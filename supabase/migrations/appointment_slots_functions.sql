@@ -47,7 +47,11 @@ CREATE POLICY "Staff can manage slots" ON appointment_slots
 -- ============================================
 DROP FUNCTION IF EXISTS generate_daily_slots(UUID, DATE, UUID);
 DROP FUNCTION IF EXISTS get_dentist_available_slots(UUID, DATE, UUID);
+-- Drop all possible overloads of book_appointment_slot
 DROP FUNCTION IF EXISTS book_appointment_slot(UUID, DATE, TIME, UUID);
+DROP FUNCTION IF EXISTS book_appointment_slot(UUID, TEXT, TEXT, UUID);
+DROP FUNCTION IF EXISTS book_appointment_slot(UUID, DATE, TEXT, UUID);
+DROP FUNCTION IF EXISTS book_appointment_slot(p_dentist_id UUID, p_slot_date DATE, p_slot_time TIME, p_appointment_id UUID);
 
 -- ============================================
 -- 3. Generate daily slots function
