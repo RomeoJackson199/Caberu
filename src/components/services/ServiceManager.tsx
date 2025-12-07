@@ -63,6 +63,11 @@ export function ServiceManager() {
   const handleDelete = async (serviceId: string) => {
     if (!confirm('Are you sure you want to delete this service?')) return;
 
+    // Optimistically remove from UI immediately
+    const previousServices = [...services];
+    setServices(services.filter(s => s.id !== serviceId));
+    toast.success('Service deleted');
+
     try {
       const { error } = await supabase
         .from('business_services')
@@ -70,16 +75,22 @@ export function ServiceManager() {
         .eq('id', serviceId);
 
       if (error) throw error;
-
-      toast.success('Service deleted');
-      loadServices();
     } catch (error: any) {
+      // Rollback on error
+      setServices(previousServices);
       console.error('Error deleting service:', error);
       toast.error('Failed to delete service');
     }
   };
 
   const handleToggleActive = async (serviceId: string, currentStatus: boolean) => {
+    // Optimistically toggle in UI immediately
+    const previousServices = [...services];
+    setServices(services.map(s =>
+      s.id === serviceId ? { ...s, is_active: !currentStatus } : s
+    ));
+    toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'}`);
+
     try {
       const { error } = await supabase
         .from('business_services')
@@ -87,10 +98,9 @@ export function ServiceManager() {
         .eq('id', serviceId);
 
       if (error) throw error;
-
-      toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'}`);
-      loadServices();
     } catch (error: any) {
+      // Rollback on error
+      setServices(previousServices);
       console.error('Error updating service:', error);
       toast.error('Failed to update service');
     }
@@ -297,8 +307,8 @@ export function ServiceManager() {
             <Card
               key={service.id}
               className={`flex h-full flex-col transition-all hover:shadow-xl ${!service.is_active
-                  ? 'border-dashed opacity-60 hover:opacity-80'
-                  : 'border-2 hover:scale-[1.02] shadow-md'
+                ? 'border-dashed opacity-60 hover:opacity-80'
+                : 'border-2 hover:scale-[1.02] shadow-md'
                 }`}
             >
               <CardHeader className="space-y-4">
