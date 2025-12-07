@@ -74,13 +74,13 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     const pathParts = location.pathname.split('/').filter(Boolean);
     if (pathParts.length >= 2) {
       const sectionFromUrl = pathParts[1]; // Gets 'patients' from '/dentist/patients'
-      
+
       const validSections: DentistSection[] = [
         'dashboard', 'patients', 'appointments', 'employees', 'messages', 'clinical',
         'schedule', 'payments', 'analytics', 'reports', 'inventory',
         'imports', 'users', 'team', 'branding', 'security', 'settings', 'services'
       ];
-      
+
       if (validSections.includes(sectionFromUrl as DentistSection)) {
         setActiveSection(sectionFromUrl as DentistSection);
       }
@@ -98,7 +98,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     };
 
     getUser();
-    
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
     });
@@ -116,13 +116,13 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   const fetchBusinessInfo = async () => {
     const businessId = localStorage.getItem('selected_business_id');
     if (!businessId) return;
-    
+
     const { data } = await supabase
       .from('businesses')
       .select('id, name')
       .eq('id', businessId)
       .single();
-    
+
     if (data) setBusinessInfo(data);
   };
 
@@ -148,7 +148,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         throw new Error('Profile not found');
       }
 
-      const { data: dentist, error: dentistError } = await supabase
+      let { data: dentist, error: dentistError } = await supabase
         .from('dentists')
         .select('id, is_active')
         .eq('profile_id', profile.id)
@@ -158,17 +158,31 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         logger.error('❌ Dentist error:', dentistError);
         throw dentistError;
       }
+
       if (!dentist) {
-        logger.error('❌ No dentist record found for profile:', profile.id);
-        throw new Error('You are not registered as a dentist');
-      }
-      if (!dentist.is_active) {
-        logger.error('❌ Dentist account is inactive');
-        throw new Error('Your dentist account is not active');
+        logger.info('DentistPortal: No dentist record found, creating...');
+        const { data: newDentist, error: insertError } = await supabase
+          .from('dentists')
+          .insert({ profile_id: profile.id, is_active: true })
+          .select('id, is_active')
+          .single();
+
+        if (insertError) {
+          logger.error('❌ Failed to create dentist record:', insertError);
+          throw new Error('Failed to create dentist record. Please contact support.');
+        }
+        dentist = newDentist;
+        logger.info('✅ Dentist record created');
+      } else if (!dentist.is_active) {
+        logger.warn('⚠️ Dentist inactive - activating');
+        await supabase
+          .from('dentists')
+          .update({ is_active: true })
+          .eq('id', dentist.id);
       }
 
       setDentistId(dentist.id);
-      
+
       // Fetch badge counts
       const { data: payments } = await supabase
         .from('payment_requests')
@@ -302,16 +316,16 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         )}
         {activeSection === 'users' && businessInfo && (
           <div className="flex justify-end mb-4">
-            <InviteDentistDialog 
-              businessId={businessInfo.id} 
+            <InviteDentistDialog
+              businessId={businessInfo.id}
               businessName={businessInfo.name}
             />
           </div>
         )}
         {activeSection === 'team' && businessInfo && (
           <div className="flex justify-end mb-4">
-            <InviteDentistDialog 
-              businessId={businessInfo.id} 
+            <InviteDentistDialog
+              businessId={businessInfo.id}
               businessName={businessInfo.name}
             />
           </div>
