@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Shield, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 const ForgotPassword = () => {
   const { toast } = useToast();
@@ -33,10 +34,10 @@ const ForgotPassword = () => {
         description: "Please check your email for the reset code",
       });
       setStep('verify');
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to send code",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -61,10 +62,10 @@ const ForgotPassword = () => {
         title: "Password Reset",
         description: "Your password has been successfully updated.",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to reset password",
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
