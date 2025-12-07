@@ -2,20 +2,48 @@
 <html lang="en">
 
 <head>
-  <!-- Critical inline script for custom elements -->
+  <!-- Critical inline script for custom elements and global error handling -->
   <script>
     (function () {
-      const originalDefine = customElements.define;
+      // Prevent custom element double-registration errors (from browser extensions)
+      const originalDefine = customElements.define.bind(customElements);
       customElements.define = function (name, constructor, options) {
         if (customElements.get(name)) {
+          console.debug('Custom element already defined, skipping:', name);
           return;
         }
         try {
-          originalDefine.call(customElements, name, constructor, options);
+          originalDefine(name, constructor, options);
         } catch (e) {
-          console.warn('Silenced custom element error for:', name, e);
+          console.debug('Silenced custom element error for:', name);
         }
       };
+
+      // Global error handler for extension errors (prevents blank screen)
+      window.addEventListener('error', function (event) {
+        // Ignore errors from browser extensions or external scripts
+        if (event.filename && (
+          event.filename.includes('extension://') ||
+          event.filename.includes('overlay_bundle') ||
+          event.filename.includes('webcomponents') ||
+          event.filename.includes('content.js')
+        )) {
+          event.preventDefault();
+          console.debug('Suppressed extension error:', event.message);
+          return false;
+        }
+      }, true);
+
+      // Also catch unhandled promise rejections from extensions
+      window.addEventListener('unhandledrejection', function (event) {
+        if (event.reason && event.reason.toString && (
+          event.reason.toString().includes('custom element') ||
+          event.reason.toString().includes('mce-')
+        )) {
+          event.preventDefault();
+          console.debug('Suppressed extension promise rejection');
+        }
+      });
     })();
   </script>
 
