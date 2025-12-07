@@ -17,7 +17,7 @@ export function generateWelcomeEmail(props: WelcomeEmailProps): string {
     userType,
     loginLink,
     dashboardLink,
-    supportLink = "https://dentibot.com/support",
+    supportLink = "https://Caberu.com/support",
   } = props;
 
   const isDentist = userType === 'dentist';
@@ -28,7 +28,7 @@ export function generateWelcomeEmail(props: WelcomeEmailProps): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to DentiBot!</title>
+  <title>Welcome to Caberu!</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -175,7 +175,7 @@ export function generateWelcomeEmail(props: WelcomeEmailProps): string {
     <!-- Header -->
     <div class="header">
       <div class="logo">🦷</div>
-      <h1>Welcome to DentiBot!</h1>
+      <h1>Welcome to Caberu!</h1>
       <p>${isDentist ? 'Transform Your Practice Management' : 'Your Dental Health Journey Starts Here'}</p>
     </div>
 
@@ -184,7 +184,7 @@ export function generateWelcomeEmail(props: WelcomeEmailProps): string {
       <p class="greeting">Hi ${userName},</p>
 
       <p class="message">
-        Welcome to DentiBot! We're thrilled to have you join our community of ${isDentist ? 'dental professionals' : 'patients'}
+        Welcome to Caberu! We're thrilled to have you join our community of ${isDentist ? 'dental professionals' : 'patients'}
         who are ${isDentist ? 'transforming their practice management' : 'taking control of their dental health'}.
       </p>
 
@@ -289,22 +289,22 @@ export function generateWelcomeEmail(props: WelcomeEmailProps): string {
 
       <p style="color: #6b7280; margin-top: 30px;">
         Best regards,<br>
-        <strong>The DentiBot Team</strong>
+        <strong>The Caberu Team</strong>
       </p>
     </div>
 
     <!-- Footer -->
     <div class="footer">
       <p>
-        <strong>DentiBot</strong> - AI-Powered Dental Practice Management
+        <strong>Caberu</strong> - AI-Powered Dental Practice Management
       </p>
       <div class="social-links">
-        <a href="https://dentibot.com">Website</a> |
+        <a href="https://Caberu.com">Website</a> |
         <a href="${supportLink}">Support</a> |
-        <a href="https://dentibot.com/privacy">Privacy</a>
+        <a href="https://Caberu.com/privacy">Privacy</a>
       </div>
       <p style="margin-top: 15px; font-size: 12px;">
-        © ${new Date().getFullYear()} DentiBot. All rights reserved.
+        © ${new Date().getFullYear()} Caberu. All rights reserved.
       </p>
     </div>
   </div>

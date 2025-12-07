@@ -559,7 +559,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 				<div className="flex items-center justify-between">
 					<div className="font-semibold">Supplies</div>
 					<div className="flex items-center gap-2 text-xs text-muted-foreground">
-						<span>Dentibot estimates the tools used. Edit if different.</span>
+						<span>Caberu estimates the tools used. Edit if different.</span>
 						<div className="flex items-center gap-2"><span>Auto-deduct on save</span><Switch checked={autoDeduct} onCheckedChange={setAutoDeduct} /></div>
 					</div>
 				</div>

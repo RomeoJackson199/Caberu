@@ -262,8 +262,8 @@ export function generateAppointmentReminderEmail(props: AppointmentReminderEmail
     <!-- Footer -->
     <div class="footer">
       <p>
-        Powered by <strong>DentiBot</strong><br>
-        <a href="https://dentibot.com">www.dentibot.com</a>
+        Powered by <strong>Caberu</strong><br>
+        <a href="https://Caberu.com">www.Caberu.com</a>
       </p>
       <p style="margin-top: 15px; font-size: 12px;">
         This is an automated reminder. Please do not reply to this email.

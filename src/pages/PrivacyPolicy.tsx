@@ -30,7 +30,7 @@ const PrivacyPolicy = () => {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-900">1. Introduction</h2>
           <p className="text-gray-700 leading-relaxed">
-            DentiBot ("we", "our", or "us") is committed to protecting your privacy and personal information. This Privacy Policy
+            Caberu ("we", "our", or "us") is committed to protecting your privacy and personal information. This Privacy Policy
             explains how we collect, use, disclose, and safeguard your information when you use our dental practice management
             platform. We comply with the General Data Protection Regulation (GDPR), Health Insurance Portability and Accountability
             Act (HIPAA), and other applicable data protection laws.
@@ -195,7 +195,7 @@ const PrivacyPolicy = () => {
           </div>
 
           <p className="text-gray-700 leading-relaxed mt-4">
-            To exercise any of these rights, please contact us at <strong>privacy@dentibot.com</strong>.
+            To exercise any of these rights, please contact us at <strong>privacy@Caberu.com</strong>.
             We will respond within 30 days.
           </p>
         </section>
@@ -274,10 +274,10 @@ const PrivacyPolicy = () => {
           <Card className="p-6 bg-blue-50 border-blue-200">
             <div className="space-y-2 text-gray-700">
               <p><strong>For privacy-related inquiries or to exercise your rights:</strong></p>
-              <p>Email: <a href="mailto:privacy@dentibot.com" className="text-blue-600 hover:underline">privacy@dentibot.com</a></p>
-              <p>Data Protection Officer: dpo@dentibot.com</p>
+              <p>Email: <a href="mailto:privacy@Caberu.com" className="text-blue-600 hover:underline">privacy@Caberu.com</a></p>
+              <p>Data Protection Officer: dpo@Caberu.com</p>
               <p className="mt-4"><strong>For general support:</strong></p>
-              <p>Email: <a href="mailto:support@dentibot.com" className="text-blue-600 hover:underline">support@dentibot.com</a></p>
+              <p>Email: <a href="mailto:support@Caberu.com" className="text-blue-600 hover:underline">support@Caberu.com</a></p>
             </div>
           </Card>
         </section>
@@ -287,7 +287,7 @@ const PrivacyPolicy = () => {
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500 pt-8 border-t">
-          <p>© {new Date().getFullYear()} DentiBot. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Caberu. All rights reserved.</p>
           <p className="mt-2">
             This privacy policy is effective as of the date listed above and supersedes all previous versions.
           </p>

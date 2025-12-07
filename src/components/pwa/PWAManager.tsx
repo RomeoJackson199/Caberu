@@ -183,7 +183,7 @@ export const PWAManager: React.FC<PWAManagerProps> = ({ onInstall }) => {
                     <Smartphone className="h-5 w-5 text-primary-foreground" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Install Dentibot</CardTitle>
+                    <CardTitle className="text-lg">Install Caberu</CardTitle>
                     <p className="text-sm text-muted-foreground">Access faster with our app</p>
                   </div>
                 </div>

@@ -186,7 +186,7 @@ export function FeedbackWidget({
                   Send Feedback
                 </DialogTitle>
                 <DialogDescription>
-                  Help us improve DentiBot by sharing your thoughts, reporting bugs,
+                  Help us improve Caberu by sharing your thoughts, reporting bugs,
                   or suggesting new features.
                 </DialogDescription>
               </DialogHeader>
@@ -353,7 +353,7 @@ export function FeedbackWidget({
               </h3>
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
                 Your feedback has been submitted successfully. We appreciate you
-                taking the time to help us improve DentiBot.
+                taking the time to help us improve Caberu.
               </p>
               <Button
                 onClick={() => {

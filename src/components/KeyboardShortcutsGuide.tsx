@@ -199,7 +199,7 @@ export function KeyboardShortcutsGuide({
             Keyboard Shortcuts
           </DialogTitle>
           <DialogDescription>
-            Use these keyboard shortcuts to navigate DentiBot faster
+            Use these keyboard shortcuts to navigate Caberu faster
           </DialogDescription>
         </DialogHeader>
 

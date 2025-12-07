@@ -22,7 +22,7 @@ const Terms = () => {
             <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-1" />
             <div>
               <p className="text-gray-800 leading-relaxed">
-                <strong>Please read these Terms of Service carefully.</strong> By accessing or using DentiBot,
+                <strong>Please read these Terms of Service carefully.</strong> By accessing or using Caberu,
                 you agree to be bound by these terms. If you disagree with any part of these terms, you may
                 not access the service.
               </p>
@@ -34,8 +34,8 @@ const Terms = () => {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-900">1. Agreement to Terms</h2>
           <p className="text-gray-700 leading-relaxed">
-            These Terms of Service ("Terms") govern your access to and use of DentiBot's website, mobile application,
-            and services (collectively, the "Service"). DentiBot ("we," "us," or "our") provides a dental practice
+            These Terms of Service ("Terms") govern your access to and use of Caberu's website, mobile application,
+            and services (collectively, the "Service"). Caberu ("we," "us," or "our") provides a dental practice
             management platform designed for dental professionals and their patients.
           </p>
           <p className="text-gray-700 leading-relaxed">
@@ -150,7 +150,7 @@ const Terms = () => {
           </h2>
           <Card className="p-6 bg-red-50 border-red-200">
             <p className="text-gray-800 leading-relaxed mb-3">
-              <strong>Important:</strong> DentiBot is a practice management platform, not a medical advice service.
+              <strong>Important:</strong> Caberu is a practice management platform, not a medical advice service.
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
               <li>The Service does not provide medical or dental advice, diagnosis, or treatment</li>
@@ -170,7 +170,7 @@ const Terms = () => {
             <h3 className="text-xl font-semibold text-gray-800">6.1 Our IP</h3>
             <p className="text-gray-700 leading-relaxed">
               The Service, including its source code, databases, functionality, software, website designs, audio,
-              video, text, photographs, and graphics (collectively, "Content") are owned by DentiBot and are
+              video, text, photographs, and graphics (collectively, "Content") are owned by Caberu and are
               protected by copyright, trademark, and other intellectual property laws.
             </p>
           </div>
@@ -230,7 +230,7 @@ const Terms = () => {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-900">10. Indemnification</h2>
           <p className="text-gray-700 leading-relaxed">
-            You agree to indemnify and hold harmless DentiBot and its officers, directors, employees, and agents
+            You agree to indemnify and hold harmless Caberu and its officers, directors, employees, and agents
             from any claims, damages, losses, liabilities, and expenses arising from:
           </p>
           <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
@@ -288,19 +288,19 @@ const Terms = () => {
           <Card className="p-6 bg-blue-50 border-blue-200">
             <div className="space-y-2 text-gray-700">
               <p><strong>For questions about these Terms:</strong></p>
-              <p>Email: <a href="mailto:legal@dentibot.com" className="text-blue-600 hover:underline">legal@dentibot.com</a></p>
+              <p>Email: <a href="mailto:legal@Caberu.com" className="text-blue-600 hover:underline">legal@Caberu.com</a></p>
               <p className="mt-4"><strong>For general support:</strong></p>
-              <p>Email: <a href="mailto:support@dentibot.com" className="text-blue-600 hover:underline">support@dentibot.com</a></p>
-              <p>Website: <a href="https://dentibot.com/support" className="text-blue-600 hover:underline">https://dentibot.com/support</a></p>
+              <p>Email: <a href="mailto:support@Caberu.com" className="text-blue-600 hover:underline">support@Caberu.com</a></p>
+              <p>Website: <a href="https://Caberu.com/support" className="text-blue-600 hover:underline">https://Caberu.com/support</a></p>
             </div>
           </Card>
         </section>
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500 pt-8 border-t">
-          <p>© {new Date().getFullYear()} DentiBot. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Caberu. All rights reserved.</p>
           <p className="mt-2">
-            By using DentiBot, you agree to these Terms of Service and our{" "}
+            By using Caberu, you agree to these Terms of Service and our{" "}
             <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>.
           </p>
         </div>

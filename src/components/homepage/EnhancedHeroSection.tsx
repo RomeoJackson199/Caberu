@@ -55,7 +55,7 @@ export const EnhancedHeroSection: React.FC<EnhancedHeroSectionProps> = ({ classN
       name: "Sarah Johnson",
       location: "Brussels, Belgium",
       rating: 5,
-      text: "DentiBot made booking my emergency appointment so easy. The AI chat understood exactly what I needed."
+      text: "Caberu made booking my emergency appointment so easy. The AI chat understood exactly what I needed."
     },
     {
       name: "Michael Chen",
