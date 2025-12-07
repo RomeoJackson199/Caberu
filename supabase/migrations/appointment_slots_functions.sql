@@ -123,7 +123,7 @@ END;
 $$;
 
 -- ============================================
--- 3. Get available slots function
+-- 4. Get available slots function
 -- ============================================
 CREATE OR REPLACE FUNCTION get_dentist_available_slots(
   p_dentist_id UUID,
@@ -142,14 +142,15 @@ BEGIN
   PERFORM generate_daily_slots(p_dentist_id, p_date, p_business_id);
   
   -- Return slots, cross-checking with appointments table
+  -- Use timezone-aware comparison (Europe/Brussels for Belgian timezone)
   RETURN QUERY
   SELECT 
     s.slot_time,
     s.is_available AND NOT EXISTS (
       SELECT 1 FROM appointments a 
       WHERE a.dentist_id = p_dentist_id 
-      AND DATE(a.appointment_date) = p_date 
-      AND a.appointment_date::TIME = s.slot_time
+      AND DATE(a.appointment_date AT TIME ZONE 'Europe/Brussels') = p_date 
+      AND (a.appointment_date AT TIME ZONE 'Europe/Brussels')::TIME = s.slot_time
       AND a.status NOT IN ('cancelled', 'no_show')
     ) AS is_available
   FROM appointment_slots s
