@@ -156,7 +156,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(businessIdOrSlug);
 
       const { data, error } = await supabase.functions.invoke('set-current-business', {
-        body: isUuid 
+        body: isUuid
           ? { businessId: businessIdOrSlug }
           : { businessSlug: businessIdOrSlug },
       });
@@ -187,7 +187,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
             toast.success(`Switched to ${business.name}`);
           }
         }
-        
+
         // Reload memberships to refresh any template-related data
         await loadMemberships();
       }
@@ -206,11 +206,14 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN') {
         loadMemberships();
       } else if (event === 'SIGNED_OUT') {
+        // Clear all business-related state
         setBusinessId(null);
         setBusinessSlug(null);
         setBusinessName(null);
         setMembershipRole(null);
         setMemberships([]);
+        // Clear localStorage to prevent stale business on next login
+        localStorage.removeItem('selected_business_id');
       }
     });
 
@@ -248,7 +251,7 @@ export function useBusinessContext() {
 // Utility hook to ensure business is selected
 export function useRequireBusinessContext() {
   const context = useBusinessContext();
-  
+
   useEffect(() => {
     if (!context.loading && !context.businessId) {
       toast.error('Please select a business first');
