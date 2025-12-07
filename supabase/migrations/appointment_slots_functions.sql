@@ -20,8 +20,12 @@ CREATE TABLE IF NOT EXISTS appointment_slots (
 -- Enable RLS
 ALTER TABLE appointment_slots ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist, then recreate
+DROP POLICY IF EXISTS "Users can view slots for their business" ON appointment_slots;
+DROP POLICY IF EXISTS "Staff can manage slots" ON appointment_slots;
+
 -- RLS policies
-CREATE POLICY IF NOT EXISTS "Users can view slots for their business" ON appointment_slots
+CREATE POLICY "Users can view slots for their business" ON appointment_slots
   FOR SELECT USING (
     business_id IN (
       SELECT business_id FROM business_members WHERE profile_id = auth.uid()
@@ -30,7 +34,7 @@ CREATE POLICY IF NOT EXISTS "Users can view slots for their business" ON appoint
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Staff can manage slots" ON appointment_slots
+CREATE POLICY "Staff can manage slots" ON appointment_slots
   FOR ALL USING (
     business_id IN (
       SELECT business_id FROM business_members 
