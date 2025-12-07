@@ -16,7 +16,6 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { FloatingBookingButton } from "./FloatingBookingButton";
 import { BusinessSelector } from "@/components/BusinessSelector";
 import { useClinicBranding } from "@/hooks/useClinicBranding";
-import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { logger } from '@/lib/logger';
 
 type NavItem = {
@@ -61,7 +60,6 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
   const { state, toggleSidebar, open, setOpen } = useSidebar();
   const { counts } = usePatientBadgeCounts();
   const { branding } = useClinicBranding();
-  const { hasFeature } = useBusinessTemplate();
   const [openGroupId, setOpenGroupId] = useState<string | null>(() => localStorage.getItem(STORAGE_KEYS.lastGroup));
   const [moreOpen, setMoreOpen] = useState(false);
   const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
@@ -90,34 +88,24 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
     if (openGroupId) localStorage.setItem(STORAGE_KEYS.lastGroup, openGroupId);
   }, [openGroupId]);
 
-  // Groups and items per IA
+  // Groups and items per IA - all features enabled (no template restrictions)
   const groups: NavGroup[] = useMemo(() => {
     const careItems = [
       { id: 'care-home', label: t.pnav.care.home, icon: <Home className="h-4 w-4" />, to: '/care' },
-      { id: 'care-booking', label: 'Classic Booking', icon: <Calendar className="h-4 w-4" />, to: '/dashboard', onClick: (e?: React.MouseEvent) => {
-        // Prevent default navigation
-        e?.preventDefault();
-        // Set section to assistant in localStorage
-        localStorage.setItem('pd_section', 'assistant');
-        // Dispatch custom event for dashboard to pick up
-        window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
-        // Navigate if not already on dashboard
-        if (location.pathname !== '/dashboard') {
-          navigate('/dashboard');
+      {
+        id: 'care-booking', label: 'Classic Booking', icon: <Calendar className="h-4 w-4" />, to: '/dashboard', onClick: (e?: React.MouseEvent) => {
+          e?.preventDefault();
+          localStorage.setItem('pd_section', 'assistant');
+          window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
+          if (location.pathname !== '/dashboard') {
+            navigate('/dashboard');
+          }
         }
-      }},
+      },
       { id: 'care-appointments', label: t.pnav.care.appointments, icon: <Calendar className="h-4 w-4" />, to: '/care/appointments', badge: counts.upcoming7d },
+      { id: 'care-prescriptions', label: t.pnav.care.prescriptions, icon: <Pill className="h-4 w-4" />, to: '/care/prescriptions' },
+      { id: 'care-history', label: t.pnav.care.history, icon: <FileText className="h-4 w-4" />, to: '/care/history' },
     ];
-
-    // Only add prescriptions if the feature is enabled
-    if (hasFeature('prescriptions')) {
-      careItems.push({ id: 'care-prescriptions', label: t.pnav.care.prescriptions, icon: <Pill className="h-4 w-4" />, to: '/care/prescriptions' });
-    }
-
-    // Only add history if treatment plans are enabled
-    if (hasFeature('treatmentPlans')) {
-      careItems.push({ id: 'care-history', label: t.pnav.care.history, icon: <FileText className="h-4 w-4" />, to: '/care/history' });
-    }
 
     const allGroups: NavGroup[] = [
       {
@@ -125,20 +113,13 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
         label: t.pnav.group.care,
         items: careItems,
       },
-    ];
-
-    // Only add billing group if payment requests feature is enabled
-    if (hasFeature('paymentRequests')) {
-      allGroups.push({
+      {
         id: 'billing',
         label: t.pnav.group.billing,
         items: [
           { id: 'billing-main', label: t.pnav.billing.main, icon: <CreditCard className="h-4 w-4" />, to: '/billing', badge: counts.unpaid },
         ],
-      });
-    }
-
-    allGroups.push(
+      },
       {
         id: 'documents',
         label: t.pnav.group.documents,
@@ -155,11 +136,11 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
           { id: 'account-privacy', label: t.pnav.account.privacy, icon: <Shield className="h-4 w-4" />, to: '/account/privacy' },
           { id: 'account-help', label: t.pnav.account.help, icon: <HelpCircle className="h-4 w-4" />, to: '/account/help' },
         ],
-      }
-    );
+      },
+    ];
 
     return allGroups;
-  }, [t, counts.upcoming7d, counts.unpaid, hasFeature]);
+  }, [t, counts.upcoming7d, counts.unpaid, location.pathname, navigate]);
 
   // Deep link behavior: /billing?status=unpaid expands Billing
   useEffect(() => {
@@ -183,7 +164,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
     try { localStorage.setItem(STORAGE_KEYS.lastVisited, item.to); } catch (error) { console.debug('Failed to save last visited:', error); }
     try { emitAnalyticsEvent('pnav_click', '', { role: 'patient', group: groupId, item: item.id, path: item.to }); } catch (error) { console.debug('Failed to emit analytics:', error); }
     if (isMobile) setMoreOpen(false);
-    
+
     // Auto-collapse sidebar when navigating to booking
     if (item.to === '/dashboard' && item.id === 'care-booking' && state !== 'collapsed') {
       toggleSidebar();
@@ -352,9 +333,9 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
             <span className="text-sm font-medium truncate">{branding.clinicName || 'Patient Portal'}</span>
           </div>
         </header>
-        
+
         <div className="flex-1">{children ?? <Outlet />}</div>
-        
+
         {/* Floating Book Appointment Button */}
         <FloatingBookingButton onBookAppointment={() => {
           localStorage.setItem('pd_section', 'assistant');
@@ -363,7 +344,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
             navigate('/dashboard');
           }
         }} />
-        
+
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t">
           <div className="grid grid-cols-4">
             <NavLink to="/care" end onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label="Home">
@@ -398,8 +379,8 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
                   {navContent}
                   {/* Sign out button in mobile drawer */}
                   <div className="p-4 border-t mt-4">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                       onClick={handleSignOut}
                     >
@@ -429,64 +410,64 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
       >
         {navContent}
       </Sidebar>
-        <div className="flex-1">
-          <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b px-3 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger aria-label="Toggle sidebar" title="Toggle sidebar" />
-            </div>
-            <div className="flex items-center gap-6">
-              {/* Book Appointment Button - Desktop */}
-              <Button 
-                onClick={() => {
-                  localStorage.setItem('pd_section', 'assistant');
-                  window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
-                  if (location.pathname !== '/dashboard') {
-                    navigate('/dashboard');
-                  }
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                size="sm"
-              >
-                <Calendar className="h-4 w-4" />
-                <span className="hidden lg:inline">Book Appointment</span>
-              </Button>
-              
-              <LanguageSelector />
-              
-              {/* Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2" aria-label="Open profile menu" title="Profile">
-                    <Avatar className="h-5 w-5">
-                      <AvatarImage src={userProfilePicture || undefined} />
-                      <AvatarFallback className="text-xs">P</AvatarFallback>
-                    </Avatar>
-                    <span className="hidden sm:inline">Profile</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-background">
-                  <DropdownMenuItem onClick={() => navigate('/account/profile')} aria-label="Profile">
-                    <User className="mr-2 h-4 w-4" />
-                    My Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/about')} aria-label="About">
-                    <Info className="mr-2 h-4 w-4" />
-                    About
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600 focus:bg-red-50" aria-label="Sign out">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+      <div className="flex-1">
+        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b px-3 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger aria-label="Toggle sidebar" title="Toggle sidebar" />
           </div>
-          <div className="p-3 md:p-4">{children ?? <Outlet />}</div>
+          <div className="flex items-center gap-6">
+            {/* Book Appointment Button - Desktop */}
+            <Button
+              onClick={() => {
+                localStorage.setItem('pd_section', 'assistant');
+                window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
+                if (location.pathname !== '/dashboard') {
+                  navigate('/dashboard');
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+              size="sm"
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="hidden lg:inline">Book Appointment</span>
+            </Button>
+
+            <LanguageSelector />
+
+            {/* Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2" aria-label="Open profile menu" title="Profile">
+                  <Avatar className="h-5 w-5">
+                    <AvatarImage src={userProfilePicture || undefined} />
+                    <AvatarFallback className="text-xs">P</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden sm:inline">Profile</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background">
+                <DropdownMenuItem onClick={() => navigate('/account/profile')} aria-label="Profile">
+                  <User className="mr-2 h-4 w-4" />
+                  My Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/about')} aria-label="About">
+                  <Info className="mr-2 h-4 w-4" />
+                  About
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600 focus:bg-red-50" aria-label="Sign out">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
+        <div className="p-3 md:p-4">{children ?? <Outlet />}</div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
 export function PatientPortalNav({ children }: { children: React.ReactNode }) {
   return (
