@@ -138,11 +138,29 @@ export function WeeklyCalendarView({
 
   const handleCancelAppointment = async (appointmentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Optimistically update UI immediately
+    const previousData = queryClient.getQueryData<any[]>(["appointments-calendar", dentistId, format(weekStart, "yyyy-MM-dd")]);
+
+    queryClient.setQueryData(
+      ["appointments-calendar", dentistId, format(weekStart, "yyyy-MM-dd")],
+      (old: any[] | undefined) =>
+        old?.map(apt => apt.id === appointmentId ? { ...apt, status: "cancelled" } : apt) || []
+    );
+
+    toast({ title: "Appointment cancelled" });
+
     try {
-      await supabase.from("appointments").update({ status: "cancelled" }).eq("id", appointmentId);
+      const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", appointmentId);
+      if (error) throw error;
+      // Refresh from server to ensure sync
       queryClient.invalidateQueries({ queryKey: ["appointments-calendar"] });
-      toast({ title: "Appointment cancelled" });
     } catch (error) {
+      // Rollback on error
+      queryClient.setQueryData(
+        ["appointments-calendar", dentistId, format(weekStart, "yyyy-MM-dd")],
+        previousData
+      );
       toast({ title: "Error", description: "Failed to cancel appointment.", variant: "destructive" });
     }
   };
