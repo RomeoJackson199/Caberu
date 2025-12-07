@@ -41,8 +41,12 @@ serve(async (req) => {
         const billingCycle = session.metadata?.billing_cycle;
 
         if (!dentistId || !planId) {
-          console.error('Missing metadata in checkout session');
-          break;
+          console.error('Missing metadata in checkout session:', { dentistId, planId });
+          // Return error so Stripe retries - don't silently succeed
+          return new Response(
+            JSON.stringify({ error: 'Missing required metadata (dentist_id or plan_id)' }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          );
         }
 
         // Get subscription details from Stripe
@@ -69,7 +73,7 @@ serve(async (req) => {
           console.error('Error creating subscription:', error);
         } else {
           console.log('Subscription created successfully');
-          
+
           // Send notification to dentist
           await supabase.from('notifications').insert({
             user_id: (await supabase
@@ -80,7 +84,7 @@ serve(async (req) => {
             type: 'system',
             category: 'info',
             title: 'Subscription Active',
-            message: 'Your subscription is now active. Thank you for choosing DentiBot!',
+            message: 'Your subscription is now active. Thank you for choosing Caberu!',
           });
         }
         break;
@@ -88,7 +92,7 @@ serve(async (req) => {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        
+
         const { error } = await supabase
           .from('subscriptions')
           .update({
@@ -107,7 +111,7 @@ serve(async (req) => {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        
+
         const { error } = await supabase
           .from('subscriptions')
           .update({ status: 'cancelled' })
@@ -146,7 +150,7 @@ serve(async (req) => {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        
+
         // Check if renewal is coming up (7 days before end)
         const subscription = await stripe.subscriptions.retrieve(
           invoice.subscription as string
