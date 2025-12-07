@@ -184,7 +184,8 @@ BEGIN
 END;
 $$;
 
--- Grant execute permissions
-GRANT EXECUTE ON FUNCTION generate_daily_slots TO authenticated;
-GRANT EXECUTE ON FUNCTION get_dentist_available_slots TO authenticated;
-GRANT EXECUTE ON FUNCTION book_appointment_slot TO authenticated;
+-- Grant execute permissions (with full signatures)
+GRANT EXECUTE ON FUNCTION generate_daily_slots(UUID, DATE, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION get_dentist_available_slots(UUID, DATE, UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION book_appointment_slot(UUID, DATE, TIME, UUID) TO authenticated;
+
