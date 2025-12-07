@@ -21,7 +21,11 @@ export const UnifiedDashboard = memo(({ user }: UnifiedDashboardProps) => {
   React.useEffect(() => {
     if (!roleLoading && !superAdminLoading && isDentist && !isSuperAdmin) {
       // Redirect business owners/providers (who are not super admins) to their dashboard
-      navigate('/dentist/dashboard', { replace: true });
+      // Only redirect if we're not already at a dentist route to prevent loops
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith('/dentist')) {
+        navigate('/dentist/dashboard', { replace: true });
+      }
     }
   }, [roleLoading, superAdminLoading, isDentist, isSuperAdmin, navigate]);
 

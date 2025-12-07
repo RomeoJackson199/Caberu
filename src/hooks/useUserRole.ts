@@ -14,12 +14,15 @@ export function useUserRole() {
       try {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (!user) {
+          logger.info('useUserRole: No user found');
           setRoles([]);
           setLoading(false);
           return;
         }
+
+        logger.info('useUserRole: Fetching roles for user', { userId: user.id, email: user.email });
 
         const { data, error: roleError } = await supabase
           .from('user_roles')
@@ -31,10 +34,14 @@ export function useUserRole() {
           throw roleError;
         }
 
+        logger.info('useUserRole: Roles fetched from database', { data, count: data?.length });
+
         if (data && Array.isArray(data)) {
           const userRoles = data.map((r: any) => r.role as AppRole);
+          logger.info('useUserRole: Parsed user roles', { userRoles });
           setRoles(userRoles);
         } else {
+          logger.warn('useUserRole: No roles found for user');
           setRoles([]);
         }
       } catch (e: any) {
@@ -55,6 +62,17 @@ export function useUserRole() {
   // Handle legacy 'customer' role as 'patient' during transition
   const isPatient = hasRole('patient') || (roles as any).includes('customer');
   const isStaff = hasRole('staff');
+
+  // Log computed flags for debugging
+  if (roles.length > 0) {
+    logger.info('useUserRole: Computed role flags', {
+      roles,
+      isAdmin,
+      isDentist,
+      isPatient,
+      isStaff
+    });
+  }
 
   return {
     roles,
