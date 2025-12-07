@@ -73,53 +73,56 @@ export default function PatientCareHome() {
         return;
       }
 
-      // Fetch upcoming appointments
-      const { data: appointments } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          appointment_date,
-          duration_minutes,
-          status,
-          reason,
-          dentists (
-            profiles (
-              first_name,
-              last_name
+      // Fetch data in parallel after getting profile
+      const [appointmentsResult, totalCountResult, prescriptionCountResult] = await Promise.allSettled([
+        supabase
+          .from('appointments')
+          .select(`
+            id,
+            appointment_date,
+            duration_minutes,
+            status,
+            reason,
+            dentists (
+              profiles (
+                first_name,
+                last_name
+              )
             )
-          )
-        `)
-        .eq('patient_id', profile.id)
-        .gte('appointment_date', new Date().toISOString())
-        .order('appointment_date', { ascending: true })
-        .limit(3);
+          `)
+          .eq('patient_id', profile.id)
+          .gte('appointment_date', new Date().toISOString())
+          .order('appointment_date', { ascending: true })
+          .limit(3),
+        supabase
+          .from('appointments')
+          .select('*', { count: 'exact', head: true })
+          .eq('patient_id', profile.id),
+        supabase
+          .from('prescriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('patient_id', profile.id)
+          .eq('status', 'active')
+      ]);
+
+      // Extract results with graceful fallbacks
+      const appointments = appointmentsResult.status === 'fulfilled' ? appointmentsResult.value.data : null;
+      const totalCount = totalCountResult.status === 'fulfilled' ? totalCountResult.value.count : 0;
+      const prescriptionCount = prescriptionCountResult.status === 'fulfilled' ? prescriptionCountResult.value.count : 0;
 
       // Transform appointments to match expected type
       const transformedAppointments = (appointments || []).map(apt => ({
         ...apt,
         dentists: Array.isArray(apt.dentists) && apt.dentists.length > 0
           ? {
-              profiles: Array.isArray(apt.dentists[0].profiles)
-                ? apt.dentists[0].profiles[0]
-                : apt.dentists[0].profiles
-            }
+            profiles: Array.isArray(apt.dentists[0].profiles)
+              ? apt.dentists[0].profiles[0]
+              : apt.dentists[0].profiles
+          }
           : undefined
       }));
 
       setUpcomingAppointments(transformedAppointments);
-
-      // Get total appointments count
-      const { count: totalCount } = await supabase
-        .from('appointments')
-        .select('*', { count: 'exact', head: true })
-        .eq('patient_id', profile.id);
-
-      // Get active prescriptions count
-      const { count: prescriptionCount } = await supabase
-        .from('prescriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('patient_id', profile.id)
-        .eq('status', 'active');
 
       setStats({
         upcomingAppointments: appointments?.length || 0,

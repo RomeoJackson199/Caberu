@@ -48,69 +48,71 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 			try {
 				const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 				const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+				const weekStart = new Date(today);
+				weekStart.setDate(today.getDate() - today.getDay());
 
-				// Today's appointments with details
-			const { data: todayAppts, error: todayError } = await supabase
-				.from('appointments')
-				.select(`
-					id,
-					appointment_date,
-					patient_name,
-					reason,
-					status,
-					urgency,
-					profiles!appointments_patient_id_fkey (
-						first_name,
-						last_name
-					)
-				`)
-				.eq('dentist_id', dentistId)
-				.gte('appointment_date', startOfDay.toISOString())
-				.lt('appointment_date', endOfDay.toISOString())
-				.neq('status', 'cancelled')
-				.order('appointment_date', { ascending: true });
+				// Fetch all data in parallel
+				const [todayApptsResult, weekCompletedResult, patientsResult] = await Promise.allSettled([
+					supabase
+						.from('appointments')
+						.select(`
+							id,
+							appointment_date,
+							patient_name,
+							reason,
+							status,
+							urgency,
+							profiles!appointments_patient_id_fkey (
+								first_name,
+								last_name
+							)
+						`)
+						.eq('dentist_id', dentistId)
+						.gte('appointment_date', startOfDay.toISOString())
+						.lt('appointment_date', endOfDay.toISOString())
+						.neq('status', 'cancelled')
+						.order('appointment_date', { ascending: true }),
+					supabase
+						.from('appointments')
+						.select('id')
+						.eq('dentist_id', dentistId)
+						.gte('appointment_date', weekStart.toISOString())
+						.eq('status', 'completed'),
+					supabase
+						.from('appointments')
+						.select('patient_id')
+						.eq('dentist_id', dentistId)
+				]);
 
-			if (todayError) {
-				logger.error('❌ Error fetching today appointments:', { code: todayError.code, message: todayError.message, details: (todayError as any)?.details });
-			}
+				// Extract results with graceful fallbacks
+				const todayAppts = todayApptsResult.status === 'fulfilled' ? todayApptsResult.value.data : null;
+				const todayError = todayApptsResult.status === 'fulfilled' ? todayApptsResult.value.error : null;
+				const weekCompleted = weekCompletedResult.status === 'fulfilled' ? weekCompletedResult.value.data : null;
+				const patients = patientsResult.status === 'fulfilled' ? patientsResult.value.data : null;
 
-			// Filter out appointments without profile data and unwrap profiles array
-			const validAppts = (todayAppts || [])
-				.filter(apt => apt.profiles && (Array.isArray(apt.profiles) ? apt.profiles.length > 0 : true))
-				.map(apt => ({
-					...apt,
-					profiles: Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles
-				})) as TodayAppointment[];
+				if (todayError) {
+					logger.error('❌ Error fetching today appointments:', { code: todayError.code, message: todayError.message, details: (todayError as any)?.details });
+				}
 
-			// Count urgent cases
-			const urgentCount = validAppts.filter(a => a.urgency === 'high').length || 0;
+				// Filter out appointments without profile data and unwrap profiles array
+				const validAppts = (todayAppts || [])
+					.filter(apt => apt.profiles && (Array.isArray(apt.profiles) ? apt.profiles.length > 0 : true))
+					.map(apt => ({
+						...apt,
+						profiles: Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles
+					})) as TodayAppointment[];
 
-				// This week's completed
-				const startOfWeek = new Date(today);
-				startOfWeek.setDate(today.getDate() - today.getDay());
-				
-				const { data: weekCompleted } = await supabase
-					.from('appointments')
-					.select('id')
-					.eq('dentist_id', dentistId)
-					.gte('appointment_date', startOfWeek.toISOString())
-					.eq('status', 'completed');
-
-				// Total unique patients
-				const { data: patients } = await supabase
-					.from('appointments')
-					.select('patient_id')
-					.eq('dentist_id', dentistId);
-				
+				// Count urgent cases
+				const urgentCount = validAppts.filter(a => a.urgency === 'high').length || 0;
 				const uniquePatients = new Set(patients?.map(p => p.patient_id) || []);
 
-			setStats({
-				todayCount: validAppts.length,
-				urgentCount,
-				weekCompleted: weekCompleted?.length || 0,
-				totalPatients: uniquePatients.size
-			});
-			setTodayAppointments(validAppts);
+				setStats({
+					todayCount: validAppts.length,
+					urgentCount,
+					weekCompleted: weekCompleted?.length || 0,
+					totalPatients: uniquePatients.size
+				});
+				setTodayAppointments(validAppts);
 			} catch (error) {
 				logger.error('Error fetching dashboard data:', error);
 			} finally {
@@ -161,38 +163,38 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				</div>
 			</div>
 
-		{/* Quick Stats with Polished Components */}
-		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-tour="stats-cards">
-			<StatCard
-				title="Today's Appointments"
-				value={stats.todayCount.toString()}
-				icon={Calendar}
-				gradient="from-blue-500 to-cyan-500"
-			/>
-
-			{hasFeature('urgencyLevels') && (
+			{/* Quick Stats with Polished Components */}
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-tour="stats-cards">
 				<StatCard
-					title="Urgent Cases"
-					value={stats.urgentCount.toString()}
-					icon={AlertCircle}
-					gradient="from-red-500 to-orange-500"
+					title="Today's Appointments"
+					value={stats.todayCount.toString()}
+					icon={Calendar}
+					gradient="from-blue-500 to-cyan-500"
 				/>
-			)}
 
-			<StatCard
-				title="Completed This Week"
-				value={stats.weekCompleted.toString()}
-				icon={CheckCircle}
-				gradient="from-green-500 to-emerald-500"
-			/>
+				{hasFeature('urgencyLevels') && (
+					<StatCard
+						title="Urgent Cases"
+						value={stats.urgentCount.toString()}
+						icon={AlertCircle}
+						gradient="from-red-500 to-orange-500"
+					/>
+				)}
 
-			<StatCard
-				title={t('customerPlural')}
-				value={stats.totalPatients.toString()}
-				icon={UserIcon}
-				gradient="from-indigo-500 to-blue-500"
-			/>
-		</div>
+				<StatCard
+					title="Completed This Week"
+					value={stats.weekCompleted.toString()}
+					icon={CheckCircle}
+					gradient="from-green-500 to-emerald-500"
+				/>
+
+				<StatCard
+					title={t('customerPlural')}
+					value={stats.totalPatients.toString()}
+					icon={UserIcon}
+					gradient="from-indigo-500 to-blue-500"
+				/>
+			</div>
 
 			{/* Next Appointment Widget */}
 			<NextAppointmentWidget dentistId={dentistId} />
@@ -241,7 +243,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 												{format(new Date(appointment.appointment_date), 'HH:mm')}
 											</span>
 										</div>
-										
+
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-2 mb-1 flex-wrap">
 												<p className="font-medium text-sm sm:text-base truncate">{getPatientName(appointment)}</p>
@@ -260,10 +262,10 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 									</Badge>
 								</div>
 							))}
-							
-							<Button 
-								onClick={() => onOpenAppointmentsTab?.()} 
-								variant="outline" 
+
+							<Button
+								onClick={() => onOpenAppointmentsTab?.()}
+								variant="outline"
 								className="w-full mt-3 sm:mt-4"
 							>
 								View All Appointments

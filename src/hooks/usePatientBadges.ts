@@ -43,25 +43,34 @@ export function usePatientBadgeCounts() {
           return;
         }
 
-        // Upcoming appointments in next 7 days (excluding cancelled/completed)
+        // Fetch data in parallel
         const now = new Date();
         const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        const { data: appts, error: apptErr } = await supabase
-          .from('appointments')
-          .select('id, status, appointment_date')
-          .eq('patient_id', patientId)
-          .gte('appointment_date', now.toISOString())
-          .lte('appointment_date', in7.toISOString());
-        if (apptErr) throw apptErr;
-        const upcoming7d = (appts || []).filter(a => !['cancelled','completed'].includes(String(a.status || '').toLowerCase())).length;
 
-        // Unpaid payments: payment_requests with pending/overdue
-        const { data: payReqs, error: payErr } = await supabase
-          .from('payment_requests')
-          .select('id, status')
-          .eq('patient_id', patientId)
-          .in('status', ['pending','overdue']);
+        const [apptsResult, payReqsResult] = await Promise.allSettled([
+          supabase
+            .from('appointments')
+            .select('id, status, appointment_date')
+            .eq('patient_id', patientId)
+            .gte('appointment_date', now.toISOString())
+            .lte('appointment_date', in7.toISOString()),
+          supabase
+            .from('payment_requests')
+            .select('id, status')
+            .eq('patient_id', patientId)
+            .in('status', ['pending', 'overdue'])
+        ]);
+
+        // Extract results with graceful fallbacks
+        const appts = apptsResult.status === 'fulfilled' ? apptsResult.value.data : null;
+        const apptErr = apptsResult.status === 'fulfilled' ? apptsResult.value.error : null;
+        const payReqs = payReqsResult.status === 'fulfilled' ? payReqsResult.value.data : null;
+        const payErr = payReqsResult.status === 'fulfilled' ? payReqsResult.value.error : null;
+
+        if (apptErr) throw apptErr;
         if (payErr) throw payErr;
+
+        const upcoming7d = (appts || []).filter(a => !['cancelled', 'completed'].includes(String(a.status || '').toLowerCase())).length;
         const unpaid = (payReqs || []).length;
 
         if (isMounted) {
