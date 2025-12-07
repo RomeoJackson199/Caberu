@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useOptimisticMutation } from "@/hooks/useOptimisticMutation";
 import { format } from "date-fns";
 
 interface AppointmentEditDialogProps {
@@ -16,32 +16,33 @@ interface AppointmentEditDialogProps {
 }
 
 export function AppointmentEditDialog({ appointment, open, onOpenChange }: AppointmentEditDialogProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState(appointment.status);
   const [notes, setNotes] = useState(appointment.consultation_notes || "");
   const [treatmentNotes, setTreatmentNotes] = useState(appointment.notes || "");
 
-  const updateMutation = useMutation({
+  // Optimistic mutation - updates UI instantly before server confirms
+  const updateMutation = useOptimisticMutation({
     mutationFn: async (data: any) => {
       const { error } = await supabase
         .from("appointments")
         .update(data)
         .eq("id", appointment.id);
-      
+
       if (error) throw error;
+      return data;
     },
+    queryKey: ["appointments"],
+    updateCache: (oldData: any[] | undefined, newData: any) => {
+      if (!oldData) return [];
+      return oldData.map(apt =>
+        apt.id === appointment.id ? { ...apt, ...newData } : apt
+      );
+    },
+    successMessage: "Appointment updated",
+    errorMessage: "Failed to update appointment",
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      toast({ title: "Appointment updated successfully" });
       onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({ 
-        title: "Error updating appointment",
-        description: error.message,
-        variant: "destructive"
-      });
     }
   });
 
