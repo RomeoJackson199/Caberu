@@ -44,7 +44,7 @@ serve(async (req) => {
       throw new Error('Profile not found');
     }
 
-    const { name, tagline, template_type } = await req.json();
+    const { name, tagline } = await req.json();
 
     // Generate unique slug
     let slug = name.toLowerCase()
@@ -61,7 +61,7 @@ serve(async (req) => {
       slug = `${slug}-${Math.random().toString(36).substring(2, 8)}`;
     }
 
-    // Create business
+    // Create business - always healthcare template
     const { data: business, error: businessError } = await supabaseServiceClient
       .from('businesses')
       .insert({
@@ -69,7 +69,7 @@ serve(async (req) => {
         slug,
         tagline: tagline || 'Your Practice, Your Way',
         owner_profile_id: profile.id,
-        template_type: template_type || 'healthcare',
+        template_type: 'healthcare',
         primary_color: '#0F3D91',
         secondary_color: '#66D2D6',
         currency: 'USD',
@@ -79,38 +79,17 @@ serve(async (req) => {
 
     if (businessError) throw businessError;
 
-    // Assign admin and provider roles
+    // Assign admin role
     const { error: adminRoleError } = await supabaseServiceClient
       .from('user_roles')
       .upsert({ user_id: user.id, role: 'admin' }, { onConflict: 'user_id,role' });
 
-    const { error: providerRoleError } = await supabaseServiceClient
-      .from('user_roles')
-      .upsert({ user_id: user.id, role: 'provider' }, { onConflict: 'user_id,role' });
-
-    if (adminRoleError || providerRoleError) {
-      console.error('Error assigning roles:', adminRoleError || providerRoleError);
+    if (adminRoleError) {
+      console.error('Error assigning admin role:', adminRoleError);
     }
 
-    // Create dentist record
-    const { error: dentistError } = await supabaseServiceClient
-      .from('dentists')
-      .upsert(
-        {
-          profile_id: profile.id,
-          first_name: '',
-          last_name: '',
-          email: user.email || '',
-          is_active: true,
-        },
-        { onConflict: 'profile_id' }
-      );
-
-    if (dentistError) {
-      console.error('Error creating dentist record:', dentistError);
-    }
-
-    // Add to business_members
+    // Add to business_members as owner
+    // This will trigger auto-creation of dentist record via database trigger
     const { error: memberError } = await supabaseServiceClient
       .from('business_members')
       .insert({

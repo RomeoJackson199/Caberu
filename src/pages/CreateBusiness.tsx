@@ -14,7 +14,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface BusinessData {
-  template?: string;
   name?: string;
   tagline?: string;
   bio?: string;
@@ -31,9 +30,7 @@ export default function CreateBusiness() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
-  const [businessData, setBusinessData] = useState<BusinessData>({
-    template: 'dentist', // Default template
-  });
+  const [businessData, setBusinessData] = useState<BusinessData>({});
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showTour, setShowTour] = useState(false);
 
@@ -42,10 +39,10 @@ export default function CreateBusiness() {
     const handleSubscriptionSuccess = async () => {
       const sessionId = searchParams.get('session_id');
       const subscriptionSuccess = searchParams.get('subscription');
-      
+
       if (subscriptionSuccess === 'success' && sessionId) {
         toast.loading('Creating your business...');
-        
+
         try {
           const { data, error } = await supabase.functions.invoke('complete-business-subscription', {
             body: { sessionId },
@@ -68,16 +65,11 @@ export default function CreateBusiness() {
   // Check for demo data on mount
   useEffect(() => {
     const demoBusinessName = sessionStorage.getItem('demo_business_name');
-    const demoTemplate = sessionStorage.getItem('demo_template');
-    
-    if (demoBusinessName && demoTemplate) {
-      setBusinessData({
-        name: demoBusinessName,
-        template: demoTemplate as TemplateType,
-      });
-      // Clear demo data after using it
+
+    if (demoBusinessName) {
+      setBusinessData({ name: demoBusinessName });
       sessionStorage.removeItem('demo_business_name');
-      sessionStorage.removeItem('demo_template');
+      sessionStorage.removeItem('demo_template'); // Clear old template data if exists
     }
   }, []);
 
@@ -138,13 +130,12 @@ export default function CreateBusiness() {
                     initial={{ scale: 0.8 }}
                     animate={{ scale: currentStep === step.id ? 1.1 : 1 }}
                     transition={{ duration: 0.3 }}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold transition-all shadow-lg ${
-                      currentStep > step.id
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold transition-all shadow-lg ${currentStep > step.id
                         ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
                         : currentStep === step.id
-                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white ring-4 ring-blue-200 dark:ring-blue-900'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    }`}
+                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white ring-4 ring-blue-200 dark:ring-blue-900'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      }`}
                   >
                     {currentStep > step.id ? <CheckCircle2 className="w-6 h-6" /> : step.id}
                   </motion.div>
