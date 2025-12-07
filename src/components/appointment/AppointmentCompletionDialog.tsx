@@ -89,9 +89,9 @@ export function AppointmentCompletionDialog({
     ];
     return defs.map(d => ({ id: d.id as any, title: (allStepMeta[d.id]?.title ?? d.title), icon: (allStepMeta[d.id]?.icon ?? FileText) }));
   }, [template]);
-  const showToothInput = template?.id === 'healthcare' || !!template?.features.medicalRecords;
-  const serviceLabel = template?.terminology.service || 'Treatment';
-  const serviceLabelPlural = template?.terminology.servicePlural || 'Treatments';
+  const showToothInput = template?.id === 'healthcare' || !!template?.features?.medicalRecords;
+  const serviceLabel = template?.terminology?.service || 'Treatment';
+  const serviceLabelPlural = template?.terminology?.servicePlural || 'Treatments';
   // Form data
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [notes, setNotes] = useState('');

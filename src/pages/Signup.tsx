@@ -139,7 +139,7 @@ const Signup = () => {
         },
       });
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "❌ Google sign up failed",
         description: "Unable to sign up with Google. Please try again or use email/password.",

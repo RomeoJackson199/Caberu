@@ -70,7 +70,7 @@ export default function Pricing() {
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Subscription error:', error);
       toast.error(error.message || "Failed to start checkout");
       setLoading(null);

@@ -141,7 +141,7 @@ const Login = () => {
 
       // No 2FA - proceed with normal login flow
       await completeLogin();
-    } catch (error: any) {
+    } catch (error) {
       const errorMessage = error.message.toLowerCase();
       let userFriendlyMessage = "Unable to sign in. Please try again.";
 
@@ -227,7 +227,7 @@ const Login = () => {
 
       // Complete the login process with the active session
       await completeLogin();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Sign in failed",
         description: "Failed to complete sign in after 2FA verification",
@@ -260,7 +260,7 @@ const Login = () => {
         },
       });
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Google sign in failed",
         description: "Unable to sign in with Google. Please try again or use email/password.",
