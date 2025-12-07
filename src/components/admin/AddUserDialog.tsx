@@ -35,7 +35,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<"patient" | "dentist" | "staff" | "admin" | "manager" | "waiter" | "cook" | "host">("patient");
+  const [role, setRole] = useState<"patient" | "dentist" | "staff" | "admin">("patient");
   const { toast } = useToast();
   const { isAdmin, isDentist, loading: roleLoading } = useUserRole();
 
@@ -55,43 +55,6 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     setLoading(true);
 
     try {
-      // Handle restaurant staff roles
-      if (role === 'manager' || role === 'waiter' || role === 'cook' || role === 'host') {
-        if (!businessId) {
-          toast({
-            title: 'Select a clinic',
-            description: 'Please select a business before inviting restaurant staff.',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        console.log('Inviting restaurant staff:', { businessId, email, role });
-
-        const { data, error: inviteError } = await supabase.rpc('create_restaurant_staff_invitation', {
-          p_business_id: businessId,
-          p_email: email.trim(),
-          p_role: role,
-        });
-
-        console.log('RPC result:', { data, error: inviteError });
-
-        if (inviteError) throw inviteError;
-
-        toast({
-          title: 'Invitation sent',
-          description: `Invited ${email} as ${role}. They'll be prompted to accept on next login.`,
-        });
-
-        setOpen(false);
-        setEmail('');
-        setFirstName('');
-        setLastName('');
-        setRole('patient');
-        onUserAdded?.();
-        return;
-      }
-
       if (role === 'dentist') {
         if (!businessId) {
           toast({
@@ -259,10 +222,6 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
                 <SelectItem value="patient">Patient</SelectItem>
                 <SelectItem value="dentist">Dentist</SelectItem>
                 <SelectItem value="staff">Staff</SelectItem>
-                <SelectItem value="manager">Manager (Restaurant)</SelectItem>
-                <SelectItem value="waiter">Waiter (Restaurant)</SelectItem>
-                <SelectItem value="cook">Cook (Restaurant)</SelectItem>
-                <SelectItem value="host">Host (Restaurant)</SelectItem>
                 <SelectItem value="admin">Admin (Full Access)</SelectItem>
               </SelectContent>
             </Select>

@@ -26,5 +26,9 @@ export function useTemplateNavigation() {
         navItems,
         getNavItems: () => navItems,
         hasNavItem: () => true,
+        // Stub for removed restaurant functionality
+        filterNavItems: (items: NavItem[]) => items,
+        getRestaurantNavItems: [] as NavItem[],
+        isRestaurant: false,
     };
 }
