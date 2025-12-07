@@ -43,7 +43,14 @@ CREATE POLICY "Staff can manage slots" ON appointment_slots
   );
 
 -- ============================================
--- 2. Generate daily slots function
+-- 2. Drop existing functions to allow signature changes
+-- ============================================
+DROP FUNCTION IF EXISTS generate_daily_slots(UUID, DATE, UUID);
+DROP FUNCTION IF EXISTS get_dentist_available_slots(UUID, DATE, UUID);
+DROP FUNCTION IF EXISTS book_appointment_slot(UUID, DATE, TIME, UUID);
+
+-- ============================================
+-- 3. Generate daily slots function
 -- ============================================
 CREATE OR REPLACE FUNCTION generate_daily_slots(
   p_dentist_id UUID,
