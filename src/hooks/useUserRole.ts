@@ -24,26 +24,73 @@ export function useUserRole() {
 
         logger.info('useUserRole: Fetching roles for user', { userId: user.id, email: user.email });
 
-        const { data, error: roleError } = await supabase
+        // First, check user_roles table (legacy system)
+        const { data: userRolesData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id);
 
         if (roleError) {
-          logger.error('Error fetching roles:', roleError);
+          logger.error('Error fetching user_roles:', roleError);
           throw roleError;
         }
 
-        logger.info('useUserRole: Roles fetched from database', { data, count: data?.length });
+        logger.info('useUserRole: Roles from user_roles table', { data: userRolesData, count: userRolesData?.length });
 
-        if (data && Array.isArray(data)) {
-          const userRoles = data.map((r: any) => r.role as AppRole);
-          logger.info('useUserRole: Parsed user roles', { userRoles });
-          setRoles(userRoles);
-        } else {
-          logger.warn('useUserRole: No roles found for user');
-          setRoles([]);
+        // Second, check business_members table (multi-tenancy system)
+        // Get profile_id first
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError) {
+          logger.error('Error fetching profile:', profileError);
         }
+
+        let businessRoles: string[] = [];
+        if (profileData) {
+          const { data: membershipData, error: membershipError } = await supabase
+            .from('business_members')
+            .select('role')
+            .eq('profile_id', profileData.id);
+
+          if (membershipError) {
+            logger.error('Error fetching business_members:', membershipError);
+          } else {
+            businessRoles = membershipData?.map((m: any) => m.role) || [];
+            logger.info('useUserRole: Roles from business_members table', {
+              businessRoles,
+              count: businessRoles.length
+            });
+          }
+        }
+
+        // Combine roles from both tables
+        const allRoles = new Set<AppRole>();
+
+        // Add roles from user_roles table
+        if (userRolesData && Array.isArray(userRolesData)) {
+          userRolesData.forEach((r: any) => {
+            if (r.role) allRoles.add(r.role as AppRole);
+          });
+        }
+
+        // Add dentist/provider role if user has business membership with dentist-like roles
+        if (businessRoles.length > 0) {
+          if (businessRoles.includes('owner') ||
+            businessRoles.includes('admin') ||
+            businessRoles.includes('dentist')) {
+            allRoles.add('dentist');
+            logger.info('useUserRole: Added dentist role based on business membership');
+          }
+        }
+
+        const finalRoles = Array.from(allRoles);
+        logger.info('useUserRole: Final combined roles', { finalRoles });
+        setRoles(finalRoles);
+
       } catch (e: any) {
         setError(e.message);
         logger.error('Error in useUserRole:', e);
@@ -64,15 +111,13 @@ export function useUserRole() {
   const isStaff = hasRole('staff');
 
   // Log computed flags for debugging
-  if (roles.length > 0) {
-    logger.info('useUserRole: Computed role flags', {
-      roles,
-      isAdmin,
-      isDentist,
-      isPatient,
-      isStaff
-    });
-  }
+  logger.info('useUserRole: Computed role flags', {
+    roles,
+    isAdmin,
+    isDentist,
+    isPatient,
+    isStaff
+  });
 
   return {
     roles,
