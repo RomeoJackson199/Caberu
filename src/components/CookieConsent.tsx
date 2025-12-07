@@ -63,11 +63,11 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
     // Here you would typically initialize analytics/marketing scripts based on preferences
     if (prefs.analytics) {
       // Initialize analytics (e.g., Google Analytics)
-      console.log("Analytics enabled");
+      // Analytics/marketing enabled
     }
     if (prefs.marketing) {
       // Initialize marketing scripts
-      console.log("Marketing cookies enabled");
+      // Analytics/marketing enabled
     }
   };
 

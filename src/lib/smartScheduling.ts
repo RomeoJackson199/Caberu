@@ -130,7 +130,7 @@ export async function getRecommendedSlots(
       return b.score - a.score;
     });
 
-    console.log('🤖 AI-powered recommendations:', {
+    logger.debug('🤖 AI-powered recommendations:', {
       summary: aiAnalysis.summary,
       strategy: aiAnalysis.distributionStrategy,
       balanceScore: aiAnalysis.balanceScore,
@@ -292,7 +292,7 @@ export async function checkDentistCapacity(
     });
 
   if (error) {
-    console.error('Error checking capacity:', error);
+    logger.error('Error checking capacity:', error);
     return null;
   }
 
@@ -316,7 +316,7 @@ export async function getPatientPreferences(
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching preferences:', error);
+    logger.error('Error fetching preferences:', error);
     return null;
   }
 
@@ -367,7 +367,7 @@ export async function logSlotRecommendations(
     .single();
 
   if (error) {
-    console.error('Error logging recommendations:', error);
+    logger.error('Error logging recommendations:', error);
     return null;
   }
 

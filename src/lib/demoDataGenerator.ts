@@ -136,7 +136,7 @@ async function createDemoPatients(
     .select();
 
   if (error) {
-    console.error("Error creating demo patients:", error);
+    logger.error("Error creating demo patients:", error);
     throw error;
   }
 
@@ -217,7 +217,7 @@ async function createDemoAppointments(
     .select();
 
   if (error) {
-    console.error("Error creating demo appointments:", error);
+    logger.error("Error creating demo appointments:", error);
     throw error;
   }
 
@@ -261,7 +261,7 @@ async function createDemoMedicalRecords(
     .select();
 
   if (error) {
-    console.error("Error creating demo medical records:", error);
+    logger.error("Error creating demo medical records:", error);
     // Don't throw - medical records are optional
     return [];
   }
@@ -283,27 +283,27 @@ export async function generateDemoData(
   } = options;
 
   try {
-    console.log("🎭 Generating demo data...");
+    logger.debug("🎭 Generating demo data...");
 
     // Step 1: Create demo patients
-    console.log(`📋 Creating ${numberOfPatients} demo patients...`);
+    logger.debug(`📋 Creating ${numberOfPatients} demo patients...`);
     const patients = await createDemoPatients(businessId, userId, numberOfPatients);
-    console.log(`✅ Created ${patients.length} demo patients`);
+    logger.debug(`✅ Created ${patients.length} demo patients`);
 
     // Step 2: Create demo appointments
-    console.log(`📅 Creating ${numberOfAppointments} demo appointments...`);
+    logger.debug(`📅 Creating ${numberOfAppointments} demo appointments...`);
     const appointments = await createDemoAppointments(
       businessId,
       userId,
       patients,
       numberOfAppointments
     );
-    console.log(`✅ Created ${appointments.length} demo appointments`);
+    logger.debug(`✅ Created ${appointments.length} demo appointments`);
 
     // Step 3: Create demo medical records
-    console.log(`📄 Creating demo medical records...`);
+    logger.debug(`📄 Creating demo medical records...`);
     const medicalRecords = await createDemoMedicalRecords(businessId, userId, patients);
-    console.log(`✅ Created ${medicalRecords.length} demo medical records`);
+    logger.debug(`✅ Created ${medicalRecords.length} demo medical records`);
 
     // Mark demo data as created in localStorage (column doesn't exist in database)
     localStorage.setItem("demo-data-generated", "true");
@@ -318,7 +318,7 @@ export async function generateDemoData(
       },
     };
   } catch (error: any) {
-    console.error("❌ Error generating demo data:", error);
+    logger.error("❌ Error generating demo data:", error);
     return {
       success: false,
       message: "Failed to generate demo data",
@@ -335,7 +335,7 @@ export async function clearDemoData(
   userId: string
 ): Promise<DemoDataResult> {
   try {
-    console.log("🗑️ Clearing demo data...");
+    logger.debug("🗑️ Clearing demo data...");
 
     // Delete in correct order (appointments first, then medical records, then patients)
     await supabase
@@ -364,7 +364,7 @@ export async function clearDemoData(
       message: "Demo data cleared successfully",
     };
   } catch (error: any) {
-    console.error("❌ Error clearing demo data:", error);
+    logger.error("❌ Error clearing demo data:", error);
     return {
       success: false,
       message: "Failed to clear demo data",

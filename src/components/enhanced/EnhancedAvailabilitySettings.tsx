@@ -149,8 +149,8 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
   };
 
   const updateAvailability = (dayIndex: number, field: keyof DentistAvailability, value: any) => {
-    setAvailability(prev => 
-      prev.map((day, index) => 
+    setAvailability(prev =>
+      prev.map((day, index) =>
         index === dayIndex ? { ...day, [field]: value } : day
       )
     );
@@ -159,12 +159,9 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
   const saveAvailability = async () => {
     setSaving(true);
     try {
-      console.log('Starting save availability for dentist:', dentistId);
       const businessId = await getCurrentBusinessId();
-      console.log('Got business ID:', businessId);
 
       // Delete existing availability for this dentist and business
-      console.log('Deleting existing availability...');
       const { error: deleteError } = await supabase
         .from('dentist_availability')
         .delete()
@@ -172,10 +169,9 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
         .eq('business_id', businessId);
 
       if (deleteError) {
-        console.error('Delete error:', deleteError);
+        logger.error('Delete error:', deleteError);
         throw deleteError;
       }
-      console.log('Delete successful');
 
       // Insert new availability settings (only include breaks if both times are set)
       const availabilityData = availability
@@ -193,17 +189,15 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
           };
         });
 
-      console.log('Inserting availability data:', availabilityData);
       if (availabilityData.length > 0) {
         const { error: insertError } = await supabase
           .from('dentist_availability')
           .insert(availabilityData);
 
         if (insertError) {
-          console.error('Insert error:', insertError);
+          logger.error('Insert error:', insertError);
           throw insertError;
         }
-        console.log('Insert successful');
       }
 
       // Refetch to confirm
@@ -390,7 +384,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                     break_start_time: '12:00',
                     break_end_time: '13:00',
                   };
-                  
+
                   return (
                     <Card key={day.value} className={`border-2 transition-all ${dayAvailability.is_available ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
                       <CardContent className="p-5">
@@ -405,7 +399,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                             </div>
                             <Switch
                               checked={dayAvailability.is_available}
-                              onCheckedChange={(checked) => 
+                              onCheckedChange={(checked) =>
                                 updateAvailability(index, 'is_available', checked)
                               }
                               className="scale-125"
@@ -421,7 +415,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                                   id={`start-${day.value}`}
                                   type="time"
                                   value={dayAvailability.start_time}
-                                  onChange={(e) => 
+                                  onChange={(e) =>
                                     updateAvailability(index, 'start_time', e.target.value)
                                   }
                                   className="h-10 mt-1"
@@ -433,7 +427,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                                   id={`end-${day.value}`}
                                   type="time"
                                   value={dayAvailability.end_time}
-                                  onChange={(e) => 
+                                  onChange={(e) =>
                                     updateAvailability(index, 'end_time', e.target.value)
                                   }
                                   className="h-10 mt-1"
@@ -448,7 +442,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                                   id={`break-start-${day.value}`}
                                   type="time"
                                   value={dayAvailability.break_start_time || ''}
-                                  onChange={(e) => 
+                                  onChange={(e) =>
                                     updateAvailability(index, 'break_start_time', e.target.value || null)
                                   }
                                   className="h-10 mt-1"
@@ -464,7 +458,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                                   id={`break-end-${day.value}`}
                                   type="time"
                                   value={dayAvailability.break_end_time || ''}
-                                  onChange={(e) => 
+                                  onChange={(e) =>
                                     updateAvailability(index, 'break_end_time', e.target.value || null)
                                   }
                                   className="h-10 mt-1"
@@ -515,9 +509,9 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                   </div>
                   <div>
                     <Label>{t.vacationType}</Label>
-                    <Select 
-                      value={newVacation.vacation_type} 
-                      onValueChange={(value: 'vacation' | 'sick' | 'personal') => 
+                    <Select
+                      value={newVacation.vacation_type}
+                      onValueChange={(value: 'vacation' | 'sick' | 'personal') =>
                         setNewVacation(prev => ({ ...prev, vacation_type: value }))
                       }
                     >
@@ -540,7 +534,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                     </Button>
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="vacation-reason">{t.reason} ({t.optional})</Label>
                   <Textarea
@@ -572,7 +566,7 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                       const startDate = new Date(vacation.start_date);
                       const endDate = new Date(vacation.end_date);
                       const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-                      
+
                       return (
                         <Card key={vacation.id} className="border">
                           <CardContent className="p-4">
@@ -595,15 +589,15 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
                                   <p className="text-sm text-muted-foreground">{vacation.reason}</p>
                                 )}
                               </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => vacation.id && deleteVacationDay(vacation.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                  aria-label={t.deleteVacation}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => vacation.id && deleteVacationDay(vacation.id)}
+                                className="text-red-600 hover:text-red-700"
+                                aria-label={t.deleteVacation}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>

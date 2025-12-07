@@ -146,7 +146,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
       if (error) throw error;
       setUserProfile(data);
     } catch (error) {
-      console.error("Error loading user profile:", error);
+      logger.error("Error loading user profile:", error);
     }
   };
 
@@ -207,7 +207,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
         metadata: message.metadata as any,
       });
     } catch (error) {
-      console.error("Error saving message:", error);
+      logger.error("Error saving message:", error);
     }
   };
 
@@ -249,7 +249,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
             }
           }
         } catch (contextError) {
-          console.error('Error loading patient context:', contextError);
+          logger.error('Error loading patient context:', contextError);
         }
       }
 
@@ -271,7 +271,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
       });
 
       if (error) {
-        console.error('AI function error:', error);
+        logger.error('AI function error:', error);
         throw error;
       }
 
@@ -433,7 +433,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
       return botMessage;
 
     } catch (error) {
-      console.error('Error calling AI:', error);
+      logger.error('Error calling AI:', error);
 
       // Fallback to simple responses
       const lowerMessage = userMessage.toLowerCase();
@@ -488,7 +488,7 @@ Type your request...`;
     try {
       await saveMessage(userMessage);
     } catch (error) {
-      console.error('Failed to save user message:', error);
+      logger.error('Failed to save user message:', error);
       // Continue with chat flow even if save fails
     }
 
@@ -510,10 +510,10 @@ Type your request...`;
         try {
           await saveMessage(botResponse);
         } catch (error) {
-          console.error('Failed to save bot response:', error);
+          logger.error('Failed to save bot response:', error);
         }
       } catch (error) {
-        console.error('Error generating bot response:', error);
+        logger.error('Error generating bot response:', error);
         // Add fallback message
         const fallbackMessage: ChatMessage = {
           id: crypto.randomUUID(),
@@ -531,7 +531,7 @@ Type your request...`;
         try {
           await saveMessage(fallbackMessage);
         } catch (error) {
-          console.error('Failed to save fallback message:', error);
+          logger.error('Failed to save fallback message:', error);
         }
       } finally {
         // Only update loading state if component is still mounted
@@ -646,7 +646,7 @@ Type your request...`;
       });
 
     } catch (error) {
-      console.error('Error starting recording:', error);
+      logger.error('Error starting recording:', error);
       toast({
         title: t.error,
         description: t.microphoneAccessError,
@@ -732,7 +732,7 @@ Type your request...`;
       }
 
     } catch (error) {
-      console.error('Error processing voice message:', error);
+      logger.error('Error processing voice message:', error);
       toast({
         title: t.error,
         description: t.voiceProcessingError,
@@ -808,7 +808,7 @@ Type your request...`;
                 );
               }
             } catch (e) {
-              console.error('Error parsing widget data:', e);
+              logger.error('Error parsing widget data:', e);
             }
           }
 

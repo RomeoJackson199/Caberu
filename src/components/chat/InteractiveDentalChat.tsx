@@ -235,7 +235,7 @@ export const InteractiveDentalChat = ({
           }
         }
       } catch (error) {
-        console.log('Could not check AI customization:', error);
+        logger.debug('Could not check AI customization:', error);
       } finally {
         setIsAIConfigLoaded(true);
       }
@@ -263,7 +263,7 @@ export const InteractiveDentalChat = ({
       if (error) throw error;
       setUserProfile(data);
     } catch (error) {
-      console.error("Error loading user profile:", error);
+      logger.error("Error loading user profile:", error);
     }
   };
 
@@ -300,7 +300,7 @@ export const InteractiveDentalChat = ({
         metadata: message.metadata as any,
       });
     } catch (error) {
-      console.error("Error saving message:", error);
+      logger.error("Error saving message:", error);
     }
   };
 
@@ -371,7 +371,7 @@ export const InteractiveDentalChat = ({
         effectiveBusinessId = businesses?.id || null;
       }
 
-      console.log('Sending AI request with business_id:', effectiveBusinessId);
+      logger.debug('Sending AI request with business_id:', effectiveBusinessId);
 
       // Use business context for AI customization
       const aiResponse = await supabase.functions.invoke('dental-ai-chat', {
@@ -390,7 +390,7 @@ export const InteractiveDentalChat = ({
       });
 
       if (aiResponse.error) {
-        console.error('AI function error:', aiResponse.error);
+        logger.error('AI function error:', aiResponse.error);
         // If backend returned a JSON body, try to use it instead of failing hard
         if (!aiResponse.data) {
           throw aiResponse.error;
@@ -421,7 +421,7 @@ export const InteractiveDentalChat = ({
         recommendedDentists: recommendedDentists
       };
     } catch (error) {
-      console.error('Error generating AI response:', error);
+      logger.error('Error generating AI response:', error);
       return {
         message: {
           id: crypto.randomUUID(),
@@ -614,7 +614,7 @@ export const InteractiveDentalChat = ({
 
 
   } catch (error) {
-    console.error("Error fetching appointments:", error);
+    logger.error("Error fetching appointments:", error);
     addBotMessage("I'm sorry, I couldn't retrieve your appointments right now. Please try again later.");
   }
 };
@@ -727,7 +727,7 @@ Just type what you need! 😊
       }
       
     } catch (error) {
-      console.error("Error fetching dentists:", error);
+      logger.error("Error fetching dentists:", error);
       addBotMessage("I couldn't load the dentist list. Please try again.");
     }
   };
@@ -798,8 +798,8 @@ Just type what you need! 😊
       addBotMessage("Please choose your preferred time:");
       
   } catch (error) {
-    console.error("Error fetching slots - Full error:", error);
-    console.error("Error details:", {
+    logger.error("Error fetching slots - Full error:", error);
+    logger.error("Error details:", {
       dentistId: bookingFlow.selectedDentist?.id,
       date: dateStr,
       dentist: bookingFlow.selectedDentist
@@ -900,7 +900,7 @@ Just type what you need! 😊
             appointmentReason = aiReason;
           }
         } catch (err) {
-          console.error('Failed to generate AI reason:', err);
+          logger.error('Failed to generate AI reason:', err);
         }
       }
 
@@ -929,7 +929,7 @@ Just type what you need! 😊
           .eq('session_id', sessionId)
           .eq('user_id', user.id);
       } catch (linkError) {
-        console.error('Error linking chat messages to appointment:', linkError);
+        logger.error('Error linking chat messages to appointment:', linkError);
         // Don't throw - appointment was successful, linking is supplementary
       }
 
@@ -985,7 +985,7 @@ You'll receive a confirmation email shortly.`;
 
 
   } catch (error) {
-    console.error("Error booking appointment:", error);
+    logger.error("Error booking appointment:", error);
     addBotMessage("I'm sorry, I couldn't complete your booking. Please try again or contact the clinic directly.");
   }
 };
@@ -1105,7 +1105,7 @@ You'll receive a confirmation email shortly.`;
         addBotMessage("No outstanding payments found. Your account appears to be up to date! ✅");
       }
     } catch (error) {
-      console.error('Error initiating payment:', error);
+      logger.error('Error initiating payment:', error);
       addBotMessage("Sorry, I couldn't open the payment page. Please try again or contact your dentist.");
     }
   };
@@ -1137,7 +1137,7 @@ You'll receive a confirmation email shortly.`;
       addBotMessage("✅ Your appointment has been cancelled successfully. If you need to book a new appointment, just let me know!");
       
     } catch (error) {
-      console.error('Error cancelling appointment:', error);
+      logger.error('Error cancelling appointment:', error);
       addBotMessage("Sorry, I couldn't cancel your appointment. Please contact your dentist directly.");
     }
   };
@@ -1200,7 +1200,7 @@ You'll receive a confirmation email shortly.`;
       addBotMessage(`✅ Refill request sent for ${prescription.medication_name}! Your dentist will review and contact you soon.`);
       
     } catch (error) {
-      console.error('Error requesting refill:', error);
+      logger.error('Error requesting refill:', error);
       addBotMessage("Sorry, I couldn't send the refill request. Please contact your dentist directly.");
     }
   };
@@ -1244,7 +1244,7 @@ You'll receive a confirmation email shortly.`;
       addBotMessage("I found outstanding payments on your account. You can pay securely online:");
 
     } catch (error) {
-      console.error("Error fetching payment info:", error);
+      logger.error("Error fetching payment info:", error);
       addBotMessage("I couldn't retrieve your payment information. Please try again.");
     }
   };
@@ -1309,7 +1309,7 @@ You'll receive a confirmation email shortly.`;
       addBotMessage("I found your next appointment. Would you like to reschedule it?");
 
     } catch (error) {
-      console.error("Error fetching appointment:", error);
+      logger.error("Error fetching appointment:", error);
       addBotMessage("I couldn't retrieve your appointment information. Please try again.");
     }
   };
@@ -1374,7 +1374,7 @@ You'll receive a confirmation email shortly.`;
       addBotMessage("I found your next appointment. Are you sure you want to cancel it?");
 
     } catch (error) {
-      console.error("Error fetching appointment:", error);
+      logger.error("Error fetching appointment:", error);
       addBotMessage("I couldn't retrieve your appointment information. Please try again.");
     }
   };
@@ -1421,7 +1421,7 @@ You'll receive a confirmation email shortly.`;
       }
 
     } catch (error) {
-      console.error("Error fetching prescriptions:", error);
+      logger.error("Error fetching prescriptions:", error);
       addBotMessage("I couldn't retrieve your prescription information. Please try again.");
     }
   };
