@@ -31,6 +31,8 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { OnboardingOrchestrator } from "@/components/onboarding/OnboardingOrchestrator";
 import { initializeErrorReporting } from "@/lib/errorReporting";
 
+// Force resync: 2025-12-07T19:03
+
 const Invite = lazy(() => import("./pages/Invite"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
