@@ -9,6 +9,33 @@ export default {
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
 	],
+	// Safelist to prevent purging of dynamically-used responsive classes
+	safelist: [
+		// Flex direction responsive variants
+		'sm:flex-row', 'md:flex-row', 'lg:flex-row',
+		'sm:flex-col', 'md:flex-col', 'lg:flex-col',
+		// Grid responsive variants
+		'sm:grid-cols-2', 'md:grid-cols-2', 'lg:grid-cols-2',
+		'sm:grid-cols-3', 'md:grid-cols-3', 'lg:grid-cols-3',
+		'sm:grid-cols-4', 'md:grid-cols-4', 'lg:grid-cols-4',
+		// Display responsive variants
+		'sm:flex', 'md:flex', 'lg:flex',
+		'sm:grid', 'md:grid', 'lg:grid',
+		'sm:block', 'md:block', 'lg:block',
+		'sm:hidden', 'md:hidden', 'lg:hidden',
+		// Dynamic spacing from useMobileOptimizations
+		'p-4', 'p-6', 'space-y-4', 'space-y-6',
+		'gap-4', 'gap-6', 'gap-8',
+		// Common responsive gap variants
+		'sm:gap-4', 'sm:gap-6', 'md:gap-6', 'md:gap-8', 'lg:gap-8',
+		// Width responsive variants
+		'sm:w-auto', 'md:w-auto', 'lg:w-auto',
+		// Text alignment responsive
+		'sm:text-left', 'md:text-left', 'lg:text-left',
+		// Justify and align responsive
+		'sm:justify-start', 'md:justify-start', 'lg:justify-start',
+		'sm:items-start', 'md:items-center', 'lg:items-center',
+	],
 	prefix: "",
 	theme: {
 		container: {

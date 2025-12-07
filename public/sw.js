@@ -1,4 +1,4 @@
-const CACHE_NAME = 'denti-scheduler-v2';
+const CACHE_NAME = 'denti-scheduler-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
           // Revalidate in background
           fetch(request).then((response) => {
             caches.open(CACHE_NAME).then((cache) => cache.put(request, response));
-          }).catch(() => {});
+          }).catch(() => { });
           return cached;
         }
         return fetch(request).then((response) => {
