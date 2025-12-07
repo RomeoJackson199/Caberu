@@ -304,11 +304,6 @@ export default function BookAppointment() {
         appointmentId: appointmentData.id
       });
 
-      // DEBUG: Log to browser console for user to see
-      console.log("=== BOOKING DEBUG ===");
-      console.log("Selected Time (from UI):", selectedTime);
-      console.log("Date String:", dateStr);
-      console.log("Appointment Date (UTC):", appointmentDateTime.toISOString());
 
       // Try to mark slot as unavailable (optional - appointments table is now the source of truth)
       const { error: slotError } = await supabase.rpc('book_appointment_slot', {
@@ -318,9 +313,9 @@ export default function BookAppointment() {
         p_appointment_id: appointmentData.id
       });
 
-      // Log but don't fail if slot marking fails - the appointment is already created
+      // Non-critical - the appointment is already created
       if (slotError) {
-        console.log("Note: Could not mark slot in appointment_slots table (non-critical):", slotError);
+        logger.warn("Could not mark slot in appointment_slots table:", slotError);
       }
 
       setSuccessDetails({
