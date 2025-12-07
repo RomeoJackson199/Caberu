@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 import { useEffect } from "react";
 
 type FeedbackType = "bug" | "feature" | "improvement" | "general";
@@ -127,7 +128,7 @@ export function FeedbackWidget({
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      console.log("Feedback submitted:", {
+      logger.info("Feedback submitted:", {
         ...formData,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
@@ -150,7 +151,7 @@ export function FeedbackWidget({
         });
       }, 2000);
     } catch (error) {
-      console.error("Failed to submit feedback:", error);
+      logger.error("Failed to submit feedback:", error);
       toast.error("Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -204,19 +205,17 @@ export function FeedbackWidget({
                           setFormData({ ...formData, type: type.value })
                         }
                         className={`p-4 rounded-lg border-2 transition-all text-left
-                                   ${
-                                     formData.type === type.value
-                                       ? "border-blue-600 bg-blue-50"
-                                       : "border-gray-200 hover:border-gray-300"
-                                   }`}
+                                   ${formData.type === type.value
+                            ? "border-blue-600 bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <div
-                            className={`p-2 rounded-lg ${
-                              formData.type === type.value
-                                ? type.color
-                                : "bg-gray-100 text-gray-600"
-                            }`}
+                            className={`p-2 rounded-lg ${formData.type === type.value
+                              ? type.color
+                              : "bg-gray-100 text-gray-600"
+                              }`}
                           >
                             <type.icon className="w-5 h-5" />
                           </div>

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 export function useGoogleCalendarSync() {
   const { toast } = useToast();
@@ -14,18 +15,18 @@ export function useGoogleCalendarSync() {
       });
 
       if (error) {
-        console.error('Failed to sync to Google Calendar:', error);
+        logger.error('Failed to sync to Google Calendar:', error);
         return { success: false };
       }
 
       if (data?.success) {
-        console.log(`Successfully ${action}d appointment in Google Calendar`);
+        logger.info(`Successfully ${action}d appointment in Google Calendar`);
         return { success: true };
       }
 
       return { success: false };
     } catch (error) {
-      console.error('Error syncing to Google Calendar:', error);
+      logger.error('Error syncing to Google Calendar:', error);
       return { success: false };
     }
   };

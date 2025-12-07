@@ -226,7 +226,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
           businessId = businesses.id;
         }
       } catch (businessError) {
-        console.log('Could not fetch business ID:', businessError);
+        logger.warn('Could not fetch business ID:', businessError);
       }
 
       // Get patient context if user is logged in
@@ -820,8 +820,8 @@ Type your request...`;
             >
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.is_bot
-                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100'
-                    : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100'
+                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
                   }`}
               >
                 <div className="flex items-start gap-2">

@@ -134,10 +134,10 @@ export default function DentistAdminSecurity() {
             timestamp: new Date().toISOString(),
           }
         });
-        console.log('Password change notification sent');
+        logger.info('Password change notification sent');
       } catch (emailError) {
         // Don't fail the password change if email fails
-        console.error('Failed to send password change email:', emailError);
+        logger.error('Failed to send password change email:', emailError);
       }
 
       toast({

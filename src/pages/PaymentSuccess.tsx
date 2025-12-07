@@ -30,7 +30,7 @@ const PaymentSuccess: React.FC = () => {
           try {
             businessData = JSON.parse(pendingData);
           } catch (error) {
-            console.error('Failed to parse business data:', error);
+            logger.error('Failed to parse business data:', error);
             throw new Error('Invalid business data format');
           }
 
@@ -41,7 +41,7 @@ const PaymentSuccess: React.FC = () => {
             try {
               promoCode = JSON.parse(promoCodeData);
             } catch (error) {
-              console.error('Failed to parse promo code data:', error);
+              logger.error('Failed to parse promo code data:', error);
               // Continue without promo code if parsing fails
             }
           }
@@ -74,7 +74,7 @@ const PaymentSuccess: React.FC = () => {
             .eq('slug', slug)
             .maybeSingle();
 
-          const finalSlug = existingBusiness 
+          const finalSlug = existingBusiness
             ? `${slug}-${Math.random().toString(36).substring(2, 8)}`
             : slug;
 
@@ -134,7 +134,7 @@ const PaymentSuccess: React.FC = () => {
               .insert(servicesData);
 
             if (servicesError) {
-              console.error('Error creating services:', servicesError);
+              logger.error('Error creating services:', servicesError);
               // Don't throw, just log the error so business creation can complete
             }
           }
@@ -148,10 +148,10 @@ const PaymentSuccess: React.FC = () => {
               });
 
               if (promoError) {
-                console.error('Error updating promo code usage:', promoError);
+                logger.error('Error updating promo code usage:', promoError);
               }
             } catch (err) {
-              console.error('Failed to update promo code:', err);
+              logger.error('Failed to update promo code:', err);
             }
           }
 
@@ -164,7 +164,7 @@ const PaymentSuccess: React.FC = () => {
           // Clear pending data
           sessionStorage.removeItem('pending_business_data');
           sessionStorage.removeItem('promo_code_used');
-          
+
           // Clear tour localStorage to ensure it shows for new business owner
           localStorage.removeItem('tour_completed_dentist');
 
@@ -182,13 +182,13 @@ const PaymentSuccess: React.FC = () => {
               toast.success('URL copied to clipboard! Share it with your patients.');
             }, 500);
           }
-          
+
           // Redirect to dentist portal
           setTimeout(() => {
             navigate('/dentist-portal');
           }, 4000);
         } catch (error: any) {
-          console.error('Error creating business:', error);
+          logger.error('Error creating business:', error);
           toast.error(error.message || 'Failed to create business');
           setProcessing(false);
         }
@@ -201,10 +201,10 @@ const PaymentSuccess: React.FC = () => {
             });
 
             if (error) {
-              console.error('Error updating payment status:', error);
+              logger.error('Error updating payment status:', error);
             }
           } catch (error) {
-            console.error('Failed to update payment status:', error);
+            logger.error('Failed to update payment status:', error);
           }
         }
       }
@@ -236,10 +236,10 @@ const PaymentSuccess: React.FC = () => {
           ) : (
             <>
               <p className="text-muted-foreground">
-                Your payment has been processed successfully. 
+                Your payment has been processed successfully.
                 {type === 'business' && ' Your business account is now active!'}
               </p>
-              
+
               {sessionId && (
                 <p className="text-sm text-muted-foreground">
                   Transaction ID: {sessionId.slice(0, 20)}...
@@ -247,7 +247,7 @@ const PaymentSuccess: React.FC = () => {
               )}
 
               {type !== 'business' && (
-                <Button 
+                <Button
                   onClick={() => window.close()}
                   className="w-full"
                 >
