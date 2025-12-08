@@ -112,6 +112,11 @@ export default function DentistSettings() {
     );
   }
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    navigate(`?tab=${value}`, { replace: true });
+  };
+
   return (
     <div className="container max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3 flex-col sm:flex-row sm:items-center">
@@ -121,76 +126,87 @@ export default function DentistSettings() {
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold truncate">Settings</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">A simpler control center for your practice, appointments, and team</p>
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Tidy controls for your practice, appointments, and team</p>
           </div>
         </div>
         <div className="text-xs sm:text-sm text-muted-foreground bg-muted/50 border rounded-lg px-3 py-2">
-          Quick tip: finish appointments and schedule first, then polish branding and permissions.
+          Start with essentials (profile, availability, approvals) and polish branding last.
         </div>
       </div>
 
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-background to-primary/5">
-        <CardContent className="p-4 sm:p-6 grid gap-4 sm:grid-cols-3">
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Practice basics</h3>
-            <p className="text-sm text-muted-foreground">Keep your public profile lean and accurate for patients.</p>
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-background to-primary/5">
+        <CardContent className="p-4 sm:p-6 grid gap-4 sm:grid-cols-4">
+          <div className="space-y-2 sm:col-span-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-primary">Quick setup</h3>
+            <p className="text-sm text-muted-foreground">Follow this path to get patients booking fast without hunting for pages.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => handleTabChange('profile')}>
+                <User className="h-4 w-4 mr-2" /> Profile
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => handleTabChange('schedule')}>
+                <Calendar className="h-4 w-4 mr-2" /> Availability
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => handleTabChange('appointments')}>
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Approvals
+              </Button>
+            </div>
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Appointments</h3>
-            <p className="text-sm text-muted-foreground">Control approvals, rules, and availability before inviting patients.</p>
+            <h3 className="text-sm font-semibold">Why these first?</h3>
+            <p className="text-sm text-muted-foreground">Patients see your profile, then book from your availability. Approval rules keep you in control.</p>
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Team, brand & access</h3>
-            <p className="text-sm text-muted-foreground">Manage roles, visual identity, and safety without digging through menus.</p>
+            <h3 className="text-sm font-semibold">Polish later</h3>
+            <p className="text-sm text-muted-foreground">Once bookings feel right, tune branding, team roles, and security.</p>
           </div>
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-          <TabsTrigger value="profile" className="gap-2 text-left flex-col items-start">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
+        <TabsList className="flex flex-wrap w-full gap-2">
+          <TabsTrigger value="profile" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="font-semibold">Profile</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Contact details & clinic bio</span>
+            <span className="text-[11px] text-muted-foreground">Basics patients see first</span>
           </TabsTrigger>
-          <TabsTrigger value="appointments" className="gap-2 text-left flex-col items-start">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="font-semibold">Appointments</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Approvals & booking rules</span>
-          </TabsTrigger>
-          <TabsTrigger value="schedule" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="schedule" className="gap-2 text-left flex-col items-start min-w-[140px]">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span className="font-semibold">Availability</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Working hours & breaks</span>
+            <span className="text-[11px] text-muted-foreground">Hours, breaks, time off</span>
           </TabsTrigger>
-          <TabsTrigger value="staff" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="appointments" className="gap-2 text-left flex-col items-start min-w-[140px]">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="font-semibold">Appointments</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Approvals & rules</span>
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="gap-2 text-left flex-col items-start min-w-[140px]">
             <div className="flex items-center gap-2">
               <UserCog className="h-4 w-4" />
               <span className="font-semibold">Team & access</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Roles, invites, permissions</span>
+            <span className="text-[11px] text-muted-foreground">Roles & permissions</span>
           </TabsTrigger>
-          <TabsTrigger value="branding" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="branding" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               <span className="font-semibold">Branding</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Logo, patient emails & AI tone</span>
+            <span className="text-[11px] text-muted-foreground">Logo & patient touchpoints</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="security" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               <span className="font-semibold">Security</span>
             </div>
             <span className="text-[11px] text-muted-foreground">Access control & danger zone</span>
           </TabsTrigger>
-          <TabsTrigger value="support" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="support" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4" />
               <span className="font-semibold">Support</span>
@@ -203,28 +219,48 @@ export default function DentistSettings() {
           <DentistAdminProfile />
         </TabsContent>
 
+        <TabsContent value="schedule" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Schedule & Availability</CardTitle>
+              <CardDescription>
+                Manage your working hours, breaks, and time off
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EnhancedAvailabilitySettings dentistId={dentistId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="appointments" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Appointment preferences</CardTitle>
-              <CardDescription>Keep booking rules close to scheduling instead of hiding them in your profile.</CardDescription>
+              <CardDescription>Keep booking rules next to scheduling instead of hiding them in your profile.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-start justify-between gap-4">
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border rounded-lg p-4">
                 <div className="space-y-1">
                   <Label htmlFor="require-approval">Require approval before confirming</Label>
                   <p className="text-sm text-muted-foreground">
-                    Approve new patient requests manually to avoid double booking or prep issues.
+                    Approve new patient requests to prevent double booking or missing prep time.
                   </p>
                 </div>
-                <Switch
-                  id="require-approval"
-                  checked={requireApproval}
-                  disabled={appointmentLoading || savingAppointments}
-                  onCheckedChange={setRequireApproval}
-                />
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="require-approval"
+                    checked={requireApproval}
+                    disabled={appointmentLoading || savingAppointments}
+                    onCheckedChange={setRequireApproval}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {requireApproval ? 'Manual review required' : 'Requests auto-confirmed'}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-end">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p className="text-sm text-muted-foreground">Save changes so patients see the right booking rules immediately.</p>
                 <Button
                   onClick={async () => {
                     if (!dentistId) return;
@@ -249,25 +285,11 @@ export default function DentistSettings() {
                     setSavingAppointments(false);
                   }}
                   disabled={appointmentLoading || savingAppointments}
-                  className="min-w-[120px]"
+                  className="min-w-[140px]"
                 >
                   {savingAppointments ? 'Saving...' : 'Save changes'}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="schedule" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Schedule & Availability</CardTitle>
-              <CardDescription>
-                Manage your working hours, breaks, and time off
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EnhancedAvailabilitySettings dentistId={dentistId} />
             </CardContent>
           </Card>
         </TabsContent>
