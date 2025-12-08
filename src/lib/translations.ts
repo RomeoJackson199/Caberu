@@ -22,6 +22,12 @@ export interface Translations {
     startConsultation: string;
     emergencyAssistance: string;
     language: string;
+    patientPortal: string;
+    classicBooking: string;
+    clinicLogoAlt: string;
+    openMenu: string;
+    collapseExpandSidebar: string;
+    toggleSidebar: string;
     light: string;
     dark: string;
     save: string;
@@ -117,6 +123,8 @@ export interface Translations {
     deleteAccount: string;
     deleteAccountConfirm: string;
     aiAdviceDisclaimer: string;
+    myProfile: string;
+    about: string;
 
     // Auth
     signOut: string;
@@ -569,7 +577,9 @@ export interface Translations {
     'common.success': string;
 }
 
-export const translations: Record<Language, Translations> = {
+type TranslationEntry = Partial<Translations>;
+
+export const translations: Record<Language, TranslationEntry> = {
     en: {
         // Error & status messages
         error: "Error",
@@ -593,6 +603,12 @@ export const translations: Record<Language, Translations> = {
         bookAppointment: "Book Appointment",
         emergencyAssistance: "Emergency Assistance",
         language: "Preferred Language",
+        patientPortal: "Patient Portal",
+        classicBooking: "Classic Booking",
+        clinicLogoAlt: "Clinic Logo",
+        openMenu: "Open menu",
+        collapseExpandSidebar: "Collapse or expand sidebar",
+        toggleSidebar: "Toggle sidebar",
         light: "Light",
         dark: "Dark",
         save: "Save",
@@ -704,6 +720,8 @@ export const translations: Record<Language, Translations> = {
         signInError: "Sign in error",
         signInSuccess: "Sign in successful!",
         welcomeToCaberu: "Welcome to Caberu.",
+        myProfile: "My Profile",
+        about: "About",
 
         // Placeholders
         enterFirstName: "Enter your first name",
@@ -1166,6 +1184,12 @@ export const translations: Record<Language, Translations> = {
         bookAppointment: "Prendre Rendez-vous",
         emergencyAssistance: "Assistance d'urgence",
         language: "Langue préférée",
+        patientPortal: "Portail patient",
+        classicBooking: "Réservation classique",
+        clinicLogoAlt: "Logo de la clinique",
+        openMenu: "Ouvrir le menu",
+        collapseExpandSidebar: "Réduire ou développer la barre latérale",
+        toggleSidebar: "Basculer la barre latérale",
         light: "Clair",
         dark: "Sombre",
         save: "Enregistrer",
@@ -1277,6 +1301,8 @@ export const translations: Record<Language, Translations> = {
         signInError: "Erreur lors de la connexion",
         signInSuccess: "Connexion réussie !",
         welcomeToCaberu: "Bienvenue sur Caberu.",
+        myProfile: "Mon profil",
+        about: "À propos",
 
         // Placeholders
         enterFirstName: "Entrez votre prénom",
@@ -1723,5 +1749,255 @@ export const translations: Record<Language, Translations> = {
         srAlertNew: "Nouvelle alerte critique",
         srQuickActions: "Barre d'actions rapides",
     },
-    nl: {}
+    nl: {
+        // Error & status messages
+        error: "Fout",
+        success: "Succes",
+        microphoneAccessError:
+            "Kan geen toegang krijgen tot de microfoon. Controleer je browserrechten en probeer het opnieuw.",
+        transcriptionFailed:
+            "Transcriptie van spraak mislukt. Probeer het opnieuw of typ je bericht.",
+        voiceProcessingError: "Fout bij het verwerken van het spraakbericht. Probeer het opnieuw.",
+
+        // General
+        settings: "Instellingen",
+        general: "Algemeen",
+        theme: "Thema",
+        personal: "Persoonlijk",
+        intelligentDentalAssistant: "Intelligente tandartsassistent",
+        experienceFuture: "Ervaar de toekomst",
+        viewOurDentists: "Bekijk onze tandartsen",
+        aiDiagnosis: "AI-diagnose",
+        startConsultation: "Consult starten",
+        bookAppointment: "Afspraak boeken",
+        emergencyAssistance: "Noodhulp",
+        language: "Voorkeurstaal",
+        patientPortal: "Patiëntenportaal",
+        classicBooking: "Klassieke boeking",
+        clinicLogoAlt: "Klinieklogo",
+        openMenu: "Menu openen",
+        collapseExpandSidebar: "Zijbalk in- of uitklappen",
+        toggleSidebar: "Zijbalk schakelen",
+        light: "Licht",
+        dark: "Donker",
+        save: "Opslaan",
+        confirm: "Bevestigen",
+        cancel: "Annuleren",
+        close: "Sluiten",
+        retry: "Opnieuw proberen",
+
+        // Booking & schedule additions
+        selectDentist: "Kies tandarts",
+        selectAppointmentType: "Kies afspraaktype",
+        appointmentType: "Afspraaktype",
+        confirmBooking: "Boeking bevestigen",
+        booking: "Boeken...",
+        bookAppointmentDescription: "Boek je tandartsafspraak in een paar klikken",
+        describeSymptoms: "Beschrijf je klachten of zorgen...",
+        noSlotsAvailable: "Geen tijden beschikbaar voor deze datum",
+        unableToLoadSlots: "Kan beschikbare tijden niet laden",
+        unableToBookAppointment: "Kan afspraak niet boeken",
+        pleaseCompleteAllFields: "Vul alle verplichte velden in",
+        incompleteProfile: "Profiel onvolledig",
+        pleaseCompleteProfileFirst:
+            "Vul eerst je profiel in bij de instellingen voordat je een afspraak boekt",
+        appointmentBooked: "Afspraak succesvol geboekt",
+        weeklyAvailability: "Wekelijkse beschikbaarheid",
+        workingHours: "Werkuren",
+        breakTime: "Pauzetijd",
+        saveAvailability: "Beschikbaarheid opslaan",
+        availabilityUpdated: "Beschikbaarheid bijgewerkt",
+        failedToLoadAvailability: "Laden van beschikbaarheid mislukt",
+        failedToSaveAvailability: "Opslaan van beschikbaarheid mislukt",
+        saving: "Opslaan...",
+        monday: "Maandag",
+        tuesday: "Dinsdag",
+        wednesday: "Woensdag",
+        thursday: "Donderdag",
+        friday: "Vrijdag",
+        saturday: "Zaterdag",
+        sunday: "Zondag",
+
+        // Messages
+        languageUpdated: "Taal bijgewerkt",
+        languageChangedTo: "Taal gewijzigd naar",
+        themeUpdated: "Thema bijgewerkt",
+        switchedToMode: "Overgeschakeld naar",
+        personalInfoSaved: "Persoonlijke informatie opgeslagen",
+        personalInfoUpdated: "Je gegevens zijn succesvol bijgewerkt.",
+        informationConfirmed: "Informatie bevestigd",
+        changesSaved: "Wijzigingen opgeslagen",
+        privacyNotice:
+            "Je persoonlijke en medische gegevens worden beschermd volgens ons privacybeleid.",
+
+        // Auth
+        signOut: "Afmelden",
+        signIn: "Aanmelden",
+        signUp: "Registreren",
+        createAccount: "Account aanmaken",
+        email: "E-mail",
+        password: "Wachtwoord",
+        phone: "Telefoon",
+        optional: "optioneel",
+        welcome: "Welkom",
+        accessCaberu: "Toegang tot Caberu",
+        signInOrCreate: "Meld je aan of maak een account om te beginnen",
+        signInButton: "Aanmelden",
+        createAccountButton: "Account maken",
+        accountCreatedSuccess: "Account succesvol aangemaakt!",
+        checkEmailConfirm: "Controleer je e-mail om je account te bevestigen.",
+        signUpError: "Fout bij registreren",
+        signInError: "Fout bij aanmelden",
+        signInSuccess: "Succesvol aangemeld!",
+        welcomeToCaberu: "Welkom bij Caberu.",
+        myProfile: "Mijn profiel",
+        about: "Over",
+
+        // Placeholders
+        enterFirstName: "Voer je voornaam in",
+        enterLastName: "Voer je achternaam in",
+        enterPhoneNumber: "Voer je telefoonnummer in",
+        enterMedicalHistory: "Vul relevante medische geschiedenis, allergieën, medicatie, enz. in.",
+        selectLanguage: "Selecteer taal",
+        enterEmail: "jij@email.com",
+        enterPassword: "••••••••",
+
+        // Dental Chat
+        dentalAssistant: "Tandartsassistent",
+        typeMessage: "Typ je bericht...",
+        send: "Verzenden",
+        welcomeMessage: "Hallo! Ik ben Caberu. Hoe kan ik je vandaag helpen? 🦷",
+        detailedWelcomeMessage:
+            "Welkom bij First Smile AI! 🦷✨\n\nIk ben je AI-tandartsassistent, 24/7 beschikbaar om je te helpen met:\n\n🤖 **AI-chat** - Krijg direct antwoord op je tandheelkundige vragen\n📅 **Slim boeken** - Boek afspraken intelligent met duurinformatie\n📸 **Foto-analyse** - Upload foto's voor AI-gestuurde tandheelkundige analyse  \n👨‍👩‍👧‍👦 **Gezinszorg** - Maak afspraken voor jezelf of gezinsleden\n\n💡 **Pro tip**: Vertel gewoon wat er aan de hand is, dan begeleid ik je door alles!\n\nWaarmee kan ik je helpen?",
+        detailedWelcomeMessageWithName: (
+            name: string,
+        ) =>
+            `Welkom bij First Smile AI! 🦷✨\n\nHallo ${name}! Ik ben je AI-tandartsassistent, 24/7 beschikbaar om je te helpen met:\n\n🤖 **AI-chat** - Krijg direct antwoord op je tandheelkundige vragen\n📅 **Slim boeken** - Boek afspraken intelligent met duurinformatie\n📸 **Foto-analyse** - Upload foto's voor AI-gestuurde tandheelkundige analyse  \n👨‍👩‍👧‍👦 **Gezinszorg** - Maak afspraken voor jezelf of gezinsleden\n\n💡 **Pro tip**: Vertel gewoon wat er aan de hand is, dan begeleid ik je door alles!\n\nWaarmee kan ik je helpen?`,
+
+        // Landing page
+        aiDiagnosisDesc: "Ontvang direct AI-gestuurde beoordelingen",
+        smartBooking: "Slim boeken",
+        smartBookingDesc: "Plan afspraken intelligent",
+        support24_7: "24/7 ondersteuning",
+        support24_7Desc: "Hulp rond de klok",
+        initializingExperience: "Ervaring wordt voorbereid",
+        preparingAssistant:
+            "Je persoonlijke tandartsassistent wordt voorbereid met geavanceerde AI-technologie",
+
+        // Navigation
+        chat: "Chat",
+        appointments: "Afspraken",
+
+        // Appointment booking
+        bookConsultationDescription: "Plan je tandartsconsult in enkele klikken",
+        chooseDentist: "Kies tandarts",
+        selectDate: "Selecteer datum",
+        selectTime: "Selecteer tijd",
+        availableSlots: "Beschikbare tijden",
+        consultationReason: "Reden van consult",
+        generalConsultation: "Algemeen consult",
+        routineCheckup: "Periodieke controle",
+        dentalPain: "Tandpijn",
+        emergency: "Noodgeval",
+        cleaning: "Reiniging",
+        other: "Anders",
+        bookNow: "Nu boeken",
+        appointmentConfirmed: "Afspraak bevestigd!",
+        errorTitle: "Fout",
+        cannotLoadSlots: "Kan beschikbare tijden niet laden",
+        cannotLoadDentists: "Kan lijst met tandartsen niet laden",
+        missingInformation: "Informatie ontbreekt",
+        selectDentistDateTime: "Selecteer een tandarts, datum en tijd",
+        slotNoLongerAvailable: "Dit tijdslot is niet meer beschikbaar",
+        cannotCreateAppointment: "Kan afspraak niet aanmaken",
+
+        // Appointments list
+        myAppointments: "Mijn afspraken",
+        appointmentHistory: "Afsprakenhistorie",
+        upcomingAppointments: "Aankomende afspraken",
+        pastAppointments: "Afgelopen afspraken",
+        newAppointment: "Nieuw",
+        appointmentDetails: "Afspraakdetails",
+        loading: "Laden...",
+        noUpcomingAppointments: "Geen aankomende afspraken",
+        noPastAppointments: "Geen eerdere afspraken",
+        noAppointmentsFound: "Geen afspraken gevonden",
+        viewMore: "Meer weergeven",
+        showLess: "Minder tonen",
+        more: "meer",
+        reschedule: "Verzetten",
+        cancelAppointment: "Annuleren",
+        confirmCancellation: "Afspraak annuleren",
+        confirmCancellationMessage:
+            "Weet je zeker dat je deze afspraak wilt annuleren? Deze actie kan niet ongedaan worden gemaakt.",
+        keepAppointment: "Afspraak behouden",
+        yesCancelAppointment: "Ja, annuleren",
+        appointmentCancelled: "Afspraak succesvol geannuleerd",
+        failedToCancelAppointment: "Het annuleren van de afspraak is mislukt",
+
+        // Appointments Management
+        appointmentsManagement: "Afsprakenbeheer",
+        manageViewAppointments: "Beheer en bekijk al je patiëntafspraken",
+        refresh: "Verversen",
+        searchByPatient: "Zoek op patiëntnaam, reden of notities...",
+        todayPlus7Days: "Vandaag + 7 dagen",
+        nextWeek: "Volgende week",
+        nextMonth: "Volgende maand",
+        allTime: "Alle periodes",
+        thisWeek: "Deze week",
+        thisMonth: "Deze maand",
+
+        // Error handling
+        microphoneError: "Microfoonfout",
+        cameraError: "Camera fout",
+        mediaAccessDenied: "Toegang tot media geweigerd",
+        mediaNotSupported: "Media niet ondersteund",
+        tryAgain: "Probeer opnieuw",
+
+        // Privacy & validation
+        privacyPolicyLink: "Zie ons privacybeleid",
+        dataHandlingInfo: "We beschermen je gegevens volgens de GDPR-richtlijnen.",
+        invalidPhoneFormat: "Ongeldig telefoonnummer",
+        invalidEmailFormat: "Ongeldig e-mailadres",
+        requiredField: "Verplicht veld",
+
+        // Language selection
+        selectPreferredLanguage: "Kies je voorkeurstaal",
+        languageSelectionDescription: "Pas de ervaring aan je taalvoorkeur aan.",
+
+        // Common
+        'common.cancel': "Annuleren",
+        'common.next': "Volgende",
+        'common.back': "Terug",
+        'common.loading': "Bezig met laden...",
+        'common.success': "Gelukt",
+    },
+};
+
+const isTranslationObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null && !Array.isArray(value);
+
+const mergeTranslations = (
+    base: Record<string, any>,
+    override: TranslationEntry,
+): Translations => {
+    const result = { ...base } as Record<string, any>;
+
+    Object.entries(override || {}).forEach(([key, value]) => {
+        if (value === undefined) return;
+
+        if (isTranslationObject(value) && isTranslationObject(base[key])) {
+            result[key] = mergeTranslations(base[key], value as TranslationEntry);
+        } else {
+            result[key] = value;
+        }
+    });
+
+    return result as Translations;
+};
+
+export const getTranslationsForLanguage = (language: Language): Translations => {
+    const base = translations.en as Translations;
+    const override = translations[language] || {};
+    return mergeTranslations(base, override);
 };

@@ -10,8 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Language,
   Translations,
-  translations,
   SUPPORTED_LANGUAGES,
+  getTranslationsForLanguage,
 } from "@/lib/translations";
 
 interface LanguageContextType {
@@ -107,7 +107,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     document.documentElement.lang = language;
   }, [language]);
 
-  const t = translations[language];
+  const t = getTranslationsForLanguage(language);
 
   return (
     <LanguageContext.Provider

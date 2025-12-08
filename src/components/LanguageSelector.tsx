@@ -28,13 +28,14 @@ export const languages = [{
 export const LanguageSelectorMenu = () => {
   const {
     language,
-    setLanguage
+    setLanguage,
+    t
   } = useLanguage();
 
   return <DropdownMenuSub>
       <DropdownMenuSubTrigger className="gap-2">
         <Globe className="h-4 w-4" />
-        <span className="flex-1 text-left">Language</span>
+        <span className="flex-1 text-left">{t.language}</span>
         <span className="text-xs text-muted-foreground">
           {languages.find(lang => lang.code === language)?.name}
         </span>
