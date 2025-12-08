@@ -59,7 +59,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { state, toggleSidebar, open, setOpen } = useSidebar();
   const { counts } = usePatientBadgeCounts();
-  const { branding } = useClinicBranding();
+  const { branding } = useClinicBranding({ disableBrandingFetch: true });
   const [openGroupId, setOpenGroupId] = useState<string | null>(() => localStorage.getItem(STORAGE_KEYS.lastGroup));
   const [moreOpen, setMoreOpen] = useState(false);
   const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);

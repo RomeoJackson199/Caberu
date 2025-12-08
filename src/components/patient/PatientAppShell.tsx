@@ -106,7 +106,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
   } = useMobileOptimizations();
   const {
     branding
-  } = useClinicBranding();
+  } = useClinicBranding({ disableBrandingFetch: true });
   const {
     showTour,
     closeTour

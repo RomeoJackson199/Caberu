@@ -10,7 +10,11 @@ interface ClinicBranding {
   secondaryColor: string;
 }
 
-export function useClinicBranding() {
+interface UseClinicBrandingOptions {
+  disableBrandingFetch?: boolean;
+}
+
+export function useClinicBranding(options: UseClinicBrandingOptions = {}) {
   const [branding, setBranding] = useState<ClinicBranding>({
     logoUrl: null,
     clinicName: null,
@@ -21,8 +25,14 @@ export function useClinicBranding() {
   const [loading, setLoading] = useState(true);
   const { businessId } = useBusinessContext();
   const [resolvedBusinessId, setResolvedBusinessId] = useState<string | null>(null);
+  const { disableBrandingFetch = false } = options;
 
   useEffect(() => {
+    if (disableBrandingFetch) {
+      setLoading(false);
+      return;
+    }
+
     const loadBranding = async () => {
       try {
         let targetBusinessId = businessId as string | null | undefined;
@@ -131,7 +141,7 @@ export function useClinicBranding() {
         supabase.removeChannel(channel);
       }
     };
-  }, [businessId, resolvedBusinessId]);
+  }, [businessId, resolvedBusinessId, disableBrandingFetch]);
 
   return { branding, loading };
 }
