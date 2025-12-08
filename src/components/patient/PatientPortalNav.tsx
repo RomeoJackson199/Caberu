@@ -93,7 +93,11 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
     const careItems = [
       { id: 'care-home', label: t.pnav.care.home, icon: <Home className="h-4 w-4" />, to: '/care' },
       {
-        id: 'care-booking', label: 'Classic Booking', icon: <Calendar className="h-4 w-4" />, to: '/dashboard', onClick: (e?: React.MouseEvent) => {
+        id: 'care-booking',
+        label: t.classicBooking,
+        icon: <Calendar className="h-4 w-4" />,
+        to: '/dashboard',
+        onClick: (e?: React.MouseEvent) => {
           e?.preventDefault();
           localStorage.setItem('pd_section', 'assistant');
           window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
@@ -218,14 +222,14 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
       <SidebarHeader className="px-3 py-3">
         <div className="flex items-center gap-2 px-1">
           {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt="Clinic Logo" className="h-7 w-7 rounded-lg object-cover flex-shrink-0" />
+            <img src={branding.logoUrl} alt={t.clinicLogoAlt} className="h-7 w-7 rounded-lg object-cover flex-shrink-0" />
           ) : (
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold flex-shrink-0">
               {branding.clinicName?.[0]?.toUpperCase() || 'P'}
             </span>
           )}
           <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-sm truncate">{branding.clinicName || 'Patient Portal'}</span>
+            <span className="font-semibold text-sm truncate">{branding.clinicName || t.patientPortal}</span>
             <BusinessSelector />
           </div>
         </div>
@@ -305,7 +309,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
       <SidebarFooter>
         <div className="flex items-center gap-2">
           <LanguageSelector />
-          <SidebarTrigger className="h-8 w-8" aria-label="Collapse or expand sidebar" title="Collapse/Expand" />
+          <SidebarTrigger className="h-8 w-8" aria-label={t.collapseExpandSidebar} title={t.collapseExpandSidebar} />
         </div>
       </SidebarFooter>
       <SidebarRail />
@@ -319,18 +323,18 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex flex-col">
         {/* Mobile top header with menu toggle */}
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b px-3 py-2 flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => setMoreOpen(true)} aria-label="Open menu">
+          <Button variant="ghost" size="icon" onClick={() => setMoreOpen(true)} aria-label={t.openMenu}>
             <PanelLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
             {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt="Clinic Logo" className="h-6 w-6 rounded-lg object-cover" />
+              <img src={branding.logoUrl} alt={t.clinicLogoAlt} className="h-6 w-6 rounded-lg object-cover" />
             ) : (
               <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground text-xs font-semibold">
                 {branding.clinicName?.[0]?.toUpperCase() || 'P'}
               </span>
             )}
-            <span className="text-sm font-medium truncate">{branding.clinicName || 'Patient Portal'}</span>
+            <span className="text-sm font-medium truncate">{branding.clinicName || t.patientPortal}</span>
           </div>
         </header>
 
@@ -347,27 +351,27 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
 
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t">
           <div className="grid grid-cols-4">
-            <NavLink to="/care" end onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label="Home">
+            <NavLink to="/care" end onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label={t.pnav.care.home}>
               <Home className="h-5 w-5" />
               <span className="text-xs">{t.pnav.care.home}</span>
             </NavLink>
-            <NavLink to="/care/appointments" onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center relative", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label="Appointments">
+            <NavLink to="/care/appointments" onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center relative", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label={t.pnav.care.appointments}>
               <div className="relative">
                 <Calendar className="h-5 w-5" />
                 {counts.upcoming7d > 0 && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 rounded-full" />}
               </div>
               <span className="text-xs">{t.pnav.care.appointments}</span>
             </NavLink>
-            <NavLink to="/billing" onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center relative", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label="Billing">
+            <NavLink to="/billing" onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center relative", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label={t.pnav.group.billing}>
               <div className="relative">
                 <CreditCard className="h-5 w-5" />
                 {counts.unpaid > 0 && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 rounded-full" />}
               </div>
               <span className="text-xs">{t.pnav.group.billing}</span>
             </NavLink>
-            <button className="py-2 flex flex-col items-center text-muted-foreground" onClick={() => { haptic(); setMoreOpen(true); }} aria-label="More">
+            <button className="py-2 flex flex-col items-center text-muted-foreground" onClick={() => { haptic(); setMoreOpen(true); }} aria-label={t.more}>
               <MoreHorizontal className="h-5 w-5" />
-              <span className="text-xs">More</span>
+              <span className="text-xs">{t.more}</span>
             </button>
           </div>
         </nav>
@@ -385,7 +389,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
                       onClick={handleSignOut}
                     >
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
+                      {t.signOut}
                     </Button>
                   </div>
                 </div>
@@ -411,11 +415,11 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
         {navContent}
       </Sidebar>
       <div className="flex-1">
-        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b px-3 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger aria-label="Toggle sidebar" title="Toggle sidebar" />
-          </div>
-          <div className="flex items-center gap-6">
+          <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b px-3 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+            <SidebarTrigger aria-label={t.toggleSidebar} title={t.toggleSidebar} />
+            </div>
+            <div className="flex items-center gap-6">
             {/* Book Appointment Button - Desktop */}
             <Button
               onClick={() => {
@@ -429,7 +433,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
               size="sm"
             >
               <Calendar className="h-4 w-4" />
-              <span className="hidden lg:inline">Book Appointment</span>
+              <span className="hidden lg:inline">{t.bookAppointment}</span>
             </Button>
 
             <LanguageSelector />
@@ -437,27 +441,27 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2" aria-label="Open profile menu" title="Profile">
+                <Button variant="outline" size="sm" className="gap-2" aria-label={t.topProfile} title={t.topProfile}>
                   <Avatar className="h-5 w-5">
                     <AvatarImage src={userProfilePicture || undefined} />
                     <AvatarFallback className="text-xs">P</AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:inline">Profile</span>
+                  <span className="hidden sm:inline">{t.topProfile}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background">
-                <DropdownMenuItem onClick={() => navigate('/account/profile')} aria-label="Profile">
+                <DropdownMenuItem onClick={() => navigate('/account/profile')} aria-label={t.myProfile}>
                   <User className="mr-2 h-4 w-4" />
-                  My Profile
+                  {t.myProfile}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/about')} aria-label="About">
+                <DropdownMenuItem onClick={() => navigate('/about')} aria-label={t.about}>
                   <Info className="mr-2 h-4 w-4" />
-                  About
+                  {t.about}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600 focus:bg-red-50" aria-label="Sign out">
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600 focus:bg-red-50" aria-label={t.signOut}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
+                  {t.signOut}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -22,6 +22,12 @@ export interface Translations {
     startConsultation: string;
     emergencyAssistance: string;
     language: string;
+    patientPortal: string;
+    classicBooking: string;
+    clinicLogoAlt: string;
+    openMenu: string;
+    collapseExpandSidebar: string;
+    toggleSidebar: string;
     light: string;
     dark: string;
     save: string;
@@ -117,6 +123,8 @@ export interface Translations {
     deleteAccount: string;
     deleteAccountConfirm: string;
     aiAdviceDisclaimer: string;
+    myProfile: string;
+    about: string;
 
     // Auth
     signOut: string;
@@ -595,6 +603,12 @@ export const translations: Record<Language, TranslationEntry> = {
         bookAppointment: "Book Appointment",
         emergencyAssistance: "Emergency Assistance",
         language: "Preferred Language",
+        patientPortal: "Patient Portal",
+        classicBooking: "Classic Booking",
+        clinicLogoAlt: "Clinic Logo",
+        openMenu: "Open menu",
+        collapseExpandSidebar: "Collapse or expand sidebar",
+        toggleSidebar: "Toggle sidebar",
         light: "Light",
         dark: "Dark",
         save: "Save",
@@ -706,6 +720,8 @@ export const translations: Record<Language, TranslationEntry> = {
         signInError: "Sign in error",
         signInSuccess: "Sign in successful!",
         welcomeToCaberu: "Welcome to Caberu.",
+        myProfile: "My Profile",
+        about: "About",
 
         // Placeholders
         enterFirstName: "Enter your first name",
@@ -1168,6 +1184,12 @@ export const translations: Record<Language, TranslationEntry> = {
         bookAppointment: "Prendre Rendez-vous",
         emergencyAssistance: "Assistance d'urgence",
         language: "Langue préférée",
+        patientPortal: "Portail patient",
+        classicBooking: "Réservation classique",
+        clinicLogoAlt: "Logo de la clinique",
+        openMenu: "Ouvrir le menu",
+        collapseExpandSidebar: "Réduire ou développer la barre latérale",
+        toggleSidebar: "Basculer la barre latérale",
         light: "Clair",
         dark: "Sombre",
         save: "Enregistrer",
@@ -1279,6 +1301,8 @@ export const translations: Record<Language, TranslationEntry> = {
         signInError: "Erreur lors de la connexion",
         signInSuccess: "Connexion réussie !",
         welcomeToCaberu: "Bienvenue sur Caberu.",
+        myProfile: "Mon profil",
+        about: "À propos",
 
         // Placeholders
         enterFirstName: "Entrez votre prénom",
@@ -1748,6 +1772,12 @@ export const translations: Record<Language, TranslationEntry> = {
         bookAppointment: "Afspraak boeken",
         emergencyAssistance: "Noodhulp",
         language: "Voorkeurstaal",
+        patientPortal: "Patiëntenportaal",
+        classicBooking: "Klassieke boeking",
+        clinicLogoAlt: "Klinieklogo",
+        openMenu: "Menu openen",
+        collapseExpandSidebar: "Zijbalk in- of uitklappen",
+        toggleSidebar: "Zijbalk schakelen",
         light: "Licht",
         dark: "Donker",
         save: "Opslaan",
@@ -1820,6 +1850,8 @@ export const translations: Record<Language, TranslationEntry> = {
         signInError: "Fout bij aanmelden",
         signInSuccess: "Succesvol aangemeld!",
         welcomeToCaberu: "Welkom bij Caberu.",
+        myProfile: "Mijn profiel",
+        about: "Over",
 
         // Placeholders
         enterFirstName: "Voer je voornaam in",
