@@ -49,11 +49,11 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
     icon: LayoutDashboard
   }, {
     id: 'patients' as DentistSection,
-    label: t('customerPlural'),
+    label: 'Patients',
     icon: Users
   }, {
     id: 'appointments' as DentistSection,
-    label: t('appointmentPlural'),
+    label: 'Appointments',
     icon: Calendar
   }, {
     id: 'messages' as DentistSection,
