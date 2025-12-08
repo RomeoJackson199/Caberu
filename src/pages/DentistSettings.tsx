@@ -80,47 +80,81 @@ export default function DentistSettings() {
 
   return (
     <div className="container max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <SettingsIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+      <div className="flex items-start justify-between gap-3 flex-col sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <SettingsIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold truncate">Settings</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Organize your practice information, access, and support</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold truncate">Settings</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Manage your practice settings and preferences</p>
+        <div className="text-xs sm:text-sm text-muted-foreground bg-muted/50 border rounded-lg px-3 py-2">
+          Quick tip: start with your profile and availability, then invite your team.
         </div>
       </div>
 
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-background to-primary/5">
+        <CardContent className="p-4 sm:p-6 grid gap-4 sm:grid-cols-3">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold">Practice basics</h3>
+            <p className="text-sm text-muted-foreground">Keep your profile, contact info, and branding up to date for patients.</p>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold">Scheduling</h3>
+            <p className="text-sm text-muted-foreground">Manage your availability and team access so bookings stay organized.</p>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold">Security & support</h3>
+            <p className="text-sm text-muted-foreground">Control permissions and reach support when you need help.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 gap-1">
-          <TabsTrigger value="profile" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-            <User className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Profile</span>
-            <span className="sm:hidden">Prof</span>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <TabsTrigger value="profile" className="gap-2 text-left flex-col items-start">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="font-semibold">Profile</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Contact details & clinic bio</span>
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Schedule</span>
-            <span className="sm:hidden">Sched</span>
+          <TabsTrigger value="schedule" className="gap-2 text-left flex-col items-start">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="font-semibold">Availability</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Working hours & breaks</span>
           </TabsTrigger>
-          <TabsTrigger value="branding" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-            <Palette className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Branding</span>
-            <span className="sm:hidden">Brand</span>
+          <TabsTrigger value="staff" className="gap-2 text-left flex-col items-start">
+            <div className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              <span className="font-semibold">Team & access</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Roles, invites, permissions</span>
           </TabsTrigger>
-          <TabsTrigger value="staff" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-            <UserCog className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Staff</span>
-            <span className="sm:hidden">Staff</span>
+          <TabsTrigger value="branding" className="gap-2 text-left flex-col items-start">
+            <div className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              <span className="font-semibold">Branding</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Logo, colors, patient view</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-            <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Security</span>
-            <span className="sm:hidden">Sec</span>
+          <TabsTrigger value="security" className="gap-2 text-left flex-col items-start">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              <span className="font-semibold">Security</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Access control & danger zone</span>
           </TabsTrigger>
-          <TabsTrigger value="support" className="gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-            <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Support</span>
-            <span className="sm:hidden">Help</span>
+          <TabsTrigger value="support" className="gap-2 text-left flex-col items-start">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="h-4 w-4" />
+              <span className="font-semibold">Support</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Help channels & tips</span>
           </TabsTrigger>
         </TabsList>
 
@@ -142,10 +176,6 @@ export default function DentistSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="branding" className="space-y-6">
-          <DentistAdminBranding />
-        </TabsContent>
-
         <TabsContent value="staff" className="space-y-6">
           <Card>
             <CardHeader>
@@ -158,6 +188,10 @@ export default function DentistSettings() {
               <DentistAdminUsers />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="branding" className="space-y-6">
+          <DentistAdminBranding />
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6">

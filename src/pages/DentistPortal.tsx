@@ -53,14 +53,20 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   const [showDemoTour, setShowDemoTour] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
 
+  const isTourMarkedCompleted = () => {
+    return (
+      localStorage.getItem('dentist-tour-completed') === 'true' ||
+      localStorage.getItem('tour_completed_dentist') === 'true'
+    );
+  };
+
   // Check if tour has been completed and if it should auto-start
   useEffect(() => {
-    const completed = localStorage.getItem('dentist-tour-completed') === 'true';
-    setTourCompleted(completed);
+    setTourCompleted(isTourMarkedCompleted());
 
     // Check if we should auto-start the tour (after demo data generation)
     const shouldStartTour = localStorage.getItem('should-start-tour') === 'true';
-    if (shouldStartTour && !completed) {
+    if (shouldStartTour && !isTourMarkedCompleted()) {
       // Small delay to ensure the page is fully loaded
       setTimeout(() => {
         setShowDemoTour(true);
@@ -334,7 +340,14 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       </div>
 
       {/* User Tour */}
-      <UserTour isOpen={showTour} onClose={closeTour} userRole="dentist" />
+      <UserTour
+        isOpen={showTour}
+        onClose={() => {
+          closeTour();
+          setTourCompleted(isTourMarkedCompleted());
+        }}
+        userRole="dentist"
+      />
 
       {/* Demo Tour */}
       <DentistDemoTour
@@ -342,8 +355,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         onClose={() => {
           setShowDemoTour(false);
           // Refresh tour completed state
-          const completed = localStorage.getItem('dentist-tour-completed') === 'true';
-          setTourCompleted(completed);
+          setTourCompleted(isTourMarkedCompleted());
         }}
         onChangeSection={(section) => setActiveSection(section as DentistSection)}
       />

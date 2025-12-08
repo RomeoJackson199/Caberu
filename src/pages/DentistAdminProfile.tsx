@@ -28,7 +28,6 @@ export default function DentistAdminProfile() {
     phone: "",
     specialization: "",
     clinic_address: "",
-    license_number: "",
     bio: "",
     profile_picture_url: "",
   });
@@ -59,7 +58,6 @@ export default function DentistAdminProfile() {
           phone: profileData.phone || "",
           specialization: dentistData.specialization || "",
           clinic_address: dentistData.clinic_address || "",
-          license_number: dentistData.license_number || "",
           bio: profileData.bio || "",
           profile_picture_url: dentistData.profile_picture_url || profileData.profile_picture_url || "",
         };
@@ -94,7 +92,6 @@ export default function DentistAdminProfile() {
             email: formData.email,
             specialization: formData.specialization,
             clinic_address: formData.clinic_address,
-            license_number: formData.license_number,
             profile_picture_url: formData.profile_picture_url,
             require_appointment_approval: requireApproval,
           })
@@ -235,16 +232,6 @@ export default function DentistAdminProfile() {
                   value={formData.specialization}
                   onChange={(e) => handleInputChange('specialization', e.target.value)}
                   placeholder="General Dentistry, Orthodontics, etc."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="license_number">License Number</Label>
-                <Input
-                  id="license_number"
-                  value={formData.license_number}
-                  onChange={(e) => handleInputChange('license_number', e.target.value)}
-                  placeholder="DDS-12345"
                 />
               </div>
             </div>
