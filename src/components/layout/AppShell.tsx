@@ -36,6 +36,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPPORTED_LANGUAGES, type Language } from "@/lib/translations";
 import {
   Stethoscope,
   Calendar,
@@ -247,10 +248,12 @@ function TopBar() {
               <DropdownMenuLabel>Preferences</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>{t.theme}: {theme}</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Language</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setLanguage('en')}>🇬🇧 English</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLanguage('fr')}>🇫🇷 Français</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLanguage('nl')}>🇳🇱 Nederlands</DropdownMenuItem>
+              <DropdownMenuLabel>{t.language || 'Language'}</DropdownMenuLabel>
+              {SUPPORTED_LANGUAGES.map(({ code, flag, name }) => (
+                <DropdownMenuItem key={code} onClick={() => setLanguage(code as Language)}>
+                  {flag} {name}
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/dentist/settings?tab=users')}>
                 <Users className="h-4 w-4 mr-2" />
