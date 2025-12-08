@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2 } from "lucide-react";
 import { EnhancedAvailabilitySettings } from "@/components/enhanced/EnhancedAvailabilitySettings";
 import DentistAdminBranding from "./DentistAdminBranding";
 import DentistAdminSecurity from "./DentistAdminSecurity";
@@ -14,20 +14,54 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrentBusinessId } from "@/lib/businessUtils";
 import { logger } from '@/lib/logger';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function DentistSettings() {
   const { dentistId } = useCurrentDentist();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState("schedule");
+  const [activeTab, setActiveTab] = useState("appointments");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [requireApproval, setRequireApproval] = useState(false);
+  const [appointmentLoading, setAppointmentLoading] = useState(true);
+  const [savingAppointments, setSavingAppointments] = useState(false);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['profile', 'schedule', 'branding', 'security', 'staff', 'support'].includes(tabParam)) {
+    if (tabParam && ['profile', 'appointments', 'schedule', 'branding', 'security', 'staff', 'support'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!dentistId) return;
+
+    const loadAppointmentSettings = async () => {
+      setAppointmentLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('dentists')
+          .select('require_appointment_approval')
+          .eq('id', dentistId)
+          .single();
+
+        if (error) throw error;
+        setRequireApproval(data?.require_appointment_approval || false);
+      } catch (error) {
+        logger.error('Failed to load appointment settings', error);
+        toast({
+          title: "Couldn't load appointment settings",
+          description: "Please refresh the page or try again in a moment.",
+          variant: "destructive",
+        });
+      } finally {
+        setAppointmentLoading(false);
+      }
+    };
+
+    loadAppointmentSettings();
+  }, [dentistId, toast]);
 
   const handleLeaveClinic = async () => {
     try {
@@ -78,6 +112,11 @@ export default function DentistSettings() {
     );
   }
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    navigate(`?tab=${value}`, { replace: true });
+  };
+
   return (
     <div className="container max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3 flex-col sm:flex-row sm:items-center">
@@ -87,69 +126,87 @@ export default function DentistSettings() {
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold truncate">Settings</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Organize your practice information, access, and support</p>
+            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Tidy controls for your practice, appointments, and team</p>
           </div>
         </div>
         <div className="text-xs sm:text-sm text-muted-foreground bg-muted/50 border rounded-lg px-3 py-2">
-          Quick tip: start with your profile and availability, then invite your team.
+          Start with essentials (profile, availability, approvals) and polish branding last.
         </div>
       </div>
 
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-background to-primary/5">
-        <CardContent className="p-4 sm:p-6 grid gap-4 sm:grid-cols-3">
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Practice basics</h3>
-            <p className="text-sm text-muted-foreground">Keep your profile, contact info, and branding up to date for patients.</p>
+      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-background to-primary/5">
+        <CardContent className="p-4 sm:p-6 grid gap-4 sm:grid-cols-4">
+          <div className="space-y-2 sm:col-span-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-primary">Quick setup</h3>
+            <p className="text-sm text-muted-foreground">Follow this path to get patients booking fast without hunting for pages.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={() => handleTabChange('profile')}>
+                <User className="h-4 w-4 mr-2" /> Profile
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => handleTabChange('schedule')}>
+                <Calendar className="h-4 w-4 mr-2" /> Availability
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => handleTabChange('appointments')}>
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Approvals
+              </Button>
+            </div>
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Scheduling</h3>
-            <p className="text-sm text-muted-foreground">Manage your availability and team access so bookings stay organized.</p>
+            <h3 className="text-sm font-semibold">Why these first?</h3>
+            <p className="text-sm text-muted-foreground">Patients see your profile, then book from your availability. Approval rules keep you in control.</p>
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Security & support</h3>
-            <p className="text-sm text-muted-foreground">Control permissions and reach support when you need help.</p>
+            <h3 className="text-sm font-semibold">Polish later</h3>
+            <p className="text-sm text-muted-foreground">Once bookings feel right, tune branding, team roles, and security.</p>
           </div>
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          <TabsTrigger value="profile" className="gap-2 text-left flex-col items-start">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
+        <TabsList className="flex flex-wrap w-full gap-2">
+          <TabsTrigger value="profile" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="font-semibold">Profile</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Contact details & clinic bio</span>
+            <span className="text-[11px] text-muted-foreground">Basics patients see first</span>
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="schedule" className="gap-2 text-left flex-col items-start min-w-[140px]">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span className="font-semibold">Availability</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Working hours & breaks</span>
+            <span className="text-[11px] text-muted-foreground">Hours, breaks, time off</span>
           </TabsTrigger>
-          <TabsTrigger value="staff" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="appointments" className="gap-2 text-left flex-col items-start min-w-[140px]">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="font-semibold">Appointments</span>
+            </div>
+            <span className="text-[11px] text-muted-foreground">Approvals & rules</span>
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="gap-2 text-left flex-col items-start min-w-[140px]">
             <div className="flex items-center gap-2">
               <UserCog className="h-4 w-4" />
               <span className="font-semibold">Team & access</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Roles, invites, permissions</span>
+            <span className="text-[11px] text-muted-foreground">Roles & permissions</span>
           </TabsTrigger>
-          <TabsTrigger value="branding" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="branding" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               <span className="font-semibold">Branding</span>
             </div>
-            <span className="text-[11px] text-muted-foreground">Logo, colors, patient view</span>
+            <span className="text-[11px] text-muted-foreground">Logo & patient touchpoints</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="security" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               <span className="font-semibold">Security</span>
             </div>
             <span className="text-[11px] text-muted-foreground">Access control & danger zone</span>
           </TabsTrigger>
-          <TabsTrigger value="support" className="gap-2 text-left flex-col items-start">
+          <TabsTrigger value="support" className="gap-2 text-left flex-col items-start min-w-[120px]">
             <div className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4" />
               <span className="font-semibold">Support</span>
@@ -172,6 +229,67 @@ export default function DentistSettings() {
             </CardHeader>
             <CardContent>
               <EnhancedAvailabilitySettings dentistId={dentistId} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="appointments" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Appointment preferences</CardTitle>
+              <CardDescription>Keep booking rules next to scheduling instead of hiding them in your profile.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border rounded-lg p-4">
+                <div className="space-y-1">
+                  <Label htmlFor="require-approval">Require approval before confirming</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Approve new patient requests to prevent double booking or missing prep time.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="require-approval"
+                    checked={requireApproval}
+                    disabled={appointmentLoading || savingAppointments}
+                    onCheckedChange={setRequireApproval}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {requireApproval ? 'Manual review required' : 'Requests auto-confirmed'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p className="text-sm text-muted-foreground">Save changes so patients see the right booking rules immediately.</p>
+                <Button
+                  onClick={async () => {
+                    if (!dentistId) return;
+                    setSavingAppointments(true);
+                    const { error } = await supabase
+                      .from('dentists')
+                      .update({ require_appointment_approval: requireApproval })
+                      .eq('id', dentistId);
+
+                    if (error) {
+                      toast({
+                        title: "Couldn't save appointment settings",
+                        description: error.message || "Try again in a moment.",
+                        variant: "destructive",
+                      });
+                    } else {
+                      toast({
+                        title: "Appointment rules updated",
+                        description: "Patients will see the new approval rules immediately.",
+                      });
+                    }
+                    setSavingAppointments(false);
+                  }}
+                  disabled={appointmentLoading || savingAppointments}
+                  className="min-w-[140px]"
+                >
+                  {savingAppointments ? 'Saving...' : 'Save changes'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
