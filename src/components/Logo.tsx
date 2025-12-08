@@ -13,10 +13,10 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: 80,
-  md: 120,
-  lg: 160,
-  xl: 200,
+  sm: { height: 48, width: 140 },
+  md: { height: 64, width: 190 },
+  lg: { height: 80, width: 240 },
+  xl: { height: 96, width: 280 },
 };
 
 export function Logo({ size = "md", variant = "full", className = "" }: LogoProps) {
@@ -27,8 +27,16 @@ export function Logo({ size = "md", variant = "full", className = "" }: LogoProp
     <img
       src={logoSrc}
       alt={variant === "full" ? "Caberu Healthcare Solutions" : "Caberu"}
-      style={{ height: logoSize }}
+      style={{
+        maxHeight: logoSize.height,
+        maxWidth: logoSize.width,
+        width: "100%",
+        height: "auto",
+      }}
       className={`object-contain ${className}`}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
     />
   );
 }
@@ -45,8 +53,16 @@ export function AnimatedLogo({ size = "lg", variant = "full" }: { size?: "sm" | 
       <img
         src={logoSrc}
         alt={variant === "full" ? "Caberu Healthcare Solutions" : "Caberu"}
-        style={{ height: logoSize * 1.5 }}
+        style={{
+          maxHeight: logoSize.height * 1.5,
+          maxWidth: logoSize.width * 1.5,
+          width: "100%",
+          height: "auto",
+        }}
         className="object-contain"
+        loading="lazy"
+        decoding="async"
+        draggable={false}
       />
     </div>
   );

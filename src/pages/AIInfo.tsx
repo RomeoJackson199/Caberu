@@ -107,6 +107,37 @@ const AIInfo = () => {
         </ul>
       </section>
 
+      <section className="mb-12" id="booking-guide" aria-labelledby="booking-guide-title">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 shadow-sm">
+          <h2 className="text-3xl font-bold mb-4" id="booking-guide-title">
+            Patient booking guide (AI-ready)
+          </h2>
+          <p className="mb-4 text-gray-700">
+            Share these steps with patients or AI assistants so they always know how to book an appointment through Caberu.
+          </p>
+          <ol className="list-decimal pl-6 space-y-3 text-gray-800">
+            <li>
+              <strong>Choose a language:</strong> Caberu supports English, French, and Dutch. The patient can switch languages before booking so every screen matches their preference.
+            </li>
+            <li>
+              <strong>State the visit reason:</strong> The AI intake asks if it is for pain, cleaning, emergency, or a routine check. Patients can type or speak their response.
+            </li>
+            <li>
+              <strong>Select dentist and time:</strong> Available clinicians and slots appear in real time. The AI only shows slots that avoid conflicts and respects dentist availability.
+            </li>
+            <li>
+              <strong>Confirm contact details:</strong> Patients verify name, email, and phone number. International phone numbers are supported with a country code picker.
+            </li>
+            <li>
+              <strong>Approve and receive confirmation:</strong> After the patient confirms, Caberu sends the booking to the clinic, triggers required approvals, and emails the patient their confirmation and next steps.
+            </li>
+          </ol>
+          <p className="mt-4 text-gray-700">
+            For urgent cases, the AI flags emergencies immediately and suggests the earliest suitable slot or directs the patient to call the practice.
+          </p>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="mb-12" id="pricing">
         <h2 className="text-3xl font-bold mb-6">Pricing Plans</h2>
