@@ -135,8 +135,12 @@ export class ClientRateLimit {
 // Environment-based CORS configuration
 export const getCorsHeaders = (environment?: string) => {
   if (environment === 'production') {
+    const productionDomain = import.meta.env.VITE_PRODUCTION_DOMAIN || import.meta.env.VITE_APP_URL;
+    if (!productionDomain) {
+      console.warn('VITE_PRODUCTION_DOMAIN or VITE_APP_URL not set in environment variables. Using wildcard for CORS.');
+    }
     return {
-      'Access-Control-Allow-Origin': 'https://yourdomain.com', // Replace with actual domain
+      'Access-Control-Allow-Origin': productionDomain || '*',
       'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Max-Age': '86400', // 24 hours

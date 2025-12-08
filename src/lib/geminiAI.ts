@@ -5,6 +5,7 @@ import { TimeSlot } from './appointmentAvailability';
 import { getSlotUsageStatistics, getUnderutilizedSlots, SlotUsageStats } from './slotUsageTracking';
 import { PatientPreferences } from './smartScheduling';
 import { format, getDay } from 'date-fns';
+import { logger } from '@/lib/logger';
 
 // Initialize Gemini AI
 const getGeminiAI = () => {
@@ -116,7 +117,7 @@ Analyze the available time slots and recommend which ones to promote to the pati
     try {
       aiAnalysis = JSON.parse(jsonMatch[0]);
     } catch (error) {
-      console.error('Failed to parse AI JSON response:', error);
+      logger.error('Failed to parse AI JSON response:', error);
       throw new Error('Failed to parse AI response: ' + (error instanceof Error ? error.message : 'Invalid JSON'));
     }
 
@@ -150,7 +151,7 @@ Analyze the available time slots and recommend which ones to promote to the pati
     };
 
   } catch (error) {
-    console.error('Error getting Gemini recommendations:', error);
+    logger.error('Error getting Gemini recommendations:', error);
 
     // Fallback to rule-based if AI fails
     return getFallbackRecommendations(availableSlots, dayOfWeek, slotStats);
@@ -323,13 +324,13 @@ async function logAIRecommendation(
       .single();
 
     if (error) {
-      console.error('Error logging AI recommendation:', error);
+      logger.error('Error logging AI recommendation:', error);
       return null;
     }
 
     return data.id;
   } catch (error) {
-    console.error('Error logging AI recommendation:', error);
+    logger.error('Error logging AI recommendation:', error);
     return null;
   }
 }
@@ -354,7 +355,7 @@ export async function updateAIRecommendationSelection(
       })
       .eq('id', recommendationId);
   } catch (error) {
-    console.error('Error updating AI recommendation:', error);
+    logger.error('Error updating AI recommendation:', error);
   }
 }
 
@@ -398,7 +399,7 @@ export async function getAIRecommendationSuccessRate(
       completed_appointments: completed
     };
   } catch (error) {
-    console.error('Error getting AI success rate:', error);
+    logger.error('Error getting AI success rate:', error);
     return {
       total_recommendations: 0,
       accepted_recommendations: 0,

@@ -180,77 +180,113 @@ return data.id;
     appointmentId: string,
     reminderType: '24h' | '2h' | '1h' = '24h'
   ): Promise<string> {
-const { data, error } = await supabase
-  .from('notifications')
-  .insert({
-    user_id: 'unknown',
-    type: 'appointment',
-    category: 'info',
-    title: `Appointment Reminder (${reminderType})`,
-    message: `Reminder for appointment ${appointmentId}`,
-    is_read: false,
-    created_at: new Date().toISOString(),
-  })
-  .select('id')
-  .single();
+    // First, fetch the appointment to get the patient_id (user_id)
+    const { data: appointment, error: appointmentError } = await supabase
+      .from('appointments')
+      .select('patient_id')
+      .eq('id', appointmentId)
+      .single();
 
-if (error) {
-  logger.error('Error creating appointment reminder:', error);
-  throw new Error('Failed to create appointment reminder');
-}
+    if (appointmentError || !appointment) {
+      logger.error('Error fetching appointment for reminder:', appointmentError);
+      throw new Error('Failed to fetch appointment for reminder');
+    }
 
-return data.id;
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: appointment.patient_id,
+        type: 'appointment',
+        category: 'info',
+        title: `Appointment Reminder (${reminderType})`,
+        message: `Reminder for appointment ${appointmentId}`,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      logger.error('Error creating appointment reminder:', error);
+      throw new Error('Failed to create appointment reminder');
+    }
+
+    return data.id;
   }
 
   // Create prescription notification
-static async createPrescriptionNotification(prescriptionId: string): Promise<string> {
-  const { data, error } = await supabase
-    .from('notifications')
-    .insert({
-      user_id: 'unknown',
-      type: 'prescription',
-      category: 'info',
-      title: 'New Prescription',
-      message: `Prescription created (${prescriptionId})`,
-      is_read: false,
-      created_at: new Date().toISOString(),
-    })
-    .select('id')
-    .single();
+  static async createPrescriptionNotification(prescriptionId: string): Promise<string> {
+    // First, fetch the prescription to get the patient_id (user_id)
+    const { data: prescription, error: prescriptionError } = await supabase
+      .from('prescriptions')
+      .select('patient_id')
+      .eq('id', prescriptionId)
+      .single();
 
-  if (error) {
-    logger.error('Error creating prescription notification:', error);
-    throw new Error('Failed to create prescription notification');
+    if (prescriptionError || !prescription) {
+      logger.error('Error fetching prescription for notification:', prescriptionError);
+      throw new Error('Failed to fetch prescription for notification');
+    }
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: prescription.patient_id,
+        type: 'prescription',
+        category: 'info',
+        title: 'New Prescription',
+        message: `Prescription created (${prescriptionId})`,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      logger.error('Error creating prescription notification:', error);
+      throw new Error('Failed to create prescription notification');
+    }
+
+    return data.id;
   }
-
-  return data.id;
-}
 
   // Create treatment plan notification
   static async createTreatmentPlanNotification(
     treatmentPlanId: string,
     notificationType: 'created' | 'updated' | 'completed' = 'created'
   ): Promise<string> {
-const { data, error } = await supabase
-  .from('notifications')
-  .insert({
-    user_id: 'unknown',
-    type: 'treatment_plan',
-    category: 'info',
-    title: `Treatment Plan ${notificationType}`,
-    message: `Treatment plan update (${treatmentPlanId})`,
-    is_read: false,
-    created_at: new Date().toISOString(),
-  })
-  .select('id')
-  .single();
+    // First, fetch the treatment plan to get the patient_id (user_id)
+    const { data: treatmentPlan, error: treatmentPlanError } = await supabase
+      .from('treatment_plans')
+      .select('patient_id')
+      .eq('id', treatmentPlanId)
+      .single();
 
-if (error) {
-  logger.error('Error creating treatment plan notification:', error);
-  throw new Error('Failed to create treatment plan notification');
-}
+    if (treatmentPlanError || !treatmentPlan) {
+      logger.error('Error fetching treatment plan for notification:', treatmentPlanError);
+      throw new Error('Failed to fetch treatment plan for notification');
+    }
 
-return data.id;
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: treatmentPlan.patient_id,
+        type: 'treatment_plan',
+        category: 'info',
+        title: `Treatment Plan ${notificationType}`,
+        message: `Treatment plan update (${treatmentPlanId})`,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      logger.error('Error creating treatment plan notification:', error);
+      throw new Error('Failed to create treatment plan notification');
+    }
+
+    return data.id;
   }
 
   // Get notification preferences
@@ -330,7 +366,7 @@ static async updateNotificationPreferences(
 
       return data as any;
     } catch (error) {
-      console.error('Error updating notification preferences:', error);
+      logger.error('Error updating notification preferences:', error);
       // Return merged default preferences on error
       const defaultPrefs: NotificationPreferences = {
         id: `default-${userId}`,

@@ -165,7 +165,7 @@ export function showEnhancedErrorToast(error: unknown, context?: ErrorContext): 
   
   // Log for debugging in development
   if (process.env.NODE_ENV === 'development') {
-    console.error('Enhanced Error:', {
+    logger.error('Enhanced Error:', {
       error: processedError,
       context,
       timestamp: new Date().toISOString()
@@ -326,7 +326,7 @@ export function handleValidationErrors(
   });
   
   if (process.env.NODE_ENV === 'development') {
-    console.error('Validation errors:', { errors, context });
+    logger.error('Validation errors:', { errors, context });
   }
 }
 
@@ -341,8 +341,8 @@ export function handleGlobalError(error: Error, errorInfo: any): void {
   };
   
   const processedError = processError(error, context);
-  
-  console.error('Global error caught:', {
+
+  logger.error('Global error caught:', {
     error: processedError,
     errorInfo,
     timestamp: new Date().toISOString()

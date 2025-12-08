@@ -23,7 +23,7 @@ export class DashboardError extends Error {
 }
 
 export const handleDatabaseError = (error: unknown, context: string): ErrorInfo => {
-  console.error(`Database error in ${context}:`, error);
+  logger.error(`Database error in ${context}:`, error);
 
   // Type-safe error handling
   const err = error as { code?: string; message?: string; details?: string; hint?: string };
@@ -113,7 +113,7 @@ export const showErrorToast = (errorInfo: ErrorInfo, context?: string) => {
   });
 
   // Log detailed error for debugging
-  console.error(`Error in ${context || 'unknown context'}:`, {
+  logger.error(`Error in ${context || 'unknown context'}:`, {
     message: errorInfo.message,
     code: errorInfo.code,
     details: errorInfo.details
