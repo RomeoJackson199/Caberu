@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ElementType } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -25,17 +25,19 @@ interface AIChatOnboardingDialogProps {
 }
 
 interface OnboardingStep {
-  icon: React.ElementType;
+  icon: ElementType;
   title: string;
   description: string;
   examples: string[];
+  highlight: string;
 }
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     icon: Bot,
-    title: 'AI Dental Assistant',
-    description: 'I can help you with appointments, health questions, and more using natural conversation.',
+    title: 'Meet your AI dental guide',
+    description: 'Available 24/7 to help you book appointments, answer questions, and keep your care on track.',
+    highlight: 'I can book visits for you or family members and share how long each appointment will take.',
     examples: [
       'Show my appointments',
       'Book an appointment',
@@ -44,8 +46,9 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     icon: Calendar,
-    title: 'Appointment Management',
-    description: 'Book, reschedule, or cancel appointments easily through chat.',
+    title: 'Smart appointment booking',
+    description: 'Book, reschedule, or cancel with clear duration and end-time guidance.',
+    highlight: 'Tell me what you need—emergency or routine—and I will find the best slot for you.',
     examples: [
       'Find earliest available slot',
       'Reschedule my appointment',
@@ -54,8 +57,9 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     icon: Settings,
-    title: 'Quick Settings',
-    description: 'Change language, theme, and preferences directly in chat.',
+    title: 'Personalized preferences',
+    description: 'Change language, theme, and reminders so the experience fits you.',
+    highlight: 'Just say “switch to dark mode” or “remind me about cleanings” and I’ll adjust.',
     examples: [
       'Change language to French',
       'Switch to dark mode',
@@ -64,8 +68,9 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     icon: Image,
-    title: 'Photo Sharing',
-    description: 'Share dental images, X-rays, or photos for better assistance.',
+    title: 'Share photos when needed',
+    description: 'Upload dental photos or X-rays for faster triage and guidance.',
+    highlight: 'I’ll never share them without permission and I’ll use them only to assist you.',
     examples: [
       'Upload a photo',
       'Share my X-ray',
@@ -103,70 +108,83 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <StepIcon className="h-6 w-6 text-primary" />
-            </div>
-            <Badge variant="secondary" className="text-xs">
-              Step {currentStep + 1} of {ONBOARDING_STEPS.length}
+      <DialogContent className="sm:max-w-[640px] border-primary/10">
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-2xl">One-minute AI guide</DialogTitle>
+          <DialogDescription className="text-base">
+            Learn how the assistant can book appointments, answer questions, and keep you updated.
+          </DialogDescription>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="secondary" className="text-xs">Step {currentStep + 1} of {ONBOARDING_STEPS.length}</Badge>
+            <Badge className="bg-gradient-to-r from-primary to-primary/60 text-primary-foreground text-xs">
+              Built for dental care
             </Badge>
           </div>
-          <DialogTitle className="text-2xl">{step.title}</DialogTitle>
-          <DialogDescription className="text-base">
-            {step.description}
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <MessageSquare className="h-4 w-4" />
-            Try saying:
-          </div>
-          
-          <div className="space-y-2">
-            {step.examples.map((example, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
-              >
-                <ChevronRight className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-sm font-medium">{example}</span>
+          <div className="rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary text-primary-foreground rounded-xl shadow-sm">
+                <StepIcon className="h-6 w-6" />
               </div>
-            ))}
-          </div>
-
-          {currentStep === 0 && (
-            <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-900 dark:text-blue-100">
-                <strong>Pro Tip:</strong> Just type naturally like you're texting a friend. 
-                The AI understands context and conversational language!
+              <div>
+                <p className="text-lg font-semibold leading-tight">{step.title}</p>
+                <p className="text-sm text-muted-foreground">{step.description}</p>
               </div>
             </div>
-          )}
+            <div className="mt-3 flex items-start gap-2 text-sm bg-white/60 dark:bg-black/30 rounded-xl p-3 shadow-sm">
+              <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
+              <p className="text-muted-foreground">{step.highlight}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <MessageSquare className="h-4 w-4" />
+              Try asking for these:
+            </div>
+
+            <div className="space-y-2">
+              {step.examples.map((example, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+                >
+                  <ChevronRight className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-sm font-medium">{example}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {currentStep === ONBOARDING_STEPS.length - 1 && (
-            <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-green-900 dark:text-green-100">
-                You're all set! Start chatting below and I'll help you with anything you need.
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-green-900 dark:text-green-100">
+                  You're all set! I can book, reschedule, and keep you informed without long forms.
+                </div>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-900 dark:text-blue-100">
+                  Ask for a visit time and I’ll confirm how long it takes and when you’ll be done.
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Progress indicators */}
         <div className="flex gap-2 justify-center mb-4">
           {ONBOARDING_STEPS.map((_, index) => (
             <div
               key={index}
               className={`h-2 rounded-full transition-all ${
-                index === currentStep 
-                  ? 'w-8 bg-primary' 
-                  : index < currentStep 
-                  ? 'w-2 bg-primary/50'
+                index === currentStep
+                  ? 'w-10 bg-primary'
+                  : index < currentStep
+                  ? 'w-3 bg-primary/60'
                   : 'w-2 bg-muted'
               }`}
             />
@@ -174,14 +192,11 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
         </div>
 
         <div className="flex justify-between gap-2">
-          <Button
-            variant="ghost"
-            onClick={handleSkip}
-          >
-            Skip Tutorial
+          <Button variant="ghost" onClick={handleSkip}>
+            Skip
           </Button>
-          <Button onClick={handleNext}>
-            {currentStep < ONBOARDING_STEPS.length - 1 ? 'Next' : 'Start Chatting'}
+          <Button onClick={handleNext} className="bg-primary text-primary-foreground shadow-lg">
+            {currentStep < ONBOARDING_STEPS.length - 1 ? 'Next' : 'Start chatting'}
           </Button>
         </div>
       </DialogContent>
