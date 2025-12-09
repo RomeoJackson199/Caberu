@@ -119,99 +119,38 @@ export default function DentistSettings() {
 
   return (
     <div className="container max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="flex items-start justify-between gap-3 flex-col sm:flex-row sm:items-center">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <SettingsIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold truncate">Settings</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Tidy controls for your practice, appointments, and team</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <SettingsIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
         </div>
-        <div className="text-xs sm:text-sm text-muted-foreground bg-muted/50 border rounded-lg px-3 py-2">
-          Start with essentials (profile, availability, approvals) and polish branding last.
-        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
       </div>
 
-      <Card className="border-primary/30 bg-gradient-to-r from-primary/5 via-background to-primary/5">
-        <CardContent className="p-4 sm:p-6 grid gap-4 sm:grid-cols-4">
-          <div className="space-y-2 sm:col-span-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-primary">Quick setup</h3>
-            <p className="text-sm text-muted-foreground">Follow this path to get patients booking fast without hunting for pages.</p>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" onClick={() => handleTabChange('profile')}>
-                <User className="h-4 w-4 mr-2" /> Profile
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => handleTabChange('schedule')}>
-                <Calendar className="h-4 w-4 mr-2" /> Availability
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => handleTabChange('appointments')}>
-                <CheckCircle2 className="h-4 w-4 mr-2" /> Approvals
-              </Button>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Why these first?</h3>
-            <p className="text-sm text-muted-foreground">Patients see your profile, then book from your availability. Approval rules keep you in control.</p>
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Polish later</h3>
-            <p className="text-sm text-muted-foreground">Once bookings feel right, tune branding, team roles, and security.</p>
-          </div>
-        </CardContent>
-      </Card>
-
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
-        <TabsList className="flex flex-wrap w-full gap-2">
-          <TabsTrigger value="profile" className="gap-2 text-left flex-col items-start min-w-[120px]">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span className="font-semibold">Profile</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Basics patients see first</span>
+        <TabsList className="flex flex-wrap w-full gap-1">
+          <TabsTrigger value="profile" className="gap-2">
+            <User className="h-4 w-4" />
+            Profile
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="gap-2 text-left flex-col items-start min-w-[140px]">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span className="font-semibold">Availability</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Hours, breaks, time off</span>
+          <TabsTrigger value="schedule" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            Availability
           </TabsTrigger>
-          <TabsTrigger value="appointments" className="gap-2 text-left flex-col items-start min-w-[140px]">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="font-semibold">Appointments</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Approvals & rules</span>
+          <TabsTrigger value="appointments" className="gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            Appointments
           </TabsTrigger>
-          <TabsTrigger value="staff" className="gap-2 text-left flex-col items-start min-w-[140px]">
-            <div className="flex items-center gap-2">
-              <UserCog className="h-4 w-4" />
-              <span className="font-semibold">Team & access</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Roles & permissions</span>
+          <TabsTrigger value="staff" className="gap-2">
+            <UserCog className="h-4 w-4" />
+            Team
           </TabsTrigger>
-          <TabsTrigger value="branding" className="gap-2 text-left flex-col items-start min-w-[120px]">
-            <div className="flex items-center gap-2">
-              <Palette className="h-4 w-4" />
-              <span className="font-semibold">Branding</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Logo & patient touchpoints</span>
+          <TabsTrigger value="branding" className="gap-2">
+            <Palette className="h-4 w-4" />
+            Branding
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2 text-left flex-col items-start min-w-[120px]">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="font-semibold">Security</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Access control & danger zone</span>
-          </TabsTrigger>
-          <TabsTrigger value="support" className="gap-2 text-left flex-col items-start min-w-[120px]">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="h-4 w-4" />
-              <span className="font-semibold">Support</span>
-            </div>
-            <span className="text-[11px] text-muted-foreground">Help channels & tips</span>
+          <TabsTrigger value="security" className="gap-2">
+            <Shield className="h-4 w-4" />
+            Security
           </TabsTrigger>
         </TabsList>
 
@@ -223,9 +162,6 @@ export default function DentistSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Schedule & Availability</CardTitle>
-              <CardDescription>
-                Manage your working hours, breaks, and time off
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <EnhancedAvailabilitySettings dentistId={dentistId} />
@@ -237,7 +173,6 @@ export default function DentistSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Appointment preferences</CardTitle>
-              <CardDescription>Keep booking rules next to scheduling instead of hiding them in your profile.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border rounded-lg p-4">
@@ -314,7 +249,7 @@ export default function DentistSettings() {
 
         <TabsContent value="security" className="space-y-6">
           <DentistAdminSecurity />
-          
+
           <Card className="border-destructive/50">
             <CardHeader>
               <CardTitle className="text-destructive">Danger Zone</CardTitle>
@@ -323,8 +258,8 @@ export default function DentistSettings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={handleLeaveClinic}
                 className="gap-2"
               >
@@ -340,77 +275,6 @@ export default function DentistSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="support" className="space-y-6">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <HelpCircle className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle>Contact Support</CardTitle>
-                  <CardDescription>
-                    Need help? We're here for you
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  If you have any questions, issues, or need assistance with the platform, our support team is ready to help.
-                </p>
-                
-                <div className="bg-background/50 border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Mail className="h-4 w-4 text-primary" />
-                    <span>Email Support</span>
-                  </div>
-                  <a 
-                    href="mailto:romeo@caberu.be"
-                    className="block text-primary hover:text-primary-glow transition-colors font-medium text-lg"
-                  >
-                    romeo@caberu.be
-                  </a>
-                  <p className="text-sm text-muted-foreground">
-                    We typically respond within 24 hours during business days
-                  </p>
-                </div>
-
-                <Button 
-                  onClick={() => window.location.href = 'mailto:romeo@caberu.be'}
-                  className="w-full gap-2 bg-gradient-to-r from-primary to-primary-glow"
-                  size="lg"
-                >
-                  <Mail className="h-5 w-5" />
-                  Send Email
-                </Button>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="font-semibold mb-3">Common Topics</h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>Account and billing questions</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>Technical support and troubleshooting</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>Feature requests and feedback</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary">•</span>
-                    <span>Data migration and import assistance</span>
-                  </li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

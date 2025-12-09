@@ -59,6 +59,7 @@ import {
   Stethoscope as ToothIcon,
   Plus,
   LogOut,
+  HelpCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -254,6 +255,10 @@ function TopBar() {
               <DropdownMenuItem onClick={() => navigate('/dentist/settings?tab=users')}>
                 <Users className="h-4 w-4 mr-2" />
                 Team Management
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.location.href = 'mailto:romeo@caberu.be'}>
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Support
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => supabase.auth.signOut()}>Sign out</DropdownMenuItem>
