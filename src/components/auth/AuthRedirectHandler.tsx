@@ -7,6 +7,7 @@ import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
+import { savePracticeConsent, hasPendingPracticeConsent } from '@/lib/consent-utils';
 
 const REDIRECT_KEY = 'auth_redirect_attempt';
 const MAX_REDIRECT_ATTEMPTS = 3;
@@ -128,6 +129,24 @@ export function AuthRedirectHandler() {
 
         // Priority 2: Provider/Dentist -> /dentist/dashboard
         if (isDentist) {
+          // Try to save pending consent if exists
+          if (hasPendingPracticeConsent()) {
+            // Get the profile ID to save consent
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+
+              if (profile?.id) {
+                await savePracticeConsent(profile.id);
+                logger.info('AuthRedirectHandler: Saved practice consent', { profileId: profile.id });
+              }
+            }
+          }
+
           if (businessId) {
             logger.info('AuthRedirectHandler: Redirecting dentist to /dentist/dashboard', { businessId });
             sessionStorage.removeItem(REDIRECT_KEY);
