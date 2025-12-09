@@ -60,15 +60,25 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
     setShowBanner(false);
     setShowSettings(false);
 
-    // Here you would typically initialize analytics/marketing scripts based on preferences
-    if (prefs.analytics) {
-      // Initialize analytics (e.g., Google Analytics)
-      // Analytics/marketing enabled
+    // Update analytics consent using the analytics manager
+    import('@/lib/analytics').then(({ analytics }) => {
+      analytics.setConsent(prefs.analytics);
+    }).catch(() => {
+      // Analytics module not available
+    });
+
+    // Update Google Analytics consent mode (if gtag is available)
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
+        'analytics_storage': prefs.analytics ? 'granted' : 'denied',
+        'ad_storage': prefs.marketing ? 'granted' : 'denied',
+        'ad_user_data': prefs.marketing ? 'granted' : 'denied',
+        'ad_personalization': prefs.marketing ? 'granted' : 'denied',
+      });
     }
-    if (prefs.marketing) {
-      // Initialize marketing scripts
-      // Analytics/marketing enabled
-    }
+
+    // Also update localStorage key that analytics.ts checks
+    localStorage.setItem('analytics_consent', prefs.analytics.toString());
   };
 
   const acceptAll = () => {
