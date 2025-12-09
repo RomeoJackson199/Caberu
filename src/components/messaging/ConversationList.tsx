@@ -44,7 +44,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
   const detectRoleAndLoad = async () => {
     setLoading(true);
     setBusinessError(null);
-    
+
     try {
       const { data: profile } = await supabase
         .from('profiles')
@@ -92,12 +92,12 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
       if (error) throw error;
 
       const conversationMap = new Map<string, any>();
-      
+
       messagesData?.forEach(msg => {
-        const partnerId = msg.sender_profile_id === profileId 
-          ? msg.recipient_profile_id 
+        const partnerId = msg.sender_profile_id === profileId
+          ? msg.recipient_profile_id
           : msg.sender_profile_id;
-        
+
         if (!conversationMap.has(partnerId)) {
           conversationMap.set(partnerId, {
             profileId: partnerId,
@@ -289,9 +289,9 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
   );
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-b from-background to-muted/10">
-      {/* Header */}
-      <div className="p-4 border-b bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-md">
+    <div className="h-full flex flex-col overflow-hidden bg-gradient-to-b from-background to-muted/10">
+      {/* Header - Sticky */}
+      <div className="sticky top-0 z-10 flex-shrink-0 p-4 border-b bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-md">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Messages</h2>
           <div className="flex gap-1">
@@ -329,7 +329,8 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Conversations List - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-8 text-center">
             <div className="inline-flex items-center justify-center">
@@ -484,7 +485,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
             )}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }

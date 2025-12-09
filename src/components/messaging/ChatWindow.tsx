@@ -199,9 +199,9 @@ export function ChatWindow({
   }, {} as Record<string, Message[]>);
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-background to-muted/20">
-      {/* Header */}
-      <div className="border-b bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-md">
+    <div className="flex flex-col h-full overflow-hidden bg-gradient-to-b from-background to-muted/20">
+      {/* Header - Sticky */}
+      <div className="sticky top-0 z-10 border-b bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-md flex-shrink-0">
         <div className="p-4 flex items-center gap-3">
           {onBack && (
             <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 hover:bg-primary/10 transition-all duration-300">
@@ -226,8 +226,8 @@ export function ChatWindow({
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 px-4 py-6">
+      {/* Messages - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="w-full space-y-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date} className="space-y-4">
@@ -306,10 +306,10 @@ export function ChatWindow({
           ))}
           <div ref={scrollRef} />
         </div>
-      </ScrollArea>
+      </div>
 
-      {/* Input */}
-      <div className="border-t bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 shadow-lg">
+      {/* Input - Fixed at bottom */}
+      <div className="flex-shrink-0 border-t bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 shadow-lg">
         <div className="w-full">
           <div className="rounded-2xl border-2 border-border/50 bg-background shadow-md hover:shadow-xl focus-within:shadow-xl focus-within:border-primary/50 transition-all duration-300">
             <div className="flex items-end gap-3 p-3">
