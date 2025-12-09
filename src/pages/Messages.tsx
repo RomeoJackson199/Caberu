@@ -82,40 +82,35 @@ export default function Messages() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle p-6">
-      <div className="max-w-screen-2xl mx-auto">
-        <Card className="overflow-hidden shadow-2xl border border-border/60 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <div className="grid grid-cols-12 h-[calc(100vh-14rem)]">
-            <div className="col-span-4 border-r border-border/80 bg-gradient-to-b from-background via-background to-muted/20">
-              <ConversationList
-                currentUserId={currentUserId}
-                onSelectRecipient={setSelectedRecipient}
-              />
-            </div>
-            <div className="col-span-8 bg-background/80">
-              {selectedRecipient ? (
-                <ChatWindow
-                  currentUserId={currentUserId}
-                  recipient={selectedRecipient}
-                  onBack={null}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground">
-                  <div className="text-center max-w-md px-6">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 mb-4 shadow-md">
-                      <MessageSquare className="h-10 w-10 text-primary" />
-                    </div>
-                    <p className="font-semibold text-foreground mb-1">Select a conversation</p>
-                    <p className="text-sm text-muted-foreground">
-                      The messaging workspace now fills the page so patients and dentists can concentrate on one thread at a time.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className="h-[calc(100vh-4rem)] bg-gradient-subtle">
+      <Card className="h-full overflow-hidden shadow-2xl border border-border/60 backdrop-blur supports-[backdrop-filter]:bg-background/80 rounded-none sm:rounded-lg">
+        <div className="grid grid-cols-12 h-full">
+          <div className="col-span-4 border-r border-border/80 bg-gradient-to-b from-background via-background to-muted/20 overflow-y-auto">
+            <ConversationList
+              currentUserId={currentUserId}
+              onSelectRecipient={setSelectedRecipient}
+            />
           </div>
-        </Card>
-      </div>
+          <div className="col-span-8 bg-background/80 flex flex-col">
+            {selectedRecipient ? (
+              <ChatWindow
+                currentUserId={currentUserId}
+                recipient={selectedRecipient}
+                onBack={null}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                <div className="text-center max-w-md px-6">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 mb-4 shadow-md">
+                    <MessageSquare className="h-10 w-10 text-primary" />
+                  </div>
+                  <p className="font-semibold text-foreground mb-1">Select a conversation</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

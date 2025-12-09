@@ -244,7 +244,7 @@ export function ChatWindow({
                 {msgs.map((msg, index) => {
                   const isOwnMessage = msg.sender_profile_id === currentProfileId;
                   const showAvatar = index === 0 || msgs[index - 1].sender_profile_id !== msg.sender_profile_id;
-                  
+
                   return (
                     <motion.div
                       key={msg.id}
@@ -268,7 +268,7 @@ export function ChatWindow({
                           )}
                         </div>
                       )}
-                      
+
                       <motion.div
                         whileHover={{ scale: 1.02 }}
                         transition={{ duration: 0.2 }}
@@ -338,9 +338,6 @@ export function ChatWindow({
               </Button>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground text-center mt-2 font-medium">
-            Press <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">Shift + Enter</kbd> for new line
-          </p>
         </div>
       </div>
     </div>
