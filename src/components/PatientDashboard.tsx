@@ -7,7 +7,6 @@ import RealAppointmentsList from "@/components/RealAppointmentsList";
 import { HealthData } from "@/components/HealthData";
 import { PatientPaymentHistory } from "@/components/PatientPaymentHistory";
 import { PatientAnalytics } from "@/components/analytics/PatientAnalytics";
-import { ModernNotificationCenter } from "@/components/notifications/ModernNotificationCenter";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle } from "@/components/ui/glass-card";

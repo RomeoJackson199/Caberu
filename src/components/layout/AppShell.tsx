@@ -30,7 +30,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { ModernNotificationCenter } from "@/components/notifications/ModernNotificationCenter";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
@@ -53,7 +52,6 @@ import {
   Languages,
   Search,
   Building2,
-  Bell,
   ChevronDown,
   ChevronRight,
   Home,
@@ -233,8 +231,6 @@ function TopBar() {
           ) : (
             <BusinessSelector />
           )}
-
-          {userId && <ModernNotificationCenter userId={userId} />}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
