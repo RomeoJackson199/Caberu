@@ -33,6 +33,8 @@ import { TemplatePreview } from "@/components/TemplatePreview";
 import { EmailTemplateEditor } from "@/components/settings/EmailTemplateEditor";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
+import { StripeConnectSettings } from "@/components/settings/StripeConnectSettings";
+import { CreditCard } from "lucide-react";
 
 export default function DentistAdminBranding() {
   const { businessId, loading: businessLoading } = useBusinessContext();
@@ -471,11 +473,15 @@ export default function DentistAdminBranding() {
         />
 
         <Tabs defaultValue="branding" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="services">
               <Package className="h-4 w-4 mr-2" />
               Services
+            </TabsTrigger>
+            <TabsTrigger value="payments">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Payments
             </TabsTrigger>
             <TabsTrigger value="emails">
               <Mail className="h-4 w-4 mr-2" />
@@ -709,6 +715,10 @@ export default function DentistAdminBranding() {
 
           <TabsContent value="services">
             <ServiceManager />
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <StripeConnectSettings />
           </TabsContent>
 
           <TabsContent value="emails">

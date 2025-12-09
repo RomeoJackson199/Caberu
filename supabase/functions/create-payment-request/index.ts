@@ -305,8 +305,25 @@ serve(async (req) => {
       }
     }
 
-    // Create a Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Check if business has Stripe Connect account for destination charges
+    let stripeConnectAccountId = null;
+    let platformFeeAmount = 0;
+
+    const { data: businessData } = await supabaseClient
+      .from('businesses')
+      .select('stripe_account_id, stripe_charges_enabled, platform_fee_percentage')
+      .eq('id', business_id)
+      .single();
+
+    if (businessData?.stripe_account_id && businessData?.stripe_charges_enabled) {
+      stripeConnectAccountId = businessData.stripe_account_id;
+      // Calculate platform fee (default 2.5%)
+      const feePercentage = businessData.platform_fee_percentage || 2.5;
+      platformFeeAmount = Math.round(totalAmount * (feePercentage / 100));
+    }
+
+    // Build Stripe checkout session options
+    const sessionOptions: any = {
       payment_method_types: ["card"],
       line_items: [
         {
@@ -327,9 +344,29 @@ serve(async (req) => {
       metadata: {
         patient_id,
         dentist_id,
+        business_id,
         description,
+        payment_request_id: newPaymentRequestId,
       },
-    });
+    };
+
+    // Add Stripe Connect destination charges if account is connected
+    if (stripeConnectAccountId) {
+      sessionOptions.payment_intent_data = {
+        // Transfer to dentist's connected account
+        transfer_data: {
+          destination: stripeConnectAccountId,
+        },
+        // Platform fee goes to Caberu
+        application_fee_amount: platformFeeAmount,
+      };
+      console.log(`Using Stripe Connect: ${stripeConnectAccountId}, platform fee: ${platformFeeAmount} cents`);
+    } else {
+      console.log('No Stripe Connect account - payment goes to platform');
+    }
+
+    // Create a Stripe checkout session
+    const session = await stripe.checkout.sessions.create(sessionOptions);
 
     // Attach session id to payment request
     await supabaseClient
