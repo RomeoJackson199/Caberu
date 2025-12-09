@@ -199,9 +199,9 @@ export function ChatWindow({
   }, {} as Record<string, Message[]>);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-gradient-to-b from-background to-muted/20">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden bg-gradient-to-b from-background to-muted/20">
       {/* Header - Sticky */}
-      <div className="sticky top-0 z-10 border-b bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-md flex-shrink-0">
+      <div className="flex-shrink-0 border-b bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-md">
         <div className="p-4 flex items-center gap-3">
           {onBack && (
             <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 hover:bg-primary/10 transition-all duration-300">
@@ -227,7 +227,7 @@ export function ChatWindow({
       </div>
 
       {/* Messages - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6">
         <div className="w-full space-y-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date} className="space-y-4">

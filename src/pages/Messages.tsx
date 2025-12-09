@@ -82,16 +82,16 @@ export default function Messages() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-gradient-subtle">
+    <div className="h-[calc(100vh-4rem)] overflow-hidden bg-gradient-subtle">
       <Card className="h-full overflow-hidden shadow-2xl border border-border/60 backdrop-blur supports-[backdrop-filter]:bg-background/80 rounded-none sm:rounded-lg">
-        <div className="grid grid-cols-12 h-full">
-          <div className="col-span-4 border-r border-border/80 bg-gradient-to-b from-background via-background to-muted/20 overflow-y-auto">
+        <div className="grid grid-cols-12 h-full overflow-hidden">
+          <div className="col-span-4 h-full overflow-hidden border-r border-border/80 bg-gradient-to-b from-background via-background to-muted/20">
             <ConversationList
               currentUserId={currentUserId}
               onSelectRecipient={setSelectedRecipient}
             />
           </div>
-          <div className="col-span-8 bg-background/80 flex flex-col">
+          <div className="col-span-8 h-full overflow-hidden bg-background/80">
             {selectedRecipient ? (
               <ChatWindow
                 currentUserId={currentUserId}
