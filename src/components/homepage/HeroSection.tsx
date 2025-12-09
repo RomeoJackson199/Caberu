@@ -16,20 +16,20 @@ export const HeroSection = ({
     <section className="relative mobile-section-lg overflow-hidden">
       {/* Enhanced Background Pattern */}
       <div className="absolute inset-0 hero-pattern opacity-40"></div>
-      
+
       {/* Animated Background Elements - Hidden on mobile for performance */}
       <div className="absolute inset-0 hidden sm:block">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-dental-primary/5 rounded-full blur-3xl animate-float"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-dental-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: "2s" }}></div>
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-dental-secondary/5 rounded-full blur-3xl animate-float" style={{ animationDelay: "4s" }}></div>
       </div>
-      
+
       {/* Content */}
       <div className="relative mobile-container sm:tablet-container lg:desktop-container">
         <div className="text-center max-w-6xl mx-auto">
           {/* Enhanced AI Badge - Mobile optimized */}
-          <Badge 
-            variant="outline" 
+          <Badge
+            variant="outline"
             className="mb-6 sm:mb-8 px-4 py-2 sm:px-6 sm:py-3 bg-gradient-glass backdrop-blur-xl border-dental-primary/30 text-dental-primary shadow-elegant hover:shadow-glow hover:scale-105 transition-all duration-300 animate-fade-in touch-target"
           >
             <Bot className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-pulse-soft" />
@@ -50,7 +50,7 @@ export const HeroSection = ({
 
             {/* Subheadline with mobile-friendly styling */}
             <p className="mobile-body sm:text-xl lg:text-2xl text-dental-muted-foreground max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: "0.4s" }}>
-              Experience the future of dental care with <span className="text-dental-primary font-semibold">AI-powered consultations</span>, 
+              Experience the future of dental care with <span className="text-dental-primary font-semibold">AI-powered consultations</span>,
               smart appointment booking, and personalized treatment recommendations.
             </p>
           </div>
@@ -80,9 +80,9 @@ export const HeroSection = ({
                 delay: "1.0s"
               }
             ].map((feature, index) => (
-              <Card 
+              <Card
                 key={index}
-                variant="glass" 
+                variant="glass"
                 hover
                 glow
                 className="mobile-card-interactive border border-white/10 hover:border-dental-primary/30 transition-all duration-500 group animate-scale-in"
@@ -124,9 +124,9 @@ export const HeroSection = ({
 
           {/* Enhanced CTA Buttons - Mobile stack */}
           <div className="flex flex-col gap-4 sm:flex-row sm:gap-6 justify-center items-center mb-12 sm:mb-16 animate-slide-up" style={{ animationDelay: "1.4s" }}>
-            <Button 
+            <Button
               variant="gradient"
-              size="lg" 
+              size="lg"
               className="w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-semibold group touch-target"
               onClick={onBookAppointment}
               icon={<Sparkles className="w-5 h-5 sm:w-6 sm:h-6 group-hover:animate-pulse" />}
@@ -135,9 +135,9 @@ export const HeroSection = ({
               Get Started Free
             </Button>
 
-            <Button 
+            <Button
               variant="glass"
-              size="lg" 
+              size="lg"
               className="w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-semibold border-dental-primary/30 hover:border-dental-primary/60 touch-target"
               onClick={onStartTriage}
               icon={<Activity className="w-5 h-5 sm:w-6 sm:h-6" />}
@@ -149,7 +149,7 @@ export const HeroSection = ({
           {/* Enhanced Trust Indicators - Mobile layout */}
           <div className="flex flex-wrap justify-center items-center mobile-gap text-mobile-sm sm:text-sm text-dental-muted-foreground animate-fade-in" style={{ animationDelay: "1.6s" }}>
             {[
-              { icon: Shield, text: "HIPAA Compliant" },
+              { icon: Shield, text: "GDPR Ready" },
               { icon: Heart, text: "Secure & Private" },
               { icon: CheckCircle, text: "No Credit Card" }
             ].map((item, index) => (
@@ -168,19 +168,19 @@ export const HeroSection = ({
           <Bot className="w-10 h-10 text-blue-500" />
         </Card>
       </div>
-      
+
       <div className="absolute top-1/3 right-10 hidden lg:block animate-float" style={{ animationDelay: "1s" }}>
         <Card variant="glass" className="p-6 border border-white/20 hover:border-dental-accent/30 transition-all duration-300 hover:scale-110">
           <Sparkles className="w-10 h-10 text-purple-500 animate-pulse-soft" />
         </Card>
       </div>
-      
+
       <div className="absolute bottom-1/4 left-1/4 hidden lg:block animate-float" style={{ animationDelay: "2s" }}>
         <Card variant="glass" className="p-6 border border-white/20 hover:border-dental-secondary/30 transition-all duration-300 hover:scale-110">
           <Stethoscope className="w-10 h-10 text-dental-primary" />
         </Card>
       </div>
-      
+
       <div className="absolute bottom-1/3 right-1/4 hidden lg:block animate-float" style={{ animationDelay: "3s" }}>
         <Card variant="glass" className="p-6 border border-white/20 hover:border-dental-warning/30 transition-all duration-300 hover:scale-110">
           <Heart className="w-10 h-10 text-red-500 animate-pulse-soft" />

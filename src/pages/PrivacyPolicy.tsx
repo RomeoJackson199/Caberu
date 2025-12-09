@@ -139,8 +139,8 @@ const PrivacyPolicy = () => {
           <h2 className="text-2xl font-bold text-gray-900">5. How We Store and Protect Your Data</h2>
           <div className="space-y-3">
             <p className="text-gray-700 leading-relaxed">
-              <strong>Storage Location:</strong> All data is stored on secure, SOC 2 compliant servers with data centers
-              in the EU and US, ensuring compliance with GDPR and HIPAA requirements.
+              <strong>Storage Location:</strong> All data is stored on secure, GDPR-compliant servers with data centers
+              in the EU and US, ensuring compliance with European data protection requirements.
             </p>
             <p className="text-gray-700 leading-relaxed">
               <strong>Encryption:</strong> We use industry-standard encryption (AES-256) for data at rest and TLS 1.3 for data in transit.

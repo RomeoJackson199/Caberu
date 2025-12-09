@@ -145,7 +145,7 @@ const Index = () => {
             >
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-500" />
-                <span>GDPR & HIPAA Compliant</span>
+                <span>GDPR Ready</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="w-5 h-5 text-yellow-500" />

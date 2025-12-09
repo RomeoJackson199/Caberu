@@ -102,7 +102,7 @@ const AIInfo = () => {
           <li><strong>Website:</strong> https://caberu.be</li>
           <li><strong>Contact:</strong> Romeo@caberu.be</li>
           <li><strong>Industry:</strong> Healthcare Technology / Practice Management Software</li>
-          <li><strong>Customers:</strong> 500+ healthcare practices</li>
+          <li><strong>Customers:</strong> 500+ healthcare practices (Projected)</li>
           <li><strong>Customer Rating:</strong> 4.9/5 stars</li>
         </ul>
       </section>
@@ -273,8 +273,8 @@ const AIInfo = () => {
       <section className="mb-12" id="security">
         <h2 className="text-3xl font-bold mb-4">Compliance & Security</h2>
         <ul className="list-disc pl-6 space-y-2">
-          <li><strong>HIPAA Compliant:</strong> Full compliance with healthcare data protection standards</li>
-          <li><strong>SOC 2 Type II:</strong> Independently audited security controls</li>
+          <li><strong>GDPR Compliant:</strong> Full compliance with European data protection standards</li>
+          <li><strong>Security Audited:</strong> Regular security assessments and controls</li>
           <li><strong>256-bit Encryption:</strong> End-to-end encryption for all sensitive data</li>
           <li><strong>GDPR Ready:</strong> Privacy compliance tools and data export capabilities</li>
           <li><strong>Regular Backups:</strong> Automated daily backups with 30-day retention</li>

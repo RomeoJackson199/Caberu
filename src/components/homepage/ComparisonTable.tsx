@@ -30,7 +30,7 @@ const comparisons: ComparisonRow[] = [
   },
   {
     feature: "Monthly cost",
-    caberu: "$299+",
+    caberu: "$249+",
     traditional: "$3,500+",
     competitors: "$500-1,500"
   },
@@ -154,9 +154,8 @@ export const ComparisonTable = () => {
                   {comparisons.map((row, index) => (
                     <tr
                       key={index}
-                      className={`border-b border-gray-100 ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                      } hover:bg-blue-50/30 transition-colors`}
+                      className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                        } hover:bg-blue-50/30 transition-colors`}
                     >
                       <td className="py-4 px-6 font-medium text-gray-900">{row.feature}</td>
                       <td className="py-4 px-6 text-center bg-blue-50/50">

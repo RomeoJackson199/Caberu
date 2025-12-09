@@ -110,7 +110,7 @@ export function FloatingChatBubble({ context = 'general' }: FloatingChatBubblePr
       } else if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('plan')) {
         return "Caberu offers flexible pricing plans for practices of all sizes. Visit our Pricing page to see detailed plan comparisons and find the best fit for your practice!";
       } else if (lowerMessage.includes('feature') || lowerMessage.includes('what can')) {
-        return "Caberu is a complete dental practice management system with:\n\n• Smart Scheduling with AI triage\n• Patient Records & Treatment History\n• Billing & Payment Processing\n• Inventory Management\n• Analytics & Reporting\n• Automated Reminders\n• Multi-Provider Support\n• HIPAA Compliant Security\n\nWhat would you like to know more about?";
+        return "Caberu is a complete dental practice management system with:\n\n• Smart Scheduling with AI triage\n• Patient Records & Treatment History\n• Billing & Payment Processing\n• Inventory Management\n• Analytics & Reporting\n• Automated Reminders\n• Multi-Provider Support\n• GDPR Compliant Security\n\nWhat would you like to know more about?";
       } else if (lowerMessage.includes('ai') || lowerMessage.includes('chatbot')) {
         return "Yes! Caberu includes an AI Assistant that helps with patient triage, answers common questions, and guides patients through booking appointments. It's available 24/7 and can handle multiple languages!";
       } else if (lowerMessage.includes('hipaa') || lowerMessage.includes('security') || lowerMessage.includes('secure')) {
@@ -195,9 +195,8 @@ export function FloatingChatBubble({ context = 'general' }: FloatingChatBubblePr
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
                     >
                       <div
-                        className={`flex items-start gap-2 max-w-[85%] ${
-                          msg.role === 'user' ? 'flex-row-reverse' : ''
-                        }`}
+                        className={`flex items-start gap-2 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''
+                          }`}
                       >
                         {/* Avatar */}
                         <div className="flex-shrink-0">
@@ -213,11 +212,10 @@ export function FloatingChatBubble({ context = 'general' }: FloatingChatBubblePr
                         </div>
                         {/* Message Bubble */}
                         <div
-                          className={`rounded-2xl px-4 py-2 shadow-md ${
-                            msg.role === 'user'
+                          className={`rounded-2xl px-4 py-2 shadow-md ${msg.role === 'user'
                               ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground'
                               : 'bg-card border border-border'
-                          }`}
+                            }`}
                         >
                           <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                         </div>

@@ -38,7 +38,7 @@ const About = () => {
               We saw dentists drowning in paperwork, struggling with outdated scheduling systems, and losing valuable time to manual data entry. Meanwhile, patients faced long wait times, difficulty booking appointments, and fragmented communication. We knew there had to be a better way.
             </p>
             <p>
-              That's why we created Caberu - an intelligent, HIPAA-compliant platform that automates the busywork so dental professionals can focus on what they do best: providing exceptional patient care. Today, practices using Caberu report up to 40% reduction in administrative overhead and significantly improved patient satisfaction scores.
+              That's why we created Caberu - an intelligent, GDPR-compliant platform that automates the busywork so dental professionals can focus on what they do best: providing exceptional patient care. Today, practices using Caberu report up to 40% reduction in administrative overhead and significantly improved patient satisfaction scores.
             </p>
           </div>
         </section>
@@ -71,7 +71,7 @@ const About = () => {
               <Shield className="w-10 h-10 text-blue-600 mb-4" />
               <h3 className="text-lg font-semibold mb-2">Security First</h3>
               <p className="text-sm text-muted-foreground">
-                HIPAA-compliant with end-to-end encryption, SOC 2 certified, and enterprise-grade security.
+                GDPR-compliant with end-to-end encryption, security audited, and enterprise-grade security.
               </p>
             </div>
           </div>
@@ -173,7 +173,7 @@ const About = () => {
               <p><strong>Founded:</strong> 2024</p>
               <p><strong>Founders:</strong> Romeo Jackson & Thomas Iordache</p>
               <p><strong>Headquarters:</strong> Europe</p>
-              <p><strong>Compliance:</strong> HIPAA, SOC 2, GDPR</p>
+              <p><strong>Compliance:</strong> GDPR Ready, Security Audited</p>
               <p><strong>Industry:</strong> Healthcare Technology / Dental Software</p>
             </div>
           </div>

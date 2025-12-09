@@ -15,7 +15,7 @@ export const ROICalculator = () => {
   const monthlyRevenueLost = appointmentsLost * avgAppointmentValue;
   const yearlyRevenueLost = monthlyRevenueLost * 12;
 
-  const caberuCost = 299; // Monthly cost
+  const caberuCost = 249; // Monthly cost
   const staffingSavings = receptionistCost > 0 ? receptionistCost - caberuCost : 0;
   const additionalRevenue = monthlyRevenueLost * 0.9; // Capture 90% of missed calls
   const totalMonthlySavings = staffingSavings + additionalRevenue;

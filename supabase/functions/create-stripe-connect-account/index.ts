@@ -135,9 +135,13 @@ serve(async (req) => {
         );
     } catch (error) {
         console.error("Error creating Stripe Connect account:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorStack = error instanceof Error ? error.stack : undefined;
+
         return new Response(
             JSON.stringify({
-                error: (error as Error).message,
+                error: errorMessage,
+                details: errorStack,
                 success: false,
             }),
             {

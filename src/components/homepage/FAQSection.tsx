@@ -33,7 +33,7 @@ const faqs = [
   },
   {
     question: "How much does Caberu cost?",
-    answer: "Pricing starts at $299/month for solo practices with unlimited calls and appointments. We offer scaled pricing for multi-location practices. Most practices save $3,000-5,000/month compared to traditional staffing while capturing 40-50% more appointments."
+    answer: "Pricing starts at $249/month for solo practices with unlimited calls and appointments. We offer scaled pricing for multi-location practices. Most practices save $3,000-5,000/month compared to traditional staffing while capturing 40-50% more appointments."
   },
   {
     question: "What languages does the AI support?",

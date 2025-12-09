@@ -52,7 +52,7 @@ export const WhatCaberuDoesSection = () => {
                         </div>
                         <h3 className="text-2xl font-bold text-white mb-4">Secure & Compliant</h3>
                         <p className="text-gray-300">
-                            Enterprise-grade security with HIPAA compliance, SOC 2 Type II certification, and 256-bit encryption. Your patient data is safe with us.
+                            Enterprise-grade security with GDPR compliance, security audits, and 256-bit encryption. Your patient data is safe with us.
                         </p>
                     </motion.div>
 
