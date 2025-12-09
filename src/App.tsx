@@ -46,6 +46,7 @@ const Index = lazy(() => import("./pages/Index"));
 const DentistProfiles = lazy(() => import("./pages/DentistProfiles"));
 const Terms = lazy(() => import("./pages/Terms"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
@@ -318,6 +319,7 @@ const App = () => {
                       <Route path="/dentists" element={<DentistProfiles />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/dpa" element={<DataProcessingAgreement />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/payment-success" element={<PaymentSuccess />} />
                       <Route path="/payment-cancelled" element={<PaymentCancelled />} />
