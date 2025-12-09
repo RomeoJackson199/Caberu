@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 // Environment-based CORS configuration
 const getCorsHeaders = () => {
   const environment = Deno.env.get('ENVIRONMENT') || 'development';
-  
+
   if (environment === 'production') {
     return {
       "Access-Control-Allow-Origin": "https://gjvxcisbaxhhblhsytar.supabase.co",
@@ -14,7 +14,7 @@ const getCorsHeaders = () => {
       "Access-Control-Max-Age": "86400",
     };
   }
-  
+
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -166,7 +166,7 @@ serve(async (req) => {
         .eq('id', payment_request_id);
 
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           payment_url: session.url,
           session_id: session.id,
           message: "Payment link created successfully"
@@ -178,8 +178,23 @@ serve(async (req) => {
       );
     }
 
-    if (!patient_id || !dentist_id || !description || !patient_email) {
-      throw new Error("Missing required fields");
+    // Validate required fields with detailed error messages
+    const missingFields: string[] = [];
+    if (!patient_id) missingFields.push('patient_id');
+    if (!dentist_id) missingFields.push('dentist_id');
+    if (!description) missingFields.push('description');
+    if (!patient_email) missingFields.push('patient_email');
+
+    if (missingFields.length > 0) {
+      console.error('Missing required fields:', missingFields);
+      return new Response(
+        JSON.stringify({
+          error: 'Missing required fields',
+          missing: missingFields,
+          received: { patient_id, dentist_id, description, patient_email }
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // If items provided, compute amount from items; otherwise use provided amount
@@ -220,7 +235,7 @@ serve(async (req) => {
         .single();
       business_id = appt?.business_id;
     }
-    
+
     // If no appointment, get business from dentist's business memberships
     if (!business_id) {
       const { data: dentistProfile } = await supabaseClient
@@ -228,7 +243,7 @@ serve(async (req) => {
         .select('profile_id')
         .eq('id', dentist_id)
         .single();
-      
+
       if (dentistProfile) {
         const { data: membership } = await supabaseClient
           .from('business_members')
@@ -258,7 +273,7 @@ serve(async (req) => {
         status: "draft",
         due_date: dueDate.toISOString(),
         terms_due_in_days: dueInDays,
-        reminder_cadence_days: reminder_cadence_days ?? [3,7,14],
+        reminder_cadence_days: reminder_cadence_days ?? [3, 7, 14],
         channels: channels ?? ["email"],
         appointment_id,
         created_by: actorProfile?.id || null,
@@ -337,7 +352,7 @@ serve(async (req) => {
           const payload = {
             to: patient_email,
             subject: `Payment request from your dentist`,
-            message: `Thanks for your visit. Your secure payment link is below.\n\nAmount: €${(totalAmount/100).toFixed(2)}\nDescription: ${description}\n\nPay here: ${session.url}`,
+            message: `Thanks for your visit. Your secure payment link is below.\n\nAmount: €${(totalAmount / 100).toFixed(2)}\nDescription: ${description}\n\nPay here: ${session.url}`,
             messageType: 'system',
             isSystemNotification: true,
             patientId: patient_id,
@@ -382,7 +397,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         payment_url: session.url,
         session_id: session.id,
         payment_request_id: newPaymentRequestId,
@@ -396,19 +411,19 @@ serve(async (req) => {
   } catch (error) {
     const environment = Deno.env.get('ENVIRONMENT') || 'development';
     const isDevelopment = environment === 'development';
-    
+
     // Log full error in development only
     if (isDevelopment) {
       console.error("Error creating payment request:", error);
     }
-    
+
     // Don't expose internal errors in production
-    const publicMessage = isDevelopment 
-      ? (error as Error).message 
+    const publicMessage = isDevelopment
+      ? (error as Error).message
       : "Payment request failed";
-    
+
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: publicMessage,
         success: false
       }),
