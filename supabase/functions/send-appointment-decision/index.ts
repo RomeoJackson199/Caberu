@@ -18,11 +18,37 @@ serve(async (req) => {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         const { appointment_id, decision } = await req.json();
+        console.log('Received request:', { appointment_id, decision });
 
         if (!appointment_id || !decision) {
             return new Response(
                 JSON.stringify({ error: 'appointment_id and decision are required' }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
+
+        // First check if appointment exists
+        const { data: appointmentCheck, error: checkError } = await supabase
+            .from('appointments')
+            .select('id, patient_id, dentist_id')
+            .eq('id', appointment_id)
+            .maybeSingle();
+
+        console.log('Appointment check:', { appointmentCheck, checkError });
+
+        if (checkError) {
+            console.error('Error checking appointment:', checkError);
+            return new Response(
+                JSON.stringify({ error: 'Database error checking appointment', details: checkError.message }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
+
+        if (!appointmentCheck) {
+            console.error('Appointment not found with ID:', appointment_id);
+            return new Response(
+                JSON.stringify({ error: 'Appointment not found', appointment_id }),
+                { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
@@ -52,12 +78,14 @@ serve(async (req) => {
             .single();
 
         if (aptError || !appointment) {
-            console.error('Error fetching appointment:', aptError);
+            console.error('Error fetching appointment details:', aptError);
             return new Response(
-                JSON.stringify({ error: 'Appointment not found' }),
-                { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                JSON.stringify({ error: 'Failed to fetch appointment details', details: aptError?.message }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
+
+        console.log('Appointment found:', { id: appointment.id, patient_id: appointment.patient_id });
 
         const patientEmail = appointment.profiles?.email;
         const patientName = `${appointment.profiles?.first_name || ''} ${appointment.profiles?.last_name || ''}`.trim();
