@@ -124,16 +124,20 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
 
       if (error) throw error;
 
-      // Send approval email notification
+      // Send approval email notification (non-blocking)
       try {
-        await supabase.functions.invoke('send-appointment-decision', {
+        const { error: emailError } = await supabase.functions.invoke('send-appointment-decision', {
           body: {
             appointment_id: apt.id,
             decision: 'approved'
           }
         });
-      } catch (emailError) {
-        logger.warn('Failed to send approval email:', emailError);
+        if (emailError) {
+          logger.warn('Email notification returned error:', emailError);
+        }
+      } catch (emailError: any) {
+        // Don't fail the whole operation if email notification fails
+        logger.warn('Failed to send approval email (will retry on next action):', emailError?.message || emailError);
       }
 
       toast({
@@ -164,16 +168,20 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
 
       if (error) throw error;
 
-      // Send rejection email notification
+      // Send rejection email notification (non-blocking)
       try {
-        await supabase.functions.invoke('send-appointment-decision', {
+        const { error: emailError } = await supabase.functions.invoke('send-appointment-decision', {
           body: {
             appointment_id: apt.id,
             decision: 'rejected'
           }
         });
-      } catch (emailError) {
-        logger.warn('Failed to send rejection email:', emailError);
+        if (emailError) {
+          logger.warn('Email notification returned error:', emailError);
+        }
+      } catch (emailError: any) {
+        // Don't fail the whole operation if email notification fails
+        logger.warn('Failed to send rejection email (will retry on next action):', emailError?.message || emailError);
       }
 
       toast({
