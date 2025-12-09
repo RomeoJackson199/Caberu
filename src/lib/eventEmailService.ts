@@ -76,7 +76,7 @@ export class EventEmailService {
         tenant_id: contextData.clinic_id
       });
 
-      // Create matching in-app notification
+      // Create matching patient message instead of feed notification
       await this.createInAppNotification(event, template, contextData, renderedEmail);
 
       return { success: true };
@@ -312,7 +312,7 @@ END:VCALENDAR`;
   }
 
   /**
-   * Create in-app notification matching the email sent
+   * Create a portal message matching the email sent
    */
   private async createInAppNotification(
     event: EmailEvent,
@@ -321,56 +321,45 @@ END:VCALENDAR`;
     renderedEmail: { subject: string; body: string }
   ) {
     try {
-      // Get user_id from patient profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('id', event.patient_id)
-        .maybeSingle();
+      // Create a conversational message tied to the patient's profile
+      const messageBody = this.stripHtmlTags(renderedEmail.body).substring(0, 500);
 
-      if (!profile?.user_id) {
-        console.warn('No user_id found for patient, skipping in-app notification');
+      // Use the current business context for the message thread
+      const { data: businessId, error: businessError } = await supabase.rpc('get_current_business_id');
+      if (businessError || !businessId) {
+        console.warn('No business context available for patient message', businessError);
         return;
       }
 
-      // Map event type to notification type and category
-      const notificationType = this.mapEventToNotificationType(event.event);
-      const category = template.priority === 'essential' ? 'urgent' : 
-                      template.priority === 'important' ? 'warning' : 'info';
+      // Identify the sending clinician profile
+      const { data: dentistProfile, error: dentistError } = await supabase
+        .from('dentists')
+        .select('profile_id')
+        .eq('id', context.clinic_id)
+        .maybeSingle();
 
-      // Create the in-app notification
-      await supabase.from('notifications').insert({
-        user_id: profile.user_id,
-        type: notificationType,
-        category: category,
-        title: renderedEmail.subject,
-        message: this.stripHtmlTags(renderedEmail.body).substring(0, 500), // Plain text, max 500 chars
-        action_url: event.appointment_id ? `/appointments/${event.appointment_id}` : undefined,
-        metadata: {
-          email_sent: true,
-          event_type: event.event,
-          appointment_id: event.appointment_id,
-          idempotency_key: event.idempotency_key
-        },
-        is_read: false,
-        created_at: new Date().toISOString()
+      if (dentistError || !dentistProfile?.profile_id) {
+        console.warn('No dentist profile available for patient message', dentistError);
+        return;
+      }
+
+      // Send the patient a message that mirrors the email content
+      const { error: messageError } = await supabase.from('messages').insert({
+        business_id: businessId,
+        sender_profile_id: dentistProfile.profile_id,
+        recipient_profile_id: event.patient_id,
+        message_text: `${renderedEmail.subject}: ${messageBody}`
       });
 
-      console.log(`✅ Created in-app notification for ${event.event}`);
-    } catch (error) {
-      console.error('Error creating in-app notification:', error);
-      // Don't fail the whole email process if notification creation fails
-    }
-  }
+      if (messageError) {
+        throw messageError;
+      }
 
-  /**
-   * Map email event type to notification type
-   */
-  private mapEventToNotificationType(eventType: string): string {
-    if (eventType.includes('Appointment')) return 'appointment';
-    if (eventType.includes('Prescription')) return 'prescription';
-    if (eventType.includes('Treatment')) return 'treatment_plan';
-    return 'system';
+      console.log(`✅ Created patient message for ${event.event}`);
+    } catch (error) {
+      console.error('Error creating patient message:', error);
+      // Don't fail the whole email process if message creation fails
+    }
   }
 
   /**
