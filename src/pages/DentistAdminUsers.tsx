@@ -10,6 +10,7 @@ import { Search, Mail, Calendar, Shield, Users as UsersIcon, RefreshCw } from "l
 import { formatDistanceToNow } from "date-fns";
 import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
 import { logger } from '@/lib/logger';
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import {
   Table,
   TableBody,
@@ -36,58 +37,58 @@ export default function DentistAdminUsers() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { businessId } = useBusinessContext();
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
-      // Fetch all profiles
+
+      if (!businessId) {
+        setUsers([]);
+        return;
+      }
+
+      // First, get all profile IDs that are members of this business
+      const { data: businessMembers, error: membersError } = await supabase
+        .from('business_members')
+        .select('profile_id, role')
+        .eq('business_id', businessId);
+
+      if (membersError) throw membersError;
+
+      if (!businessMembers || businessMembers.length === 0) {
+        setUsers([]);
+        return;
+      }
+
+      // Get unique profile IDs
+      const profileIds = [...new Set(businessMembers.map(m => m.profile_id))];
+
+      // Fetch profiles for these members only
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, email, first_name, last_name, created_at, user_id')
+        .in('id', profileIds)
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
-      // Fetch user roles for each profile
-      const usersWithRoles = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const allRoles: string[] = [];
-          
-          if (profile.user_id) {
-            // Fetch app-level roles from user_roles table
-            const { data: rolesData } = await supabase
-              .from('user_roles' as any)
-              .select('role')
-              .eq('user_id', profile.user_id);
-            
-            if (rolesData) {
-              allRoles.push(...rolesData.map((r: any) => r.role));
-            }
-          }
-          
-          // Fetch business-specific roles from business_members table
-          const { data: businessRoles } = await supabase
-            .from('business_members')
-            .select('role')
-            .eq('profile_id', profile.id);
-          
-          if (businessRoles && businessRoles.length > 0) {
-            // Add business roles (admin, provider, patient, etc.)
-            allRoles.push(...businessRoles.map(br => br.role));
-          }
-          
-          // Remove duplicates
-          const uniqueRoles = [...new Set(allRoles)];
+      // Map profiles with their roles from this business
+      const usersWithRoles = (profiles || []).map((profile) => {
+        // Get roles for this profile in this business
+        const memberRoles = businessMembers
+          .filter(m => m.profile_id === profile.id)
+          .map(m => m.role);
 
-          return {
-            ...profile,
-            roles: uniqueRoles,
-            invitation_status: profile.user_id ? 'accepted' as const : undefined,
-            invitation_sent_at: undefined,
-          };
-        })
-      );
+        const uniqueRoles = [...new Set(memberRoles)];
+
+        return {
+          ...profile,
+          roles: uniqueRoles,
+          invitation_status: profile.user_id ? 'accepted' as const : undefined,
+          invitation_sent_at: undefined,
+        };
+      });
 
       setUsers(usersWithRoles);
     } catch (error: any) {
@@ -104,7 +105,7 @@ export default function DentistAdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [businessId]);
 
   const filteredUsers = users.filter((user) => {
     const query = searchQuery.toLowerCase();
@@ -140,9 +141,9 @@ export default function DentistAdminUsers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Team Members</h1>
           <p className="text-muted-foreground mt-1">
-            Manage user accounts and invitations
+            Manage staff and patients for your clinic
           </p>
         </div>
         <AddUserDialog onUserAdded={fetchUsers} />
