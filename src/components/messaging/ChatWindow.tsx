@@ -228,7 +228,7 @@ export function ChatWindow({
 
       {/* Messages */}
       <ScrollArea className="flex-1 px-4 py-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="w-full space-y-6">
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date} className="space-y-4">
               {/* Date divider */}
@@ -310,7 +310,7 @@ export function ChatWindow({
 
       {/* Input */}
       <div className="border-t bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 shadow-lg">
-        <div className="mx-auto max-w-4xl">
+        <div className="w-full">
           <div className="rounded-2xl border-2 border-border/50 bg-background shadow-md hover:shadow-xl focus-within:shadow-xl focus-within:border-primary/50 transition-all duration-300">
             <div className="flex items-end gap-3 p-3">
               <Textarea
