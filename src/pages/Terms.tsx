@@ -186,16 +186,44 @@ const Terms = () => {
 
         {/* Fees and Payment */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-900">7. Fees and Payment</h2>
-          <p className="text-gray-700 leading-relaxed">
-            Certain features of the Service may require payment of fees. By using paid features, you agree to pay
-            all applicable fees as described at the time of purchase.
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">7. Pricing and Payment</h2>
+
+          <h3 className="text-lg font-semibold">Current Pricing (as of December 2025)</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-3 text-left">Plan</th>
+                  <th className="border p-3 text-left">Price</th>
+                  <th className="border p-3 text-left">Patients/Month</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border p-3 font-medium">Starter</td>
+                  <td className="border p-3">€249/month</td>
+                  <td className="border p-3">Up to 500</td>
+                </tr>
+                <tr>
+                  <td className="border p-3 font-medium">Professional</td>
+                  <td className="border p-3">€499/month</td>
+                  <td className="border p-3">Up to 2,500</td>
+                </tr>
+                <tr>
+                  <td className="border p-3 font-medium">Enterprise</td>
+                  <td className="border p-3">€999/month</td>
+                  <td className="border p-3">Up to 7,500</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-sm text-gray-500">Prices exclude VAT.</p>
+
           <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-            <li>Fees are non-refundable except as required by law</li>
-            <li>We reserve the right to change fees with 30 days' notice</li>
-            <li>You authorize us to charge your payment method for all fees</li>
-            <li>Failure to pay may result in service suspension</li>
+            <li><strong>14-day money-back guarantee</strong> for first-time customers (EU Consumer Rights)</li>
+            <li>Billed monthly in advance; cancel anytime</li>
+            <li>30 days notice for price changes</li>
+            <li>€25 late payment fee applies after 15 days</li>
           </ul>
         </section>
 
@@ -204,11 +232,10 @@ const Terms = () => {
           <h2 className="text-2xl font-bold text-gray-900">8. Data Protection and Privacy</h2>
           <p className="text-gray-700 leading-relaxed">
             Your use of the Service is also governed by our <a href="/privacy" className="text-blue-600 hover:underline font-semibold">Privacy Policy</a>.
-            We comply with HIPAA, GDPR, and other applicable data protection regulations.
+            We comply with <strong>GDPR</strong> and other applicable EU data protection regulations.
           </p>
           <p className="text-gray-700 leading-relaxed">
-            As a healthcare platform, we take data security seriously and implement industry-standard measures to
-            protect your information.
+            By using the Service, you agree to our <strong>Data Processing Agreement</strong> (DPA), which governs how we process patient health data on your behalf (GDPR Article 28).
           </p>
         </section>
 
@@ -261,12 +288,11 @@ const Terms = () => {
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-900">12. Governing Law and Disputes</h2>
           <p className="text-gray-700 leading-relaxed">
-            These Terms shall be governed by and construed in accordance with the laws of [Your Jurisdiction],
-            without regard to its conflict of law provisions.
+            These Terms shall be governed by and construed in accordance with the laws of <strong>Belgium</strong>.
+            Courts of Belgium have exclusive jurisdiction.
           </p>
           <p className="text-gray-700 leading-relaxed">
-            Any disputes arising from these Terms or the Service shall be resolved through binding arbitration,
-            except where prohibited by law.
+            <strong>EU Online Dispute Resolution:</strong> <a href="https://ec.europa.eu/consumers/odr" className="text-blue-600 hover:underline">https://ec.europa.eu/consumers/odr</a>
           </p>
         </section>
 
@@ -287,11 +313,10 @@ const Terms = () => {
           </h2>
           <Card className="p-6 bg-blue-50 border-blue-200">
             <div className="space-y-2 text-gray-700">
-              <p><strong>For questions about these Terms:</strong></p>
-              <p>Email: <a href="mailto:legal@Caberu.com" className="text-blue-600 hover:underline">legal@Caberu.com</a></p>
-              <p className="mt-4"><strong>For general support:</strong></p>
-              <p>Email: <a href="mailto:support@Caberu.com" className="text-blue-600 hover:underline">support@Caberu.com</a></p>
-              <p>Website: <a href="https://Caberu.com/support" className="text-blue-600 hover:underline">https://Caberu.com/support</a></p>
+              <p><strong>Caberu SRL</strong></p>
+              <p>Hertogenweg 20, Belgium</p>
+              <p className="mt-2">Email: <a href="mailto:Romeo@caberu.be" className="text-blue-600 hover:underline">Romeo@caberu.be</a></p>
+              <p>Website: <a href="https://caberu.be" className="text-blue-600 hover:underline">https://caberu.be</a></p>
             </div>
           </Card>
         </section>
