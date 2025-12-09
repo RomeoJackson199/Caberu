@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DentalPracticeConsentDialog } from "@/components/consent";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -32,6 +33,8 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
   });
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -54,6 +57,12 @@ const Signup = () => {
         description: "Please make sure both passwords are the same.",
         variant: "destructive",
       });
+      return;
+    }
+
+    // For business users, require consent before signup
+    if (userType === "business" && !consentGiven) {
+      setShowConsentDialog(true);
       return;
     }
 
@@ -474,6 +483,19 @@ const Signup = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* GDPR Consent Dialog for Business Users */}
+      <DentalPracticeConsentDialog
+        open={showConsentDialog}
+        onOpenChange={setShowConsentDialog}
+        onAccept={(consentData) => {
+          setConsentGiven(true);
+          // Store consent data in localStorage temporarily - will be saved to DB after signup
+          localStorage.setItem('pending_practice_consent', JSON.stringify(consentData));
+          // Now trigger the actual signup
+          handleSignUp(new Event('submit') as unknown as React.FormEvent);
+        }}
+      />
     </div>
   );
 };
