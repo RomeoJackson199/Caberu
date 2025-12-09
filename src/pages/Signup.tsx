@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DentalPracticeConsentDialog } from "@/components/consent";
+import { DentalPracticeConsentDialog, PatientTermsConsentDialog } from "@/components/consent";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -60,8 +60,8 @@ const Signup = () => {
       return;
     }
 
-    // For business users, require consent before signup
-    if (userType === "business" && !consentGiven) {
+    // Require consent before signup for ALL user types
+    if (!consentGiven) {
       setShowConsentDialog(true);
       return;
     }
@@ -484,18 +484,33 @@ const Signup = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* GDPR Consent Dialog for Business Users */}
-      <DentalPracticeConsentDialog
-        open={showConsentDialog}
-        onOpenChange={setShowConsentDialog}
-        onAccept={(consentData) => {
-          setConsentGiven(true);
-          // Store consent data in localStorage temporarily - will be saved to DB after signup
-          localStorage.setItem('pending_practice_consent', JSON.stringify(consentData));
-          // Now trigger the actual signup
-          handleSignUp(new Event('submit') as unknown as React.FormEvent);
-        }}
-      />
+      {/* GDPR Consent Dialog - shows different dialog based on user type */}
+      {userType === "business" && (
+        <DentalPracticeConsentDialog
+          open={showConsentDialog}
+          onOpenChange={setShowConsentDialog}
+          onAccept={(consentData) => {
+            setConsentGiven(true);
+            // Store consent data in localStorage temporarily - will be saved to DB after signup
+            localStorage.setItem('pending_practice_consent', JSON.stringify(consentData));
+            // Now trigger the actual signup
+            handleSignUp(new Event('submit') as unknown as React.FormEvent);
+          }}
+        />
+      )}
+      {userType === "client" && (
+        <PatientTermsConsentDialog
+          open={showConsentDialog}
+          onOpenChange={setShowConsentDialog}
+          onAccept={(consentData) => {
+            setConsentGiven(true);
+            // Store consent data in localStorage temporarily
+            localStorage.setItem('pending_patient_terms_consent', JSON.stringify(consentData));
+            // Now trigger the actual signup
+            handleSignUp(new Event('submit') as unknown as React.FormEvent);
+          }}
+        />
+      )}
     </div>
   );
 };
