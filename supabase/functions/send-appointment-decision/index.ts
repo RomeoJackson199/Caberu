@@ -7,17 +7,35 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-    // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
     }
 
     try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+        if (!supabaseUrl || !supabaseServiceKey) {
+            console.error('Missing environment variables');
+            return new Response(
+                JSON.stringify({ error: 'Server configuration error' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
+
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-        const { appointment_id, decision } = await req.json();
+        let body;
+        try {
+            body = await req.json();
+        } catch (parseError) {
+            return new Response(
+                JSON.stringify({ error: 'Invalid JSON body' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
+
+        const { appointment_id, decision } = body;
         console.log('Received request:', { appointment_id, decision });
 
         if (!appointment_id || !decision) {
@@ -27,154 +45,108 @@ serve(async (req) => {
             );
         }
 
-        // First check if appointment exists
-        const { data: appointmentCheck, error: checkError } = await supabase
+        // Simple query first - just get the appointment
+        const { data: appointment, error: aptError } = await supabase
             .from('appointments')
-            .select('id, patient_id, dentist_id')
+            .select('id, appointment_date, reason, patient_id, dentist_id')
             .eq('id', appointment_id)
             .maybeSingle();
 
-        console.log('Appointment check:', { appointmentCheck, checkError });
+        console.log('Appointment query result:', { appointment, error: aptError?.message });
 
-        if (checkError) {
-            console.error('Error checking appointment:', checkError);
+        if (aptError) {
+            console.error('Database error:', aptError);
             return new Response(
-                JSON.stringify({ error: 'Database error checking appointment', details: checkError.message }),
+                JSON.stringify({ error: 'Database error', details: aptError.message }),
                 { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        if (!appointmentCheck) {
-            console.error('Appointment not found with ID:', appointment_id);
+        if (!appointment) {
             return new Response(
                 JSON.stringify({ error: 'Appointment not found', appointment_id }),
                 { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        // Get appointment details with patient and dentist info
-        const { data: appointment, error: aptError } = await supabase
-            .from('appointments')
-            .select(`
-        id,
-        appointment_date,
-        reason,
-        patient_id,
-        dentist_id,
-        profiles:patient_id (
-          first_name,
-          last_name,
-          email
-        ),
-        dentists:dentist_id (
-          profile_id,
-          profiles:profile_id (
-            first_name,
-            last_name
-          )
-        )
-      `)
-            .eq('id', appointment_id)
-            .single();
+        // Get patient email separately
+        let patientEmail = null;
+        try {
+            const { data: patientProfile } = await supabase
+                .from('profiles')
+                .select('email, first_name, last_name')
+                .eq('id', appointment.patient_id)
+                .single();
 
-        if (aptError || !appointment) {
-            console.error('Error fetching appointment details:', aptError);
-            return new Response(
-                JSON.stringify({ error: 'Failed to fetch appointment details', details: aptError?.message }),
-                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
+            patientEmail = patientProfile?.email;
+            console.log('Patient profile:', patientProfile);
+        } catch (profileError) {
+            console.error('Failed to get patient profile:', profileError);
         }
 
-        console.log('Appointment found:', { id: appointment.id, patient_id: appointment.patient_id });
-
-        const patientEmail = appointment.profiles?.email;
-        const patientName = `${appointment.profiles?.first_name || ''} ${appointment.profiles?.last_name || ''}`.trim();
-
-        // Handle nested dentist profile
-        const dentistProfiles = appointment.dentists?.profiles;
-        const dentistProfile = Array.isArray(dentistProfiles) ? dentistProfiles[0] : dentistProfiles;
-        const dentistName = dentistProfile
-            ? `Dr. ${dentistProfile.first_name || ''} ${dentistProfile.last_name || ''}`.trim()
-            : 'Your dentist';
-
         if (!patientEmail) {
-            console.log('No patient email found, skipping notification');
             return new Response(
-                JSON.stringify({ success: true, message: 'No email to send - patient email not found' }),
+                JSON.stringify({ success: true, message: 'No patient email found, skipping notification' }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        // Format the date
+        // Format date 
         const appointmentDate = new Date(appointment.appointment_date);
         const formattedDate = appointmentDate.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
         const formattedTime = appointmentDate.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
+            hour: 'numeric', minute: '2-digit', hour12: true
         });
 
-        // Prepare email content based on decision
-        let subject: string;
-        let title: string;
-        let message: string;
-        let statusColor: string;
+        // Prepare email content
+        const subject = decision === 'approved'
+            ? '✅ Your Appointment Has Been Confirmed!'
+            : '❌ Appointment Request Update';
 
-        if (decision === 'approved') {
-            subject = '✅ Your Appointment Has Been Confirmed!';
-            title = 'Appointment Confirmed';
-            message = `Great news! ${dentistName} has approved your appointment request.`;
-            statusColor = '#22c55e'; // green
-        } else {
-            subject = '❌ Appointment Request Update';
-            title = 'Appointment Not Available';
-            message = `Unfortunately, ${dentistName} was unable to confirm your appointment request for this time slot. Please book a new appointment at a different time.`;
-            statusColor = '#ef4444'; // red
-        }
+        const message = decision === 'approved'
+            ? `Great news! Your appointment has been approved.\n\nDate: ${formattedDate}\nTime: ${formattedTime}\nReason: ${appointment.reason || 'General consultation'}`
+            : `Unfortunately, your appointment request could not be confirmed.\n\nDate: ${formattedDate}\nTime: ${formattedTime}\n\nPlease book a new appointment at a different time.`;
 
-        // Send email using the existing send-email-notification function
+        // Try to send email but don't fail if it doesn't work
         let emailSent = false;
         try {
             const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
                 body: {
                     to: patientEmail,
                     subject: subject,
-                    message: `${title}\n\n${message}\n\nAppointment: ${formattedDate} at ${formattedTime}\nReason: ${appointment.reason || 'General consultation'}`,
-                    messageType: 'appointment_confirmation',
+                    message: message,
+                    messageType: 'system',
                     isSystemNotification: true,
                 },
             });
 
-            if (emailError) {
-                console.error('Error sending email:', emailError);
-            } else {
+            if (!emailError) {
                 emailSent = true;
+                console.log('Email sent successfully');
+            } else {
+                console.error('Email error:', emailError);
             }
         } catch (emailCatchError) {
-            console.error('Failed to invoke send-email-notification:', emailCatchError);
-            // Don't throw - we still want to return success for the decision itself
+            console.error('Failed to invoke email function:', emailCatchError);
         }
 
         return new Response(
             JSON.stringify({
                 success: true,
-                message: emailSent
-                    ? `${decision} email sent to ${patientEmail}`
-                    : `Appointment ${decision} but email delivery failed`,
-                email_sent: emailSent
+                message: emailSent ? `Email sent to ${patientEmail}` : 'Appointment processed but email not sent',
+                email_sent: emailSent,
+                appointment_id: appointment_id,
+                decision: decision
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
 
     } catch (error) {
-        console.error('Error in send-appointment-decision:', error);
+        console.error('Unexpected error:', error);
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: 'Internal server error', details: String(error) }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }
