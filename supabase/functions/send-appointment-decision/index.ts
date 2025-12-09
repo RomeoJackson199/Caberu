@@ -138,32 +138,36 @@ serve(async (req) => {
         }
 
         // Send email using the existing send-email-notification function
-        const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
-            body: {
-                to: patientEmail,
-                subject: subject,
-                template_type: 'appointment_decision',
-                variables: {
-                    patient_name: patientName || 'Patient',
-                    dentist_name: dentistName,
-                    appointment_date: formattedDate,
-                    appointment_time: formattedTime,
-                    reason: appointment.reason || 'General consultation',
-                    decision: decision,
-                    title: title,
-                    message: message,
-                    status_color: statusColor,
+        let emailSent = false;
+        try {
+            const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
+                body: {
+                    to: patientEmail,
+                    subject: subject,
+                    message: `${title}\n\n${message}\n\nAppointment: ${formattedDate} at ${formattedTime}\nReason: ${appointment.reason || 'General consultation'}`,
+                    messageType: 'appointment_confirmation',
+                    isSystemNotification: true,
                 },
-            },
-        });
+            });
 
-        if (emailError) {
-            console.error('Error sending email:', emailError);
-            // Don't fail the request if email fails
+            if (emailError) {
+                console.error('Error sending email:', emailError);
+            } else {
+                emailSent = true;
+            }
+        } catch (emailCatchError) {
+            console.error('Failed to invoke send-email-notification:', emailCatchError);
+            // Don't throw - we still want to return success for the decision itself
         }
 
         return new Response(
-            JSON.stringify({ success: true, message: `${decision} email sent to ${patientEmail}` }),
+            JSON.stringify({
+                success: true,
+                message: emailSent
+                    ? `${decision} email sent to ${patientEmail}`
+                    : `Appointment ${decision} but email delivery failed`,
+                email_sent: emailSent
+            }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
 
