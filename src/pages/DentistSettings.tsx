@@ -3,12 +3,13 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2 } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase } from "lucide-react";
 import { EnhancedAvailabilitySettings } from "@/components/enhanced/EnhancedAvailabilitySettings";
 import DentistAdminBranding from "./DentistAdminBranding";
 import DentistAdminSecurity from "./DentistAdminSecurity";
 import DentistAdminProfile from "./DentistAdminProfile";
 import DentistAdminUsers from "./DentistAdminUsers";
+import { ServiceManager } from "@/components/services/ServiceManager";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +30,7 @@ export default function DentistSettings() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['profile', 'appointments', 'schedule', 'branding', 'security', 'staff', 'support'].includes(tabParam)) {
+    if (tabParam && ['profile', 'services', 'appointments', 'schedule', 'branding', 'security', 'staff', 'support'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -132,6 +133,10 @@ export default function DentistSettings() {
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
+          <TabsTrigger value="services" className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            Services
+          </TabsTrigger>
           <TabsTrigger value="schedule" className="gap-2">
             <Calendar className="h-4 w-4" />
             Availability
@@ -156,6 +161,10 @@ export default function DentistSettings() {
 
         <TabsContent value="profile" className="space-y-6">
           <DentistAdminProfile />
+        </TabsContent>
+
+        <TabsContent value="services" className="space-y-6">
+          <ServiceManager />
         </TabsContent>
 
         <TabsContent value="schedule" className="space-y-6">

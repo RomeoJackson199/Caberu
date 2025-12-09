@@ -185,15 +185,6 @@ export function ServiceManager() {
             <Plus className="h-5 w-5" />
             Add Service
           </Button>
-          <Button
-            onClick={() => handleAddNew('Product')}
-            variant="outline"
-            className="gap-2 border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-950/30 h-11 px-6"
-            size="lg"
-          >
-            <Plus className="h-5 w-5" />
-            Add Product
-          </Button>
           <Button variant="ghost" size="icon" onClick={loadServices} disabled={loading} className="h-11 w-11">
             <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
           </Button>
