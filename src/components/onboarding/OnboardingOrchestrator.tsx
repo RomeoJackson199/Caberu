@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { DentistOnboardingFlow } from "./DentistOnboardingFlow";
-import { DemoDataPrompt } from "./DemoDataPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { useBusinessContext } from "@/hooks/useBusinessContext";
 
 interface OnboardingOrchestratorProps {
   user: User | null;
@@ -12,13 +10,8 @@ interface OnboardingOrchestratorProps {
 
 export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) => {
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showDemoPrompt, setShowDemoPrompt] = useState(false);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [demoDataGenerated, setDemoDataGenerated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { businessId } = useBusinessContext();
 
   useEffect(() => {
     if (!user) return;
@@ -39,13 +32,9 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
 
         // Check if onboarding has been completed
         const hasCompletedOnboarding = profile?.onboarding_completed === true;
-        // Use localStorage to track demo data since column doesn't exist
-        const hasGeneratedDemo = localStorage.getItem("demo-data-generated") === "true";
         const role = profile?.role;
 
         setUserRole(role);
-        setOnboardingCompleted(hasCompletedOnboarding);
-        setDemoDataGenerated(hasGeneratedDemo);
 
         // Only show onboarding for dentists/practitioners who haven't completed it
         const isDentistRoute =
@@ -55,17 +44,6 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
         if (!hasCompletedOnboarding && isDentistRoute && role === "dentist") {
           // Show onboarding flow
           setShowOnboarding(true);
-        } else if (
-          hasCompletedOnboarding &&
-          !hasGeneratedDemo &&
-          isDentistRoute &&
-          role === "dentist"
-        ) {
-          // Onboarding done, but no demo data yet - offer demo data
-          const demoDataSkipped = localStorage.getItem("demo-data-skipped");
-          if (!demoDataSkipped) {
-            setShowDemoPrompt(true);
-          }
         }
       } catch (error) {
         console.error("Error in onboarding orchestrator:", error);
@@ -77,27 +55,6 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    setOnboardingCompleted(true);
-
-    // After onboarding, show demo data prompt
-    const demoDataSkipped = localStorage.getItem("demo-data-skipped");
-    if (!demoDataSkipped && !demoDataGenerated) {
-      // Delay slightly so the transition is smooth
-      setTimeout(() => {
-        setShowDemoPrompt(true);
-      }, 500);
-    }
-  };
-
-  const handleDemoDataComplete = () => {
-    setShowDemoPrompt(false);
-    setDemoDataGenerated(true);
-
-    // Trigger a tour if needed
-    localStorage.setItem("should-start-tour", "true");
-
-    // Refresh the page to load the new demo data
-    window.location.reload();
   };
 
   // Don't show onboarding on login/signup pages
@@ -117,16 +74,6 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
           isOpen={showOnboarding}
           onClose={handleOnboardingComplete}
           userId={user.id}
-        />
-      )}
-
-      {showDemoPrompt && businessId && (
-        <DemoDataPrompt
-          isOpen={showDemoPrompt}
-          onClose={() => setShowDemoPrompt(false)}
-          businessId={businessId}
-          userId={user.id}
-          onDemoDataGenerated={handleDemoDataComplete}
         />
       )}
     </>
