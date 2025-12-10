@@ -23,6 +23,8 @@ const PaymentSuccess: React.FC = () => {
         try {
           const pendingData = sessionStorage.getItem('pending_business_data');
           if (!pendingData) {
+            // For business flow, we expect pending data. If missing, maybe it wasn't a business creation flow?
+            // But if type arg says business, we should fail or redirect.
             throw new Error('Business data not found');
           }
 
@@ -42,140 +44,35 @@ const PaymentSuccess: React.FC = () => {
               promoCode = JSON.parse(promoCodeData);
             } catch (error) {
               logger.error('Failed to parse promo code data:', error);
-              // Continue without promo code if parsing fails
             }
           }
 
-          // Get current user
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) throw new Error('Not authenticated');
-
-          // Get user's profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
-
-          if (profileError || !profile) {
-            throw new Error('Profile not found');
-          }
-
-          // Create business slug
-          const slug = businessData.name
-            ?.toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '') || 'business';
-
-          // Ensure unique slug
-          const { data: existingBusiness } = await supabase
-            .from('businesses')
-            .select('id')
-            .eq('slug', slug)
-            .maybeSingle();
-
-          const finalSlug = existingBusiness
-            ? `${slug}-${Math.random().toString(36).substring(2, 8)}`
-            : slug;
-
-          // Create business
-          const { data: business, error: businessError } = await supabase
-            .from('businesses')
-            .insert({
-              name: businessData.name,
-              slug: finalSlug,
-              tagline: businessData.tagline,
-              bio: businessData.bio,
-              template_type: businessData.template || 'generic',
-              owner_profile_id: profile.id,
-            })
-            .select()
-            .single();
-
-          if (businessError) throw businessError;
-
-          // Add owner to business_members
-          const { error: roleError } = await supabase
-            .from('business_members')
-            .insert({
-              business_id: business.id,
-              profile_id: profile.id,
-              role: 'owner',
-            });
-
-          if (roleError) throw roleError;
-
-          // Ensure user has provider role
-          await supabase.rpc('assign_provider_role');
-
-          // Set current session business
-          await supabase.from('session_business').upsert({
-            user_id: user.id,
-            business_id: business.id,
-          }, { onConflict: 'user_id' });
-
-          // Create services if any
-          if (businessData.services && businessData.services.length > 0) {
-            const servicesData = businessData.services.map((service: any) => ({
-              business_id: business.id,
-              name: service.name,
-              description: service.description || null,
-              price_cents: Math.round((service.price || 0) * 100),
-              currency: 'EUR',
-              duration_minutes: service.duration || 30,
-              category: service.category || null,
-              image_url: service.image_url || null,
-              requires_upfront_payment: service.requires_upfront_payment || false,
-              is_active: service.is_active !== undefined ? service.is_active : true,
-            }));
-
-            const { error: servicesError } = await supabase
-              .from('business_services')
-              .insert(servicesData);
-
-            if (servicesError) {
-              logger.error('Error creating services:', servicesError);
-              // Don't throw, just log the error so business creation can complete
+          // Call Secure Edge Function
+          const { data, error } = await supabase.functions.invoke('complete-business-setup', {
+            body: {
+              session_id: sessionId,
+              business_data: businessData,
+              promo_code_id: promoCode?.id
             }
-          }
+          });
 
-          // Update promo code usage if used
-          if (promoCode) {
-            try {
-              // Call RPC function to increment promo code usage
-              const { error: promoError } = await supabase.rpc('increment_promo_usage', {
-                promo_id: promoCode.id
-              });
-
-              if (promoError) {
-                logger.error('Error updating promo code usage:', promoError);
-              }
-            } catch (err) {
-              logger.error('Failed to update promo code:', err);
-            }
-          }
-
-          // Mark onboarding as complete
-          await supabase
-            .from('profiles')
-            .update({ onboarding_completed: true })
-            .eq('id', profile.id);
+          if (error) throw error;
+          if (data?.error) throw new Error(data.error);
 
           // Clear pending data
           sessionStorage.removeItem('pending_business_data');
           sessionStorage.removeItem('promo_code_used');
-
-          // Clear tour localStorage to ensure it shows for new business owner
           localStorage.removeItem('tour_completed_dentist');
 
-          // Show business URL and copy to clipboard
-          const businessUrl = `${window.location.origin}/${business.slug}`;
+          // Business Created Successfully
+          const businessUrl = `${window.location.origin}/${data.slug}`;
           const successMessage = isPromo
-            ? `Business created for FREE with promo code! Your URL: ${businessUrl}`
+            ? `Business created for FREE with promo code!`
             : `Business created! Your URL: ${businessUrl}`;
+
           toast.success(successMessage);
 
-          // Copy URL to clipboard
+          // Copy URL
           if (navigator.clipboard) {
             await navigator.clipboard.writeText(businessUrl);
             setTimeout(() => {
@@ -183,10 +80,11 @@ const PaymentSuccess: React.FC = () => {
             }, 500);
           }
 
-          // Redirect to dentist portal
+          // Redirect
           setTimeout(() => {
             navigate('/dentist-portal');
           }, 4000);
+
         } catch (error: any) {
           logger.error('Error creating business:', error);
           toast.error(error.message || 'Failed to create business');

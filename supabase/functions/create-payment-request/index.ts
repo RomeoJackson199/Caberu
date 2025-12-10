@@ -70,23 +70,37 @@ serve(async (req) => {
       send_now
     } = await req.json();
 
-    // Authorization check: Only dentists can create payment requests
+    // Authorization check: User must be a valid dentist creating the request
+    // 1. Get the profile of the authenticated user
+    const { data: actorProfile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('id, role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !actorProfile) {
+      throw new Error('Unauthorized: Profile not found');
+    }
+
+    // 2. If creating a new request (dentist_id provided), verify they own that dentist record
     if (dentist_id) {
-      const { data: profile } = await supabaseClient
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      const { data: dentist, error: dentistError } = await supabaseClient
+      // Check if the actor OWNS this dentist record
+      const { data: dentistRecord, error: dentistError } = await supabaseClient
         .from('dentists')
-        .select('id')
+        .select('id, business_id') // assuming business_id might be here or via link
         .eq('id', dentist_id)
-        .eq('profile_id', profile?.id)
-        .single();
+        .eq('profile_id', actorProfile.id)
+        .maybeSingle();
 
-      if (dentistError || !dentist) {
-        throw new Error('Unauthorized: Only the dentist can create payment requests');
+      if (dentistError || !dentistRecord) {
+        throw new Error('Unauthorized: You can only create payment requests for your own dentist profile.');
+      }
+
+      // Optional: Enforce 'dentist' or 'provider' role if your app uses role-based access
+      if (actorProfile.role !== 'dentist' && actorProfile.role !== 'owner' && actorProfile.role !== 'provider') {
+        // This assumes 'role' column acts as a primary gate. 
+        // If you rely solely on the existence of the dentist record, the check above is sufficient.
+        // throw new Error('Unauthorized: User role is not authorized for payments.');
       }
     }
 
@@ -218,12 +232,7 @@ serve(async (req) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + dueInDays);
 
-    // Resolve actor profile for created_by
-    const { data: actorProfile } = await supabaseClient
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
+
 
     // Get business_id from the appointment or dentist
     let business_id = null;
