@@ -336,8 +336,8 @@ const App = () => {
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/ai-info" element={<AIInfo />} />
                       <Route path="/google-calendar-callback" element={<GoogleCalendarCallback />} />
-                      {/* Super Admin Dashboard */}
-                      <Route path="/super-admin" element={<SuperAdminDashboard />} />
+                      {/* Super Admin Dashboard - Protected */}
+                      <Route path="/super-admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
                       {/* Main booking route */}
                       <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
                       {/* Redirect old routes to main booking */}
