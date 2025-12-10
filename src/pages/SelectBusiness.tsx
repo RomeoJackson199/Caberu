@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Check, Loader2 } from 'lucide-react';
+import { Building2, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { toast } from 'sonner';
 
 export default function SelectBusiness() {
     const navigate = useNavigate();
@@ -56,19 +57,97 @@ export default function SelectBusiness() {
         fetchBusinesses();
     }, [isAuthenticated]);
 
+    // Check subscription status for a dentist
+    const checkDentistSubscription = async (dentistId: string): Promise<boolean> => {
+        try {
+            const { data, error } = await supabase
+                .from('subscriptions')
+                .select('id, status, current_period_end')
+                .eq('dentist_id', dentistId)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Error checking subscription:', error);
+                return false;
+            }
+
+            if (!data) {
+                return false; // No subscription found
+            }
+
+            // Check if subscription is active and not expired
+            const periodEnd = data.current_period_end ? new Date(data.current_period_end) : null;
+            const now = new Date();
+
+            return data.status === 'active' && (!periodEnd || periodEnd > now);
+        } catch (err) {
+            console.error('Subscription check error:', err);
+            return false;
+        }
+    };
+
+    // Get dentist ID from profile
+    const getDentistId = async (userId: string): Promise<string | null> => {
+        try {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', userId)
+                .single();
+
+            if (!profile) return null;
+
+            const { data: dentist } = await supabase
+                .from('dentists')
+                .select('id')
+                .eq('profile_id', profile.id)
+                .maybeSingle();
+
+            return dentist?.id || null;
+        } catch (err) {
+            console.error('Error getting dentist ID:', err);
+            return null;
+        }
+    };
+
     const handleSelectBusiness = async (targetBusinessId: string) => {
         setSelecting(targetBusinessId);
         try {
             await switchBusiness(targetBusinessId);
-            // Redirect based on user role
+
+            // Check if user is a dentist
             const membership = memberships.find(m => m.business_id === targetBusinessId);
-            if (membership?.role === 'dentist' || membership?.role === 'admin' || membership?.role === 'owner') {
+            const isDentist = membership?.role === 'dentist' || membership?.role === 'admin' || membership?.role === 'owner';
+
+            if (isDentist) {
+                // Get current user
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const dentistId = await getDentistId(user.id);
+
+                    if (dentistId) {
+                        const hasActiveSubscription = await checkDentistSubscription(dentistId);
+
+                        if (!hasActiveSubscription) {
+                            // No active subscription - redirect to pricing
+                            toast.warning('Subscription Required', {
+                                description: 'Please subscribe to access the dentist dashboard.',
+                            });
+                            navigate('/pricing', { replace: true });
+                            return;
+                        }
+                    }
+                }
+
+                // Has subscription - go to dentist dashboard
                 navigate('/dentist/dashboard', { replace: true });
             } else {
+                // Patient - go to patient dashboard
                 navigate('/dashboard', { replace: true });
             }
         } catch (error) {
             console.error('Error selecting business:', error);
+            toast.error('Failed to select business');
         } finally {
             setSelecting(null);
         }
@@ -111,8 +190,8 @@ export default function SelectBusiness() {
                                 <Card
                                     key={business.id}
                                     className={`cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 ${isSelected
-                                            ? 'ring-2 ring-primary bg-primary/5'
-                                            : 'hover:bg-muted/50'
+                                        ? 'ring-2 ring-primary bg-primary/5'
+                                        : 'hover:bg-muted/50'
                                         }`}
                                     onClick={() => !isSelecting && handleSelectBusiness(business.id)}
                                 >
@@ -144,8 +223,8 @@ export default function SelectBusiness() {
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${role !== 'Patient'
-                                                        ? 'bg-primary/10 text-primary'
-                                                        : 'bg-muted text-muted-foreground'
+                                                    ? 'bg-primary/10 text-primary'
+                                                    : 'bg-muted text-muted-foreground'
                                                     }`}>
                                                     {role}
                                                 </span>
