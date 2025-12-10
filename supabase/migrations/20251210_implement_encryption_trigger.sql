@@ -4,6 +4,8 @@
 -- 1. Helper function for Encryption Key
 -- SECURITY WARNING: In production, use Supabase Vault or a separate secure schema.
 -- For this implementation, we use a obfuscated function.
+CREATE SCHEMA IF NOT EXISTS private;
+
 CREATE OR REPLACE FUNCTION private.get_app_key() 
 RETURNS TEXT 
 LANGUAGE plpgsql 
