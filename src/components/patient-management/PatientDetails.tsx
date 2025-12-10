@@ -20,11 +20,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Patient } from "@/types/patient";
 import { isValidImageUrl } from "@/utils/validation";
 
-// Lazy load heavy components
-const PatientAppointments = lazy(() => import("../PatientAppointments"));
-const TreatmentPlanManager = lazy(() => import("../TreatmentPlanManager"));
-const PrescriptionManager = lazy(() => import("../PrescriptionManager"));
-const PatientPaymentHistory = lazy(() => import("../PatientPaymentHistory"));
+// Lazy load heavy components (using named exports)
+const PatientAppointments = lazy(() => import("../PatientAppointments").then(m => ({ default: m.PatientAppointments })));
+const TreatmentPlanManager = lazy(() => import("../TreatmentPlanManager").then(m => ({ default: m.TreatmentPlanManager })));
+const PrescriptionManager = lazy(() => import("../PrescriptionManager").then(m => ({ default: m.PrescriptionManager })));
+const PatientPaymentHistory = lazy(() => import("../PatientPaymentHistory").then(m => ({ default: m.PatientPaymentHistory })));
 
 interface PatientDetailsProps {
     patient: Patient;
