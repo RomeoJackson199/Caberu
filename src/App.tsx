@@ -86,39 +86,9 @@ const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
 
-// Business gate component that shows appropriate picker
+// Business gate component - DISABLED: Now using dedicated /select-business page
 const BusinessGate = ({ showBusinessPicker, setShowBusinessPicker }: { showBusinessPicker: boolean, setShowBusinessPicker: (show: boolean) => void }) => {
-  const { memberships, switchBusiness, loading, businessId, allBusinesses } = useBusinessContext();
-
-  // useEffect(() => {
-  //   if (!loading && memberships.length === 1 && !businessId) {
-  //     switchBusiness(memberships[0].business_id);
-  //   }
-  // }, [loading, memberships, businessId, switchBusiness]);
-
-  if (loading) return null;
-
-  // Show picker if no business is selected AND (has memberships OR there are public businesses available)
-  // This ensures patients can also select a business
-  if (!businessId && (memberships.length > 0 || allBusinesses.length > 0)) {
-    return (
-      <BusinessPickerDialog
-        open={true}
-        onOpenChange={setShowBusinessPicker}
-      />
-    );
-  }
-
-  // Also show if manually triggered
-  if (showBusinessPicker) {
-    return (
-      <BusinessPickerDialog
-        open={showBusinessPicker}
-        onOpenChange={setShowBusinessPicker}
-      />
-    );
-  }
-
+  // Popup disabled - business selection is now handled by /select-business page
   return null;
 };
 
