@@ -14,19 +14,26 @@ interface ReportErrorParams {
 export async function reportError(params: ReportErrorParams) {
   try {
     const { data: userData } = await supabase.auth.getUser();
-    const { data: businessData } = await supabase
-      .from('session_business')
-      .select('business_id')
-      .eq('user_id', userData?.user?.id || '')
-      .maybeSingle();
+    const userId = userData?.user?.id;
+
+    // Only query session_business if we have a valid user ID
+    let businessId: string | null = null;
+    if (userId) {
+      const { data: businessData } = await supabase
+        .from('session_business')
+        .select('business_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      businessId = businessData?.business_id || null;
+    }
 
     await supabase.from('system_errors').insert({
       error_type: params.error_type,
       error_message: params.error_message,
       stack_trace: params.stack_trace || null,
       severity: params.severity || 'medium',
-      user_id: userData?.user?.id || null,
-      business_id: businessData?.business_id || null,
+      user_id: userId || null,
+      business_id: businessId,
       url: params.url || window.location.href,
       user_agent: navigator.userAgent,
       metadata: params.metadata || null,
