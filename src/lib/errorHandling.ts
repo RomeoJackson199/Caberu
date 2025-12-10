@@ -8,6 +8,27 @@ export interface ErrorInfo {
   userFriendly?: string;
 }
 
+export const getUserFriendlyErrorMessage = (error: unknown, fallback?: string): string => {
+  if (!error) return fallback || 'Something went wrong. Please try again.';
+
+  if (typeof error === 'string') return error;
+
+  if (error instanceof DashboardError) {
+    return error.userFriendly || fallback || error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback || 'An unexpected error occurred.';
+  }
+
+  if (typeof error === 'object' && 'message' in (error as Record<string, unknown>)) {
+    const message = (error as { message?: string }).message;
+    if (message) return message;
+  }
+
+  return fallback || 'An unexpected error occurred. Please try again.';
+};
+
 export class DashboardError extends Error {
   public code: string;
   public details: unknown;

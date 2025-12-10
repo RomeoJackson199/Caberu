@@ -30,6 +30,9 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { CookieConsent } from "@/components/CookieConsent";
 import { OnboardingOrchestrator } from "@/components/onboarding/OnboardingOrchestrator";
 import { initializeErrorReporting } from "@/lib/errorReporting";
+import { GlobalDashboardErrorListener } from "@/components/dashboard/GlobalDashboardErrorListener";
+import { getUserFriendlyErrorMessage } from "@/lib/errorHandling";
+import { toast } from "@/hooks/use-toast";
 
 // Force resync: 2025-12-07T19:03
 
@@ -161,11 +164,35 @@ const queryClient = new QueryClient({
         return failureCount < 2; // Only 2 retries (faster failure)
       },
       retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 5000), // Faster retries
+      onError: (error) => {
+        const description = getUserFriendlyErrorMessage(
+          error,
+          "We couldn't load that dashboard data. Please try again."
+        );
+
+        toast({
+          title: "Dashboard data error",
+          description,
+          variant: "destructive",
+        });
+      },
     },
     mutations: {
       // Optimistic updates - UI updates immediately
       networkMode: 'offlineFirst',
       retry: 1,
+      onError: (error) => {
+        const description = getUserFriendlyErrorMessage(
+          error,
+          "We couldn't save your dashboard changes. Please try again."
+        );
+
+        toast({
+          title: "Action failed",
+          description,
+          variant: "destructive",
+        });
+      },
     },
   },
 });
@@ -275,6 +302,7 @@ const App = () => {
               <TooltipProvider>
                 <Sonner />
                 <Toaster />
+                <GlobalDashboardErrorListener />
                 <PWAInstallPrompt />
                 <ProfileCompletionDialog />
                 <BrowserRouter>
