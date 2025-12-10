@@ -90,11 +90,11 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 const BusinessGate = ({ showBusinessPicker, setShowBusinessPicker }: { showBusinessPicker: boolean, setShowBusinessPicker: (show: boolean) => void }) => {
   const { memberships, switchBusiness, loading, businessId } = useBusinessContext();
 
-  useEffect(() => {
-    if (!loading && memberships.length === 1 && !businessId) {
-      switchBusiness(memberships[0].business_id);
-    }
-  }, [loading, memberships, businessId, switchBusiness]);
+  // useEffect(() => {
+  //   if (!loading && memberships.length === 1 && !businessId) {
+  //     switchBusiness(memberships[0].business_id);
+  //   }
+  // }, [loading, memberships, businessId, switchBusiness]);
 
   if (loading) return null;
 
@@ -103,9 +103,10 @@ const BusinessGate = ({ showBusinessPicker, setShowBusinessPicker }: { showBusin
     return null;
   }
 
-  if (memberships.length === 1) {
-    return null;
-  }
+  // Auto-selection removed to allow users to see all businesses
+  // if (memberships.length === 1) {
+  //   return null;
+  // }
 
   return (
     <BusinessPickerDialog
@@ -249,8 +250,8 @@ const App = () => {
 
             // Show business picker on login
             if (memberships && memberships.length > 0) {
-              if (memberships.length > 1 && !sessionBusiness?.business_id) {
-                // Providers with multiple clinics need to choose
+              if (memberships.length >= 1 && !sessionBusiness?.business_id) {
+                // Providers with ANY clinics need to choose (to allow seeing public list)
                 setTimeout(() => {
                   if (isMounted) setShowBusinessPicker(true);
                 }, 500);
