@@ -85,10 +85,9 @@ const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 
-// Dashboard component that handles authentication with lazy loading
 // Business gate component that shows appropriate picker
 const BusinessGate = ({ showBusinessPicker, setShowBusinessPicker }: { showBusinessPicker: boolean, setShowBusinessPicker: (show: boolean) => void }) => {
-  const { memberships, switchBusiness, loading, businessId } = useBusinessContext();
+  const { memberships, switchBusiness, loading, businessId, allBusinesses } = useBusinessContext();
 
   // useEffect(() => {
   //   if (!loading && memberships.length === 1 && !businessId) {
@@ -98,22 +97,28 @@ const BusinessGate = ({ showBusinessPicker, setShowBusinessPicker }: { showBusin
 
   if (loading) return null;
 
-  // Don't show business selection for patients - removed that flow
-  if (memberships.length === 0) {
-    return null;
+  // Show picker if no business is selected AND (has memberships OR there are public businesses available)
+  // This ensures patients can also select a business
+  if (!businessId && (memberships.length > 0 || allBusinesses.length > 0)) {
+    return (
+      <BusinessPickerDialog
+        open={true}
+        onOpenChange={setShowBusinessPicker}
+      />
+    );
   }
 
-  // Auto-selection removed to allow users to see all businesses
-  // if (memberships.length === 1) {
-  //   return null;
-  // }
+  // Also show if manually triggered
+  if (showBusinessPicker) {
+    return (
+      <BusinessPickerDialog
+        open={showBusinessPicker}
+        onOpenChange={setShowBusinessPicker}
+      />
+    );
+  }
 
-  return (
-    <BusinessPickerDialog
-      open={showBusinessPicker}
-      onOpenChange={setShowBusinessPicker}
-    />
-  );
+  return null;
 };
 
 const Dashboard = () => {
