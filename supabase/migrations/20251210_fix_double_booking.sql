@@ -135,6 +135,8 @@ COMMENT ON FUNCTION public.generate_appointment_slots_safe IS 'Safe slot generat
 -- Add function to release a booked slot (for cancellations)
 -- Also uses locking for safety
 -- =====================================================
+DROP FUNCTION IF EXISTS public.release_appointment_slot(uuid);
+
 CREATE OR REPLACE FUNCTION public.release_appointment_slot(
   p_appointment_id uuid
 )
