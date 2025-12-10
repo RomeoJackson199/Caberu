@@ -8,6 +8,8 @@ import { Loader2, Calendar, MessageSquare, FileText, Sparkles, Mail, CheckCircle
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { logger } from '@/lib/logger';
+import { validatePassword, checkPasswordBreach, getStrengthLabel, type PasswordStrength } from '@/utils/passwordValidation';
+import { Progress } from '@/components/ui/progress';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +37,18 @@ const Signup = () => {
   });
   const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
+  const [isCheckingBreach, setIsCheckingBreach] = useState(false);
+
+  // Real-time password validation
+  useEffect(() => {
+    if (formData.password) {
+      const strength = validatePassword(formData.password);
+      setPasswordStrength(strength);
+    } else {
+      setPasswordStrength(null);
+    }
+  }, [formData.password]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -65,6 +79,38 @@ const Signup = () => {
       setShowConsentDialog(true);
       return;
     }
+
+    // SECURITY: Validate password strength before signup
+    const strength = validatePassword(formData.password);
+    if (!strength.isValid) {
+      toast({
+        title: "Password Too Weak",
+        description: strength.feedback.join('. '),
+        variant: "destructive",
+        duration: 8000,
+      });
+      return;
+    }
+
+    // SECURITY: Check for breached passwords
+    setIsCheckingBreach(true);
+    try {
+      const isBreached = await checkPasswordBreach(formData.password);
+      if (isBreached) {
+        toast({
+          title: "Compromised Password",
+          description: "This password has been found in a data breach. Please choose a different password.",
+          variant: "destructive",
+          duration: 10000,
+        });
+        setIsCheckingBreach(false);
+        return;
+      }
+    } catch (breachError) {
+      // Continue if breach check fails (don't block signup)
+      logger.error('Breach check failed:', breachError);
+    }
+    setIsCheckingBreach(false);
 
     setIsLoading(true);
 
@@ -287,7 +333,7 @@ const Signup = () => {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Minimum 8 characters"
+                        placeholder="Minimum 12 characters"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         className="h-12 pr-10"
@@ -301,8 +347,34 @@ const Signup = () => {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+
+                    {/* Password Strength Indicator */}
+                    {passwordStrength && formData.password && (
+                      <div className="space-y-2">
+                        <Progress
+                          value={(passwordStrength.score / 5) * 100}
+                          className="h-2"
+                        />
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs font-medium ${getStrengthLabel(passwordStrength.score).color}`}>
+                            {getStrengthLabel(passwordStrength.score).label}
+                          </span>
+                          {isCheckingBreach && (
+                            <span className="text-xs text-muted-foreground">Checking security...</span>
+                          )}
+                        </div>
+                        {passwordStrength.feedback.length > 0 && (
+                          <ul className="text-xs text-red-600 space-y-1">
+                            {passwordStrength.feedback.slice(0, 3).map((item, i) => (
+                              <li key={i}>• {item}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+
                     <p className="text-xs text-muted-foreground">
-                      Minimum 8 characters with 1 upper and 1 lower case
+                      12+ characters with uppercase, lowercase, number, and special character
                     </p>
                   </div>
 
