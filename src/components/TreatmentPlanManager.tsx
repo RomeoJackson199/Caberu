@@ -44,7 +44,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { TreatmentPlan, NewTreatmentPlanForm } from "@/types/dental";
 import { logger } from '@/lib/logger';
-import { useBusinessContext } from "@/contexts/BusinessContext";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 
 interface TreatmentPlanManagerProps {
   patientId: string;
