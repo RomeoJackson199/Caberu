@@ -102,7 +102,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
 
       // Get current session business or auto-select (only if not already set)
       const currentBusinessId = businessId;
-      if (!currentBusinessId) {
+      if (!currentBusinessId && user?.id) {
         const { data: sessionBusiness } = await supabase
           .from('session_business')
           .select('business_id')
