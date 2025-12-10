@@ -20,6 +20,7 @@ interface BusinessContextValue {
   businessName: string | null;
   membershipRole: string | null;
   memberships: BusinessMembership[];
+  allBusinesses: { id: string; name: string; slug: string }[];  // All available businesses
   loading: boolean;
   switchBusiness: (businessIdOrSlug: string) => Promise<void>;
   refreshMemberships: () => Promise<void>;
@@ -33,6 +34,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [membershipRole, setMembershipRole] = useState<string | null>(null);
   const [memberships, setMemberships] = useState<BusinessMembership[]>([]);
+  const [allBusinesses, setAllBusinesses] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadMemberships = useCallback(async () => {
@@ -80,16 +82,25 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
 
       const businessIds = (membershipData || []).map((m: MembershipData) => m.business_id);
       let businessMap: Record<string, BusinessData> = {};
-      if (businessIds.length > 0) {
-        const { data: businessesData, error: businessesError } = await supabase
-          .from('businesses')
-          .select('id, name, slug, template_type')
-          .in('id', businessIds)
-          .in('template_type', ['healthcare', 'dentist']);
 
-        if (businessesError) throw businessesError;
-        businessMap = Object.fromEntries((businessesData || []).map((b: BusinessData) => [b.id, b]));
-      }
+      // Fetch ALL businesses (for public selection)
+      const { data: allBusinessesData, error: allBusinessesError } = await supabase
+        .from('businesses')
+        .select('id, name, slug, template_type')
+        .in('template_type', ['healthcare', 'dentist'])
+        .order('name');
+
+      if (allBusinessesError) throw allBusinessesError;
+
+      // Set all businesses for public selection
+      setAllBusinesses((allBusinessesData || []).map((b: BusinessData) => ({
+        id: b.id,
+        name: b.name,
+        slug: b.slug
+      })));
+
+      // Build business map from all businesses
+      businessMap = Object.fromEntries((allBusinessesData || []).map((b: BusinessData) => [b.id, b]));
 
       const formattedMemberships = (membershipData || []).map((m: MembershipData) => ({
         id: m.id,
@@ -230,6 +241,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         businessName,
         membershipRole,
         memberships,
+        allBusinesses,
         loading,
         switchBusiness,
         refreshMemberships: loadMemberships,
