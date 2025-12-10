@@ -1,0 +1,10 @@
+
+interface Business {
+  id: string;
+  name: string;
+  tagline: string | null;
+  // logo_url is now nested in branding_settings in the view, but we query it as alias 'logo_url'
+  // or we need to adjust type if the query alias works
+  logo_url: string | null; 
+  template_type?: string | null;
+}

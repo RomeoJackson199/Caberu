@@ -82,23 +82,24 @@ const Login = () => {
     const loadBusinesses = async () => {
       setIsLoadingBusinesses(true);
       try {
-        const { data, error } = await supabase
-          .from("businesses")
-          .select("id, name, tagline, logo_url, template_type")
-          .in('template_type', ['healthcare', 'dentist'])
-          .order("name");
+        try {
+          const { data, error } = await supabase
+            .from("public_businesses_view")
+            .select("id, name, tagline, logo_url:branding_settings->logo_url, template_type")
+            .in('template_type', ['healthcare', 'dentist'])
+            .order("name");
 
-        if (error) throw error;
-        setBusinesses(data || []);
-      } catch (error) {
-        logger.error("Error loading businesses:", error);
-      } finally {
-        setIsLoadingBusinesses(false);
-      }
-    };
+          if (error) throw error;
+          setBusinesses(data || []);
+        } catch (error) {
+          logger.error("Error loading businesses:", error);
+        } finally {
+          setIsLoadingBusinesses(false);
+        }
+      };
 
-    loadBusinesses();
-  }, []);
+      loadBusinesses();
+    }, []);
 
 
   const handleSelectBusiness = (businessId: string) => {
