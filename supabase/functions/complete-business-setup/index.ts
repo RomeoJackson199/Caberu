@@ -120,9 +120,52 @@ serve(async (req) => {
             await supabaseClient.from('business_services').insert(servicesData);
         }
 
-        // 9. Handle Promo Code (Increment Usage)
+        // 9. Handle Promo Code - Create 1-month trial subscription
         if (promo_code_id) {
             await supabaseClient.rpc('increment_promo_usage', { promo_id: promo_code_id });
+
+            // Create dentist record first
+            const { data: dentist, error: dentistError } = await supabaseClient
+                .from('dentists')
+                .insert({
+                    profile_id: profile.id,
+                    business_id: business.id,
+                    specialty: 'General Dentistry',
+                })
+                .select('id')
+                .single();
+
+            if (dentistError) {
+                console.error('Error creating dentist:', dentistError);
+            } else {
+                // Get free trial plan (or create a basic one)
+                const { data: trialPlan } = await supabaseClient
+                    .from('subscription_plans')
+                    .select('id')
+                    .eq('name', 'Free Trial')
+                    .maybeSingle();
+
+                const planId = trialPlan?.id;
+
+                if (planId) {
+                    // Create subscription with 1-month period
+                    const now = new Date();
+                    const oneMonthFromNow = new Date(now);
+                    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+                    await supabaseClient
+                        .from('subscriptions')
+                        .insert({
+                            dentist_id: dentist.id,
+                            plan_id: planId,
+                            status: 'active',
+                            billing_cycle: 'monthly',
+                            current_period_start: now.toISOString(),
+                            current_period_end: oneMonthFromNow.toISOString(),
+                            cancel_at_period_end: true, // Will expire after 1 month
+                        });
+                }
+            }
         }
 
         // 10. Mark Onboarding Complete
