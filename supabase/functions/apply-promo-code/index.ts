@@ -31,10 +31,12 @@ serve(async (req) => {
             throw new Error('Promo code and business ID are required')
         }
 
+        console.log('apply-promo-code v3 starting for business:', business_id);
+
         // 1. Validate Admin/Owner Access
         const { data: member } = await supabaseClient
             .from('business_members')
-            .select('role')
+            .select('role, profile_id')
             .eq('business_id', business_id)
             .eq('profile_id', (await supabaseClient.from('profiles').select('id').eq('user_id', user.id).single()).data?.id)
             .single()
@@ -65,8 +67,9 @@ serve(async (req) => {
 
         // 3. Find Active Subscription
         // First find dentist for this business AND this user
-        // We need the profile_id which we got earlier
-        const profileId = member.profile_id || (await supabaseClient.from('profiles').select('id').eq('user_id', user.id).single()).data?.id;
+        // We ensure we have profile_id from the member check above
+        const profileId = member.profile_id;
+        if (!profileId) throw new Error('Could not determine profile ID for current user');
 
         let { data: dentist } = await supabaseClient
             .from('dentists')
