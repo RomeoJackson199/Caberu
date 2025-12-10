@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard } from "lucide-react";
 import { EnhancedAvailabilitySettings } from "@/components/enhanced/EnhancedAvailabilitySettings";
 import DentistAdminBranding from "./DentistAdminBranding";
 import DentistAdminSecurity from "./DentistAdminSecurity";
@@ -17,6 +17,7 @@ import { getCurrentBusinessId } from "@/lib/businessUtils";
 import { logger } from '@/lib/logger';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { CancelSubscriptionSection } from "@/components/settings/CancelSubscriptionSection";
 
 export default function DentistSettings() {
   const { dentistId } = useCurrentDentist();
@@ -153,6 +154,10 @@ export default function DentistSettings() {
             <Palette className="h-4 w-4" />
             Branding
           </TabsTrigger>
+          <TabsTrigger value="billing" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            Billing
+          </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
             <Shield className="h-4 w-4" />
             Security
@@ -254,6 +259,10 @@ export default function DentistSettings() {
 
         <TabsContent value="branding" className="space-y-6">
           <DentistAdminBranding />
+        </TabsContent>
+
+        <TabsContent value="billing" className="space-y-6">
+          <CancelSubscriptionSection />
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6">
