@@ -292,10 +292,9 @@ export const PatientDashboard = ({
       } = await supabase.from('prescriptions').select('*').eq('patient_id', profileId);
       const activePrescriptions = prescriptionsData?.filter(p => p.status === 'active').length || 0;
 
-      // Fetch treatment plans
       const {
         data: treatmentPlansData
-      } = await supabase.from('treatment_plans').select('*').eq('patient_id', profileId);
+      } = await supabase.from('secure_treatment_plans_view').select('*').eq('patient_id', profileId);
       const activeTreatmentPlans = treatmentPlansData?.filter(tp => tp.status === 'active').length || 0;
 
       // Fetch patient notes
@@ -363,10 +362,9 @@ export const PatientDashboard = ({
         duration: prescription.duration_days?.toString() || "7 days"
       })));
 
-      // Fetch treatment plans
       const {
         data: treatmentPlansData
-      } = await supabase.from('treatment_plans').select('*').eq('patient_id', profileId).order('created_at', {
+      } = await supabase.from('secure_treatment_plans_view').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
       setTreatmentPlans((treatmentPlansData || []).map(plan => ({

@@ -298,7 +298,7 @@ export const HealthData = ({
 
   const loadTreatmentPlans = async (profileId: string) => {
     const { data, error } = await supabase
-      .from('treatment_plans')
+      .from('secure_treatment_plans_view')
       .select(`
         *,
         dentist:dentists(
