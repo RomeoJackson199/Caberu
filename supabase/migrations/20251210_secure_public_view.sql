@@ -13,6 +13,7 @@ USING (true);
 -- 2. Create Secure View for Public
 -- Replaced non-existent branding_settings with direct columns (logo_url seems to exist based on app usage)
 -- Removed non-existent membership_required column
+-- Removed non-existent visibility column filter
 CREATE OR REPLACE VIEW public.public_businesses_view AS
 SELECT 
   id,
@@ -22,8 +23,8 @@ SELECT
   tagline,         -- Exposing directly
   template_type,
   custom_config    -- Exposing config if needed for frontend logic, but be careful. Assuming it's safe or frontend needs it.
-FROM public.businesses
-WHERE visibility = 'public'; 
+FROM public.businesses;
+-- Removed WHERE visibility = 'public' as column does not exist
 
 -- 3. Grant access to view
 GRANT SELECT ON public.public_businesses_view TO anon, authenticated;
