@@ -16,6 +16,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -76,6 +77,7 @@ const Login = () => {
 
 
     setIsLoading(true);
+    setAuthError(null);
 
     try {
       const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -136,6 +138,7 @@ const Login = () => {
         userFriendlyMessage = "Too many login attempts. Please wait a moment and try again.";
       }
 
+      setAuthError(userFriendlyMessage);
       toast({
         title: "Sign in failed",
         description: userFriendlyMessage,
@@ -198,6 +201,7 @@ const Login = () => {
 
 
     setIsLoading(true);
+    setAuthError(null);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -213,6 +217,7 @@ const Login = () => {
         variant: "destructive",
         duration: 6000,
       });
+      setAuthError("Unable to sign in with Google. Please try again or use email/password.");
       setIsLoading(false);
     }
   };
@@ -377,6 +382,10 @@ const Login = () => {
                   >
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continue"}
                   </Button>
+
+                  {authError && (
+                    <p className="text-sm text-destructive text-center">{authError}</p>
+                  )}
                 </form>
               </div>
             </div>
