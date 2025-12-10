@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { saveProfileData, loadProfileData, testDatabaseConnection, ProfileData } from "@/lib/profileUtils";
 import { DentistManagement } from "@/components/DentistManagement";
-import { DentistManagement } from "@/components/DentistManagement";
 import { logger } from '@/lib/logger';
 import { VerifyPasswordModal } from "@/components/auth/VerifyPasswordModal";
 
@@ -72,7 +71,6 @@ export const Settings = ({ user }: SettingsProps) => {
   const [isDentist, setIsDentist] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [dentistClinicAddress, setDentistClinicAddress] = useState<string>('');
-  const [dentistSpecialty, setDentistSpecialty] = useState<string>('');
   const [dentistSpecialty, setDentistSpecialty] = useState<string>('');
   const [hasDentistRecord, setHasDentistRecord] = useState<boolean>(false);
 

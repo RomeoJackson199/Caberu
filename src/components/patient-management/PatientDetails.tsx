@@ -165,8 +165,9 @@ export function PatientDetails({ patient, dentistId, patientFlags }: PatientDeta
                         </TabsContent>
 
                         <TabsContent value="prescriptions" className="element-enter">
+                            {/* Note: PrescriptionManager shows ALL prescriptions by this dentist. 
+                                To view per-patient, the component would need enhancement. */}
                             <PrescriptionManager
-                                patientId={patient.id}
                                 dentistId={dentistId}
                             />
                         </TabsContent>
