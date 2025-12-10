@@ -68,8 +68,8 @@ const Index = () => {
       <Header user={user} minimal />
 
       <main id="main-content" className="overflow-x-hidden">
-        {/* Hero Section - Full viewport height */}
-        <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Hero Section - Full viewport height minus header */}
+        <section className="relative h-[calc(100vh-80px)] min-h-[600px] flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden">
           {/* Background Effects */}
           <div className="absolute inset-0 -z-10 overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-500/20 rounded-full blur-[120px] opacity-50 mix-blend-multiply animate-pulse-slow" />
