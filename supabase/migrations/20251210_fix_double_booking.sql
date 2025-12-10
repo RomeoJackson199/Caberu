@@ -3,8 +3,11 @@
 -- Adds row-level locking to prevent concurrent bookings
 -- =====================================================
 
--- Drop existing function to recreate with locking
+-- Drop ALL existing overloaded versions of the function
 DROP FUNCTION IF EXISTS public.book_appointment_slot(uuid, date, text, uuid);
+DROP FUNCTION IF EXISTS public.book_appointment_slot(uuid, date, text, uuid, timestamptz);
+DROP FUNCTION IF EXISTS public.book_appointment_slot(uuid, date, time, uuid);
+DROP FUNCTION IF EXISTS public.book_appointment_slot;
 
 -- Create new function with SELECT FOR UPDATE locking
 CREATE OR REPLACE FUNCTION public.book_appointment_slot(
