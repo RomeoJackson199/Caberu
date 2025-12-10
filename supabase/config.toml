@@ -98,3 +98,9 @@ verify_jwt = false
 
 [functions.database-api]
 verify_jwt = false
+
+[functions.apply-promo-code]
+verify_jwt = true
+
+[functions.cancel-subscription]
+verify_jwt = true
