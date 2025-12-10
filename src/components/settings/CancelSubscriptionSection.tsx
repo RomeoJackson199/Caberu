@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
     AlertDialog,
@@ -35,6 +36,8 @@ export function CancelSubscriptionSection() {
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState(false);
+    const [promoCode, setPromoCode] = useState('');
+    const [applyingPromo, setApplyingPromo] = useState(false);
 
     useEffect(() => {
         loadSubscription();
@@ -124,6 +127,41 @@ export function CancelSubscriptionSection() {
         }
     };
 
+    const handleApplyPromoCode = async () => {
+        if (!promoCode.trim()) return;
+
+        try {
+            setApplyingPromo(true);
+
+            const { data, error } = await supabase.functions.invoke('apply-promo-code', {
+                body: {
+                    promo_code: promoCode.trim(),
+                    business_id: businessId,
+                },
+            });
+
+            if (error) throw error;
+            if (data?.error) throw new Error(data.error);
+
+            toast({
+                title: 'Promo Code Applied!',
+                description: data.message || 'Your subscription has been extended.',
+            });
+
+            setPromoCode('');
+            await loadSubscription();
+        } catch (err) {
+            console.error('Promo code error:', err);
+            toast({
+                title: 'Error',
+                description: err instanceof Error ? err.message : 'Failed to apply promo code',
+                variant: 'destructive',
+            });
+        } finally {
+            setApplyingPromo(false);
+        }
+    };
+
     if (loading) {
         return (
             <Card>
@@ -172,14 +210,36 @@ export function CancelSubscriptionSection() {
                     {subscription.subscription_plans?.name || 'Current Plan'}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    {subscription.cancel_at_period_end ? (
-                        <span>Access ends on {periodEndDate.toLocaleDateString()}</span>
-                    ) : (
-                        <span>Renews on {periodEndDate.toLocaleDateString()}</span>
-                    )}
+            <CardContent className="space-y-6">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        {subscription.cancel_at_period_end ? (
+                            <span>Access ends on {periodEndDate.toLocaleDateString()}</span>
+                        ) : (
+                            <span>Renews on {periodEndDate.toLocaleDateString()}</span>
+                        )}
+                    </div>
+
+                    <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                        <h4 className="font-medium text-sm">Redeem Promo Code</h4>
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Enter promo code"
+                                value={promoCode}
+                                onChange={(e) => setPromoCode(e.target.value)}
+                                className="bg-background"
+                            />
+                            <Button
+                                onClick={handleApplyPromoCode}
+                                disabled={applyingPromo || !promoCode}
+                                variant="outline"
+                            >
+                                {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Apply a promo code to extend your subscription.</p>
+                    </div>
                 </div>
 
                 {subscription.cancel_at_period_end ? (

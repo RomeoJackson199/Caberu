@@ -1,0 +1,7 @@
+[
+    {
+        "name": "apply-promo-code",
+        "slug": "apply-promo-code",
+        "verify_jwt": true
+    }
+]
