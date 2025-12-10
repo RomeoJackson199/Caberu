@@ -59,7 +59,7 @@ export default function PublicBooking() {
 
   useEffect(() => {
     if (!businessLoading) {
-      const stored = localStorage.getItem('selected_business_id');
+      const stored = sessionStorage.getItem('selected_business_id');
       setEffectiveBusinessId(contextBusinessId || stored);
     }
   }, [contextBusinessId, businessLoading]);

@@ -126,13 +126,13 @@ const Signup = () => {
       if (error) throw error;
 
       // Set the business context after successful signup
-      const selectedBusinessId = localStorage.getItem("selected_business_id");
+      const selectedBusinessId = sessionStorage.getItem("selected_business_id");
       if (selectedBusinessId && data.user) {
         try {
           await supabase.functions.invoke('set-current-business', {
             body: { businessId: selectedBusinessId }
           });
-          localStorage.removeItem('selected_business_id');
+          sessionStorage.removeItem('selected_business_id');
         } catch (err) {
           logger.error("Error setting business context:", err);
         }
@@ -563,8 +563,8 @@ const Signup = () => {
           onOpenChange={setShowConsentDialog}
           onAccept={(consentData) => {
             setConsentGiven(true);
-            // Store consent data in localStorage temporarily - will be saved to DB after signup
-            localStorage.setItem('pending_practice_consent', JSON.stringify(consentData));
+            // Store consent data in sessionStorage temporarily - will be saved to DB after signup
+            sessionStorage.setItem('pending_practice_consent', JSON.stringify(consentData));
             // Now trigger the actual signup
             handleSignUp(new Event('submit') as unknown as React.FormEvent);
           }}
@@ -576,8 +576,8 @@ const Signup = () => {
           onOpenChange={setShowConsentDialog}
           onAccept={(consentData) => {
             setConsentGiven(true);
-            // Store consent data in localStorage temporarily
-            localStorage.setItem('pending_patient_terms_consent', JSON.stringify(consentData));
+            // Store consent data in sessionStorage temporarily
+            sessionStorage.setItem('pending_patient_terms_consent', JSON.stringify(consentData));
             // Now trigger the actual signup
             handleSignUp(new Event('submit') as unknown as React.FormEvent);
           }}

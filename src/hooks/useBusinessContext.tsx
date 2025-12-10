@@ -223,8 +223,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         setBusinessName(null);
         setMembershipRole(null);
         setMemberships([]);
-        // Clear localStorage to prevent stale business on next login
-        localStorage.removeItem('selected_business_id');
+        // Clear sessionStorage to prevent stale business on next login
+        sessionStorage.removeItem('selected_business_id');
       }
     });
 

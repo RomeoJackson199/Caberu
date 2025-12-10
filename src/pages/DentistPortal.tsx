@@ -120,7 +120,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   }, [user]);
 
   const fetchBusinessInfo = async () => {
-    const businessId = localStorage.getItem('selected_business_id');
+    const businessId = sessionStorage.getItem('selected_business_id');
     if (!businessId) return;
 
     const { data } = await supabase

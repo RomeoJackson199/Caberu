@@ -20,8 +20,8 @@ interface PatientConsentData {
  */
 export async function savePracticeConsent(practiceId: string): Promise<boolean> {
     try {
-        // Get consent data from localStorage
-        const consentJson = localStorage.getItem('pending_practice_consent');
+        // Get consent data from sessionStorage (auth-sensitive)
+        const consentJson = sessionStorage.getItem('pending_practice_consent');
         if (!consentJson) {
             console.log('No pending practice consent found');
             return false;
@@ -47,7 +47,7 @@ export async function savePracticeConsent(practiceId: string): Promise<boolean> 
         }
 
         // Clear the pending consent
-        localStorage.removeItem('pending_practice_consent');
+        sessionStorage.removeItem('pending_practice_consent');
         console.log('Practice consent saved successfully');
         return true;
     } catch (error) {
@@ -124,5 +124,5 @@ export async function withdrawPatientConsent(
  * Check if there's pending practice consent to save
  */
 export function hasPendingPracticeConsent(): boolean {
-    return localStorage.getItem('pending_practice_consent') !== null;
+    return sessionStorage.getItem('pending_practice_consent') !== null;
 }

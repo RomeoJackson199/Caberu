@@ -112,7 +112,7 @@ export function BusinessPickerHomepage({ onBusinessSelected }: BusinessPickerHom
   };
 
   const handleSelectBusiness = (businessId: string) => {
-    localStorage.setItem("selected_business_id", businessId);
+    sessionStorage.setItem("selected_business_id", businessId);
     onBusinessSelected(businessId);
   };
 
