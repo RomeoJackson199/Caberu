@@ -21,10 +21,23 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
     if (open) {
       const fetchBusinesses = async () => {
         setIsLoadingAll(true);
-        const { data, error } = await import("@/integrations/supabase/client").then(m => m.supabase)
+        const supabase = await import("@/integrations/supabase/client").then(m => m.supabase);
+
+        // Try view first, fallback to businesses table
+        let { data, error } = await supabase
           .from('public_businesses_view')
           .select('*')
           .order('name');
+
+        if (error || !data || data.length === 0) {
+          // Fallback to businesses table directly
+          const fallback = await supabase
+            .from('businesses')
+            .select('id, name, slug, logo_url, tagline, template_type')
+            .order('name');
+          data = fallback.data;
+          error = fallback.error;
+        }
 
         if (!error && data) {
           setAllBusinesses(data);
@@ -80,8 +93,8 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
                 <Card
                   key={bId}
                   className={`cursor-pointer transition-all hover:shadow-md ${isSelected
-                      ? 'ring-2 ring-primary'
-                      : 'hover:bg-muted/50'
+                    ? 'ring-2 ring-primary'
+                    : 'hover:bg-muted/50'
                     }`}
                   onClick={() => handleSelectBusiness(bId)}
                 >
@@ -96,8 +109,8 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
                         </CardTitle>
                         <CardDescription className="mt-1">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize ${role !== 'Guest'
-                              ? 'bg-primary/10 text-primary'
-                              : 'bg-muted text-muted-foreground'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted text-muted-foreground'
                             }`}>
                             {role}
                           </span>
