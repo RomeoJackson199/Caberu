@@ -181,10 +181,38 @@ export function CancelSubscriptionSection() {
                         Subscription
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">No active subscription found.</p>
-                    <Button className="mt-4" variant="outline" onClick={() => window.location.href = '/pricing'}>
-                        View Plans
+                <CardContent className="space-y-6">
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                        <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="font-medium">No Active Subscription</span>
+                        </div>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                            You don't have an active subscription. Please subscribe or redeem a promo code to access features.
+                        </p>
+                    </div>
+
+                    <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                        <h4 className="font-medium text-sm">Redeem Promo Code</h4>
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Enter promo code"
+                                value={promoCode}
+                                onChange={(e) => setPromoCode(e.target.value)}
+                                className="bg-background"
+                            />
+                            <Button
+                                onClick={handleApplyPromoCode}
+                                disabled={applyingPromo || !promoCode}
+                                variant="outline"
+                            >
+                                {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <Button className="w-full" onClick={() => window.location.href = '/pricing'}>
+                        View Subscription Plans
                     </Button>
                 </CardContent>
             </Card>

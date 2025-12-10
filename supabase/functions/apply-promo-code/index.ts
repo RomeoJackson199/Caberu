@@ -80,29 +80,56 @@ serve(async (req) => {
             .eq('status', 'active')
             .single()
 
-        if (!subscription) {
-            throw new Error('No active subscription found to apply promo code to')
-        }
+        let subscription_id = subscription?.id;
+        let newPeriodEnd;
 
         // 4. Apply Benefit (Extend 1 Month)
         // We assume all promo codes currently afford a 1-month extension for simplicity
-        // or we could check codeData.discount_type if we supported multiple types
 
-        let newPeriodEnd = new Date(subscription.current_period_end)
-        // If period end is in the past (shouldn't happen for active status but just in case), extend from now
-        if (newPeriodEnd < new Date()) {
+        if (subscription) {
+            newPeriodEnd = new Date(subscription.current_period_end)
+            if (newPeriodEnd < new Date()) {
+                newPeriodEnd = new Date();
+            }
+            newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+
+            await supabaseClient
+                .from('subscriptions')
+                .update({
+                    current_period_end: newPeriodEnd.toISOString(),
+                    cancel_at_period_end: true,
+                    status: 'active' // Reactivate if it was cancelled/expired
+                })
+                .eq('id', subscription.id)
+        } else {
+            // Create NEW subscription
             newPeriodEnd = new Date();
+            newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
+
+            // Get "Free Trial" or default plan ID
+            const { data: plan } = await supabaseClient
+                .from('subscription_plans')
+                .select('id')
+                .eq('name', 'Free Trial')
+                .maybeSingle();
+
+            const planId = plan?.id || (await supabaseClient.from('subscription_plans').select('id').limit(1).single()).data?.id;
+
+            const { data: newSub, error: createError } = await supabaseClient
+                .from('subscriptions')
+                .insert({
+                    dentist_id: dentist.id,
+                    plan_id: planId,
+                    status: 'active',
+                    current_period_end: newPeriodEnd.toISOString(),
+                    cancel_at_period_end: true
+                })
+                .select('id')
+                .single();
+
+            if (createError) throw createError;
+            subscription_id = newSub.id;
         }
-
-        newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
-
-        await supabaseClient
-            .from('subscriptions')
-            .update({
-                current_period_end: newPeriodEnd.toISOString(),
-                cancel_at_period_end: true // Ensure it doesn't auto-renew if it was a trial extension
-            })
-            .eq('id', subscription.id)
 
         // 5. Increment Usage
         await supabaseClient.rpc('increment_promo_usage', { promo_id: codeData.id })

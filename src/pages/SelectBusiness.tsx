@@ -131,11 +131,11 @@ export default function SelectBusiness() {
                         const hasActiveSubscription = await checkDentistSubscription(dentistId);
 
                         if (!hasActiveSubscription) {
-                            // No active subscription - redirect to pricing
-                            toast.warning('Subscription Required', {
-                                description: 'Please subscribe to access the dentist dashboard.',
+                            // No active subscription - redirect to billing settings to resolve
+                            toast.warning('Subscription Issue', {
+                                description: 'Please check your subscription status to continue.',
                             });
-                            navigate('/pricing', { replace: true });
+                            navigate('/dentist/settings?tab=billing', { replace: true });
                             return;
                         }
                     }
