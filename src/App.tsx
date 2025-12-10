@@ -80,9 +80,6 @@ const PatientAccountInsurancePage = lazy(() => import("./pages/PatientAccountIns
 const PatientAccountPrivacyPage = lazy(() => import("./pages/PatientAccountPrivacyPage"));
 const PatientAccountHelpPage = lazy(() => import("./pages/PatientAccountHelpPage"));
 const PatientSettingsPage = lazy(() => import("./pages/PatientSettingsPage"));
-const AdminHomepageManager = lazy(() => import("./pages/AdminHomepageManager"));
-const SetupMPPage = lazy(() => import("./pages/SetupMPPage"));
-const DeleteBusinessPage = lazy(() => import("./pages/DeleteBusinessPage"));
 const SmartBookAppointment = lazy(() => import("./pages/SmartBookAppointment"));
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
@@ -334,10 +331,6 @@ const App = () => {
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/ai-info" element={<AIInfo />} />
                       <Route path="/google-calendar-callback" element={<GoogleCalendarCallback />} />
-                      {/* Admin route for homepage management */}
-                      <Route path="/admin/homepage-manager" element={<AdminHomepageManager />} />
-                      <Route path="/admin/setup-mp" element={<SetupMPPage />} />
-                      <Route path="/admin/delete-business" element={<DeleteBusinessPage />} />
                       {/* Super Admin Dashboard */}
                       <Route path="/super-admin" element={<SuperAdminDashboard />} />
                       {/* Main booking route */}
