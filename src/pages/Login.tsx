@@ -147,8 +147,8 @@ const Login = () => {
         description: "You've successfully signed in.",
       });
 
-      // Navigate to auth-redirect after successful login
-      navigate("/auth-redirect");
+      // Navigate to select-business page after successful login
+      navigate("/select-business");
     } catch (error) {
       logger.error("Error completing login:", error);
     }

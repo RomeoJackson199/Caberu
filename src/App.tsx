@@ -84,6 +84,7 @@ const SmartBookAppointment = lazy(() => import("./pages/SmartBookAppointment"));
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
 
 // Business gate component that shows appropriate picker
 const BusinessGate = ({ showBusinessPicker, setShowBusinessPicker }: { showBusinessPicker: boolean, setShowBusinessPicker: (show: boolean) => void }) => {
@@ -324,6 +325,8 @@ const App = () => {
                       <Route path="/onboarding" element={<Onboarding />} />
                       {/* Post-auth redirect handler */}
                       <Route path="/auth-redirect" element={<AuthRedirect />} />
+                      {/* Business selection page (protected) */}
+                      <Route path="/select-business" element={<SelectBusiness />} />
                       {/* Role-based dashboard routing */}
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/patient/*" element={<Dashboard />} />
