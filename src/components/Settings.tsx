@@ -10,17 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from "@/components/ui/dialog";
-import { 
-  Settings as SettingsIcon, 
-  LogOut, 
-  User as UserIcon, 
+import {
+  Settings as SettingsIcon,
+  LogOut,
+  User as UserIcon,
   Sun,
   Moon,
   Globe,
@@ -30,7 +30,9 @@ import {
 } from "lucide-react";
 import { saveProfileData, loadProfileData, testDatabaseConnection, ProfileData } from "@/lib/profileUtils";
 import { DentistManagement } from "@/components/DentistManagement";
+import { DentistManagement } from "@/components/DentistManagement";
 import { logger } from '@/lib/logger';
+import { VerifyPasswordModal } from "@/components/auth/VerifyPasswordModal";
 
 interface SettingsProps {
   user: User;
@@ -71,7 +73,12 @@ export const Settings = ({ user }: SettingsProps) => {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [dentistClinicAddress, setDentistClinicAddress] = useState<string>('');
   const [dentistSpecialty, setDentistSpecialty] = useState<string>('');
+  const [dentistSpecialty, setDentistSpecialty] = useState<string>('');
   const [hasDentistRecord, setHasDentistRecord] = useState<boolean>(false);
+
+  // Verification State
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyAction, setVerifyAction] = useState<"export" | "delete">("export");
 
   useEffect(() => {
     fetchProfile();
@@ -81,7 +88,7 @@ export const Settings = ({ user }: SettingsProps) => {
     try {
       const profileData = await loadProfileData(user);
       setProfile(profileData);
-      
+
       // Check if profile is incomplete (missing first or last name)
       const isIncomplete = !profileData.first_name || !profileData.last_name;
       setHasIncompleteProfile(isIncomplete);
@@ -176,12 +183,12 @@ export const Settings = ({ user }: SettingsProps) => {
         title: "Success",
         description: isDentist ? "Personal and dentist information saved successfully" : "Personal information saved successfully",
       });
-      
+
       // Refresh profile to update incomplete status
       fetchProfile();
     } catch (error) {
       console.error('Profile save error:', error);
-      
+
       // Provide more specific error messages
       let errorMessage = 'Unknown error occurred';
       if (error instanceof Error) {
@@ -193,7 +200,7 @@ export const Settings = ({ user }: SettingsProps) => {
           errorMessage = error.message;
         }
       }
-      
+
       toast({
         title: "Error",
         description: `Failed to save personal information: ${errorMessage}`,
@@ -223,10 +230,10 @@ export const Settings = ({ user }: SettingsProps) => {
       if (error) throw error;
 
       setProfile(prev => ({ ...prev, ai_opt_out: optOut }));
-      
+
       toast({
         title: optOut ? "AI Features Disabled" : "AI Features Enabled",
-        description: optOut 
+        description: optOut
           ? "AI features have been disabled for your account. You can re-enable them anytime in settings."
           : "AI features have been enabled for your account.",
       });
@@ -239,34 +246,52 @@ export const Settings = ({ user }: SettingsProps) => {
     }
   };
 
-const handleDownloadData = async () => {
-  const { data: profile } = await supabase.from('profiles').select('id,*').eq('user_id', user.id).single();
-  const profileId = profile?.id;
-  const { data: appointments } = profileId ? await supabase.from('appointments').select('*').eq('patient_id', profileId) : { data: [] } as any;
-  const { data: notes } = profileId ? await supabase.from('notes').select('*').eq('patient_id', profileId) : { data: [] } as any;
-  const exportData = { profile, appointments, notes };
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'dentibot_data.json';
-  link.click();
-  URL.revokeObjectURL(url);
-};
+  const handleDownloadData = () => {
+    setVerifyAction("export");
+    setShowVerifyModal(true);
+  };
 
-const handleDeleteAccount = async () => {
-  const confirmed = window.confirm(t.deleteAccountConfirm);
-  if (!confirmed) return;
-  const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', user.id).single();
-  const profileId = profile?.id;
-  if (profileId) {
-    await supabase.from('appointments').delete().eq('patient_id', profileId);
-    await supabase.from('notes').delete().eq('patient_id', profileId);
-    await supabase.from('profiles').delete().eq('user_id', user.id);
-  }
-  await supabase.auth.signOut();
-  toast({ title: t.deleteAccount, description: 'Your account has been deleted.' });
-};
+  const executeDownloadData = async () => {
+    const { data: profile } = await supabase.from('profiles').select('id,*').eq('user.id', user.id).single();
+    const profileId = profile?.id;
+    const { data: appointments } = profileId ? await supabase.from('appointments').select('*').eq('patient_id', profileId) : { data: [] } as any;
+    const { data: notes } = profileId ? await supabase.from('notes').select('*').eq('patient_id', profileId) : { data: [] } as any;
+    const exportData = { profile, appointments, notes };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'dentibot_data.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Export Complete", description: "Your data has been downloaded." });
+  };
+
+  const handleDeleteAccount = () => {
+    setVerifyAction("delete");
+    setShowVerifyModal(true);
+  };
+
+  const executeDeleteAccount = async () => {
+    // Double confirmation is handled by the modal now, but we can keep a final system check if desired.
+    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', user.id).single();
+    const profileId = profile?.id;
+    if (profileId) {
+      await supabase.from('appointments').delete().eq('patient_id', profileId);
+      await supabase.from('notes').delete().eq('patient_id', profileId);
+      await supabase.from('profiles').delete().eq('user_id', user.id);
+    }
+    await supabase.auth.signOut();
+    toast({ title: t.deleteAccount, description: 'Your account has been deleted.' });
+  };
+
+  const handleVerificationComplete = () => {
+    if (verifyAction === "export") {
+      executeDownloadData();
+    } else {
+      executeDeleteAccount();
+    }
+  };
 
   const tabs = [
     { id: 'general' as TabType, label: 'Languages', icon: Globe },
@@ -279,9 +304,9 @@ const handleDeleteAccount = async () => {
       <Dialog>
         <DialogTrigger asChild>
           <div className="relative">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="glass-card border-dental-primary/30 text-dental-primary hover:bg-dental-primary/10 hover:border-dental-primary/50 transition-all duration-300"
             >
               <SettingsIcon className="h-4 w-4" />
@@ -298,7 +323,7 @@ const handleDeleteAccount = async () => {
               <span>Settings</span>
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="px-6">
             {/* Tab Navigation */}
             <div className="flex space-x-1 bg-muted/30 rounded-xl p-1 mb-6">
@@ -308,11 +333,10 @@ const handleDeleteAccount = async () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 flex-1 justify-center ${
-                      activeTab === tab.id
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
+                    className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 flex-1 justify-center ${activeTab === tab.id
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{tab.label}</span>
@@ -373,11 +397,10 @@ const handleDeleteAccount = async () => {
                     <Button
                       variant={theme === 'light' ? 'default' : 'outline'}
                       onClick={() => setTheme('light')}
-                      className={`flex-1 py-6 flex items-center justify-center space-x-3 rounded-xl ${
-                        theme === 'light' 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-muted/30 text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`flex-1 py-6 flex items-center justify-center space-x-3 rounded-xl ${theme === 'light'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/30 text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       <Sun className="h-5 w-5" />
                       <span className="font-medium">Light</span>
@@ -385,11 +408,10 @@ const handleDeleteAccount = async () => {
                     <Button
                       variant={theme === 'dark' ? 'default' : 'outline'}
                       onClick={() => setTheme('dark')}
-                      className={`flex-1 py-6 flex items-center justify-center space-x-3 rounded-xl ${
-                        theme === 'dark' 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-muted/30 text-muted-foreground hover:text-foreground'
-                      }`}
+                      className={`flex-1 py-6 flex items-center justify-center space-x-3 rounded-xl ${theme === 'dark'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/30 text-muted-foreground hover:text-foreground'
+                        }`}
                     >
                       <Moon className="h-5 w-5" />
                       <span className="font-medium">Dark</span>
@@ -513,7 +535,7 @@ const handleDeleteAccount = async () => {
                   )}
 
                   <div className="flex justify-end space-x-2 pt-4">
-                    <Button 
+                    <Button
                       onClick={handleSaveProfile}
                       disabled={loading}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
@@ -537,24 +559,24 @@ const handleDeleteAccount = async () => {
                 )}
 
                 <div className="pt-4 border-t border-border">
-                  <Button 
+                  <Button
                     onClick={handleDownloadData}
                     variant="outline"
                     className="w-full mb-4"
                   >
                     Download My Data
                   </Button>
-                  
-                  <Button 
+
+                  <Button
                     onClick={handleDeleteAccount}
                     variant="destructive"
                     className="w-full mb-4"
                   >
                     Delete Account
                   </Button>
-                  
-                  <Button 
-                    variant="destructive" 
+
+                  <Button
+                    variant="destructive"
                     onClick={handleSignOut}
                     className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl"
                   >
@@ -619,6 +641,13 @@ const handleDeleteAccount = async () => {
           </div>
         </DialogContent>
       </Dialog>
+      {/* New Verification Modal */}
+      <VerifyPasswordModal
+        isOpen={showVerifyModal}
+        onClose={() => setShowVerifyModal(false)}
+        onVerified={handleVerificationComplete}
+        action={verifyAction}
+      />
     </>
   );
 };
