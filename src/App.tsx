@@ -274,6 +274,7 @@ const App = () => {
               <AuthCallbackHandler />
               <TooltipProvider>
                 <Sonner />
+                <Toaster />
                 <PWAInstallPrompt />
                 <ProfileCompletionDialog />
                 <BrowserRouter>
