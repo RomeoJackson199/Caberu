@@ -86,8 +86,8 @@ export default function SelectBusiness() {
         }
     };
 
-    // Get dentist ID from profile
-    const getDentistId = async (userId: string): Promise<string | null> => {
+    // Get dentist ID from profile for a SPECIFIC business
+    const getDentistId = async (userId: string, businessId: string): Promise<string | null> => {
         try {
             const { data: profile } = await supabase
                 .from('profiles')
@@ -97,10 +97,12 @@ export default function SelectBusiness() {
 
             if (!profile) return null;
 
+            // Find dentist record for THIS specific business
             const { data: dentist } = await supabase
                 .from('dentists')
                 .select('id')
                 .eq('profile_id', profile.id)
+                .eq('business_id', businessId)
                 .maybeSingle();
 
             return dentist?.id || null;
@@ -123,7 +125,7 @@ export default function SelectBusiness() {
                 // Get current user
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                    const dentistId = await getDentistId(user.id);
+                    const dentistId = await getDentistId(user.id, targetBusinessId);
 
                     if (dentistId) {
                         const hasActiveSubscription = await checkDentistSubscription(dentistId);
