@@ -10,13 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Users, 
-  Search, 
-  User, 
-  Calendar, 
-  FileText, 
-  Plus, 
+import {
+  Users,
+  Search,
+  User,
+  Calendar,
+  FileText,
+  Plus,
   Pill,
   ClipboardList as ClipboardListIcon,
   Eye,
@@ -31,7 +31,7 @@ import { format } from "date-fns";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -49,6 +49,7 @@ import { PaymentRequestForm } from "@/components/PaymentRequestForm";
 import { useNavigate } from "react-router-dom";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { logger } from '@/lib/logger';
+import { sanitizeText } from '@/utils/sanitize';
 
 interface Patient {
   id: string;
@@ -127,11 +128,11 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
   const [showCompletion, setShowCompletion] = useState(false);
   const [lastAppointment, setLastAppointment] = useState<Appointment | null>(null);
   const [completionAppointment, setCompletionAppointment] = useState<Appointment | null>(null);
-  
+
   // Pagination state for appointments
   const [appointmentsPage, setAppointmentsPage] = useState(1);
   const appointmentsPerPage = 3;
-  
+
   // Flags per patient for badges
   const [patientFlags, setPatientFlags] = useState<Record<string, {
     hasUnpaidBalance: boolean;
@@ -172,7 +173,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
     estimated_cost: "",
     estimated_duration_weeks: "",
   });
-  
+
   const [prescriptionForm, setPrescriptionForm] = useState({
     medication_name: "",
     dosage: "",
@@ -180,14 +181,14 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
     duration_days: "",
     instructions: "",
   });
-  
+
   const [noteForm, setNoteForm] = useState({
     title: "",
     content: "",
     note_type: "general",
     is_private: false,
   });
-  
+
   const { toast } = useToast();
   const sb: any = supabase;
   const navigate = useNavigate();
@@ -219,7 +220,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
   const fetchPatients = async () => {
     try {
       setLoading(true);
-      
+
       // Get patients who have appointments with this dentist
       const { data: appointmentData, error: appointmentError } = await supabase
         .from('appointments')
@@ -248,7 +249,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
       // Extract unique patients
       const uniquePatients = appointmentData
         .map(apt => apt.profiles)
-        .filter((patient, index, self) => 
+        .filter((patient, index, self) =>
           patient && self.findIndex(p => p?.id === patient.id) === index
         )
         .filter(Boolean) as Patient[];
@@ -356,11 +357,11 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
 
       setPatientFlags(prev => ({
         ...prev,
-        [patientId]: { 
+        [patientId]: {
           hasUnpaidBalance,
           outstandingCents,
-          hasUpcomingAppointment, 
-          hasActiveTreatmentPlan, 
+          hasUpcomingAppointment,
+          hasActiveTreatmentPlan,
           lastVisitDate,
           nextAppointmentDate: nextAppointment?.appointment_date,
           nextAppointmentStatus: nextAppointment?.status
@@ -707,9 +708,8 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
             {filteredPatients.map((patient) => (
               <div
                 key={patient.id}
-                className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
-                  selectedPatient?.id === patient.id ? 'bg-dental-primary/10 border-dental-primary' : ''
-                }`}
+                className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${selectedPatient?.id === patient.id ? 'bg-dental-primary/10 border-dental-primary' : ''
+                  }`}
                 onClick={() => setSelectedPatient(patient)}
               >
                 <div className="flex items-center space-x-3">
@@ -744,7 +744,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                       )}
                       {patientFlags[patient.id]?.hasUnpaidBalance && (
                         <Badge variant="destructive" className="text-[10px] px-2 py-0.5">
-                          Unpaid {patientFlags[patient.id]?.outstandingCents ? `€${(patientFlags[patient.id]!.outstandingCents!/100).toFixed(2)}` : ''}
+                          Unpaid {patientFlags[patient.id]?.outstandingCents ? `€${(patientFlags[patient.id]!.outstandingCents! / 100).toFixed(2)}` : ''}
                         </Badge>
                       )}
 
@@ -941,8 +941,8 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                             <Button variant="outline" onClick={() => { setShowPrescriptionDialog(false); setEditingPrescriptionId(null); }}>
                               Cancel
                             </Button>
-                            <Button 
-                              onClick={handleAddPrescription} 
+                            <Button
+                              onClick={handleAddPrescription}
                               disabled={!prescriptionForm.medication_name || !prescriptionForm.dosage || !prescriptionForm.frequency}
                             >
                               {editingPrescriptionId ? 'Save Changes' : 'Add Prescription'}
@@ -1010,8 +1010,8 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                             <Button variant="outline" onClick={() => { setShowNoteDialog(false); setEditingNoteId(null); }}>
                               Cancel
                             </Button>
-                            <Button 
-                              onClick={handleAddNote} 
+                            <Button
+                              onClick={handleAddNote}
                               disabled={!noteForm.title || !noteForm.content}
                             >
                               {editingNoteId ? 'Save Changes' : 'Add Note'}
@@ -1174,11 +1174,11 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                           </div>
                         </div>
                       ))}
-                    
+
                     {appointments.filter(apt => apt.status !== 'cancelled').length > 3 && (
                       <div className="flex justify-center pt-4">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={() => setAppointmentsPage(appointmentsPage === 1 ? 2 : 1)}
                         >
                           {appointmentsPage === 1 ? 'View All' : 'Show Less'}
@@ -1216,74 +1216,74 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                       </CardTitle>
                     </CardHeader>
                     <AccordionContent>
-                    <CardContent>
-                      {prescriptions.length > 0 ? (
-                        <div className="space-y-3">
-                          {prescriptions
-                            .slice()
-                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                            .map((prescription) => (
-                            <div key={prescription.id} className="p-3 border rounded-lg group">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="font-medium">{prescription.medication_name}</h4>
-                                    <Badge className={getStatusColor(prescription.status)}>
-                                      {prescription.status}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {prescription.dosage} - {prescription.frequency}
-                                  </p>
-                                  {prescription.duration_days && (
-                                    <p className="text-sm">Duration: {prescription.duration_days} days</p>
-                                  )}
-                                  {prescription.instructions && (
-                                    <p className="text-sm mt-2 bg-muted p-2 rounded">
-                                      {prescription.instructions}
-                                    </p>
-                                  )}
-                                  <p className="text-xs text-muted-foreground mt-2">
-                                    Prescribed: {format(new Date(prescription.prescribed_date), 'PPP')}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
-                                  <Button size="icon" variant="ghost" onClick={() => openEditPrescription(prescription)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button size="icon" variant="ghost">
-                                        <Trash2 className="h-4 w-4" />
+                      <CardContent>
+                        {prescriptions.length > 0 ? (
+                          <div className="space-y-3">
+                            {prescriptions
+                              .slice()
+                              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                              .map((prescription) => (
+                                <div key={prescription.id} className="p-3 border rounded-lg group">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="font-medium">{prescription.medication_name}</h4>
+                                        <Badge className={getStatusColor(prescription.status)}>
+                                          {prescription.status}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground">
+                                        {prescription.dosage} - {prescription.frequency}
+                                      </p>
+                                      {prescription.duration_days && (
+                                        <p className="text-sm">Duration: {prescription.duration_days} days</p>
+                                      )}
+                                      {prescription.instructions && (
+                                        <p className="text-sm mt-2 bg-muted p-2 rounded">
+                                          {sanitizeText(prescription.instructions)}
+                                        </p>
+                                      )}
+                                      <p className="text-xs text-muted-foreground mt-2">
+                                        Prescribed: {format(new Date(prescription.prescribed_date), 'PPP')}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
+                                      <Button size="icon" variant="ghost" onClick={() => openEditPrescription(prescription)}>
+                                        <Edit className="h-4 w-4" />
                                       </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete prescription?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeletePrescription(prescription.id)}>Delete</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button size="icon" variant="ghost">
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete prescription?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              This action cannot be undone.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeletePrescription(prescription.id)}>Delete</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          ))}
+                              ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-center py-4">
+                            No prescriptions found
+                          </p>
+                        )}
+                        <div className="pt-3 flex justify-end">
+                          <Button size="sm" variant="ghost">View All</Button>
                         </div>
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          No prescriptions found
-                        </p>
-                      )}
-                      <div className="pt-3 flex justify-end">
-                        <Button size="sm" variant="ghost">View All</Button>
-                      </div>
-                    </CardContent>
+                      </CardContent>
                     </AccordionContent>
                   </Card>
                 </AccordionItem>
@@ -1303,76 +1303,76 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                       </CardTitle>
                     </CardHeader>
                     <AccordionContent>
-                    <CardContent>
-                      {treatmentPlans.length > 0 ? (
-                        <div className="space-y-3">
-                          {treatmentPlans
-                            .slice()
-                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                            .map((plan) => (
-                            <div key={plan.id} className="p-3 border rounded-lg group">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="font-medium">{plan.title}</h4>
-                                    <Badge className={getStatusColor(plan.status)}>
-                                      {plan.status}
-                                    </Badge>
-                                  </div>
-                                  {plan.description && (
-                                    <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
-                                  )}
-                                  {plan.diagnosis && (
-                                    <p className="text-sm mt-2 bg-muted p-2 rounded">
-                                      <span className="font-medium">Diagnosis:</span> {plan.diagnosis}
-                                    </p>
-                                  )}
-                                  <div className="flex space-x-4 mt-2 text-sm">
-                                    {plan.estimated_cost && (
-                                      <span>Cost: ${plan.estimated_cost}</span>
-                                    )}
-                                    {plan.estimated_duration_weeks && (
-                                      <span>Duration: {plan.estimated_duration_weeks} weeks</span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
-                                  <Button size="icon" variant="ghost" onClick={() => openEditTreatment(plan)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button size="icon" variant="ghost">
-                                        <Trash2 className="h-4 w-4" />
+                      <CardContent>
+                        {treatmentPlans.length > 0 ? (
+                          <div className="space-y-3">
+                            {treatmentPlans
+                              .slice()
+                              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                              .map((plan) => (
+                                <div key={plan.id} className="p-3 border rounded-lg group">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="font-medium">{plan.title}</h4>
+                                        <Badge className={getStatusColor(plan.status)}>
+                                          {plan.status}
+                                        </Badge>
+                                      </div>
+                                      {plan.description && (
+                                        <p className="text-sm text-muted-foreground mt-1">{sanitizeText(plan.description)}</p>
+                                      )}
+                                      {plan.diagnosis && (
+                                        <p className="text-sm mt-2 bg-muted p-2 rounded">
+                                          <span className="font-medium">Diagnosis:</span> {sanitizeText(plan.diagnosis)}
+                                        </p>
+                                      )}
+                                      <div className="flex space-x-4 mt-2 text-sm">
+                                        {plan.estimated_cost && (
+                                          <span>Cost: ${plan.estimated_cost}</span>
+                                        )}
+                                        {plan.estimated_duration_weeks && (
+                                          <span>Duration: {plan.estimated_duration_weeks} weeks</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
+                                      <Button size="icon" variant="ghost" onClick={() => openEditTreatment(plan)}>
+                                        <Edit className="h-4 w-4" />
                                       </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete treatment plan?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteTreatment(plan.id)}>Delete</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button size="icon" variant="ghost">
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete treatment plan?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              This action cannot be undone.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteTreatment(plan.id)}>Delete</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          ))}
+                              ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-center py-4">
+                            No treatment plans found
+                          </p>
+                        )}
+                        <div className="pt-3 flex justify-end">
+                          <Button size="sm" variant="ghost">View All</Button>
                         </div>
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          No treatment plans found
-                        </p>
-                      )}
-                      <div className="pt-3 flex justify-end">
-                        <Button size="sm" variant="ghost">View All</Button>
-                      </div>
-                    </CardContent>
+                      </CardContent>
                     </AccordionContent>
                   </Card>
                 </AccordionItem>
@@ -1386,7 +1386,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                         <CreditCard className="h-5 w-5 text-dental-primary" />
                         <span>Payments</span>
                         {patientFlags[selectedPatient.id]?.hasUnpaidBalance && (
-                          <Badge variant="destructive">Due €{((patientFlags[selectedPatient.id]?.outstandingCents || 0)/100).toFixed(2)}</Badge>
+                          <Badge variant="destructive">Due €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}</Badge>
                         )}
                       </div>
                       <AccordionTrigger className="py-0" />
@@ -1425,47 +1425,47 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                             .slice()
                             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                             .map((note) => (
-                            <div key={note.id} className="p-3 border rounded-lg group">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2">
-                                    <h4 className="font-medium">{note.title}</h4>
-                                    {note.is_private && (
-                                      <Badge variant="secondary" className="text-xs">Private</Badge>
-                                    )}
+                              <div key={note.id} className="p-3 border rounded-lg group">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2">
+                                      <h4 className="font-medium">{note.title}</h4>
+                                      {note.is_private && (
+                                        <Badge variant="secondary" className="text-xs">Private</Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mt-1">{sanitizeText(note.content)}</p>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                      {format(new Date(note.created_at), 'PPP p')}
+                                    </p>
                                   </div>
-                                  <p className="text-sm text-muted-foreground mt-1">{note.content}</p>
-                                  <p className="text-xs text-muted-foreground mt-2">
-                                    {format(new Date(note.created_at), 'PPP p')}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
-                                  <Button size="icon" variant="ghost" onClick={() => openEditNote(note)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button size="icon" variant="ghost">
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete note?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteNote(note.id)}>Delete</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                  <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
+                                    <Button size="icon" variant="ghost" onClick={() => openEditNote(note)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="icon" variant="ghost">
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete note?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDeleteNote(note.id)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                       ) : (
                         <p className="text-muted-foreground text-center py-4">
@@ -1494,7 +1494,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                   <AccordionContent>
                     <CardContent>
                       <div className="py-2">
-                        <PhotoUpload onComplete={() => {}} onCancel={() => {}} />
+                        <PhotoUpload onComplete={() => { }} onCancel={() => { }} />
                       </div>
                     </CardContent>
                   </AccordionContent>
@@ -1511,7 +1511,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                         <Badge variant="outline">{latestOutcome.length}</Badge>
                       </div>
                       <div className="flex items-center gap-2">
-                        {lastAppointment && Math.abs(new Date(lastAppointment.appointment_date).getTime() - Date.now()) < 24*60*60*1000 && (
+                        {lastAppointment && Math.abs(new Date(lastAppointment.appointment_date).getTime() - Date.now()) < 24 * 60 * 60 * 1000 && (
                           <Button size="sm" onClick={() => setShowCompletion(true)}>Complete Last Appointment</Button>
                         )}
                         <AccordionTrigger className="py-0" />
@@ -1531,7 +1531,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                                     <span className="text-xs text-muted-foreground">{new Date(o.appointments.appointment_date).toLocaleString()}</span>
                                   </div>
                                   {o.notes && (
-                                    <p className="text-sm mt-2 bg-muted p-2 rounded">{o.notes}</p>
+                                    <p className="text-sm mt-2 bg-muted p-2 rounded">{sanitizeText(o.notes)}</p>
                                   )}
                                   {treatmentsByAppointment[o.appointments.id] && (
                                     <div className="mt-2 text-xs">

@@ -7,16 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import {
-  Calendar, 
-  Clock, 
-  AlertTriangle, 
-  FileText, 
+  Calendar,
+  Clock,
+  AlertTriangle,
+  FileText,
   Save,
   Eye,
   Edit,
   CheckCircle
 } from "lucide-react";
 import { format } from "date-fns";
+import { sanitizeText } from '@/utils/sanitize';
 
 interface Appointment {
   id: string;
@@ -53,12 +54,12 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      
+
       if (!businessId) {
         setAppointments([]);
         return;
       }
-      
+
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
@@ -95,9 +96,9 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
       if (error) throw error;
 
       // Update local state
-      setAppointments(prev => 
-        prev.map(apt => 
-          apt.id === appointmentId 
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === appointmentId
             ? { ...apt, consultation_notes: consultationNotes }
             : apt
         )
@@ -187,7 +188,7 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Badge className={getStatusColor(appointment.status)}>
                       {appointment.status}
@@ -204,14 +205,14 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
                   {appointment.reason && (
                     <div>
                       <h4 className="font-medium text-sm text-muted-foreground mb-1">Reason for Visit</h4>
-                      <p className="text-sm bg-muted p-3 rounded-md">{appointment.reason}</p>
+                      <p className="text-sm bg-muted p-3 rounded-md">{sanitizeText(appointment.reason)}</p>
                     </div>
                   )}
-                  
+
                   {appointment.notes && (
                     <div>
                       <h4 className="font-medium text-sm text-muted-foreground mb-1">Patient Notes</h4>
-                      <p className="text-sm bg-muted p-3 rounded-md">{appointment.notes}</p>
+                      <p className="text-sm bg-muted p-3 rounded-md">{sanitizeText(appointment.notes)}</p>
                     </div>
                   )}
                 </div>
@@ -223,29 +224,29 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
                       <FileText className="h-4 w-4" />
                       <span>Consultation Notes</span>
                     </h4>
-                    
+
                     {appointment.status === 'completed' && (
                       <div className="flex items-center space-x-2">
                         {editingAppointment === appointment.id ? (
                           <>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               onClick={() => handleSaveConsultationNotes(appointment.id)}
                             >
                               <Save className="h-4 w-4 mr-1" />
                               Save
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => setEditingAppointment(null)}
                             >
                               Cancel
                             </Button>
                           </>
                         ) : (
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             onClick={() => handleEditConsultationNotes(appointment.id, appointment.consultation_notes || "")}
                           >
@@ -256,7 +257,7 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
                       </div>
                     )}
                   </div>
-                  
+
                   {editingAppointment === appointment.id ? (
                     <Textarea
                       value={consultationNotes}
@@ -272,7 +273,7 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
                           Consultation completed
                         </span>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{appointment.consultation_notes}</p>
+                      <p className="text-sm whitespace-pre-wrap">{sanitizeText(appointment.consultation_notes)}</p>
                     </div>
                   ) : appointment.status === 'completed' ? (
                     <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md text-center">
