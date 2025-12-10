@@ -31,17 +31,38 @@ serve(async (req) => {
             throw new Error('Promo code and business ID are required')
         }
 
-        console.log('apply-promo-code v3 starting for business:', business_id);
+        console.log('apply-promo-code v4 starting for business:', business_id);
+
+        // 0. Get Profile ID
+        const { data: profile, error: profileError } = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (profileError || !profile) {
+            console.error('Profile fetch error:', profileError);
+            throw new Error('User profile not found. Please contact support.');
+        }
+
+        const profileId = profile.id;
+        console.log('Found profile:', profileId);
 
         // 1. Validate Admin/Owner Access
-        const { data: member } = await supabaseClient
+        const { data: member, error: memberError } = await supabaseClient
             .from('business_members')
             .select('role, profile_id')
             .eq('business_id', business_id)
-            .eq('profile_id', (await supabaseClient.from('profiles').select('id').eq('user_id', user.id).single()).data?.id)
-            .single()
+            .eq('profile_id', profileId)
+            .maybeSingle()
+
+        if (memberError) {
+            console.error('Member fetch error:', memberError);
+            throw new Error('Error checking business membership');
+        }
 
         if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
+            console.error('Access denied. Role:', member?.role);
             throw new Error('Only owners or admins can apply promo codes')
         }
 
@@ -67,8 +88,7 @@ serve(async (req) => {
 
         // 3. Find Active Subscription
         // First find dentist for this business AND this user
-        // We ensure we have profile_id from the member check above
-        const profileId = member.profile_id;
+        // We ensure we have profile_id from earlier
         if (!profileId) throw new Error('Could not determine profile ID for current user');
 
         let { data: dentist } = await supabaseClient
