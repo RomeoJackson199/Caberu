@@ -33,35 +33,7 @@ USING (
   dentist_id = auth.uid()
 );
 
-
--- 2. PRESCRIPTIONS
-DROP POLICY IF EXISTS "Patients can manage their own prescriptions" ON prescriptions;
-DROP POLICY IF EXISTS "Patients can view their own prescriptions" ON prescriptions;
-
--- Patient Read-Only
-CREATE POLICY "Patients can view their own prescriptions"
-ON prescriptions FOR SELECT
-TO authenticated
-USING (
-  patient_id = auth.uid()
-);
-
--- Dentist Full Access
-CREATE POLICY "Dentists can manage prescriptions"
-ON prescriptions FOR ALL
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM business_members bm
-    WHERE bm.business_id = prescriptions.business_id
-    AND bm.profile_id = auth.uid()
-    AND bm.role IN ('dentist', 'owner', 'admin')
-  )
-  OR dentist_id = auth.uid()
-);
-
-
--- 3. TREATMENT PLANS
+-- 2. TREATMENT PLANS
 DROP POLICY IF EXISTS "Patients can manage their own treatment_plans" ON treatment_plans;
 DROP POLICY IF EXISTS "Patients can view their own treatment_plans" ON treatment_plans;
 
@@ -86,3 +58,5 @@ USING (
   )
   OR dentist_id = auth.uid()
 );
+
+-- NOTE: prescriptions table was referenced but does not exist in this schema. Removed polices for it.

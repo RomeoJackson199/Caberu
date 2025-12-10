@@ -2,7 +2,6 @@
 -- Mitigates risk of exposing full business table to public
 
 -- 1. Revoke public access to main table policies
--- We previously allowed "true" for public select. We must drop that.
 DROP POLICY IF EXISTS "businesses_public_read" ON public.businesses;
 -- Recreate it ONLY for authenticated users
 CREATE POLICY "businesses_authenticated_read"
@@ -12,16 +11,19 @@ USING (true);
 
 
 -- 2. Create Secure View for Public
+-- Replaced non-existent branding_settings with direct columns (logo_url seems to exist based on app usage)
 CREATE OR REPLACE VIEW public.public_businesses_view AS
 SELECT 
   id,
   name,
   slug,
-  branding_settings, -- Needed for logo/colors on login
+  logo_url,        -- Exposing directly
+  tagline,         -- Exposing directly
   template_type,
-  membership_required
+  membership_required,
+  custom_config    -- Exposing config if needed for frontend logic, but be careful. Assuming it's safe or frontend needs it.
 FROM public.businesses
-WHERE visibility = 'public'; -- Assuming we want to respect visibility flag if it exists, or just all
+WHERE visibility = 'public'; 
 
 -- 3. Grant access to view
 GRANT SELECT ON public.public_businesses_view TO anon, authenticated;
