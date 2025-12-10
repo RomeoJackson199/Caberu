@@ -204,57 +204,83 @@ const App = () => {
 
   useEffect(() => {
     // Check auth and show business picker if multi-business user or no business selected
+    let isMounted = true;
+
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
 
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+        if (!isMounted) return;
+        setUser(user);
 
-        if (profile) {
-          const { data: memberships } = await supabase
-            .from('business_members')
-            .select('business_id')
-            .eq('profile_id', profile.id);
-
-          // Check if they have a current business selection
-          const { data: sessionBusiness } = await supabase
-            .from('session_business')
-            .select('business_id')
+        if (user) {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
             .eq('user_id', user.id)
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+            .single();
 
-          // Show business picker on login
-          if (memberships && memberships.length > 0) {
-            if (memberships.length > 1 && !sessionBusiness?.business_id) {
-              // Providers with multiple clinics need to choose
-              setTimeout(() => setShowBusinessPicker(true), 500);
-            }
-          } else if (!sessionBusiness?.business_id) {
-            // Patient/guest: no clinic selected yet, show patient picker
-            setTimeout(() => setShowBusinessPicker(true), 500);
+          if (profileError && profileError.code !== 'PGRST116') {
+            // Ignore "no rows found" error, log others
+            console.error('Error fetching profile:', profileError);
           }
 
+          if (profile && isMounted) {
+            const { data: memberships, error: memberError } = await supabase
+              .from('business_members')
+              .select('business_id')
+              .eq('profile_id', profile.id);
+
+            if (memberError) console.error('Error fetching memberships:', memberError);
+
+            // Check if they have a current business selection
+            const { data: sessionBusiness, error: sessionError } = await supabase
+              .from('session_business')
+              .select('business_id')
+              .eq('user_id', user.id)
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (sessionError) console.error('Error fetching session business:', sessionError);
+
+            if (!isMounted) return;
+
+            // Show business picker on login
+            if (memberships && memberships.length > 0) {
+              if (memberships.length > 1 && !sessionBusiness?.business_id) {
+                // Providers with multiple clinics need to choose
+                setTimeout(() => {
+                  if (isMounted) setShowBusinessPicker(true);
+                }, 500);
+              }
+            } else if (!sessionBusiness?.business_id) {
+              // Patient/guest: no clinic selected yet, show patient picker
+              setTimeout(() => {
+                if (isMounted) setShowBusinessPicker(true);
+              }, 500);
+            }
+          }
         }
+      } catch (error) {
+        console.error('Auth check failed:', error);
       }
     };
 
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
+      if (isMounted) setUser(session?.user ?? null);
       if (event === 'SIGNED_IN') {
         checkAuth();
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
@@ -340,7 +366,7 @@ const App = () => {
                       <Route path="/book-appointment-ai" element={<Navigate to="/book-appointment" replace />} />
                       <Route path="/smart-book-appointment" element={<Navigate to="/book-appointment" replace />} />
                       {/* Business portal route - must come before catch-all */}
-                      <Route path="/:slug" element={<BusinessPortal />} />
+                      <Route path="/clinic/:slug" element={<BusinessPortal />} />
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
