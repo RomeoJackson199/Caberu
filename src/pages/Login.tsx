@@ -6,26 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Shield, Sparkles, Zap, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BusinessSelector } from "@/components/auth/BusinessSelector";
+
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
 
-type Business = {
-  id: string;
-  name: string;
-  tagline: string | null;
-  logo_url: string | null;
-  template_type?: string | null;
-};
+
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
-  const [showBusinessSelector, setShowBusinessSelector] = useState(false);
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null); // SECURITY: No client-side storage - server-side only via session_business table
+
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [is2FAPending, setIs2FAPending] = useState(false); // FIXED: Use state instead of ref for proper reactivity
@@ -78,51 +69,11 @@ const Login = () => {
     };
   }, [navigate, is2FAPending, isProcessingAuth]);
 
-  useEffect(() => {
-    const loadBusinesses = async () => {
-      setIsLoadingBusinesses(true);
-      try {
-        if (error) throw error;
-        setBusinesses(data || []);
-      } catch (error) {
-        logger.error("Error loading businesses:", error);
-      } finally {
-        setIsLoadingBusinesses(false);
-      }
-    };
-
-    loadBusinesses();
-  }, []);
-
-
-  const handleSelectBusiness = (businessId: string) => {
-    // SECURITY: Business ID stored server-side only via session_business table (set after auth)
-    setSelectedBusinessId(businessId);
-
-    const business = businesses.find((item) => item.id === businessId);
-    if (business) {
-      toast({
-        title: `${business.name} selected`,
-        description: "You're all set to sign in to this workspace.",
-        duration: 3500,
-      });
-    }
-  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate business selection first
-    if (!selectedBusinessId) {
-      toast({
-        title: "Business required",
-        description: "Please select a business before signing in.",
-        variant: "destructive",
-        duration: 5000,
-      });
-      setShowBusinessSelector(true);
-      return;
-    }
+
 
     setIsLoading(true);
 
@@ -188,36 +139,6 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      const storedBusinessId = sessionStorage.getItem("selected_business_id"); // SECURITY: Use sessionStorage
-      if (storedBusinessId) {
-        const { data, error: businessError } = await supabase.functions.invoke(
-          "set-current-business",
-          {
-            body: { businessId: storedBusinessId },
-          }
-        );
-
-        if (businessError) {
-          logger.error("Error setting business context:", businessError);
-          toast({
-            title: "Warning",
-            description: "Failed to set business context. Please select your business again.",
-            variant: "destructive",
-            duration: 5000,
-          });
-        } else if (!data?.success) {
-          logger.error("Failed to set business context:", data);
-          toast({
-            title: "Warning",
-            description: "Failed to set business context. Please select your business again.",
-            variant: "destructive",
-            duration: 5000,
-          });
-        }
-
-        sessionStorage.removeItem("selected_business_id"); // SECURITY: Use sessionStorage
-      }
-
       toast({
         title: "Welcome back!",
         description: "You've successfully signed in.",
@@ -262,17 +183,7 @@ const Login = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    // Validate business selection first
-    if (!selectedBusinessId) {
-      toast({
-        title: "Business required",
-        description: "Please select a business before signing in.",
-        variant: "destructive",
-        duration: 5000,
-      });
-      setShowBusinessSelector(true);
-      return;
-    }
+
 
     setIsLoading(true);
     try {
@@ -378,27 +289,7 @@ const Login = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Business Selector */}
-            <BusinessSelector
-              businesses={businesses}
-              selectedBusinessId={selectedBusinessId}
-              isLoading={isLoadingBusinesses}
-              onSelectBusiness={handleSelectBusiness}
-              variant="compact"
-              open={showBusinessSelector}
-              onOpenChange={setShowBusinessSelector}
-            />
 
-            {/* Dialog for mobile/all platforms */}
-            <BusinessSelector
-              businesses={businesses}
-              selectedBusinessId={selectedBusinessId}
-              isLoading={isLoadingBusinesses}
-              onSelectBusiness={handleSelectBusiness}
-              variant="dialog"
-              open={showBusinessSelector}
-              onOpenChange={setShowBusinessSelector}
-            />
 
             <div className="rounded-2xl border bg-card p-6 shadow-sm">
               <div className="space-y-4">
