@@ -139,12 +139,8 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      // Clear any existing session business to force the picker to show
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // We ignore errors here as the table might be empty or RLS might restrict deletion if not owner (but usually user owns their session)
-        await supabase.from('session_business').delete().eq('user_id', user.id);
-      }
+      // REMOVED: session_business deletion was breaking business context
+      // The BusinessPicker will show naturally if needed via App.tsx logic
 
       toast({
         title: "Welcome back!",
