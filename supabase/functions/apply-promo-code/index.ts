@@ -64,14 +64,35 @@ serve(async (req) => {
         }
 
         // 3. Find Active Subscription
-        // First find dentist for this business
-        const { data: dentist } = await supabaseClient
+        // First find dentist for this business AND this user
+        // We need the profile_id which we got earlier
+        const profileId = member.profile_id || (await supabaseClient.from('profiles').select('id').eq('user_id', user.id).single()).data?.id;
+
+        let { data: dentist } = await supabaseClient
             .from('dentists')
             .select('id')
             .eq('business_id', business_id)
-            .single();
+            .eq('profile_id', profileId)
+            .maybeSingle();
 
-        if (!dentist) throw new Error('Dentist record not found for this business');
+        if (!dentist) {
+            // Create dentist record if missing (e.g. owner who wasn't auto-created as dentist)
+            console.log('Dentist record not found, creating for profile:', profileId);
+            const { data: newDentist, error: createDentistError } = await supabaseClient
+                .from('dentists')
+                .insert({
+                    profile_id: profileId,
+                    business_id: business_id,
+                    is_active: true
+                })
+                .select('id')
+                .single();
+
+            if (createDentistError) {
+                throw new Error('Failed to create dentist record: ' + createDentistError.message);
+            }
+            dentist = newDentist;
+        }
 
         const { data: subscription } = await supabaseClient
             .from('subscriptions')
