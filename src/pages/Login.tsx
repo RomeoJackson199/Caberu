@@ -26,7 +26,7 @@ const Login = () => {
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
   const [showBusinessSelector, setShowBusinessSelector] = useState(false);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(
-    () => localStorage.getItem("selected_business_id")
+    () => sessionStorage.getItem("selected_business_id") // SECURITY: Use sessionStorage for session lifetime
   );
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -86,7 +86,7 @@ const Login = () => {
 
 
   const handleSelectBusiness = (businessId: string) => {
-    localStorage.setItem("selected_business_id", businessId);
+    sessionStorage.setItem("selected_business_id", businessId); // SECURITY: Use sessionStorage
     setSelectedBusinessId(businessId);
 
     const business = businesses.find((item) => item.id === businessId);
@@ -123,6 +123,19 @@ const Login = () => {
       });
 
       if (error) throw error;
+
+      // SECURITY: Enforce email verification before allowing login
+      if (!authData.user?.email_confirmed_at) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Email Not Verified",
+          description: "Please verify your email address before signing in. Check your inbox for the verification link.",
+          variant: "destructive",
+          duration: 10000,
+        });
+        setIsLoading(false);
+        return;
+      }
 
       // Check if user has 2FA enabled
       const twoFactorEnabled = authData.user?.user_metadata?.two_factor_enabled === true;
@@ -165,7 +178,7 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      const storedBusinessId = localStorage.getItem("selected_business_id");
+      const storedBusinessId = sessionStorage.getItem("selected_business_id"); // SECURITY: Use sessionStorage
       if (storedBusinessId) {
         const { data, error: businessError } = await supabase.functions.invoke(
           "set-current-business",
@@ -192,7 +205,7 @@ const Login = () => {
           });
         }
 
-        localStorage.removeItem("selected_business_id");
+        sessionStorage.removeItem("selected_business_id"); // SECURITY: Use sessionStorage
       }
 
       toast({
