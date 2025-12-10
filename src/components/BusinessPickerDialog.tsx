@@ -16,9 +16,9 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
   const [allBusinesses, setAllBusinesses] = useState<any[]>([]);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
 
-  // Fetch all businesses if user has no memberships
+  // Always fetch all businesses to allow switching to any
   useEffect(() => {
-    if (open && memberships.length === 0) {
+    if (open) {
       const fetchBusinesses = async () => {
         setIsLoadingAll(true);
         const { data, error } = await import("@/integrations/supabase/client").then(m => m.supabase)
@@ -33,7 +33,7 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
       };
       fetchBusinesses();
     }
-  }, [open, memberships.length]);
+  }, [open]);
 
   const handleSelectBusiness = async (targetBusinessId: string) => {
     setSelecting(true);
@@ -61,12 +61,18 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
         </DialogHeader>
 
         <div className="space-y-3 mt-4">
-          {(memberships.length > 0 ? memberships : allBusinesses)
+          {(allBusinesses.length > 0 ? allBusinesses : memberships)
             .map((item) => {
-              // Normalize item: membership has business nested, public view is flat
-              const business = (item as any).business || item;
-              const role = (item as any).role || 'Guest'; // Default role if viewing public list
-              const bId = business.id || (item as any).business_id || item.id;
+              // Item is from public view (flat) OR membership (nested)
+              // If we have allBusinesses, we iterate that.
+
+              // Normalize data
+              const businessName = item.name || (item as any).business?.name;
+              const bId = item.id || (item as any).business_id;
+
+              // Find membership for this business if it exists
+              const membership = memberships.find(m => m.business_id === bId);
+              const role = membership?.role || 'Guest';
 
               const isSelected = businessId === bId;
 
@@ -83,13 +89,16 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <CardTitle className="text-lg flex items-center gap-2">
-                          {business.name}
+                          {businessName}
                           {isSelected && (
                             <Check className="h-5 w-5 text-primary" />
                           )}
                         </CardTitle>
                         <CardDescription className="mt-1">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize ${role !== 'Guest'
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground'
+                            }`}>
                             {role}
                           </span>
                         </CardDescription>
