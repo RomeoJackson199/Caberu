@@ -91,7 +91,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('treatment_plans')
+        .from('secure_treatment_plans_view')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId)
