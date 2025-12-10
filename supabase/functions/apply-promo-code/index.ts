@@ -98,9 +98,15 @@ serve(async (req) => {
             .eq('profile_id', profileId)
             .maybeSingle();
 
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        if (!serviceRoleKey) {
+            console.error('Service Role Key missing');
+            throw new Error('Server configuration error: Service key missing');
+        }
+
         const adminClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            serviceRoleKey
         )
 
         // ... existing validation code using supabaseClient ...
@@ -203,9 +209,10 @@ serve(async (req) => {
 
     } catch (error) {
         console.error('Apply promo code error:', error)
+        // Return 200 even on error so client can read the JSON body with error message
         return new Response(
             JSON.stringify({ error: error.message }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 })
