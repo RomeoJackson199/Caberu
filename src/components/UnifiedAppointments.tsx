@@ -218,11 +218,16 @@ export function UnifiedAppointments({
       }
     } else {
       // Load all patients for dentist view
-      const { data } = await supabase
+      let query = supabase
         .from('appointments')
         .select(`patient_id, patient:profiles!appointments_patient_id_fkey ( id, first_name, last_name, email )`)
-        .eq('dentist_id', dentistId)
-        .eq('business_id', businessId || '');  // Multi-tenant filter
+        .eq('dentist_id', dentistId);
+
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
+
+      const { data } = await query;
 
       const unique: Record<string, any> = {};
       (data || []).forEach((row: any) => {

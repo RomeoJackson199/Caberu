@@ -47,7 +47,7 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
 
   const fetchUrgentAppointments = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('appointments')
         .select(`
           id,
@@ -63,13 +63,18 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
           )
         `)
         .eq('dentist_id', dentistId)
-        .eq('business_id', businessId || '')  // Multi-tenant isolation
         .gte('appointment_date', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(20);
 
-      if (error) throw error;
+      // Multi-tenant isolation - only filter if we have a business context
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
 
+      const { data, error } = await query;
+
+      if (error) throw error;
       setAppointments(data || []);
     } catch (error) {
       console.error('Error fetching urgent appointments:', error);

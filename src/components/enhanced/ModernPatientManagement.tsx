@@ -112,7 +112,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     try {
       setLoading(true);
 
-      const { data: appointmentData, error: appointmentError } = await supabase
+      let query = supabase
         .from('appointments')
         .select(`
           patient_id,
@@ -129,8 +129,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
             profile_picture_url
           )
         `)
-        .eq('dentist_id', dentistId)
-        .eq('business_id', businessId || '');  // Multi-tenant isolation
+        .eq('dentist_id', dentistId);
+
+      // Multi-tenant isolation - only filter if we have a business context
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
+
+      const { data: appointmentData, error: appointmentError } = await query;
 
       if (appointmentError) throw appointmentError;
 
