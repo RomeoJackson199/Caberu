@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,28 +30,43 @@ const Login = () => {
   );
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-  const is2FAPending = useRef(false); // Track 2FA flow synchronously
+  const [is2FAPending, setIs2FAPending] = useState(false); // FIXED: Use state instead of ref for proper reactivity
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false); // Prevent concurrent auth checks
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      // Don't auto-navigate if 2FA is pending
-      if (session && !is2FAPending.current) {
-        const has2FA = session?.user?.user_metadata?.two_factor_enabled === true;
-        if (!has2FA) {
-          navigate("/auth-redirect");
+    let isMounted = true;
+
+    const checkAuthState = async () => {
+      if (isProcessingAuth) return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!isMounted || is2FAPending) return;
+
+        if (session) {
+          const has2FA = session?.user?.user_metadata?.two_factor_enabled === true;
+          if (!has2FA) {
+            navigate("/auth-redirect");
+          }
         }
+      } catch (error) {
+        logger.error("Error checking auth state:", error);
       }
-    });
+    };
+
+    checkAuthState();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Don't auto-navigate if 2FA is pending
-      if (session && !is2FAPending.current) {
+      if (!isMounted || is2FAPending || isProcessingAuth) return;
+
+      if (session) {
         const has2FA = session?.user?.user_metadata?.two_factor_enabled === true;
         if (!has2FA) {
           navigate("/auth-redirect");
@@ -59,8 +74,11 @@ const Login = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, is2FAPending, isProcessingAuth]);
 
   useEffect(() => {
     const loadBusinesses = async () => {
@@ -144,7 +162,7 @@ const Login = () => {
       if (twoFactorEnabled) {
         // User has 2FA enabled - show verification dialog
         // Keep session active during 2FA verification
-        is2FAPending.current = true; // Prevent auto-navigation
+        setIs2FAPending(true); // FIXED: Use state setter
         setUserEmail(formData.email);
         setShow2FADialog(true);
         setIsLoading(false);
@@ -222,7 +240,7 @@ const Login = () => {
 
   const handle2FASuccess = async () => {
     setIsLoading(true);
-    is2FAPending.current = false; // Clear flag after successful 2FA
+    setIs2FAPending(false); // FIXED: Use state setter
     try {
       // Log 2FA login event
       try {
