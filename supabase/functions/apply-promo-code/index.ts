@@ -98,10 +98,17 @@ serve(async (req) => {
             .eq('profile_id', profileId)
             .maybeSingle();
 
+        const adminClient = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        )
+
+        // ... existing validation code using supabaseClient ...
+
         if (!dentist) {
-            // Create dentist record if missing (e.g. owner who wasn't auto-created as dentist)
+            // Create dentist record if missing (Using Admin Client to bypass RLS if needed)
             console.log('Dentist record not found, creating for profile:', profileId);
-            const { data: newDentist, error: createDentistError } = await supabaseClient
+            const { data: newDentist, error: createDentistError } = await adminClient
                 .from('dentists')
                 .insert({
                     profile_id: profileId,
@@ -112,6 +119,7 @@ serve(async (req) => {
                 .single();
 
             if (createDentistError) {
+                console.error('Create dentist error:', createDentistError);
                 throw new Error('Failed to create dentist record: ' + createDentistError.message);
             }
             dentist = newDentist;
@@ -137,16 +145,20 @@ serve(async (req) => {
             }
             newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
 
-            await supabaseClient
+            // Use adminClient for update
+            const { error: updateError } = await adminClient
                 .from('subscriptions')
                 .update({
                     current_period_end: newPeriodEnd.toISOString(),
                     cancel_at_period_end: true,
                     status: 'active' // Reactivate if it was cancelled/expired
                 })
-                .eq('id', subscription.id)
+                .eq('id', subscription.id);
+
+            if (updateError) throw updateError;
+
         } else {
-            // Create NEW subscription
+            // Create NEW subscription using adminClient
             newPeriodEnd = new Date();
             newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
 
@@ -159,7 +171,7 @@ serve(async (req) => {
 
             const planId = plan?.id || (await supabaseClient.from('subscription_plans').select('id').limit(1).single()).data?.id;
 
-            const { data: newSub, error: createError } = await supabaseClient
+            const { data: newSub, error: createError } = await adminClient
                 .from('subscriptions')
                 .insert({
                     dentist_id: dentist.id,
@@ -175,8 +187,8 @@ serve(async (req) => {
             subscription_id = newSub.id;
         }
 
-        // 5. Increment Usage
-        await supabaseClient.rpc('increment_promo_usage', { promo_id: codeData.id })
+        // 5. Increment Usage using adminClient (in case RPC has security definer or similar needs)
+        await adminClient.rpc('increment_promo_usage', { promo_id: codeData.id })
 
         // 6. Log Usage (Ideally create a promo_code_usages table, but for now we rely on the counter)
 
