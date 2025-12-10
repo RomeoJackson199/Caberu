@@ -1105,7 +1105,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
                 {selectedPatient.medical_history && (
                   <div className="mt-4 pt-4 border-t">
                     <h4 className="font-medium text-sm mb-2">Medical Alerts</h4>
-                    <p className="text-sm bg-muted p-3 rounded-md">{selectedPatient.medical_history}</p>
+                    <p className="text-sm bg-muted p-3 rounded-md">{sanitizeText(selectedPatient.medical_history)}</p>
                   </div>
                 )}
                 {/* Quick actions for booking and payment - Improved layout */}

@@ -25,9 +25,7 @@ const Login = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
   const [showBusinessSelector, setShowBusinessSelector] = useState(false);
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(
-    () => sessionStorage.getItem("selected_business_id") // SECURITY: Use sessionStorage for session lifetime
-  );
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null); // SECURITY: No client-side storage - server-side only via session_business table
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [is2FAPending, setIs2FAPending] = useState(false); // FIXED: Use state instead of ref for proper reactivity
@@ -104,7 +102,7 @@ const Login = () => {
 
 
   const handleSelectBusiness = (businessId: string) => {
-    sessionStorage.setItem("selected_business_id", businessId); // SECURITY: Use sessionStorage
+    // SECURITY: Business ID stored server-side only via session_business table (set after auth)
     setSelectedBusinessId(businessId);
 
     const business = businesses.find((item) => item.id === businessId);

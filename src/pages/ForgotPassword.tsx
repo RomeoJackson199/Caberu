@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Shield, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { validatePassword } from "@/utils/passwordValidation";
 
 const ForgotPassword = () => {
   const { toast } = useToast();
@@ -48,6 +49,17 @@ const ForgotPassword = () => {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code || !newPassword) return;
+
+    // SECURITY: Validate password strength before reset
+    const passwordResult = validatePassword(newPassword);
+    if (!passwordResult.isValid) {
+      toast({
+        title: "Weak Password",
+        description: passwordResult.feedback.join(". "),
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {

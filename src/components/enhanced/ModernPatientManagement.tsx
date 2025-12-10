@@ -30,6 +30,7 @@ import { QuickAppointmentDialog } from "@/components/appointments/QuickAppointme
 import { logger } from '@/lib/logger';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBusinessContext } from '@/hooks/useBusinessContext';
+import { sanitizeText } from '@/utils/sanitize';
 
 interface Patient {
   id: string;
@@ -556,7 +557,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             <FileText className="h-4 w-4" />
                             Medical Alert
                           </p>
-                          <p className="text-sm mt-1 text-foreground">{selectedPatient.medical_history}</p>
+                          <p className="text-sm mt-1 text-foreground">{sanitizeText(selectedPatient.medical_history || '')}</p>
                         </div>
                       )}
                     </div>

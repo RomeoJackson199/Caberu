@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { logger } from '@/lib/logger';
+import { sanitizeText } from '@/utils/sanitize';
 
 interface Appointment {
   id: string;
@@ -468,19 +469,19 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
                 {selectedPatient.address && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Address</label>
-                    <p className="text-base mt-1">{selectedPatient.address}</p>
+                    <p className="text-base mt-1">{sanitizeText(selectedPatient.address || '')}</p>
                   </div>
                 )}
                 {selectedPatient.emergency_contact && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Emergency Contact</label>
-                    <p className="text-base mt-1">{selectedPatient.emergency_contact}</p>
+                    <p className="text-base mt-1">{sanitizeText(selectedPatient.emergency_contact || '')}</p>
                   </div>
                 )}
                 {selectedPatient.medical_history && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Medical History</label>
-                    <p className="text-base mt-1 whitespace-pre-wrap">{selectedPatient.medical_history}</p>
+                    <p className="text-base mt-1 whitespace-pre-wrap">{sanitizeText(selectedPatient.medical_history || '')}</p>
                   </div>
                 )}
               </div>
