@@ -48,6 +48,7 @@ import { PatientPaymentHistory } from "@/components/PatientPaymentHistory";
 import { PaymentRequestForm } from "@/components/PaymentRequestForm";
 import { useNavigate } from "react-router-dom";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { logger } from '@/lib/logger';
 import { sanitizeText } from '@/utils/sanitize';
 
@@ -193,6 +194,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
   const sb: any = supabase;
   const navigate = useNavigate();
   const { hasFeature, t } = useBusinessTemplate();
+  const { businessId } = useBusinessContext();
 
   useEffect(() => {
     fetchPatients();
@@ -221,7 +223,17 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
     try {
       setLoading(true);
 
-      // Get patients who have appointments with this dentist
+      // SECURITY: Get patients who have appointments with this dentist AND business
+      if (!businessId) {
+        toast({
+          title: "Error",
+          description: "No business context. Please refresh the page.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const { data: appointmentData, error: appointmentError } = await supabase
         .from('appointments')
         .select(`
@@ -239,7 +251,8 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
             profile_picture_url
           )
         `)
-        .eq('dentist_id', dentistId);
+        .eq('dentist_id', dentistId)
+        .eq('business_id', businessId);  // Multi-tenant isolation
 
       if (appointmentError) {
         console.error('Error fetching appointments:', appointmentError);
