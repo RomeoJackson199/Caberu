@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar, 
+import {
+  Calendar,
   Clock,
   MapPin,
   AlertCircle,
@@ -27,6 +27,7 @@ import { PrescriptionManager } from "@/components/PrescriptionManager";
 import { TreatmentPlanManager } from "@/components/TreatmentPlanManager";
 import { AIConversationDialog } from "@/components/AIConversationDialog";
 import { logger } from '@/lib/logger';
+import { MedicalDataConsentDialog, checkMedicalDataConsent } from '@/components/gdpr/MedicalDataConsentDialog';
 
 interface HealthDataProps {
   user: User;
@@ -103,12 +104,12 @@ interface MedicalRecord {
   };
 }
 
-export const HealthData = ({ 
-  user, 
-  onBack, 
-  patientId: propPatientId, 
+export const HealthData = ({
+  user,
+  onBack,
+  patientId: propPatientId,
   dentistId,
-  mode = 'patient' 
+  mode = 'patient'
 }: HealthDataProps) => {
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,6 +119,8 @@ export const HealthData = ({
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showAIConsultation, setShowAIConsultation] = useState(false);
   const [activeTab, setActiveTab] = useState("prescriptions");
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [consentRequired, setConsentRequired] = useState(false);
   const { toast } = useToast();
 
   const patientId = mode === 'dentist' ? propPatientId : null;
@@ -132,6 +135,34 @@ export const HealthData = ({
       setIsLoading(true);
 
       let profile: any = null;
+
+      // Determine the user ID for consent check
+      const targetUserId = mode === 'dentist' ? propPatientId : user.id;
+
+      // GDPR Article 9: Check consent before loading medical data
+      if (targetUserId) {
+        const hasConsent = await checkMedicalDataConsent(targetUserId);
+        if (!hasConsent) {
+          setConsentRequired(true);
+          setShowConsentDialog(true);
+          setIsLoading(false);
+          return;
+        }
+        setConsentRequired(false);
+
+        // Log access for GDPR audit
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'VIEW_MEDICAL_RECORDS',
+          target_user_id: targetUserId,
+          target_table: 'medical_records',
+          metadata: {
+            access_mode: mode,
+            consent_verified: true
+          },
+          created_at: new Date().toISOString()
+        }).catch(() => { }); // Don't fail if audit fails
+      }
 
       if (mode === 'patient') {
         try {
@@ -179,44 +210,44 @@ export const HealthData = ({
       ]);
 
       // Handle results
-if (medicalRecordsResult.status === 'fulfilled') {
-  const records = medicalRecordsResult.value.map((record: any) => {
-    const d = record?.dentist;
-    return {
-      ...record,
-      visit_date: record.record_date,
-      dentist: d && typeof d === 'object' && (d as any).profile
-        ? d
-        : { profile: { first_name: '', last_name: '' } }
-    };
-  });
-  setMedicalRecords(records);
-}
-if (prescriptionsResult.status === 'fulfilled') {
-  const prescriptions = prescriptionsResult.value.map((prescription: any) => {
-    const d = prescription?.dentist;
-    return {
-      ...prescription,
-      dentist: d && typeof d === 'object' && (d as any).profile
-        ? d
-        : { profile: { first_name: '', last_name: '' } }
-    };
-  });
-  setPrescriptions(prescriptions);
-}
-if (treatmentPlansResult.status === 'fulfilled') {
-  const plans = treatmentPlansResult.value.map((plan: any) => {
-    const d = plan?.dentist;
-    return {
-      ...plan,
-      estimated_duration: plan.estimated_duration_weeks ? `${plan.estimated_duration_weeks} weeks` : '',
-      dentist: d && typeof d === 'object' && (d as any).profile
-        ? d
-        : { profile: { first_name: '', last_name: '' } }
-    };
-  });
-  setTreatmentPlans(plans);
-}
+      if (medicalRecordsResult.status === 'fulfilled') {
+        const records = medicalRecordsResult.value.map((record: any) => {
+          const d = record?.dentist;
+          return {
+            ...record,
+            visit_date: record.record_date,
+            dentist: d && typeof d === 'object' && (d as any).profile
+              ? d
+              : { profile: { first_name: '', last_name: '' } }
+          };
+        });
+        setMedicalRecords(records);
+      }
+      if (prescriptionsResult.status === 'fulfilled') {
+        const prescriptions = prescriptionsResult.value.map((prescription: any) => {
+          const d = prescription?.dentist;
+          return {
+            ...prescription,
+            dentist: d && typeof d === 'object' && (d as any).profile
+              ? d
+              : { profile: { first_name: '', last_name: '' } }
+          };
+        });
+        setPrescriptions(prescriptions);
+      }
+      if (treatmentPlansResult.status === 'fulfilled') {
+        const plans = treatmentPlansResult.value.map((plan: any) => {
+          const d = plan?.dentist;
+          return {
+            ...plan,
+            estimated_duration: plan.estimated_duration_weeks ? `${plan.estimated_duration_weeks} weeks` : '',
+            dentist: d && typeof d === 'object' && (d as any).profile
+              ? d
+              : { profile: { first_name: '', last_name: '' } }
+          };
+        });
+        setTreatmentPlans(plans);
+      }
       if (appointmentsResult.status === 'fulfilled') {
         setAppointments(appointmentsResult.value);
       }
@@ -366,7 +397,7 @@ if (treatmentPlansResult.status === 'fulfilled') {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-6">
           {/* Enhanced Patient Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -379,13 +410,13 @@ if (treatmentPlansResult.status === 'fulfilled') {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Date of Birth</p>
                 <p className="font-medium">
-                  {patientProfile?.date_of_birth 
+                  {patientProfile?.date_of_birth
                     ? formatDate(patientProfile.date_of_birth)
                     : 'Not provided'}
                 </p>
@@ -641,28 +672,28 @@ if (treatmentPlansResult.status === 'fulfilled') {
                             </div>
                             <Badge variant="outline">{record.record_type}</Badge>
                           </div>
-                          
+
                           {record.description && (
                             <div className="mb-3">
                               <h4 className="font-medium text-sm mb-1">Description:</h4>
                               <p className="text-sm text-muted-foreground">{record.description}</p>
                             </div>
                           )}
-                          
+
                           {record.findings && (
                             <div className="mb-3">
                               <h4 className="font-medium text-sm mb-1">Findings:</h4>
                               <p className="text-sm text-muted-foreground">{record.findings}</p>
                             </div>
                           )}
-                          
+
                           {record.recommendations && (
                             <div>
                               <h4 className="font-medium text-sm mb-1">Recommendations:</h4>
                               <p className="text-sm text-muted-foreground">{record.recommendations}</p>
                             </div>
                           )}
-                          
+
                           {record.dentist && (
                             <div className="mt-2 text-xs text-muted-foreground">
                               Recorded by: Dr. {record.dentist.profile.first_name} {record.dentist.profile.last_name}
@@ -681,16 +712,16 @@ if (treatmentPlansResult.status === 'fulfilled') {
         {mode === 'dentist' && dentistId && patientProfile && (
           <>
             <TabsContent value="add-prescription">
-               <PrescriptionManager
-                 dentistId={dentistId}
-               />
-             </TabsContent>
- 
-             <TabsContent value="add-treatment">
-               <TreatmentPlanManager
-                 patientId={patientProfile.id}
-                 dentistId={dentistId}
-               />
+              <PrescriptionManager
+                dentistId={dentistId}
+              />
+            </TabsContent>
+
+            <TabsContent value="add-treatment">
+              <TreatmentPlanManager
+                patientId={patientProfile.id}
+                dentistId={dentistId}
+              />
             </TabsContent>
           </>
         )}
@@ -705,6 +736,17 @@ if (treatmentPlansResult.status === 'fulfilled') {
           contextType="patient"
         />
       )}
+
+      {/* GDPR Medical Data Consent Dialog */}
+      <MedicalDataConsentDialog
+        userId={mode === 'dentist' ? (propPatientId || '') : user.id}
+        open={showConsentDialog}
+        onOpenChange={setShowConsentDialog}
+        onConsentGranted={() => {
+          setConsentRequired(false);
+          loadHealthData(); // Reload data after consent granted
+        }}
+      />
     </div>
   );
 };
