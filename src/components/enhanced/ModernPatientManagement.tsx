@@ -29,6 +29,7 @@ import { PatientDetailsTabs } from "./PatientDetailsTabs";
 import { QuickAppointmentDialog } from "@/components/appointments/QuickAppointmentDialog";
 import { logger } from '@/lib/logger';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface Patient {
   id: string;
@@ -82,10 +83,11 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { businessId } = useBusinessContext();
 
   useEffect(() => {
-    fetchPatients();
-  }, [dentistId]);
+    if (businessId) fetchPatients();
+  }, [dentistId, businessId]);
 
   // Handle URL query parameter for patient selection
   useEffect(() => {
@@ -127,7 +129,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
             profile_picture_url
           )
         `)
-        .eq('dentist_id', dentistId);
+        .eq('dentist_id', dentistId)
+        .eq('business_id', businessId || '');  // Multi-tenant isolation
 
       if (appointmentError) throw appointmentError;
 

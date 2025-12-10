@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  AlertTriangle, 
-  Clock, 
-  Activity, 
+import {
+  AlertTriangle,
+  Clock,
+  Activity,
   Heart,
   Calendar,
   User,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { logger } from '@/lib/logger';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface UrgencyAppointment {
   id: string;
@@ -35,13 +36,14 @@ interface DentistUrgencyGridProps {
 }
 
 export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
+  const { businessId } = useBusinessContext();
   const [appointments, setAppointments] = useState<UrgencyAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchUrgentAppointments();
-  }, [dentistId]);
+    if (businessId) fetchUrgentAppointments();
+  }, [dentistId, businessId]);
 
   const fetchUrgentAppointments = async () => {
     try {
@@ -61,6 +63,7 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
           )
         `)
         .eq('dentist_id', dentistId)
+        .eq('business_id', businessId || '')  // Multi-tenant isolation
         .gte('appointment_date', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(20);
@@ -81,7 +84,7 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
   };
 
   const getUrgencyConfig = (urgency: string) => {
-    switch(urgency) {
+    switch (urgency) {
       case 'emergency':
         return {
           color: 'bg-red-100 text-red-800 border-red-200',
@@ -134,9 +137,9 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
       prev.map(a =>
         a.id === appointmentId
           ? {
-              ...a,
-              urgency: a.urgency === 'high' ? 'emergency' : 'high',
-            }
+            ...a,
+            urgency: a.urgency === 'high' ? 'emergency' : 'high',
+          }
           : a
       )
     );
@@ -181,7 +184,7 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
           const config = getUrgencyConfig(urgency);
           const count = appointments.filter(apt => apt.urgency === urgency).length;
           const IconComponent = config.icon;
-          
+
           return (
             <Card key={urgency} className="glass-card">
               <CardContent className="p-4">
@@ -216,7 +219,7 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
           sortedAppointments.map((appointment) => {
             const config = getUrgencyConfig(appointment.urgency);
             const IconComponent = config.icon;
-            
+
             return (
               <Card key={appointment.id} className={`glass-card border-l-4 ${config.color.split(' ')[2]}`}>
                 <CardContent className="p-6">
@@ -232,39 +235,39 @@ export const DentistUrgencyGrid = ({ dentistId }: DentistUrgencyGridProps) => {
                           <span className="font-medium">{appointment.patient_name}</span>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                         <div className="flex items-center space-x-2">
                           <Calendar className="h-4 w-4 text-dental-primary" />
                           <span>{format(new Date(appointment.appointment_date), 'MMM dd, yyyy HH:mm')}</span>
                         </div>
-                        
+
                         {appointment.reason && (
                           <div className="flex items-center space-x-2">
                             <MessageSquare className="h-4 w-4 text-dental-secondary" />
                             <span className="truncate">{appointment.reason}</span>
                           </div>
                         )}
-                        
+
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-dental-accent" />
                           <span>Requested {format(new Date(appointment.created_at), 'HH:mm')}</span>
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSendReminder(appointment.id)}
-                          disabled={appointment.reminderSent}
-                          className="flex items-center space-x-1"
-                        >
-                          <Phone className="h-3 w-3" />
-                          <span>{appointment.reminderSent ? 'Reminded' : 'Remind'}</span>
-                        </Button>
-                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSendReminder(appointment.id)}
+                        disabled={appointment.reminderSent}
+                        className="flex items-center space-x-1"
+                      >
+                        <Phone className="h-3 w-3" />
+                        <span>{appointment.reminderSent ? 'Reminded' : 'Remind'}</span>
+                      </Button>
+
                       <Button
                         size="sm"
                         onClick={() => handlePrioritizeAppointment(appointment.id)}

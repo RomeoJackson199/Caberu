@@ -14,14 +14,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { 
-  Calendar, 
-  Clock, 
-  User, 
-  Plus, 
-  Filter, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Calendar,
+  Clock,
+  User,
+  Plus,
+  Filter,
+  CheckCircle2,
+  XCircle,
   RefreshCw,
   MoreVertical,
   AlertCircle,
@@ -71,11 +71,11 @@ interface UnifiedAppointmentsProps {
   viewMode?: 'clinical' | 'patient';
 }
 
-export function UnifiedAppointments({ 
-  dentistId, 
-  patientId, 
+export function UnifiedAppointments({
+  dentistId,
+  patientId,
   onOpenPatientProfile,
-  viewMode = 'clinical' 
+  viewMode = 'clinical'
 }: UnifiedAppointmentsProps) {
   const { businessId } = useBusinessContext();
   const [appointments, setAppointments] = useState<UnifiedAppointment[]>([]);
@@ -111,9 +111,9 @@ export function UnifiedAppointments({
   // Derive next appointment (upcoming earliest)
   const nextAppointment = useMemo(() => {
     const upcoming = appointments
-      .filter(a => ['confirmed','pending','in_progress','scheduled'].includes(a.status))
+      .filter(a => ['confirmed', 'pending', 'in_progress', 'scheduled'].includes(a.status))
       .filter(a => new Date(a.appointment_date).getTime() >= Date.now())
-      .sort((a,b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
+      .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
     return upcoming[0] || null;
   }, [appointments]);
 
@@ -178,6 +178,11 @@ export function UnifiedAppointments({
         query = query.eq('dentist_id', dentistId);
       }
 
+      // SECURITY: Multi-tenant isolation
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
@@ -192,7 +197,7 @@ export function UnifiedAppointments({
     } finally {
       setLoading(false);
     }
-  }, [dentistId, patientId, toast]);
+  }, [dentistId, patientId, businessId, toast]);
 
   useEffect(() => {
     fetchAppointments();
@@ -216,8 +221,9 @@ export function UnifiedAppointments({
       const { data } = await supabase
         .from('appointments')
         .select(`patient_id, patient:profiles!appointments_patient_id_fkey ( id, first_name, last_name, email )`)
-        .eq('dentist_id', dentistId);
-      
+        .eq('dentist_id', dentistId)
+        .eq('business_id', businessId || '');  // Multi-tenant filter
+
       const unique: Record<string, any> = {};
       (data || []).forEach((row: any) => {
         const p = row.patient;
@@ -236,10 +242,10 @@ export function UnifiedAppointments({
   // Filter appointments based on status
   const filteredAppointments = useMemo(() => {
     const now = new Date();
-    
+
     return appointments.filter(apt => {
       const aptDate = new Date(apt.appointment_date);
-      
+
       switch (filterStatus) {
         case 'upcoming':
           return aptDate >= now && apt.status !== 'cancelled' && apt.status !== 'completed';
@@ -261,10 +267,10 @@ export function UnifiedAppointments({
       completed: { bg: "bg-green-100", text: "text-green-800", border: "border-green-200" },
       cancelled: { bg: "bg-red-100", text: "text-red-800", border: "border-red-200" }
     };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || 
-                   { bg: "bg-gray-100", text: "text-gray-800", border: "border-gray-200" };
-    
+
+    const config = statusConfig[status as keyof typeof statusConfig] ||
+      { bg: "bg-gray-100", text: "text-gray-800", border: "border-gray-200" };
+
     return (
       <Badge className={`${config.bg} ${config.text} ${config.border} border capitalize px-3 py-1`}>
         {status}
@@ -299,7 +305,7 @@ export function UnifiedAppointments({
         title: "Appointment Cancelled",
         description: "The appointment has been cancelled successfully.",
       });
-      
+
       fetchAppointments();
     } catch (error) {
       toast({
@@ -315,7 +321,7 @@ export function UnifiedAppointments({
 
     try {
       const newDateTime = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
-      
+
       const { error } = await supabase
         .from('appointments')
         .update({ appointment_date: newDateTime })
@@ -327,7 +333,7 @@ export function UnifiedAppointments({
         title: "Appointment Rescheduled",
         description: "The appointment has been rescheduled successfully.",
       });
-      
+
       setShowReschedule(false);
       setSelectedAppointment(null);
       fetchAppointments();
@@ -352,12 +358,13 @@ export function UnifiedAppointments({
       }
 
       const appointmentDateTime = new Date(`${quickDate}T${quickTime}`).toISOString();
-      
+
       const { error } = await supabase
         .from('appointments')
         .insert({
           patient_id: quickPatientId,
           dentist_id: dentistId,
+          business_id: businessId,  // Multi-tenant isolation
           appointment_date: appointmentDateTime,
           duration_minutes: quickDuration,
           status: 'confirmed',
@@ -371,7 +378,7 @@ export function UnifiedAppointments({
         title: "Appointment Booked",
         description: "The appointment has been booked successfully.",
       });
-      
+
       setShowBooking(false);
       // Reset form
       setQuickPatientId("");
@@ -470,7 +477,7 @@ export function UnifiedAppointments({
                       </div>
                       {getStatusBadge(appointment.status)}
                     </div>
-                    
+
                     {viewMode === 'clinical' && appointment.patient && (
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
@@ -483,20 +490,20 @@ export function UnifiedAppointments({
                         </button>
                       </div>
                     )}
-                    
+
                     {appointment.reason && (
                       <p className="text-sm text-muted-foreground">
                         Reason: {appointment.reason}
                       </p>
                     )}
-                    
+
                     {appointment.consultation_notes && (
                       <div className="mt-2 p-3 bg-muted rounded-lg">
                         <p className="text-sm">{appointment.consultation_notes}</p>
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Action buttons - consistent across all views */}
                   <div className="flex flex-row sm:flex-col gap-2">
                     {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
@@ -530,8 +537,8 @@ export function UnifiedAppointments({
                         </Button>
                       </>
                     )}
-                    
-                    
+
+
                   </div>
                 </div>
               </CardContent>
@@ -579,7 +586,7 @@ export function UnifiedAppointments({
                 </Select>
               </div>
             )}
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Date *</Label>
@@ -598,7 +605,7 @@ export function UnifiedAppointments({
                 />
               </div>
             </div>
-            
+
             <div>
               <Label>Reason for Visit</Label>
               <Select value={quickReason} onValueChange={setQuickReason}>
@@ -616,7 +623,7 @@ export function UnifiedAppointments({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Duration (minutes)</Label>
@@ -642,7 +649,7 @@ export function UnifiedAppointments({
                 </Select>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <Button onClick={handleQuickBook} className="flex-1">
                 Book Appointment
