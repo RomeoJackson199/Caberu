@@ -183,9 +183,9 @@ export function CancelSubscriptionSection() {
                     .select('*', { count: 'exact', head: true })
                     .eq('business_id', businessId);
 
-                // Get notification/email count
+                // Get email count from email_logs table
                 const { count: emailCount } = await supabase
-                    .from('notifications')
+                    .from('email_logs')
                     .select('*', { count: 'exact', head: true })
                     .eq('business_id', businessId);
 
