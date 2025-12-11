@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,8 @@ import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerifica
 import { logger } from '@/lib/logger';
 
 export default function DentistAdminSecurity() {
-  const { dentistId, loading: dentistLoading } = useCurrentDentist();
+  const { businessId } = useBusinessContext();
+  const { dentistId, loading: dentistLoading } = useCurrentDentist(businessId);
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

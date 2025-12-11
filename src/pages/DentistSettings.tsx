@@ -11,6 +11,7 @@ import DentistAdminProfile from "./DentistAdminProfile";
 import DentistAdminUsers from "./DentistAdminUsers";
 import { ServiceManager } from "@/components/services/ServiceManager";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrentBusinessId } from "@/lib/businessUtils";
@@ -20,7 +21,8 @@ import { Label } from "@/components/ui/label";
 import { CancelSubscriptionSection } from "@/components/settings/CancelSubscriptionSection";
 
 export default function DentistSettings() {
-  const { dentistId } = useCurrentDentist();
+  const { businessId } = useBusinessContext();
+  const { dentistId } = useCurrentDentist(businessId);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("appointments");
   const navigate = useNavigate();

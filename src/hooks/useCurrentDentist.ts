@@ -9,7 +9,12 @@ export type CurrentDentistState = {
   error: string | null;
 };
 
-export function useCurrentDentist(): CurrentDentistState {
+/**
+ * Hook to get the current dentist context.
+ * If businessId is provided, it will find the dentist associated with that business.
+ * Otherwise, it returns the first active dentist for the user.
+ */
+export function useCurrentDentist(businessId?: string | null): CurrentDentistState {
   const [state, setState] = useState<CurrentDentistState>({
     userId: null,
     profileId: null,
@@ -41,25 +46,51 @@ export function useCurrentDentist(): CurrentDentistState {
         return;
       }
 
-      const { data: dentistRow, error: dentistErr } = await supabase
-        .from('dentists')
-        .select('id')
-        .eq('profile_id', profileId)
-        .eq('is_active', true)
-        .maybeSingle();
-      if (dentistErr) throw dentistErr;
+      // If businessId is provided, find dentist through business_members
+      let dentistId: string | null = null;
+
+      if (businessId) {
+        // Find dentist for the specific business via business_members
+        const { data: memberData } = await supabase
+          .from('business_members')
+          .select('profile_id')
+          .eq('business_id', businessId)
+          .eq('profile_id', profileId)
+          .maybeSingle();
+
+        if (memberData) {
+          // User is a member of this business, get their dentist record
+          const { data: dentistRow } = await supabase
+            .from('dentists')
+            .select('id')
+            .eq('profile_id', profileId)
+            .eq('is_active', true)
+            .maybeSingle();
+          dentistId = dentistRow?.id ?? null;
+        }
+      } else {
+        // No business context, just get the first active dentist
+        const { data: dentistRow, error: dentistErr } = await supabase
+          .from('dentists')
+          .select('id')
+          .eq('profile_id', profileId)
+          .eq('is_active', true)
+          .maybeSingle();
+        if (dentistErr) throw dentistErr;
+        dentistId = dentistRow?.id ?? null;
+      }
 
       setState({
         userId,
         profileId,
-        dentistId: dentistRow?.id ?? null,
+        dentistId,
         loading: false,
         error: null,
       });
     } catch (e: any) {
       setState(prev => ({ ...prev, loading: false, error: e?.message || 'Failed to load dentist context' }));
     }
-  }, []);
+  }, [businessId]);
 
   useEffect(() => {
     load();
@@ -67,4 +98,3 @@ export function useCurrentDentist(): CurrentDentistState {
 
   return state;
 }
-

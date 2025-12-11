@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { WeeklyCalendarView } from "@/components/appointments/WeeklyCalendarView";
@@ -17,10 +18,11 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3 } from "lucide-react";
 
 export default function DentistAppointmentsManagement() {
+  const { businessId } = useBusinessContext();
   const {
     dentistId,
     loading: dentistLoading
-  } = useCurrentDentist();
+  } = useCurrentDentist(businessId);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"week" | "day">("week");

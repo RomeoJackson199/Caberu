@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, User, CalendarCheck } from "lucide-react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
@@ -16,7 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 
 export default function DentistAdminProfile() {
-  const { dentistId, profileId, loading: dentistLoading } = useCurrentDentist();
+  const { businessId } = useBusinessContext();
+  const { dentistId, profileId, loading: dentistLoading } = useCurrentDentist(businessId);
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);

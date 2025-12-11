@@ -328,7 +328,8 @@ export function AppShell() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { t } = useLanguage();
-  const { dentistId, userId } = useCurrentDentist();
+  const { businessId } = useBusinessContext();
+  const { dentistId, userId } = useCurrentDentist(businessId);
   const { branding } = useClinicBranding();
 
   useScrollRestoration();
