@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Sparkles, Loader2, Tag, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,6 +35,10 @@ export default function Pricing() {
   const businessContext = useBusinessContext();
   const businessId = businessContext?.businessId || sessionStorage.getItem('currentBusinessId');
 
+  // Track current subscription to offer plan change scheduling
+  const [currentPlan, setCurrentPlan] = useState<{ name: string; status: string; endsAt: string | null } | null>(null);
+  const [pendingChange, setPendingChange] = useState<{ planName: string; changeDate: string } | null>(null);
+
   const { data: plans, isLoading } = useQuery({
     queryKey: ['subscription-plans'],
     queryFn: async () => {
@@ -54,6 +58,40 @@ export default function Pricing() {
     },
   });
 
+  // Fetch current subscription status when businessId is available
+  useEffect(() => {
+    const fetchCurrentSubscription = async () => {
+      if (!businessId) return;
+
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('subscription_status, subscription_plan, subscription_ends_at, pending_plan_change, pending_plan_change_date')
+        .eq('id', businessId)
+        .single();
+
+      if (business) {
+        if (business.subscription_status === 'active' || business.subscription_status === 'cancelling') {
+          setCurrentPlan({
+            name: business.subscription_plan || 'Free',
+            status: business.subscription_status,
+            endsAt: business.subscription_ends_at,
+          });
+        }
+
+        if (business.pending_plan_change) {
+          setPendingChange({
+            planName: business.pending_plan_change,
+            changeDate: business.pending_plan_change_date || '',
+          });
+        } else {
+          setPendingChange(null);
+        }
+      }
+    };
+
+    fetchCurrentSubscription();
+  }, [businessId]);
+
   const handleSubscribe = async (planId: string, planName: string) => {
     setLoading(planId);
     try {
@@ -71,6 +109,28 @@ export default function Pricing() {
       if (!businessId) {
         toast.error("Please select a business first");
         navigate("/select-business");
+        setLoading(null);
+        return;
+      }
+
+      // If user already has an active subscription and selecting a different plan, schedule the change
+      if (currentPlan && currentPlan.status === 'active' && currentPlan.name.toLowerCase() !== planName.toLowerCase()) {
+        console.log('Scheduling plan change from', currentPlan.name, 'to', planName);
+        const { data, error } = await supabase.functions.invoke('schedule-plan-change', {
+          body: {
+            business_id: businessId,
+            new_plan_name: planName,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        toast.success(data.message || `Your plan will change to ${planName} at the end of your billing period.`);
+        setPendingChange({
+          planName: planName,
+          changeDate: data.change_date || currentPlan.endsAt || '',
+        });
         setLoading(null);
         return;
       }
@@ -291,8 +351,14 @@ export default function Pricing() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Processing...
                       </>
+                    ) : pendingChange?.planName.toLowerCase() === plan.name.toLowerCase() ? (
+                      'Pending Change ✓'
+                    ) : currentPlan?.name.toLowerCase() === plan.name.toLowerCase() ? (
+                      'Current Plan ✓'
                     ) : validPromo ? (
                       'Apply Promo & Activate'
+                    ) : currentPlan?.status === 'active' ? (
+                      'Schedule Change'
                     ) : (
                       'Get Started'
                     )}

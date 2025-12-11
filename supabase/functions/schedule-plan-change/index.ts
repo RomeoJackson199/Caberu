@@ -30,13 +30,13 @@ serve(async (req) => {
             throw new Error('Unauthorized')
         }
 
-        const { business_id, cancel_immediately } = await req.json()
+        const { business_id, new_plan_name } = await req.json()
 
-        if (!business_id) {
-            throw new Error('business_id is required')
+        if (!business_id || !new_plan_name) {
+            throw new Error('business_id and new_plan_name are required')
         }
 
-        console.log('cancel-subscription for business:', business_id)
+        console.log('schedule-plan-change v1 for business:', business_id, 'new plan:', new_plan_name)
 
         // Verify user is owner/admin of this business
         const { data: profile } = await supabaseClient
@@ -57,13 +57,13 @@ serve(async (req) => {
             .single()
 
         if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-            throw new Error('Only owners or admins can cancel subscriptions')
+            throw new Error('Only owners or admins can change subscription plans')
         }
 
         // Get current business subscription info
         const { data: business } = await adminClient
             .from('businesses')
-            .select('subscription_status, subscription_ends_at')
+            .select('subscription_status, subscription_plan, subscription_ends_at')
             .eq('id', business_id)
             .single()
 
@@ -71,44 +71,41 @@ serve(async (req) => {
             throw new Error('Business not found')
         }
 
-        // Update business subscription status and clear any pending plan changes
-        const updateData = cancel_immediately
-            ? {
-                subscription_status: 'cancelled',
-                subscription_plan: 'free',
-                pending_plan_change: null,
-                pending_plan_change_date: null,
-            }
-            : {
-                subscription_status: 'cancelling', // Will be cancelled at period end
-                pending_plan_change: null,
-                pending_plan_change_date: null,
-            }
+        // If no active subscription, can't schedule a change
+        if (!business.subscription_status || business.subscription_status === 'cancelled') {
+            throw new Error('No active subscription to change. Please subscribe first.')
+        }
+
+        // Schedule the plan change for the end of the current period
+        const changeDate = business.subscription_ends_at || new Date().toISOString()
 
         const { error: updateError } = await adminClient
             .from('businesses')
-            .update(updateData)
+            .update({
+                pending_plan_change: new_plan_name,
+                pending_plan_change_date: changeDate,
+            })
             .eq('id', business_id)
 
         if (updateError) {
             console.error('Update error:', updateError)
-            throw new Error('Failed to cancel subscription')
+            throw new Error('Failed to schedule plan change')
         }
+
+        const formattedDate = new Date(changeDate).toLocaleDateString()
 
         return new Response(
             JSON.stringify({
                 success: true,
-                cancel_immediately,
-                current_period_end: business.subscription_ends_at,
-                message: cancel_immediately
-                    ? 'Subscription cancelled immediately'
-                    : `Subscription will end on ${business.subscription_ends_at ? new Date(business.subscription_ends_at).toLocaleDateString() : 'period end'}`,
+                message: `Your plan will change to ${new_plan_name} on ${formattedDate}.`,
+                pending_plan: new_plan_name,
+                change_date: changeDate,
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
 
     } catch (error) {
-        console.error('Cancel subscription error:', error)
+        console.error('Schedule plan change error:', error)
         return new Response(
             JSON.stringify({ error: error.message }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
