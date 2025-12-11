@@ -63,6 +63,10 @@ export function EnhancedMedicalRecords({ patientId, dentistId, viewMode = "denti
     const fileExt = selectedFile.name.split('.').pop();
     const fileName = `${recordId}/${Date.now()}.${fileExt}`;
 
+    if (fileName.includes('..')) {
+      throw new Error('Invalid file name');
+    }
+
     const { error } = await supabase.storage
       .from("dental-photos")
       .upload(fileName, selectedFile);

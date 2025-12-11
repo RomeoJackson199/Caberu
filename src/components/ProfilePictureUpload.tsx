@@ -53,6 +53,9 @@ export const ProfilePictureUpload = ({ currentUrl, userId, onUploadComplete }: P
       const fileName = `${folderId}/${Date.now()}.${fileExt}`;
 
       // Upload to Supabase storage
+      if (fileName.includes('..')) {
+        throw new Error('Invalid file name');
+      }
       const { error: uploadError } = await supabase.storage
         .from('profile-pictures')
         .upload(fileName, file, { upsert: true });
