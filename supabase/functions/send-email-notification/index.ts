@@ -33,6 +33,7 @@ interface EmailRequest {
   dentistId?: string;
   isSystemNotification?: boolean;
   appointmentDate?: string;
+  appointmentTime?: string;
 }
 
 serve(async (req) => {
@@ -47,7 +48,7 @@ serve(async (req) => {
       throw new Error('Supabase credentials not configured');
     }
 
-    const { to, subject, message, messageType, patientId, dentistId, isSystemNotification, appointmentDate }: EmailRequest = await req.json();
+    const { to, subject, message, messageType, patientId, dentistId, isSystemNotification, appointmentDate, appointmentTime }: EmailRequest = await req.json();
     const isSystem = isSystemNotification === true || messageType === 'system';
 
     let supabase;
@@ -208,6 +209,9 @@ serve(async (req) => {
 
       if (appointmentDate) {
         result = result.replace(/\{\{appointment_date\}\}/g, appointmentDate);
+      }
+      if (appointmentTime) {
+        result = result.replace(/\{\{appointment_time\}\}/g, appointmentTime);
       }
       return result;
     };

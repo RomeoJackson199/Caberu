@@ -117,7 +117,32 @@ serve(async (req) => {
       }
 
       if (!dentistRecord) {
-        throw new Error('Unauthorized: You can only create payment requests for your own dentist profile or business.');
+        // Log detailed debug info
+        console.error('❌ Authorization Failed Debug Info:');
+        console.error('Actor Profile ID:', actorProfile.id);
+        console.error('Target Dentist ID:', dentist_id);
+
+        // Check what we found about the dentist
+        const { data: debugDentist } = await supabaseClient
+          .from('dentists')
+          .select('id, profile_id, business_id')
+          .eq('id', dentist_id)
+          .maybeSingle();
+        console.error('Dentist Found in DB:', debugDentist);
+
+        if (debugDentist?.business_id) {
+          const { data: debugMember } = await supabaseClient
+            .from('business_members')
+            .select('*')
+            .eq('business_id', debugDentist.business_id)
+            .eq('profile_id', actorProfile.id)
+            .maybeSingle();
+          console.error('Business Membership Found:', debugMember);
+        } else {
+          console.error('Dentist has no business_id!');
+        }
+
+        throw new Error(`Unauthorized: You can only create payment requests for your own dentist profile or business. (Dentist: ${dentist_id}, Actor: ${actorProfile.id})`);
       }
 
       // ... (existing code)
@@ -125,17 +150,21 @@ serve(async (req) => {
       // Get business_id from the appointment or dentist
       let business_id = null;
       let appointmentDateStr = null;
+      let appointmentTimeStr = null;
 
       if (appointment_id) {
         const { data: appt } = await supabaseClient
           .from('appointments')
-          .select('business_id, appointment_date')
+          .select('business_id, appointment_date, start_time')
           .eq('id', appointment_id)
           .single();
         business_id = appt?.business_id;
         if (appt?.appointment_date) {
           // Format date nicely
           appointmentDateStr = new Date(appt.appointment_date).toLocaleDateString();
+        }
+        if (appt?.start_time) {
+          appointmentTimeStr = appt.start_time;
         }
       }
 
@@ -153,7 +182,8 @@ serve(async (req) => {
             isSystemNotification: true,
             patientId: patient_id,
             dentistId: dentist_id,
-            appointmentDate: appointmentDateStr // Pass the date
+            appointmentDate: appointmentDateStr, // Pass the date
+            appointmentTime: appointmentTimeStr
           };
           await fetch(fnUrl, {
             method: 'POST',
