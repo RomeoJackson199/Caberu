@@ -99,11 +99,10 @@ export function CancelSubscriptionSection() {
             setCancelling(true);
 
             const { data, error } = await supabase.functions.invoke('cancel-subscription', {
-                body: JSON.stringify({
+                body: {
                     business_id: businessId,
                     cancel_immediately: immediately,
-                }),
-                headers: { 'Content-Type': 'application/json' },
+                },
             });
 
             if (error) throw error;
