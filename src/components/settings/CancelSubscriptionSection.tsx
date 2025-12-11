@@ -71,14 +71,27 @@ export function CancelSubscriptionSection() {
 
             console.log('Business subscription data:', business);
 
-            if (business?.subscription_status === 'active' && business?.subscription_ends_at) {
+            if (business?.subscription_status && business?.subscription_ends_at) {
+                // Show subscription for any status (active, cancelled, cancelling)
                 setSubscription({
                     id: businessId,
                     status: business.subscription_status,
                     current_period_end: business.subscription_ends_at,
+                    cancel_at_period_end: business.subscription_status === 'cancelling',
+                    subscription_plans: {
+                        name: business.subscription_plan || 'Free',
+                        price_monthly: 0,
+                    },
+                });
+            } else if (business?.subscription_plan) {
+                // Business has a plan but no end date (e.g., free plan)
+                setSubscription({
+                    id: businessId,
+                    status: business.subscription_status || 'inactive',
+                    current_period_end: null,
                     cancel_at_period_end: false,
                     subscription_plans: {
-                        name: business.subscription_plan || 'Promo',
+                        name: business.subscription_plan || 'Free',
                         price_monthly: 0,
                     },
                 });
@@ -205,9 +218,11 @@ export function CancelSubscriptionSection() {
         );
     }
 
-    const periodEndDate = new Date(subscription.current_period_end);
+    const periodEndDate = subscription.current_period_end ? new Date(subscription.current_period_end) : null;
     const isActive = subscription.status === 'active' && !subscription.cancel_at_period_end;
-    const daysRemaining = Math.max(0, Math.ceil((periodEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    const isCancelled = subscription.status === 'cancelled';
+    const isCancelling = subscription.status === 'cancelling' || subscription.cancel_at_period_end;
+    const daysRemaining = periodEndDate ? Math.max(0, Math.ceil((periodEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
     const cycleLabel = subscription.billing_cycle === 'yearly' ? 'yearly' : 'monthly';
 
     return (
@@ -218,8 +233,8 @@ export function CancelSubscriptionSection() {
                         <CreditCard className="h-5 w-5" />
                         Subscription
                     </CardTitle>
-                    <Badge variant={isActive ? 'default' : 'secondary'}>
-                        {subscription.cancel_at_period_end ? 'Cancelling' : subscription.status}
+                    <Badge variant={isCancelled ? 'destructive' : isActive ? 'default' : 'secondary'}>
+                        {isCancelled ? 'Cancelled' : isCancelling ? 'Cancelling' : 'Active'}
                     </Badge>
                 </div>
                 <CardDescription>
@@ -249,29 +264,40 @@ export function CancelSubscriptionSection() {
 
                     <div className="border rounded-lg p-4 bg-muted/30">
                         <p className="text-xs text-muted-foreground uppercase tracking-wide">Status</p>
-                        <p className="text-base font-semibold capitalize">{subscription.status}</p>
+                        <p className="text-base font-semibold capitalize">
+                            {isCancelled ? 'Cancelled' : isCancelling ? 'Cancelling' : 'Active'}
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                            {subscription.cancel_at_period_end
-                                ? 'Your subscription stays active until the end of this period.'
-                                : 'Active and set to auto-renew.'}
+                            {isCancelled
+                                ? 'Your subscription has been cancelled.'
+                                : isCancelling
+                                    ? 'Your subscription stays active until the end of this period.'
+                                    : 'Active and set to auto-renew.'}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                     <Button
-                        variant="outline"
+                        variant={isCancelled ? 'default' : 'outline'}
                         onClick={() => navigate('/pricing')}
                         className="flex-1"
                     >
-                        Change Plan
+                        {isCancelled ? 'Reactivate Subscription' : 'Change Plan'}
                     </Button>
 
-                    {subscription.cancel_at_period_end ? (
+                    {isCancelled ? (
+                        <div className="flex-1 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                            <div className="flex items-center gap-2 text-red-700 dark:text-red-300 text-sm">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span>Subscription cancelled{periodEndDate ? ` - expired ${periodEndDate.toLocaleDateString()}` : ''}</span>
+                            </div>
+                        </div>
+                    ) : isCancelling ? (
                         <div className="flex-1 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                             <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200 text-sm">
                                 <AlertTriangle className="h-4 w-4" />
-                                <span>Ending on {periodEndDate.toLocaleDateString()}</span>
+                                <span>Ending on {periodEndDate?.toLocaleDateString()}</span>
                             </div>
                         </div>
                     ) : (
