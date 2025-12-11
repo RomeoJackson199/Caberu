@@ -157,11 +157,25 @@ export function CancelSubscriptionSection() {
 
             // Fetch usage stats
             if (businessId) {
-                // Get customer count
-                const { count: customerCount } = await supabase
+                // Get customer count from patients table
+                const { count: patientCount } = await supabase
                     .from('patients')
                     .select('*', { count: 'exact', head: true })
                     .eq('business_id', businessId);
+
+                // If no patients, count unique patients from appointments
+                let customerCount = patientCount || 0;
+                if (customerCount === 0) {
+                    const { data: appointments } = await supabase
+                        .from('appointments')
+                        .select('patient_id')
+                        .eq('business_id', businessId);
+
+                    if (appointments) {
+                        const uniquePatients = new Set(appointments.map(a => a.patient_id));
+                        customerCount = uniquePatients.size;
+                    }
+                }
 
                 // Get team member count
                 const { count: teamCount } = await supabase
@@ -169,14 +183,16 @@ export function CancelSubscriptionSection() {
                     .select('*', { count: 'exact', head: true })
                     .eq('business_id', businessId);
 
-                // Get email count (approximation from notifications or email logs if exists)
-                // For now, using a placeholder - you can replace with actual table
-                const emailsSent = 0; // Replace with actual query when email tracking table exists
+                // Get notification/email count
+                const { count: emailCount } = await supabase
+                    .from('notifications')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('business_id', businessId);
 
                 setUsageStats({
-                    customerCount: customerCount || 0,
+                    customerCount: customerCount,
                     teamMembers: teamCount || 0,
-                    emailsSent: emailsSent,
+                    emailsSent: emailCount || 0,
                 });
             }
         } catch (err) {
