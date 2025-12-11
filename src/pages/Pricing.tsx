@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/homepage/Header";
 import { Footer } from "@/components/homepage/Footer";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 
 interface SubscriptionPlan {
   id: string;
@@ -29,6 +30,10 @@ export default function Pricing() {
   const [validPromo, setValidPromo] = useState<any>(null);
   const [applyingPromo, setApplyingPromo] = useState(false);
   const navigate = useNavigate();
+
+  // Get business ID from context (try hook first, fall back to sessionStorage)
+  const businessContext = useBusinessContext();
+  const businessId = businessContext?.businessId || sessionStorage.getItem('currentBusinessId');
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ['subscription-plans'],
@@ -62,8 +67,7 @@ export default function Pricing() {
         return;
       }
 
-      // Get user's business
-      const businessId = sessionStorage.getItem('currentBusinessId');
+      // Check user has a business selected
       if (!businessId) {
         toast.error("Please select a business first");
         navigate("/select-business");
