@@ -135,8 +135,8 @@ serve(async (req) => {
             .from('subscriptions')
             .select('*')
             .eq('dentist_id', dentist.id)
-            .eq('status', 'active')
-            .single()
+            .order('current_period_end', { ascending: false })
+            .maybeSingle()
 
         let subscription_id = subscription?.id;
         let newPeriodEnd;
@@ -156,8 +156,10 @@ serve(async (req) => {
                 .from('subscriptions')
                 .update({
                     current_period_end: newPeriodEnd.toISOString(),
-                    cancel_at_period_end: true,
-                    status: 'active' // Reactivate if it was cancelled/expired
+                    cancel_at_period_end: false,
+                    status: 'active',
+                    billing_cycle: subscription.billing_cycle || 'monthly',
+                    plan_id: subscription.plan_id,
                 })
                 .eq('id', subscription.id);
 
@@ -168,14 +170,14 @@ serve(async (req) => {
             newPeriodEnd = new Date();
             newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
 
-            // Get "Free Trial" or default plan ID
-            const { data: plan } = await supabaseClient
+            // Get "Free Trial" or default plan ID using adminClient to avoid RLS issues
+            const { data: plan } = await adminClient
                 .from('subscription_plans')
                 .select('id')
                 .eq('name', 'Free Trial')
                 .maybeSingle();
 
-            const planId = plan?.id || (await supabaseClient.from('subscription_plans').select('id').limit(1).single()).data?.id;
+            const planId = plan?.id || (await adminClient.from('subscription_plans').select('id').limit(1).single()).data?.id;
 
             const { data: newSub, error: createError } = await adminClient
                 .from('subscriptions')
@@ -184,7 +186,8 @@ serve(async (req) => {
                     plan_id: planId,
                     status: 'active',
                     current_period_end: newPeriodEnd.toISOString(),
-                    cancel_at_period_end: true
+                    cancel_at_period_end: false,
+                    billing_cycle: 'monthly'
                 })
                 .select('id')
                 .single();
