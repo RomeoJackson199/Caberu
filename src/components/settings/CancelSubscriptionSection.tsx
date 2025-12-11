@@ -39,12 +39,25 @@ interface PlanLimits {
     features: string[];
 }
 
+interface UsageStats {
+    customerCount: number;
+    emailsSent: number;
+    teamMembers: number;
+}
+
+interface PendingPlanChange {
+    planName: string;
+    changeDate: string;
+}
+
 export function CancelSubscriptionSection() {
     const { toast } = useToast();
     const navigate = useNavigate();
     const { businessId } = useBusinessContext();
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
+    const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
+    const [pendingChange, setPendingChange] = useState<PendingPlanChange | null>(null);
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState(false);
     const [promoCode, setPromoCode] = useState('');
@@ -66,7 +79,7 @@ export function CancelSubscriptionSection() {
             // Get subscription info directly from businesses table
             const { data: business, error } = await supabase
                 .from('businesses')
-                .select('subscription_status, subscription_plan, subscription_ends_at, subscription_started_at, promo_code_used')
+                .select('subscription_status, subscription_plan, subscription_ends_at, subscription_started_at, promo_code_used, pending_plan_change, pending_plan_change_date')
                 .eq('id', businessId)
                 .single();
 
@@ -130,6 +143,41 @@ export function CancelSubscriptionSection() {
             } else {
                 setSubscription(null);
                 setPlanLimits(null);
+            }
+
+            // Set pending plan change if exists
+            if (business?.pending_plan_change) {
+                setPendingChange({
+                    planName: business.pending_plan_change,
+                    changeDate: business.pending_plan_change_date || '',
+                });
+            } else {
+                setPendingChange(null);
+            }
+
+            // Fetch usage stats
+            if (businessId) {
+                // Get customer count
+                const { count: customerCount } = await supabase
+                    .from('patients')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('business_id', businessId);
+
+                // Get team member count
+                const { count: teamCount } = await supabase
+                    .from('business_members')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('business_id', businessId);
+
+                // Get email count (approximation from notifications or email logs if exists)
+                // For now, using a placeholder - you can replace with actual table
+                const emailsSent = 0; // Replace with actual query when email tracking table exists
+
+                setUsageStats({
+                    customerCount: customerCount || 0,
+                    teamMembers: teamCount || 0,
+                    emailsSent: emailsSent,
+                });
             }
         } catch (err) {
             console.error('Error loading subscription:', err);
@@ -314,25 +362,78 @@ export function CancelSubscriptionSection() {
                     </div>
                 </div>
 
-                {/* Plan Limits */}
+                {/* Pending Plan Change */}
+                {pendingChange && (
+                    <div className="border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-900/20">
+                        <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                            <Calendar className="h-4 w-4" />
+                            Scheduled Plan Change
+                        </h4>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                            Your plan will change to <strong>{pendingChange.planName}</strong> on{' '}
+                            <strong>{new Date(pendingChange.changeDate).toLocaleDateString()}</strong>
+                        </p>
+                    </div>
+                )}
+
+                {/* Plan Limits & Usage Stats */}
                 {planLimits && (
                     <div className="border rounded-lg p-4 bg-muted/10">
                         <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            Plan Limits
+                            Plan Limits & Usage
                         </h4>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-                                <span className="text-sm text-muted-foreground">Maximum Customers</span>
-                                <span className="font-semibold">{planLimits.customer_limit.toLocaleString()}</span>
+
+                        {/* Usage Stats Grid */}
+                        <div className="grid gap-3 sm:grid-cols-3 mb-4">
+                            {/* Customers Usage */}
+                            <div className="p-3 bg-background rounded-md border">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs text-muted-foreground">Customers</span>
+                                    <span className="text-xs font-medium">
+                                        {usageStats?.customerCount || 0} / {planLimits.customer_limit.toLocaleString()}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-muted rounded-full h-2">
+                                    <div
+                                        className={`h-2 rounded-full transition-all ${(usageStats?.customerCount || 0) >= planLimits.customer_limit
+                                            ? 'bg-red-500'
+                                            : (usageStats?.customerCount || 0) >= planLimits.customer_limit * 0.8
+                                                ? 'bg-yellow-500'
+                                                : 'bg-green-500'
+                                            }`}
+                                        style={{ width: `${Math.min(100, ((usageStats?.customerCount || 0) / planLimits.customer_limit) * 100)}%` }}
+                                    />
+                                </div>
                             </div>
-                            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
-                                <span className="text-sm text-muted-foreground">Plan Type</span>
-                                <span className="font-semibold capitalize">{subscription.subscription_plans?.name || 'Standard'}</span>
+
+                            {/* Team Members */}
+                            <div className="p-3 bg-background rounded-md border">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs text-muted-foreground">Team Members</span>
+                                    <span className="text-xs font-medium">{usageStats?.teamMembers || 0}</span>
+                                </div>
+                                <div className="text-lg font-semibold">{usageStats?.teamMembers || 0}</div>
+                            </div>
+
+                            {/* Emails Sent */}
+                            <div className="p-3 bg-background rounded-md border">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs text-muted-foreground">Emails Sent</span>
+                                    <span className="text-xs font-medium">{usageStats?.emailsSent || 0}</span>
+                                </div>
+                                <div className="text-lg font-semibold">{usageStats?.emailsSent || 0}</div>
                             </div>
                         </div>
+
+                        {/* Current Plan Info */}
+                        <div className="flex items-center justify-between p-3 bg-background rounded-md border mb-3">
+                            <span className="text-sm text-muted-foreground">Current Plan</span>
+                            <span className="font-semibold capitalize">{subscription.subscription_plans?.name || 'Standard'}</span>
+                        </div>
+
                         {planLimits.features && planLimits.features.length > 0 && (
-                            <div className="mt-3">
+                            <div>
                                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Features Included</p>
                                 <div className="grid gap-1.5 sm:grid-cols-2">
                                     {planLimits.features.slice(0, 6).map((feature, i) => (
