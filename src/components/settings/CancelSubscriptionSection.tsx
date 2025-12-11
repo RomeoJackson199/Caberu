@@ -49,66 +49,40 @@ export function CancelSubscriptionSection() {
     const loadSubscription = async () => {
         try {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                console.log('No authenticated user');
+
+            if (!businessId) {
+                console.log('No businessId provided');
                 return;
             }
-            console.log('User ID:', user.id);
 
-            // Get profile
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('user_id', user.id)
+            // Get subscription info directly from businesses table
+            const { data: business, error } = await supabase
+                .from('businesses')
+                .select('subscription_status, subscription_plan, subscription_ends_at, subscription_started_at, promo_code_used')
+                .eq('id', businessId)
                 .single();
 
-            if (profileError || !profile) {
-                console.log('Profile not found:', profileError);
-                return;
-            }
-            console.log('Profile ID:', profile.id);
-
-            // Get dentist for this business
-            const { data: dentist, error: dentistError } = await supabase
-                .from('dentists')
-                .select('id')
-                .eq('profile_id', profile.id)
-                .eq('business_id', businessId)
-                .maybeSingle();
-
-            if (dentistError) {
-                console.log('Dentist query error:', dentistError);
-            }
-
-            if (!dentist) {
-                console.log('No dentist found for profile', profile.id, 'in business', businessId);
-                return;
-            }
-            console.log('Dentist ID:', dentist.id);
-
-            // Get subscription
-            const { data: sub, error } = await supabase
-                .from('subscriptions')
-                .select(`
-          id,
-          status,
-          billing_cycle,
-          current_period_start,
-          current_period_end,
-          cancel_at_period_end,
-          subscription_plans (name, price_monthly)
-        `)
-                .eq('dentist_id', dentist.id)
-                .maybeSingle();
-
             if (error) {
-                console.log('Subscription query error:', error);
-                throw error;
+                console.log('Business fetch error:', error);
+                return;
             }
 
-            console.log('Subscription found:', sub);
-            setSubscription(sub);
+            console.log('Business subscription data:', business);
+
+            if (business?.subscription_status === 'active' && business?.subscription_ends_at) {
+                setSubscription({
+                    id: businessId,
+                    status: business.subscription_status,
+                    current_period_end: business.subscription_ends_at,
+                    cancel_at_period_end: false,
+                    subscription_plans: {
+                        name: business.subscription_plan || 'Promo',
+                        price_monthly: 0,
+                    },
+                });
+            } else {
+                setSubscription(null);
+            }
         } catch (err) {
             console.error('Error loading subscription:', err);
         } finally {

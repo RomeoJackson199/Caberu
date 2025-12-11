@@ -209,6 +209,23 @@ serve(async (req) => {
             throw new Error('Failed to record promo code usage')
         }
 
+        // 6. Update businesses table with subscription info
+        const { error: businessUpdateError } = await adminClient
+            .from('businesses')
+            .update({
+                subscription_status: 'active',
+                subscription_plan: 'promo',
+                subscription_ends_at: newPeriodEnd.toISOString(),
+                subscription_started_at: new Date().toISOString(),
+                promo_code_used: normalizedCode,
+            })
+            .eq('id', business_id)
+
+        if (businessUpdateError) {
+            console.error('Business update error:', businessUpdateError)
+            // Don't throw - subscription was created, just log the error
+        }
+
         return new Response(
             JSON.stringify({
                 success: true,
