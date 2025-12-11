@@ -32,187 +32,200 @@ interface EmailRequest {
   patientId?: string;
   dentistId?: string;
   isSystemNotification?: boolean;
+  appointmentDate?: string;
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  // ... (lines 38-48 omitted)
+
+  const { to, subject, message, messageType, patientId, dentistId, isSystemNotification, appointmentDate }: EmailRequest = await req.json();
+
+  // ... (lines 50-198 omitted)
+
+  // Replace template variables with real data
+  const replaceVars = (text: string) => {
+    let result = text
+      .replace(/\{\{clinic_name\}\}/g, businessData?.name || 'Your Dental Practice')
+      .replace(/\{\{clinic_phone\}\}/g, businessData?.phone || '')
+      .replace(/\{\{clinic_address\}\}/g, businessData?.address || '')
+      .replace(/\{\{dentist_name\}\}/g, dentistFullName || 'Your Dentist');
+
+    if (appointmentDate) {
+      result = result.replace(/\{\{appointment_date\}\}/g, appointmentDate);
+    }
+    return result;
+  };
+  const isSystem = isSystemNotification === true || messageType === 'system';
+
+  let supabase;
+  let authedUserId: string | null = null;
+  if (isSystem) {
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('📧 System notification - skipping user authentication');
+  } else {
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header required');
+    }
+    supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Invalid or expired token');
+    }
+    authedUserId = user.id;
   }
 
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase credentials not configured');
+  console.log('📧 Email request details:', { to, subject, messageType, patientId, dentistId, isSystemNotification: isSystem });
+
+  // Authorization check
+  if (!isSystem && dentistId && patientId) {
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', authedUserId)
+      .single();
+
+    if (!userProfile) {
+      throw new Error('User profile not found');
     }
 
-    const { to, subject, message, messageType, patientId, dentistId, isSystemNotification }: EmailRequest = await req.json();
-    const isSystem = isSystemNotification === true || messageType === 'system';
+    const { data: dentist, error: dentistError } = await supabase
+      .from('dentists')
+      .select('id')
+      .eq('id', dentistId)
+      .eq('profile_id', userProfile.id)
+      .single();
 
-    let supabase;
-    let authedUserId: string | null = null;
-    if (isSystem) {
-      supabase = createClient(supabaseUrl, supabaseServiceKey);
-      console.log('📧 System notification - skipping user authentication');
-    } else {
-      const authHeader = req.headers.get('authorization');
-      if (!authHeader) {
-        throw new Error('Authorization header required');
-      }
-      supabase = createClient(supabaseUrl, supabaseServiceKey, {
-        global: { headers: { Authorization: authHeader } }
-      });
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('Invalid or expired token');
-      }
-      authedUserId = user.id;
+    if (dentistError || !dentist) {
+      throw new Error('Unauthorized: Only the dentist can send email notifications');
     }
+  } else if (isSystem) {
+    console.log('📧 System notification - skipping dentist authorization');
+  }
 
-    console.log('📧 Email request details:', { to, subject, messageType, patientId, dentistId, isSystemNotification: isSystem });
-
-    // Authorization check
-    if (!isSystem && dentistId && patientId) {
-      const { data: userProfile } = await supabase
-        .from('profiles')
+  // Create email notification record
+  let notificationId;
+  if (patientId && dentistId && !isSystem) {
+    try {
+      const { data, error } = await supabase
+        .from('email_notifications')
+        .insert({
+          patient_id: patientId,
+          dentist_id: dentistId,
+          email_address: to,
+          message_type: messageType,
+          subject: subject,
+          message_content: message,
+          status: 'pending'
+        })
         .select('id')
-        .eq('user_id', authedUserId)
         .single();
 
-      if (!userProfile) {
-        throw new Error('User profile not found');
+      if (error) {
+        console.error('Error creating email notification record:', error);
+      } else {
+        notificationId = data.id;
+        console.log('📝 Email notification record created:', notificationId);
       }
-
-      const { data: dentist, error: dentistError } = await supabase
-        .from('dentists')
-        .select('id')
-        .eq('id', dentistId)
-        .eq('profile_id', userProfile.id)
-        .single();
-
-      if (dentistError || !dentist) {
-        throw new Error('Unauthorized: Only the dentist can send email notifications');
-      }
-    } else if (isSystem) {
-      console.log('📧 System notification - skipping dentist authorization');
+    } catch (recordError) {
+      console.error('Failed to create email record, continuing with send:', recordError);
     }
+  }
 
-    // Create email notification record
-    let notificationId;
-    if (patientId && dentistId && !isSystem) {
-      try {
-        const { data, error } = await supabase
-          .from('email_notifications')
-          .insert({
-            patient_id: patientId,
-            dentist_id: dentistId,
-            email_address: to,
-            message_type: messageType,
-            subject: subject,
-            message_content: message,
-            status: 'pending'
-          })
-          .select('id')
-          .single();
+  // Default sender info
+  let fromEmail = 'Romeo@caberu.be';
+  let fromName = 'Caberu Dental';
+  let emailSubject = subject;
+  let emailBody = message;
+  let businessData: { name: string; phone?: string; address?: string } | null = null;
+  let dentistFullName = '';
 
-        if (error) {
-          console.error('Error creating email notification record:', error);
-        } else {
-          notificationId = data.id;
-          console.log('📝 Email notification record created:', notificationId);
-        }
-      } catch (recordError) {
-        console.error('Failed to create email record, continuing with send:', recordError);
-      }
-    }
-
-    // Default sender info
-    let fromEmail = 'Romeo@caberu.be';
-    let fromName = 'Caberu Dental';
-    let emailSubject = subject;
-    let emailBody = message;
-    let businessData: { name: string; phone?: string; address?: string } | null = null;
-    let dentistFullName = '';
-
-    // Fetch real business and dentist data
-    if (dentistId) {
-      const { data: dentistData } = await supabase
-        .from('dentists')
-        .select(`
+  // Fetch real business and dentist data
+  if (dentistId) {
+    const { data: dentistData } = await supabase
+      .from('dentists')
+      .select(`
           profile_id,
           profiles (first_name, last_name)
         `)
-        .eq('id', dentistId)
-        .single();
+      .eq('id', dentistId)
+      .single();
 
-      if (dentistData?.profiles) {
-        const profile = dentistData.profiles as any;
-        dentistFullName = `Dr. ${profile.first_name} ${profile.last_name}`;
-      }
+    if (dentistData?.profiles) {
+      const profile = dentistData.profiles as any;
+      dentistFullName = `Dr. ${profile.first_name} ${profile.last_name}`;
+    }
 
-      if (dentistData?.profile_id) {
-        // Get business from business_members
-        const { data: businessMember } = await supabase
-          .from('business_members')
-          .select('business_id')
-          .eq('profile_id', dentistData.profile_id)
-          .limit(1)
+    if (dentistData?.profile_id) {
+      // Get business from business_members
+      const { data: businessMember } = await supabase
+        .from('business_members')
+        .select('business_id')
+        .eq('profile_id', dentistData.profile_id)
+        .limit(1)
+        .maybeSingle();
+
+      const businessId = businessMember?.business_id;
+
+      if (businessId) {
+        // Fetch actual business details
+        const { data: business } = await supabase
+          .from('businesses')
+          .select('name, phone, tagline')
+          .eq('id', businessId)
+          .single();
+
+        if (business) {
+          businessData = {
+            name: business.name || 'Your Dental Practice',
+            phone: business.phone || '',
+            address: business.tagline || '',
+          };
+          fromName = dentistFullName ? `${dentistFullName} - ${business.name}` : business.name;
+          console.log('📍 Using real business data:', businessData.name);
+        }
+
+        // Check for custom template
+        const { data: customTemplate } = await supabase
+          .from('business_email_templates')
+          .select('subject, body_html, is_active')
+          .eq('business_id', businessId)
+          .eq('template_type', messageType)
+          .eq('is_active', true)
           .maybeSingle();
 
-        const businessId = businessMember?.business_id;
-
-        if (businessId) {
-          // Fetch actual business details
-          const { data: business } = await supabase
-            .from('businesses')
-            .select('name, phone, tagline')
-            .eq('id', businessId)
-            .single();
-
-          if (business) {
-            businessData = {
-              name: business.name || 'Your Dental Practice',
-              phone: business.phone || '',
-              address: business.tagline || '',
-            };
-            fromName = dentistFullName ? `${dentistFullName} - ${business.name}` : business.name;
-            console.log('📍 Using real business data:', businessData.name);
-          }
-
-          // Check for custom template
-          const { data: customTemplate } = await supabase
-            .from('business_email_templates')
-            .select('subject, body_html, is_active')
-            .eq('business_id', businessId)
-            .eq('template_type', messageType)
-            .eq('is_active', true)
-            .maybeSingle();
-
-          if (customTemplate) {
-            console.log('📝 Using custom email template for:', messageType);
-            emailSubject = customTemplate.subject;
-            emailBody = customTemplate.body_html;
-          }
+        if (customTemplate) {
+          console.log('📝 Using custom email template for:', messageType);
+          emailSubject = customTemplate.subject;
+          emailBody = customTemplate.body_html;
         }
       }
     }
+  }
 
-    // Replace template variables with real data
-    const replaceVars = (text: string) => {
-      return text
-        .replace(/\{\{clinic_name\}\}/g, businessData?.name || 'Your Dental Practice')
-        .replace(/\{\{clinic_phone\}\}/g, businessData?.phone || '')
-        .replace(/\{\{clinic_address\}\}/g, businessData?.address || '')
-        .replace(/\{\{dentist_name\}\}/g, dentistFullName || 'Your Dentist');
-    };
+  // Replace template variables with real data
+  const replaceVars = (text: string) => {
+    let result = text
+      .replace(/\{\{clinic_name\}\}/g, businessData?.name || 'Your Dental Practice')
+      .replace(/\{\{clinic_phone\}\}/g, businessData?.phone || '')
+      .replace(/\{\{clinic_address\}\}/g, businessData?.address || '')
+      .replace(/\{\{dentist_name\}\}/g, dentistFullName || 'Your Dentist');
 
-    emailSubject = replaceVars(emailSubject);
-    emailBody = replaceVars(emailBody);
+    if (appointmentDate) {
+      result = result.replace(/\{\{appointment_date\}\}/g, appointmentDate);
+    }
+    return result;
+  };
 
-    // Build final email HTML
-    const emailHtml = emailBody.includes('<div') || emailBody.includes('<p')
-      ? emailBody
-      : `
+  emailSubject = replaceVars(emailSubject);
+  emailBody = replaceVars(emailBody);
+
+  // Build final email HTML
+  const emailHtml = emailBody.includes('<div') || emailBody.includes('<p')
+    ? emailBody
+    : `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">${emailSubject}</h2>
           <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -224,98 +237,98 @@ serve(async (req) => {
         </div>
       `;
 
-    // Send via SendGrid
-    const sendGridApiKey = Deno.env.get('TWILIO_API_KEY');
-    if (!sendGridApiKey) {
-      throw new Error('SendGrid API key not configured');
-    }
+  // Send via SendGrid
+  const sendGridApiKey = Deno.env.get('TWILIO_API_KEY');
+  if (!sendGridApiKey) {
+    throw new Error('SendGrid API key not configured');
+  }
 
-    const emailData = {
-      personalizations: [{
-        to: [{ email: to }],
-        subject: emailSubject
-      }],
-      from: { email: fromEmail, name: fromName },
-      content: [{ type: "text/html", value: emailHtml }]
-    };
+  const emailData = {
+    personalizations: [{
+      to: [{ email: to }],
+      subject: emailSubject
+    }],
+    from: { email: fromEmail, name: fromName },
+    content: [{ type: "text/html", value: emailHtml }]
+  };
 
-    console.log('🚀 Sending email via SendGrid...');
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${sendGridApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(emailData)
-    });
+  console.log('🚀 Sending email via SendGrid...');
+  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${sendGridApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(emailData)
+  });
 
-    console.log('📡 SendGrid response status:', response.status);
+  console.log('📡 SendGrid response status:', response.status);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ SendGrid error:', errorText);
-
-      if (notificationId) {
-        await supabase
-          .from('email_notifications')
-          .update({ status: 'failed', error_message: errorText })
-          .eq('id', notificationId);
-      }
-
-      throw new Error(`SendGrid API failed: ${response.status}`);
-    }
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ SendGrid error:', errorText);
 
     if (notificationId) {
       await supabase
         .from('email_notifications')
-        .update({
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-          message_content: message
-        })
+        .update({ status: 'failed', error_message: errorText })
         .eq('id', notificationId);
     }
 
-    console.log(`✅ Email sent successfully for ${messageType}`);
-
-    // Increment business email count if associated with a business
-    // We need to re-fetch or ensure businessId is available. 
-    // Since businessId variable scope was limited, let's try to resolve it again or rely on the fact that if we have dentistId we can find it.
-    if (dentistId) {
-      try {
-        // Quick lookup for business_id via membership if we don't have it handy in this scope
-        const { data: memberData } = await supabase
-          .from('business_members')
-          .select('business_id')
-          .eq('profile_id', (await supabase.from('dentists').select('profile_id').eq('id', dentistId).single()).data?.profile_id)
-          .limit(1)
-          .maybeSingle();
-
-        if (memberData?.business_id) {
-          await supabase.rpc('increment_email_count', { business_uuid: memberData.business_id });
-        }
-      } catch (incError) {
-        console.error('Error incrementing email count:', incError);
-      }
-    }
-
-    return new Response(JSON.stringify({
-      success: true,
-      notificationId,
-      message: 'Email sent successfully'
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
-  } catch (error) {
-    console.error('❌ Error sending email:', error);
-
-    return new Response(JSON.stringify({
-      error: error.message,
-      success: false
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    throw new Error(`SendGrid API failed: ${response.status}`);
   }
+
+  if (notificationId) {
+    await supabase
+      .from('email_notifications')
+      .update({
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        message_content: message
+      })
+      .eq('id', notificationId);
+  }
+
+  console.log(`✅ Email sent successfully for ${messageType}`);
+
+  // Increment business email count if associated with a business
+  // We need to re-fetch or ensure businessId is available. 
+  // Since businessId variable scope was limited, let's try to resolve it again or rely on the fact that if we have dentistId we can find it.
+  if (dentistId) {
+    try {
+      // Quick lookup for business_id via membership if we don't have it handy in this scope
+      const { data: memberData } = await supabase
+        .from('business_members')
+        .select('business_id')
+        .eq('profile_id', (await supabase.from('dentists').select('profile_id').eq('id', dentistId).single()).data?.profile_id)
+        .limit(1)
+        .maybeSingle();
+
+      if (memberData?.business_id) {
+        await supabase.rpc('increment_email_count', { business_uuid: memberData.business_id });
+      }
+    } catch (incError) {
+      console.error('Error incrementing email count:', incError);
+    }
+  }
+
+  return new Response(JSON.stringify({
+    success: true,
+    notificationId,
+    message: 'Email sent successfully'
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+} catch (error) {
+  console.error('❌ Error sending email:', error);
+
+  return new Response(JSON.stringify({
+    error: error.message,
+    success: false
+  }), {
+    status: 500,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 });
