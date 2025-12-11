@@ -248,34 +248,84 @@ export function AppointmentCompletionDialog({
 
   const handleComplete = async () => {
     setLoading(true);
+
+    // Capture all form data before closing
+    const formData = {
+      treatments: [...treatments],
+      notes,
+      consultationNotes,
+      paymentReceived,
+      prescriptions: [...prescriptions],
+      followUpNeeded,
+      followUpDate,
+      selectedTreatmentPlan,
+      createNewTreatmentPlan,
+      newTreatmentPlanForm: { ...newTreatmentPlanForm },
+      totalAmount
+    };
+
+    // Immediately close dialog and show success toast
+    toast({
+      title: "Appointment completed",
+      description: "Processing details in background...",
+    });
+
+    onCompleted();
+    onOpenChange(false);
+    setLoading(false);
+
+    // Process everything in background (fire and forget)
+    processCompletionInBackground(formData).catch(error => {
+      console.error('Background processing failed:', error);
+      toast({
+        title: "Some details may not have saved",
+        description: "Please check the appointment and try again if needed.",
+        variant: "destructive",
+      });
+    });
+  };
+
+  // Background processing function
+  const processCompletionInBackground = async (formData: {
+    treatments: typeof treatments;
+    notes: string;
+    consultationNotes: string;
+    paymentReceived: boolean;
+    prescriptions: typeof prescriptions;
+    followUpNeeded: boolean;
+    followUpDate: string;
+    selectedTreatmentPlan: string | null;
+    createNewTreatmentPlan: boolean;
+    newTreatmentPlanForm: typeof newTreatmentPlanForm;
+    totalAmount: number;
+  }) => {
     try {
-      // Generate AI reason based on consultation notes and treatments
+      // Generate AI reason (non-blocking, optional)
       let aiGeneratedReason = appointment.reason;
       try {
-        const { data: reasonData, error: reasonError } = await supabase.functions.invoke(
+        const { data: reasonData } = await supabase.functions.invoke(
           'appointment-ai-assistant',
           {
             body: {
               action: 'generate_reason',
               appointmentData: {
-                consultation_notes: consultationNotes || notes,
-                notes: notes,
-                treatments: treatments,
+                consultation_notes: formData.consultationNotes || formData.notes,
+                notes: formData.notes,
+                treatments: formData.treatments,
               },
             },
           }
         );
-
-        if (!reasonError && reasonData?.reason) {
+        if (reasonData?.reason) {
           aiGeneratedReason = reasonData.reason;
         }
       } catch (error) {
-        console.error('Error generating AI reason:', error);
-        // Continue with existing reason if AI generation fails
+        console.error('AI reason generation failed:', error);
       }
-      // 1. Save treatment records as notes (since appointment_treatments table doesn't exist)
-      if (treatments.length > 0) {
-        const treatmentNotes = treatments.map(treatment =>
+
+      // 1. Save treatment records as notes
+      if (formData.treatments.length > 0) {
+        const treatmentNotes = formData.treatments.map(treatment =>
           `Service: ${treatment.name}${treatment.tooth ? ` (Tooth: ${treatment.tooth})` : ''} - €${treatment.price.toFixed(2)}`
         ).join('\n');
 
@@ -289,28 +339,27 @@ export function AppointmentCompletionDialog({
       }
 
       // 2. Save consultation notes
-      if (notes.trim() || consultationNotes.trim()) {
+      if (formData.notes.trim() || formData.consultationNotes.trim()) {
         await supabase.from('notes').insert({
           patient_id: appointment.patient_id,
           title: `Consultation Notes - ${format(new Date(appointment.appointment_date), 'PPP')}`,
-          content: consultationNotes.trim() || notes.trim(),
+          content: formData.consultationNotes.trim() || formData.notes.trim(),
           note_type: 'consultation',
           created_by: appointment.dentist_id
         });
       }
 
       // 3. Create invoice if payment received, or payment request if not
-      if (totalAmount > 0) {
-        if (paymentReceived) {
-          // Payment received - create invoice
+      if (formData.totalAmount > 0) {
+        if (formData.paymentReceived) {
           const { data: invoice, error: invoiceError } = await supabase
             .from('invoices')
             .insert({
               appointment_id: appointment.id,
               patient_id: appointment.patient_id,
               dentist_id: appointment.dentist_id,
-              total_amount_cents: Math.round(totalAmount * 100),
-              patient_amount_cents: Math.round(totalAmount * 100),
+              total_amount_cents: Math.round(formData.totalAmount * 100),
+              patient_amount_cents: Math.round(formData.totalAmount * 100),
               mutuality_amount_cents: 0,
               vat_amount_cents: 0,
               status: 'paid',
@@ -319,29 +368,21 @@ export function AppointmentCompletionDialog({
             .select()
             .single();
 
-          if (invoiceError) {
-            console.error('Error creating invoice:', invoiceError);
-            throw new Error('Failed to create invoice');
-          }
+          if (!invoiceError && invoice) {
+            const invoiceItems = formData.treatments.map(treatment => ({
+              invoice_id: invoice.id,
+              code: `SERV-${treatment.name.replace(/\s+/g, '-').toUpperCase()}`,
+              description: treatment.name,
+              quantity: 1,
+              tariff_cents: Math.round(treatment.price * 100),
+              mutuality_cents: 0,
+              patient_cents: Math.round(treatment.price * 100),
+              vat_cents: 0
+            }));
 
-          if (!invoice) {
-            throw new Error('Invoice creation returned no data');
-          }
-
-          // Add invoice items for treatments
-          const invoiceItems = treatments.map(treatment => ({
-            invoice_id: invoice.id,
-            code: `SERV-${treatment.name.replace(/\s+/g, '-').toUpperCase()}`,
-            description: treatment.name,
-            quantity: 1,
-            tariff_cents: Math.round(treatment.price * 100),
-            mutuality_cents: 0,
-            patient_cents: Math.round(treatment.price * 100),
-            vat_cents: 0
-          }));
-
-          if (invoiceItems.length > 0) {
-            await supabase.from('invoice_items').insert(invoiceItems);
+            if (invoiceItems.length > 0) {
+              await supabase.from('invoice_items').insert(invoiceItems);
+            }
           }
         } else {
           // Payment not received - create payment request
@@ -352,45 +393,29 @@ export function AppointmentCompletionDialog({
             .single();
 
           if (patientProfile?.email) {
-            const treatmentDescription = treatments.map(t =>
+            const treatmentDescription = formData.treatments.map(t =>
               `${t.name}${t.tooth ? ` (Tooth ${t.tooth})` : ''}`
             ).join(', ');
 
-            try {
-              const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-                'create-payment-request',
-                {
-                  body: {
-                    patient_id: appointment.patient_id,
-                    dentist_id: appointment.dentist_id,
-                    amount: Math.round(totalAmount * 100),
-                    description: `Appointment on ${format(new Date(appointment.appointment_date), 'PPP')} - ${treatmentDescription}`,
-                    patient_email: patientProfile.email,
-                    send_now: true,
-                    channels: ['email'],
-                    action_url: '/patient/billing?tab=unpaid'
-                  }
-                }
-              );
-
-              if (paymentError) {
-                console.error('Error creating payment request:', paymentError);
-                toast({
-                  title: "Payment Request Failed",
-                  description: "Could not send payment request to patient. You can create one manually later.",
-                  variant: "destructive",
-                });
+            await supabase.functions.invoke('create-payment-request', {
+              body: {
+                patient_id: appointment.patient_id,
+                dentist_id: appointment.dentist_id,
+                amount: Math.round(formData.totalAmount * 100),
+                description: `Appointment on ${format(new Date(appointment.appointment_date), 'PPP')} - ${treatmentDescription}`,
+                patient_email: patientProfile.email,
+                send_now: true,
+                channels: ['email'],
+                action_url: '/patient/billing?tab=unpaid'
               }
-            } catch (error) {
-              console.error('Failed to create payment request:', error);
-            }
+            });
           }
         }
       }
 
       // 4. Save prescriptions
-      if (prescriptions.length > 0) {
-        const prescriptionData = prescriptions.map(rx => ({
+      if (formData.prescriptions.length > 0) {
+        const prescriptionData = formData.prescriptions.map(rx => ({
           patient_id: appointment.patient_id,
           dentist_id: appointment.dentist_id,
           medication_name: rx.medication,
@@ -406,171 +431,130 @@ export function AppointmentCompletionDialog({
       }
 
       // 5. Create new treatment plan or link to existing one
-      let treatmentPlanId = selectedTreatmentPlan;
+      let treatmentPlanId = formData.selectedTreatmentPlan;
 
-      if (createNewTreatmentPlan && newTreatmentPlanForm.title.trim()) {
-        const { data: newPlan, error: planError } = await supabase
+      if (formData.createNewTreatmentPlan && formData.newTreatmentPlanForm.title.trim()) {
+        const { data: newPlan } = await supabase
           .from('treatment_plans')
           .insert({
             patient_id: appointment.patient_id,
             dentist_id: appointment.dentist_id,
-            title: newTreatmentPlanForm.title,
-            description: newTreatmentPlanForm.description || null,
-            diagnosis: newTreatmentPlanForm.diagnosis || null,
-            priority: newTreatmentPlanForm.priority,
-            estimated_cost: newTreatmentPlanForm.estimated_cost ? parseFloat(newTreatmentPlanForm.estimated_cost) : null,
-            estimated_duration_weeks: newTreatmentPlanForm.estimated_duration_weeks ? parseInt(newTreatmentPlanForm.estimated_duration_weeks) : null,
+            title: formData.newTreatmentPlanForm.title,
+            description: formData.newTreatmentPlanForm.description || null,
+            diagnosis: formData.newTreatmentPlanForm.diagnosis || null,
+            priority: formData.newTreatmentPlanForm.priority,
+            estimated_cost: formData.newTreatmentPlanForm.estimated_cost ? parseFloat(formData.newTreatmentPlanForm.estimated_cost) : null,
+            estimated_duration_weeks: formData.newTreatmentPlanForm.estimated_duration_weeks ? parseInt(formData.newTreatmentPlanForm.estimated_duration_weeks) : null,
             status: 'active',
             start_date: new Date().toISOString()
           })
           .select()
           .single();
 
-        if (planError) {
-          console.error('Error creating treatment plan:', planError);
-        } else if (newPlan) {
+        if (newPlan) {
           treatmentPlanId = newPlan.id;
         }
       }
 
-      if (treatmentPlanId) {
-        await supabase
-          .from('appointments')
-          .update({ treatment_plan_id: treatmentPlanId })
-          .eq('id', appointment.id);
-      }
-
-      // 6. Mark appointment as completed
+      // 6. Update appointment status
       await supabase
         .from('appointments')
         .update({
           status: 'completed',
           reason: aiGeneratedReason,
-          consultation_notes: consultationNotes || notes || null
+          consultation_notes: formData.consultationNotes || formData.notes || null,
+          treatment_plan_id: treatmentPlanId || null
         })
         .eq('id', appointment.id);
 
-      // 5. Schedule follow-up if needed with email notification
-      if (followUpNeeded && followUpDate) {
+      // 7. Schedule follow-up if needed
+      if (formData.followUpNeeded && formData.followUpDate) {
         const { createAppointmentWithNotification } = await import('@/hooks/useAppointments');
         await createAppointmentWithNotification({
           patient_id: appointment.patient_id,
           dentist_id: appointment.dentist_id,
-          appointment_date: new Date(followUpDate).toISOString(),
+          appointment_date: new Date(formData.followUpDate).toISOString(),
           reason: 'Follow-up appointment',
           status: 'confirmed',
           duration_minutes: 30
         });
       }
 
-      // 6. Send email notification to patient with appointment details
-      try {
-        const { data: patientProfile } = await supabase
-          .from('profiles')
-          .select('user_id, email, first_name, last_name')
-          .eq('id', appointment.patient_id)
-          .single();
+      // 8. Send email notification
+      const { data: patientProfile } = await supabase
+        .from('profiles')
+        .select('user_id, email, first_name, last_name')
+        .eq('id', appointment.patient_id)
+        .single();
 
-        if (patientProfile?.user_id && patientProfile?.email) {
-          const emailContent = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333; border-bottom: 2px solid #e5e5e5; padding-bottom: 10px;">Appointment Completed</h2>
-              
-              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
-                <p><strong>Date:</strong> ${format(new Date(appointment.appointment_date), 'PPP')}</p>
-                <p><strong>Time:</strong> ${format(new Date(appointment.appointment_date), 'p')}</p>
-                ${appointment.reason ? `<p><strong>Reason:</strong> ${appointment.reason}</p>` : ''}
-              </div>
-
-              ${treatments.length > 0 ? `
-                <div style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                  <h3 style="color: #333; margin-top: 0;">Treatments Provided</h3>
-                  ${treatments.map(treatment => `
-                    <div style="border-bottom: 1px solid #f0f0f0; padding: 10px 0;">
-                      <div style="display: flex; justify-content: space-between;">
-                        <span><strong>${treatment.name}</strong>${treatment.tooth ? ` (Tooth: ${treatment.tooth})` : ''}</span>
-                        <span>€${treatment.price.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  `).join('')}
-                  <div style="border-top: 2px solid #333; padding-top: 10px; margin-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px;">
-                      <span>Total Amount:</span>
-                      <span>€${totalAmount.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-              ` : ''}
-
-              ${(notes.trim() || consultationNotes.trim()) ? `
-                <div style="background: #f8f9fa; border-left: 4px solid #007bff; padding: 20px; margin: 20px 0;">
-                  <h3 style="color: #333; margin-top: 0;">Clinical Notes</h3>
-                  <p style="white-space: pre-wrap;">${consultationNotes.trim() || notes.trim()}</p>
-                </div>
-              ` : ''}
-
-              ${paymentReceived ? `
-                <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                  <h4 style="color: #155724; margin-top: 0;">✅ Payment Received</h4>
-                  <p style="color: #155724; margin: 0;">Payment of €${totalAmount.toFixed(2)} has been received and processed.</p>
-                </div>
-              ` : ''}
-
-              ${followUpNeeded && followUpDate ? `
-                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                  <h4 style="color: #856404; margin-top: 0;">📅 Follow-up Scheduled</h4>
-                  <p style="color: #856404; margin: 0;">A follow-up appointment has been scheduled for ${format(new Date(followUpDate), 'PPP p')}.</p>
-                </div>
-              ` : ''}
-
-              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 30px; border-top: 1px solid #e5e5e5;">
-                <p style="color: #666; margin: 0; font-size: 14px;">
-                  Thank you for your visit! If you have any questions about your treatment or need to schedule another appointment, 
-                  please don't hesitate to contact our office.
-                </p>
-              </div>
+      if (patientProfile?.user_id && patientProfile?.email) {
+        const appointmentDateObj = new Date(appointment.appointment_date);
+        const emailContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; border-bottom: 2px solid #e5e5e5; padding-bottom: 10px;">Appointment Completed</h2>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
+              <p><strong>Date:</strong> ${format(appointmentDateObj, 'PPP')}</p>
+              <p><strong>Time:</strong> ${format(appointmentDateObj, 'p')}</p>
+              ${appointment.dentist?.first_name && appointment.dentist?.last_name ? `<p><strong>Dentist:</strong> ${appointment.dentist.first_name} ${appointment.dentist.last_name}</p>` : ''}
             </div>
-          `;
 
-          const appointmentDateObj = new Date(appointment.appointment_date);
-          await NotificationService.sendEmailNotification(
-            patientProfile.user_id,
-            'Appointment Completed - Service Summary',
-            emailContent,
-            'appointment',
-            true,
-            {
-              email: patientProfile.email,
-              dentistId: appointment.dentist_id,
-              appointmentId: appointment.id,
-              isSystemNotification: false,
-              appointmentDate: format(appointmentDateObj, 'EEEE, MMMM d, yyyy'),
-              appointmentTime: format(appointmentDateObj, 'HH:mm')
-            }
-          );
-        }
-      } catch (emailError) {
-        console.error('Failed to send completion email:', emailError);
-        // Don't block the completion if email fails
+            ${formData.treatments.length > 0 ? `
+              <div style="margin: 20px 0;">
+                <h3 style="color: #333;">Services Provided</h3>
+                <ul>
+                  ${formData.treatments.map(t => `<li>${t.name}${t.tooth ? ` (Tooth ${t.tooth})` : ''} - €${t.price.toFixed(2)}</li>`).join('')}
+                </ul>
+                <p><strong>Total: €${formData.totalAmount.toFixed(2)}</strong></p>
+              </div>
+            ` : ''}
+
+            ${formData.prescriptions.length > 0 ? `
+              <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="color: #1565c0; margin-top: 0;">💊 Prescriptions</h4>
+                <ul>
+                  ${formData.prescriptions.map(rx => `<li><strong>${rx.medication}</strong> - ${rx.dosage}, ${rx.frequency}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${formData.followUpNeeded && formData.followUpDate ? `
+              <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <h4 style="color: #856404; margin-top: 0;">📅 Follow-up Scheduled</h4>
+                <p style="color: #856404; margin: 0;">A follow-up appointment has been scheduled for ${format(new Date(formData.followUpDate), 'PPP p')}.</p>
+              </div>
+            ` : ''}
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 30px; border-top: 1px solid #e5e5e5;">
+              <p style="color: #666; margin: 0; font-size: 14px;">
+                Thank you for your visit! If you have any questions about your treatment or need to schedule another appointment, 
+                please don't hesitate to contact our office.
+              </p>
+            </div>
+          </div>
+        `;
+
+        await NotificationService.sendEmailNotification(
+          patientProfile.user_id,
+          'Appointment Completed - Service Summary',
+          emailContent,
+          'appointment',
+          true,
+          {
+            email: patientProfile.email,
+            dentistId: appointment.dentist_id,
+            appointmentId: appointment.id,
+            isSystemNotification: false,
+            appointmentDate: format(appointmentDateObj, 'EEEE, MMMM d, yyyy'),
+            appointmentTime: format(appointmentDateObj, 'HH:mm')
+          }
+        );
       }
 
-      toast({
-        title: "Appointment completed successfully",
-        description: `${treatments.length} treatment(s) recorded${paymentReceived ? ', payment received' : ''}${followUpNeeded ? ', follow-up scheduled' : ''}. Patient notified by email.`,
-      });
-
-      onCompleted();
-      onOpenChange(false);
     } catch (error) {
-      console.error('Error completing appointment:', error);
-      toast({
-        title: "Error completing appointment",
-        description: "Please try again or contact support.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error('Background processing error:', error);
+      throw error; // Re-throw to trigger error toast
     }
   };
 
