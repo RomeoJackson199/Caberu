@@ -71,8 +71,9 @@ export default function Pricing() {
         return;
       }
 
-      // If promo code is validated and it's 100% free, apply directly
-      if (validPromo && validPromo.discount_type === 'free') {
+      // If any promo code is validated, apply it via the edge function
+      if (validPromo) {
+        console.log('Applying promo code:', validPromo);
         const { data, error } = await supabase.functions.invoke('apply-promo-code', {
           body: {
             promo_code: promoCode.trim(),
@@ -286,8 +287,8 @@ export default function Pricing() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Processing...
                       </>
-                    ) : validPromo && validPromo.discount_type === 'free' ? (
-                      'Activate FREE'
+                    ) : validPromo ? (
+                      'Apply Promo & Activate'
                     ) : (
                       'Get Started'
                     )}
@@ -354,7 +355,7 @@ export default function Pricing() {
 
             {validPromo && (
               <p className="text-sm font-medium text-primary">
-                ✓ Now click on a plan above to {validPromo.discount_type === 'free' ? 'activate it FREE!' : 'apply your discount'}
+                ✓ Now click on a plan above to activate with your promo code
               </p>
             )}
 
