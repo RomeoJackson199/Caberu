@@ -133,11 +133,10 @@ export default function Pricing() {
       }
 
       const { data, error } = await supabase.functions.invoke('apply-promo-code', {
-        body: JSON.stringify({
+        body: {
           promo_code: promoCode.trim(),
           business_id: businessId,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        },
       });
 
       if (error) throw error;
