@@ -12,13 +12,19 @@ serve(async (req) => {
     }
 
     try {
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-            {
-                global: { headers: { Authorization: req.headers.get('Authorization')! } },
-            }
-        )
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+        if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+            throw new Error('Server configuration error: missing Supabase keys')
+        }
+
+        const supabaseClient = createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: req.headers.get('Authorization')! } },
+        })
+
+        const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
         if (authError || !user) {
@@ -26,27 +32,28 @@ serve(async (req) => {
         }
 
         const { promo_code, business_id } = await req.json()
+        const normalizedCode = promo_code?.toString().trim().toUpperCase()
 
-        if (!promo_code || !business_id) {
+        if (!normalizedCode || !business_id) {
             throw new Error('Promo code and business ID are required')
         }
 
-        console.log('apply-promo-code v4 starting for business:', business_id);
+        console.log('apply-promo-code v5 starting for business:', business_id)
 
         // 0. Get Profile ID
         const { data: profile, error: profileError } = await supabaseClient
             .from('profiles')
             .select('id')
             .eq('user_id', user.id)
-            .single();
+            .single()
 
         if (profileError || !profile) {
-            console.error('Profile fetch error:', profileError);
-            throw new Error('User profile not found. Please contact support.');
+            console.error('Profile fetch error:', profileError)
+            throw new Error('User profile not found. Please contact support.')
         }
 
-        const profileId = profile.id;
-        console.log('Found profile:', profileId);
+        const profileId = profile.id
+        console.log('Found profile:', profileId)
 
         // 1. Validate Admin/Owner Access
         const { data: member, error: memberError } = await supabaseClient
@@ -57,12 +64,12 @@ serve(async (req) => {
             .maybeSingle()
 
         if (memberError) {
-            console.error('Member fetch error:', memberError);
-            throw new Error('Error checking business membership');
+            console.error('Member fetch error:', memberError)
+            throw new Error('Error checking business membership')
         }
 
         if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
-            console.error('Access denied. Role:', member?.role);
+            console.error('Access denied. Role:', member?.role)
             throw new Error('Only owners or admins can apply promo codes')
         }
 
@@ -70,7 +77,7 @@ serve(async (req) => {
         const { data: codeData, error: codeError } = await supabaseClient
             .from('promo_codes')
             .select('*')
-            .eq('code', promo_code.toUpperCase())
+            .eq('code', normalizedCode)
             .eq('is_active', true)
             .single()
 
@@ -86,72 +93,64 @@ serve(async (req) => {
             throw new Error('Promo code usage limit reached')
         }
 
-        // 3. Find Active Subscription
-        // First find dentist for this business AND this user
-        // We ensure we have profile_id from earlier
-        if (!profileId) throw new Error('Could not determine profile ID for current user');
-
-        let { data: dentist } = await supabaseClient
+        // 3. Find dentist and latest subscription using service role to avoid RLS gaps
+        let { data: dentist, error: dentistError } = await adminClient
             .from('dentists')
             .select('id')
             .eq('business_id', business_id)
             .eq('profile_id', profileId)
-            .maybeSingle();
+            .maybeSingle()
 
-        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-        if (!serviceRoleKey) {
-            console.error('Service Role Key missing');
-            throw new Error('Server configuration error: Service key missing');
+        if (dentistError) {
+            console.error('Dentist fetch error:', dentistError)
+            throw new Error('Failed to locate dentist record')
         }
 
-        const adminClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            serviceRoleKey
-        )
-
-        // ... existing validation code using supabaseClient ...
-
         if (!dentist) {
-            // Create dentist record if missing (Using Admin Client to bypass RLS if needed)
-            console.log('Dentist record not found, creating for profile:', profileId);
+            console.log('Dentist record not found, creating for profile:', profileId)
             const { data: newDentist, error: createDentistError } = await adminClient
                 .from('dentists')
                 .insert({
                     profile_id: profileId,
                     business_id: business_id,
-                    is_active: true
+                    is_active: true,
                 })
                 .select('id')
-                .single();
+                .single()
 
             if (createDentistError) {
-                console.error('Create dentist error:', createDentistError);
-                throw new Error('Failed to create dentist record: ' + createDentistError.message);
+                console.error('Create dentist error:', createDentistError)
+                throw new Error('Failed to create dentist record: ' + createDentistError.message)
             }
-            dentist = newDentist;
+            dentist = newDentist
         }
 
-        const { data: subscription } = await supabaseClient
+        const { data: subscription, error: subscriptionError } = await adminClient
             .from('subscriptions')
             .select('*')
             .eq('dentist_id', dentist.id)
             .order('current_period_end', { ascending: false })
             .maybeSingle()
 
-        let subscription_id = subscription?.id;
-        let newPeriodEnd;
+        if (subscriptionError) {
+            console.error('Subscription fetch error:', subscriptionError)
+            throw new Error('Failed to fetch subscription for promo application')
+        }
+
+        let subscription_id = subscription?.id
+        let newPeriodEnd: Date
 
         // 4. Apply Benefit (Extend 1 Month)
-        // We assume all promo codes currently afford a 1-month extension for simplicity
+        newPeriodEnd = subscription?.current_period_end
+            ? new Date(subscription.current_period_end)
+            : new Date()
+
+        if (newPeriodEnd < new Date()) {
+            newPeriodEnd = new Date()
+        }
+        newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1)
 
         if (subscription) {
-            newPeriodEnd = new Date(subscription.current_period_end)
-            if (newPeriodEnd < new Date()) {
-                newPeriodEnd = new Date();
-            }
-            newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
-
-            // Use adminClient for update
             const { error: updateError } = await adminClient
                 .from('subscriptions')
                 .update({
@@ -161,23 +160,27 @@ serve(async (req) => {
                     billing_cycle: subscription.billing_cycle || 'monthly',
                     plan_id: subscription.plan_id,
                 })
-                .eq('id', subscription.id);
+                .eq('id', subscription.id)
 
-            if (updateError) throw updateError;
-
+            if (updateError) {
+                console.error('Subscription update error:', updateError)
+                throw new Error('Failed to extend subscription with promo code')
+            }
         } else {
             // Create NEW subscription using adminClient
-            newPeriodEnd = new Date();
-            newPeriodEnd.setMonth(newPeriodEnd.getMonth() + 1);
-
-            // Get "Free Trial" or default plan ID using adminClient to avoid RLS issues
             const { data: plan } = await adminClient
                 .from('subscription_plans')
                 .select('id')
                 .eq('name', 'Free Trial')
-                .maybeSingle();
+                .maybeSingle()
 
-            const planId = plan?.id || (await adminClient.from('subscription_plans').select('id').limit(1).single()).data?.id;
+            const fallbackPlan = await adminClient
+                .from('subscription_plans')
+                .select('id')
+                .limit(1)
+                .single()
+
+            const planId = plan?.id || fallbackPlan.data?.id
 
             const { data: newSub, error: createError } = await adminClient
                 .from('subscriptions')
@@ -187,35 +190,39 @@ serve(async (req) => {
                     status: 'active',
                     current_period_end: newPeriodEnd.toISOString(),
                     cancel_at_period_end: false,
-                    billing_cycle: 'monthly'
+                    billing_cycle: 'monthly',
                 })
                 .select('id')
-                .single();
+                .single()
 
-            if (createError) throw createError;
-            subscription_id = newSub.id;
+            if (createError) {
+                console.error('Subscription create error:', createError)
+                throw new Error('Failed to create subscription for promo code')
+            }
+            subscription_id = newSub.id
         }
 
         // 5. Increment Usage using adminClient (in case RPC has security definer or similar needs)
-        await adminClient.rpc('increment_promo_usage', { promo_id: codeData.id })
-
-        // 6. Log Usage (Ideally create a promo_code_usages table, but for now we rely on the counter)
+        const { error: usageError } = await adminClient.rpc('increment_promo_usage', { promo_id: codeData.id })
+        if (usageError) {
+            console.error('Promo usage increment error:', usageError)
+            throw new Error('Failed to record promo code usage')
+        }
 
         return new Response(
             JSON.stringify({
                 success: true,
                 message: 'Promo code applied successfully. Subscription extended by 1 month.',
-                new_period_end: newPeriodEnd.toISOString()
+                subscription_id,
+                new_period_end: newPeriodEnd.toISOString(),
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
-
     } catch (error) {
         console.error('Apply promo code error:', error)
-        // Return 200 even on error so client can read the JSON body with error message
         return new Response(
             JSON.stringify({ error: error.message }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 })
