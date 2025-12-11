@@ -50,26 +50,42 @@ export function CancelSubscriptionSection() {
         try {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            if (!user) {
+                console.log('No authenticated user');
+                return;
+            }
+            console.log('User ID:', user.id);
 
             // Get profile
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('id')
                 .eq('user_id', user.id)
                 .single();
 
-            if (!profile) return;
+            if (profileError || !profile) {
+                console.log('Profile not found:', profileError);
+                return;
+            }
+            console.log('Profile ID:', profile.id);
 
             // Get dentist for this business
-            const { data: dentist } = await supabase
+            const { data: dentist, error: dentistError } = await supabase
                 .from('dentists')
                 .select('id')
                 .eq('profile_id', profile.id)
                 .eq('business_id', businessId)
                 .maybeSingle();
 
-            if (!dentist) return;
+            if (dentistError) {
+                console.log('Dentist query error:', dentistError);
+            }
+
+            if (!dentist) {
+                console.log('No dentist found for profile', profile.id, 'in business', businessId);
+                return;
+            }
+            console.log('Dentist ID:', dentist.id);
 
             // Get subscription
             const { data: sub, error } = await supabase
@@ -86,7 +102,12 @@ export function CancelSubscriptionSection() {
                 .eq('dentist_id', dentist.id)
                 .maybeSingle();
 
-            if (error) throw error;
+            if (error) {
+                console.log('Subscription query error:', error);
+                throw error;
+            }
+
+            console.log('Subscription found:', sub);
             setSubscription(sub);
         } catch (err) {
             console.error('Error loading subscription:', err);
