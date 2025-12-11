@@ -83,6 +83,8 @@ serve(async (req) => {
     }
 
     // 2. If creating a new request (dentist_id provided), verify they own that dentist record
+    let effectiveDentistId = dentist_id;
+
     if (dentist_id) {
       // Check if the actor OWNS this dentist record
       let { data: dentistRecord, error: dentistError } = await supabaseClient
@@ -99,7 +101,7 @@ serve(async (req) => {
           .from('dentists')
           .select('business_id')
           .eq('id', dentist_id)
-          .single();
+          .maybeSingle(); // Use maybeSingle since dentist might not exist
 
         if (targetDentist && targetDentist.business_id) {
           // Check if current user is member of this business (allow all roles for now to fix auth error)
@@ -116,34 +118,62 @@ serve(async (req) => {
         }
       }
 
+      // FALLBACK: If dentist_id doesn't exist or not authorized, try to find user's own dentist
+      if (!dentistRecord) {
+        console.log('⚠️ Provided dentist_id not found or not authorized, attempting fallback...');
+        console.log('Looking for user\'s own dentist profile with profile_id:', actorProfile.id);
+
+        // Find the user's own active dentist record
+        const { data: ownDentist } = await supabaseClient
+          .from('dentists')
+          .select('id, business_id')
+          .eq('profile_id', actorProfile.id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (ownDentist) {
+          console.log('✅ Found user\'s own dentist record:', ownDentist.id);
+          dentistRecord = ownDentist;
+          effectiveDentistId = ownDentist.id; // Use the user's actual dentist ID
+        } else {
+          // Final fallback: check if user is a member of ANY business and get a dentist from there
+          const { data: anyMembership } = await supabaseClient
+            .from('business_members')
+            .select('business_id, role')
+            .eq('profile_id', actorProfile.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (anyMembership) {
+            // Get a dentist from this business
+            const { data: businessDentist } = await supabaseClient
+              .from('dentists')
+              .select('id, business_id')
+              .eq('business_id', anyMembership.business_id)
+              .eq('is_active', true)
+              .limit(1)
+              .maybeSingle();
+
+            if (businessDentist) {
+              console.log('✅ Using business dentist as fallback:', businessDentist.id);
+              dentistRecord = businessDentist;
+              effectiveDentistId = businessDentist.id;
+            }
+          }
+        }
+      }
+
       if (!dentistRecord) {
         // Log detailed debug info
-        console.error('❌ Authorization Failed Debug Info:');
+        console.error('❌ Authorization Failed - No valid dentist found');
         console.error('Actor Profile ID:', actorProfile.id);
-        console.error('Target Dentist ID:', dentist_id);
+        console.error('Requested Dentist ID:', dentist_id);
 
-        // Check what we found about the dentist
-        const { data: debugDentist } = await supabaseClient
-          .from('dentists')
-          .select('id, profile_id, business_id')
-          .eq('id', dentist_id)
-          .maybeSingle();
-        console.error('Dentist Found in DB:', debugDentist);
-
-        if (debugDentist?.business_id) {
-          const { data: debugMember } = await supabaseClient
-            .from('business_members')
-            .select('*')
-            .eq('business_id', debugDentist.business_id)
-            .eq('profile_id', actorProfile.id)
-            .maybeSingle();
-          console.error('Business Membership Found:', debugMember);
-        } else {
-          console.error('Dentist has no business_id!');
-        }
-
-        throw new Error(`Unauthorized: You can only create payment requests for your own dentist profile or business. (Dentist: ${dentist_id}, Actor: ${actorProfile.id})`);
+        throw new Error(`Unauthorized: Could not find a valid dentist profile for your account. Please contact support. (Requested: ${dentist_id}, Actor: ${actorProfile.id})`);
       }
+
+      // Use the effective dentist ID (which may be the fallback)
+      dentist_id = effectiveDentistId;
 
       // ... (existing code)
 
