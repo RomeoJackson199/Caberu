@@ -61,6 +61,11 @@ export const QuickPhotoUpload = ({ onPhotoUploaded, onCancel }: QuickPhotoUpload
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${timestamp}.${fileExt}`;
 
+      // Validate fileName
+      if (fileName.includes('..')) {
+        throw new Error("Invalid file name");
+      }
+
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('dental-photos')
