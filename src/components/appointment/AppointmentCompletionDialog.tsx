@@ -533,6 +533,7 @@ export function AppointmentCompletionDialog({
             </div>
           `;
 
+          const appointmentDateObj = new Date(appointment.appointment_date);
           await NotificationService.sendEmailNotification(
             patientProfile.user_id,
             'Appointment Completed - Service Summary',
@@ -543,7 +544,9 @@ export function AppointmentCompletionDialog({
               email: patientProfile.email,
               dentistId: appointment.dentist_id,
               appointmentId: appointment.id,
-              isSystemNotification: false
+              isSystemNotification: false,
+              appointmentDate: format(appointmentDateObj, 'EEEE, MMMM d, yyyy'),
+              appointmentTime: format(appointmentDateObj, 'HH:mm')
             }
           );
         }

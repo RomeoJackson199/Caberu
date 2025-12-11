@@ -72,6 +72,7 @@ serve(async (req) => {
     }
 
     console.log('📧 Email request details:', { to, subject, messageType, patientId, dentistId, isSystemNotification: isSystem });
+    console.log('📅 Appointment data received:', { appointmentDate, appointmentTime });
 
     // Authorization check
     if (!isSystem && dentistId && patientId) {
