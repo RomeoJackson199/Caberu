@@ -79,7 +79,7 @@ export function CancelSubscriptionSection() {
             // Get subscription info directly from businesses table
             const { data: business, error } = await supabase
                 .from('businesses')
-                .select('subscription_status, subscription_plan, subscription_ends_at, subscription_started_at, promo_code_used, pending_plan_change, pending_plan_change_date')
+                .select('subscription_status, subscription_plan, subscription_ends_at, subscription_started_at, promo_code_used, pending_plan_change, pending_plan_change_date, emails_sent_count, customer_count')
                 .eq('id', businessId)
                 .single();
 
@@ -155,44 +155,18 @@ export function CancelSubscriptionSection() {
                 setPendingChange(null);
             }
 
-            // Fetch usage stats
-            if (businessId) {
-                // Get customer count from patients table
-                const { count: patientCount } = await supabase
-                    .from('patients')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('business_id', businessId);
-
-                // If no patients, count unique patients from appointments
-                let customerCount = patientCount || 0;
-                if (customerCount === 0) {
-                    const { data: appointments } = await supabase
-                        .from('appointments')
-                        .select('patient_id')
-                        .eq('business_id', businessId);
-
-                    if (appointments) {
-                        const uniquePatients = new Set(appointments.map(a => a.patient_id));
-                        customerCount = uniquePatients.size;
-                    }
-                }
-
-                // Get team member count
+            // Fetch usage stats - use columns from business query plus team member count
+            if (businessId && business) {
+                // Get team member count (not stored on business table)
                 const { count: teamCount } = await supabase
                     .from('business_members')
                     .select('*', { count: 'exact', head: true })
                     .eq('business_id', businessId);
 
-                // Get email count from email_logs table
-                const { count: emailCount } = await supabase
-                    .from('email_logs')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('business_id', businessId);
-
                 setUsageStats({
-                    customerCount: customerCount,
+                    customerCount: business.customer_count || 0,
                     teamMembers: teamCount || 0,
-                    emailsSent: emailCount || 0,
+                    emailsSent: business.emails_sent_count || 0,
                 });
             }
         } catch (err) {

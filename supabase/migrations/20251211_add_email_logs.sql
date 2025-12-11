@@ -1,39 +1,27 @@
--- Create email_logs table to track all emails sent by each business
-CREATE TABLE IF NOT EXISTS public.email_logs (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    business_id uuid NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-    recipient_email text NOT NULL,
-    recipient_name text,
-    subject text,
-    email_type text NOT NULL, -- e.g., 'appointment_reminder', 'confirmation', 'notification', etc.
-    status text DEFAULT 'sent', -- 'sent', 'failed', 'bounced'
-    sent_at timestamp with time zone DEFAULT now(),
-    created_at timestamp with time zone DEFAULT now()
-);
+-- Add email count and customer count columns directly to businesses table
+ALTER TABLE public.businesses 
+ADD COLUMN IF NOT EXISTS emails_sent_count integer DEFAULT 0,
+ADD COLUMN IF NOT EXISTS customer_count integer DEFAULT 0;
 
--- Add index for fast business lookup
-CREATE INDEX IF NOT EXISTS idx_email_logs_business_id ON public.email_logs(business_id);
+-- Create function to increment email count
+CREATE OR REPLACE FUNCTION increment_email_count(business_uuid uuid)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.businesses 
+    SET emails_sent_count = COALESCE(emails_sent_count, 0) + 1
+    WHERE id = business_uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Add RLS policies
-ALTER TABLE public.email_logs ENABLE ROW LEVEL SECURITY;
+-- Create function to increment customer count
+CREATE OR REPLACE FUNCTION increment_customer_count(business_uuid uuid)
+RETURNS void AS $$
+BEGIN
+    UPDATE public.businesses 
+    SET customer_count = COALESCE(customer_count, 0) + 1
+    WHERE id = business_uuid;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Allow business owners/admins to view their email logs
-CREATE POLICY "Business members can view email logs"
-    ON public.email_logs
-    FOR SELECT
-    USING (
-        business_id IN (
-            SELECT bm.business_id 
-            FROM business_members bm 
-            JOIN profiles p ON p.id = bm.profile_id
-            WHERE p.user_id = auth.uid()
-        )
-    );
-
--- Allow service role to insert email logs
-CREATE POLICY "Service role can insert email logs"
-    ON public.email_logs
-    FOR INSERT
-    WITH CHECK (true);
-
-COMMENT ON TABLE public.email_logs IS 'Tracks all emails sent by each business for billing and analytics';
+COMMENT ON COLUMN public.businesses.emails_sent_count IS 'Total count of emails sent by this business';
+COMMENT ON COLUMN public.businesses.customer_count IS 'Total count of customers for this business';
