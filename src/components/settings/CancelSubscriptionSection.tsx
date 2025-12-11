@@ -143,6 +143,7 @@ export function CancelSubscriptionSection() {
                     promo_code: promoCode.trim(),
                     business_id: businessId,
                 },
+                headers: { 'Content-Type': 'application/json' },
             });
 
             if (error) throw error;
