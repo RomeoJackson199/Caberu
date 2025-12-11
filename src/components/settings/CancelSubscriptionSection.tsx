@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ interface Subscription {
 
 export function CancelSubscriptionSection() {
     const { toast } = useToast();
+    const navigate = useNavigate();
     const { businessId } = useBusinessContext();
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [loading, setLoading] = useState(true);
@@ -196,7 +198,7 @@ export function CancelSubscriptionSection() {
                         </p>
                     </div>
 
-                    <Button className="w-full" onClick={() => window.location.href = '/pricing'}>
+                    <Button className="w-full" onClick={() => navigate('/pricing')}>
                         View Plans & Promo Codes
                     </Button>
                 </CardContent>
@@ -260,7 +262,7 @@ export function CancelSubscriptionSection() {
                 <div className="flex flex-col sm:flex-row gap-3">
                     <Button
                         variant="outline"
-                        onClick={() => window.location.href = '/pricing'}
+                        onClick={() => navigate('/pricing')}
                         className="flex-1"
                     >
                         Change Plan
