@@ -31,14 +31,15 @@ serve(async (req) => {
             throw new Error('Unauthorized')
         }
 
-        const { promo_code, business_id } = await req.json()
+        const { promo_code, business_id, plan_name } = await req.json()
         const normalizedCode = promo_code?.toString().trim().toUpperCase()
+        const planNameToUse = plan_name || 'Promo'
 
         if (!normalizedCode || !business_id) {
             throw new Error('Promo code and business ID are required')
         }
 
-        console.log('apply-promo-code v7 starting for business:', business_id, 'code:', normalizedCode)
+        console.log('apply-promo-code v8 starting for business:', business_id, 'plan:', planNameToUse, 'code:', normalizedCode)
 
         // 1. Get Profile ID
         const { data: profile, error: profileError } = await supabaseClient
@@ -124,18 +125,18 @@ serve(async (req) => {
             throw new Error('Failed to record promo code usage')
         }
 
-        console.log('v7 Promo usage incremented')
+        console.log('v8 Promo usage incremented')
 
         // 6. Update businesses table with subscription info (the main update!)
         const updateData = {
             subscription_status: 'active',
-            subscription_plan: 'promo',
+            subscription_plan: planNameToUse,
             subscription_ends_at: newPeriodEnd.toISOString(),
             subscription_started_at: new Date().toISOString(),
             promo_code_used: normalizedCode,
         }
 
-        console.log('v7 Updating business table with:', updateData)
+        console.log('v8 Updating business table with:', updateData)
 
         const { error: businessUpdateError } = await adminClient
             .from('businesses')
