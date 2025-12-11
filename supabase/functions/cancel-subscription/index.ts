@@ -1,5 +1,4 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4'
 
 const corsHeaders = {
@@ -8,100 +7,98 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders })
     }
 
     try {
-        // Get auth user
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-            {
-                global: { headers: { Authorization: req.headers.get('Authorization')! } },
-            }
-        )
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+        if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+            throw new Error('Server configuration error')
+        }
+
+        const supabaseClient = createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: req.headers.get('Authorization')! } },
+        })
+        const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
         if (authError || !user) {
             throw new Error('Unauthorized')
         }
 
-        const { subscription_id, cancel_immediately } = await req.json()
+        const { business_id, cancel_immediately } = await req.json()
 
-        if (!subscription_id) {
-            throw new Error('subscription_id is required')
+        if (!business_id) {
+            throw new Error('business_id is required')
         }
 
-        // Verify user owns this subscription
-        const { data: subscription, error: subError } = await supabaseClient
-            .from('subscriptions')
-            .select(`
-        id,
-        stripe_subscription_id,
-        dentist_id,
-        dentists!inner(profile_id)
-      `)
-            .eq('id', subscription_id)
-            .single()
+        console.log('cancel-subscription for business:', business_id)
 
-        if (subError || !subscription) {
-            throw new Error('Subscription not found')
-        }
-
-        // Get user's profile ID
+        // Verify user is owner/admin of this business
         const { data: profile } = await supabaseClient
             .from('profiles')
             .select('id')
             .eq('user_id', user.id)
             .single()
 
-        if (!profile || subscription.dentists.profile_id !== profile.id) {
-            throw new Error('You can only cancel your own subscription')
+        if (!profile) {
+            throw new Error('Profile not found')
         }
 
-        // Initialize Stripe
-        const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
-        if (!stripeKey) {
-            throw new Error('Stripe not configured')
+        const { data: member } = await supabaseClient
+            .from('business_members')
+            .select('role')
+            .eq('business_id', business_id)
+            .eq('profile_id', profile.id)
+            .single()
+
+        if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
+            throw new Error('Only owners or admins can cancel subscriptions')
         }
 
-        const stripe = new Stripe(stripeKey, {
-            apiVersion: '2023-10-16',
-        })
+        // Get current business subscription info
+        const { data: business } = await adminClient
+            .from('businesses')
+            .select('subscription_status, subscription_ends_at')
+            .eq('id', business_id)
+            .single()
 
-        let cancelResult
-
-        if (subscription.stripe_subscription_id) {
-            if (cancel_immediately) {
-                // Cancel immediately
-                cancelResult = await stripe.subscriptions.cancel(subscription.stripe_subscription_id)
-            } else {
-                // Cancel at period end (default - subscription continues until end of billing period)
-                cancelResult = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
-                    cancel_at_period_end: true,
-                })
-            }
+        if (!business) {
+            throw new Error('Business not found')
         }
 
-        // Update database
+        // Update business subscription status
         const updateData = cancel_immediately
-            ? { status: 'cancelled', cancel_at_period_end: false }
-            : { cancel_at_period_end: true }
+            ? {
+                subscription_status: 'cancelled',
+                subscription_plan: 'free'
+            }
+            : {
+                subscription_status: 'cancelling' // Will be cancelled at period end
+            }
 
-        await supabaseClient
-            .from('subscriptions')
+        const { error: updateError } = await adminClient
+            .from('businesses')
             .update(updateData)
-            .eq('id', subscription_id)
+            .eq('id', business_id)
+
+        if (updateError) {
+            console.error('Update error:', updateError)
+            throw new Error('Failed to cancel subscription')
+        }
 
         return new Response(
             JSON.stringify({
                 success: true,
-                cancel_at_period_end: !cancel_immediately,
-                current_period_end: cancelResult?.current_period_end
-                    ? new Date(cancelResult.current_period_end * 1000).toISOString()
-                    : null,
+                cancel_immediately,
+                current_period_end: business.subscription_ends_at,
+                message: cancel_immediately
+                    ? 'Subscription cancelled immediately'
+                    : `Subscription will end on ${business.subscription_ends_at ? new Date(business.subscription_ends_at).toLocaleDateString() : 'period end'}`,
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )

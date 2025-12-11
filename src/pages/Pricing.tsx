@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Check, Sparkles, Loader2 } from "lucide-react";
+import { Check, Sparkles, Loader2, Tag, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,10 @@ interface SubscriptionPlan {
 export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [promoCode, setPromoCode] = useState('');
+  const [validatingPromo, setValidatingPromo] = useState(false);
+  const [validPromo, setValidPromo] = useState<any>(null);
+  const [applyingPromo, setApplyingPromo] = useState(false);
   const navigate = useNavigate();
 
   const { data: plans, isLoading } = useQuery({
@@ -33,9 +38,9 @@ export default function Pricing() {
         .select('*')
         .eq('is_active', true)
         .order('price_monthly', { ascending: true });
-      
+
       if (error) throw error;
-      
+
       return (data || []).map(plan => ({
         ...plan,
         features: Array.isArray(plan.features) ? plan.features : [],
@@ -49,7 +54,7 @@ export default function Pricing() {
     try {
       // Check if user is logged in
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         toast.error("Please sign in to subscribe");
         navigate("/sign-in?redirect=/pricing");
@@ -74,6 +79,82 @@ export default function Pricing() {
       console.error('Subscription error:', error);
       toast.error(error.message || "Failed to start checkout");
       setLoading(null);
+    }
+  };
+
+  const validatePromoCode = async () => {
+    if (!promoCode.trim()) {
+      toast.error('Please enter a promo code');
+      return;
+    }
+
+    setValidatingPromo(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-promo-code', {
+        body: JSON.stringify({ code: promoCode.trim().toUpperCase() }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (error) throw error;
+
+      if (data?.valid) {
+        setValidPromo(data.promoCode);
+        toast.success('Promo code validated! Click "Apply Promo Code" to activate.');
+      } else {
+        toast.error('Invalid or expired promo code');
+        setValidPromo(null);
+      }
+    } catch (error: any) {
+      console.error('Promo validation error:', error);
+      toast.error(error.message || 'Failed to validate promo code');
+      setValidPromo(null);
+    } finally {
+      setValidatingPromo(false);
+    }
+  };
+
+  const applyPromoCode = async () => {
+    if (!validPromo) return;
+
+    setApplyingPromo(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to apply promo code");
+        navigate("/sign-in?redirect=/pricing");
+        return;
+      }
+
+      // Get user's business
+      const businessId = sessionStorage.getItem('currentBusinessId');
+      if (!businessId) {
+        toast.error("Please select a business first");
+        navigate("/select-business");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('apply-promo-code', {
+        body: JSON.stringify({
+          promo_code: promoCode.trim(),
+          business_id: businessId,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success(data.message || 'Promo code applied successfully!');
+      setPromoCode('');
+      setValidPromo(null);
+
+      // Redirect to dashboard
+      navigate('/dentist');
+    } catch (error: any) {
+      console.error('Apply promo error:', error);
+      toast.error(error.message || 'Failed to apply promo code');
+    } finally {
+      setApplyingPromo(false);
     }
   };
 
@@ -121,15 +202,14 @@ export default function Pricing() {
           {plans?.map((plan) => {
             const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
             const isPro = plan.isPopular;
-            
+
             return (
               <Card
                 key={plan.id}
-                className={`relative p-8 transition-all duration-500 ${
-                  isPro
-                    ? "bg-gradient-to-b from-primary/20 via-primary/10 to-background border-primary/50 shadow-[0_0_50px_rgba(139,92,246,0.3)]"
-                    : "bg-card/50 border-border/50 hover:border-border"
-                }`}
+                className={`relative p-8 transition-all duration-500 ${isPro
+                  ? "bg-gradient-to-b from-primary/20 via-primary/10 to-background border-primary/50 shadow-[0_0_50px_rgba(139,92,246,0.3)]"
+                  : "bg-card/50 border-border/50 hover:border-border"
+                  }`}
               >
                 {isPro && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -152,12 +232,10 @@ export default function Pricing() {
                   <div className="space-y-3">
                     {plan.features.map((feature, idx) => (
                       <div key={idx} className="flex items-start gap-3">
-                        <div className={`mt-0.5 rounded-full p-0.5 ${
-                          isPro ? 'bg-primary/20' : 'bg-muted'
-                        }`}>
-                          <Check className={`w-4 h-4 ${
-                            isPro ? 'text-primary' : 'text-muted-foreground'
-                          }`} />
+                        <div className={`mt-0.5 rounded-full p-0.5 ${isPro ? 'bg-primary/20' : 'bg-muted'
+                          }`}>
+                          <Check className={`w-4 h-4 ${isPro ? 'text-primary' : 'text-muted-foreground'
+                            }`} />
                         </div>
                         <span className="text-sm text-muted-foreground">{feature}</span>
                       </div>
@@ -167,11 +245,10 @@ export default function Pricing() {
                   <Button
                     onClick={() => handleSubscribe(plan.id)}
                     disabled={loading === plan.id}
-                    className={`w-full ${
-                      isPro
-                        ? "bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 text-primary-foreground shadow-lg"
-                        : "bg-background border-2 border-border hover:bg-muted text-foreground"
-                    }`}
+                    className={`w-full ${isPro
+                      ? "bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 text-primary-foreground shadow-lg"
+                      : "bg-background border-2 border-border hover:bg-muted text-foreground"
+                      }`}
                   >
                     {loading === plan.id ? (
                       <>
@@ -191,6 +268,72 @@ export default function Pricing() {
         <div className="text-center mt-12 text-sm text-muted-foreground">
           <p>All plans include free updates and can be cancelled anytime.</p>
         </div>
+
+        {/* Promo Code Section */}
+        <Card className="max-w-md mx-auto mt-12 p-6 border-2 border-dashed border-primary/30">
+          <div className="text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Tag className="w-5 h-5" />
+              <h3 className="font-semibold">Have a Promo Code?</h3>
+            </div>
+
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter promo code"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                disabled={validatingPromo || !!validPromo}
+                className="flex-1"
+              />
+              {!validPromo ? (
+                <Button
+                  onClick={validatePromoCode}
+                  disabled={validatingPromo || !promoCode.trim()}
+                  variant="outline"
+                >
+                  {validatingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Validate'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => { setValidPromo(null); setPromoCode(''); }}
+                  variant="ghost"
+                  size="sm"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {validPromo && (
+              <>
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm text-green-700 dark:text-green-400">
+                  <div className="flex items-center gap-2 justify-center">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="font-medium">
+                      {validPromo.discount_type === 'free'
+                        ? 'FREE 1 Month!'
+                        : `${validPromo.discount_value}% off`}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  onClick={applyPromoCode}
+                  disabled={applyingPromo}
+                  className="w-full bg-gradient-to-r from-primary to-primary-glow"
+                >
+                  {applyingPromo ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Applying...
+                    </>
+                  ) : (
+                    'Apply Promo Code'
+                  )}
+                </Button>
+              </>
+            )}
+          </div>
+        </Card>
       </div>
 
       <Footer />

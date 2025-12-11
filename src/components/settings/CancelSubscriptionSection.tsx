@@ -91,16 +91,17 @@ export function CancelSubscriptionSection() {
     };
 
     const handleCancelSubscription = async (immediately: boolean = false) => {
-        if (!subscription) return;
+        if (!businessId) return;
 
         try {
             setCancelling(true);
 
             const { data, error } = await supabase.functions.invoke('cancel-subscription', {
-                body: {
-                    subscription_id: subscription.id,
+                body: JSON.stringify({
+                    business_id: businessId,
                     cancel_immediately: immediately,
-                },
+                }),
+                headers: { 'Content-Type': 'application/json' },
             });
 
             if (error) throw error;
@@ -108,9 +109,9 @@ export function CancelSubscriptionSection() {
 
             toast({
                 title: immediately ? 'Subscription Cancelled' : 'Subscription Cancellation Scheduled',
-                description: immediately
-                    ? 'Your subscription has been cancelled. You no longer have access to premium features.'
-                    : `Your subscription will end on ${new Date(data.current_period_end).toLocaleDateString()}. You'll have access until then.`,
+                description: data.message || (immediately
+                    ? 'Your subscription has been cancelled.'
+                    : `Your subscription will end on ${new Date(data.current_period_end).toLocaleDateString()}.`),
             });
 
             // Reload subscription data
@@ -191,31 +192,12 @@ export function CancelSubscriptionSection() {
                             <span className="font-medium">No Active Subscription</span>
                         </div>
                         <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                            You don't have an active subscription. Please subscribe or redeem a promo code to access features.
+                            You don't have an active subscription. Subscribe or use a promo code on the pricing page.
                         </p>
                     </div>
 
-                    <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-                        <h4 className="font-medium text-sm">Redeem Promo Code</h4>
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="Enter promo code"
-                                value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value)}
-                                className="bg-background"
-                            />
-                            <Button
-                                onClick={handleApplyPromoCode}
-                                disabled={applyingPromo || !promoCode}
-                                variant="outline"
-                            >
-                                {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-                            </Button>
-                        </div>
-                    </div>
-
                     <Button className="w-full" onClick={() => window.location.href = '/pricing'}>
-                        View Subscription Plans
+                        View Plans & Promo Codes
                     </Button>
                 </CardContent>
             </Card>
@@ -275,69 +257,51 @@ export function CancelSubscriptionSection() {
                     </div>
                 </div>
 
-                <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-                    <h4 className="font-medium text-sm">Redeem Promo Code</h4>
-                    <div className="flex gap-2 flex-col sm:flex-row">
-                        <Input
-                            placeholder="Enter promo code"
-                            value={promoCode}
-                            onChange={(e) => setPromoCode(e.target.value)}
-                            className="bg-background"
-                        />
-                        <Button
-                            onClick={handleApplyPromoCode}
-                            disabled={applyingPromo || !promoCode}
-                            variant="outline"
-                            className="sm:min-w-[120px]"
-                        >
-                            {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-                        </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                        Applying a valid promo code immediately extends your paid-through date. Your free month will appear in the
-                        next bill date shown above.
-                    </p>
-                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={() => window.location.href = '/pricing'}
+                        className="flex-1"
+                    >
+                        Change Plan
+                    </Button>
 
-                {subscription.cancel_at_period_end ? (
-                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                        <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
-                            <AlertTriangle className="h-4 w-4" />
-                            <span className="font-medium">Subscription ending soon</span>
+                    {subscription.cancel_at_period_end ? (
+                        <div className="flex-1 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                            <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200 text-sm">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span>Ending on {periodEndDate.toLocaleDateString()}</span>
+                            </div>
                         </div>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                            Your subscription will end on {periodEndDate.toLocaleDateString()}.
-                            You'll lose access to premium features after this date.
-                        </p>
-                    </div>
-                ) : (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" disabled={cancelling}>
-                                {cancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Cancel Subscription
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Your subscription will remain active until {periodEndDate.toLocaleDateString()}.
-                                    After that, you'll lose access to premium features.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={() => handleCancelSubscription(false)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                    Cancel at Period End
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )}
+                    ) : (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={cancelling} className="flex-1">
+                                    {cancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Cancel Subscription
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Your subscription will remain active until {periodEndDate.toLocaleDateString()}.
+                                        After that, you'll lose access to premium features.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() => handleCancelSubscription(false)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                        Cancel at Period End
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );
