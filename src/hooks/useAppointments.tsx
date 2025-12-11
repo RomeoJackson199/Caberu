@@ -18,7 +18,7 @@ export interface Appointment {
   duration_minutes?: number;
   created_at: string;
   updated_at: string;
-  
+
   // Related data
   patient?: {
     first_name: string;
@@ -73,7 +73,7 @@ export async function createAppointmentWithNotification(appointmentData: {
   patient_name?: string;
   duration_minutes?: number;
 }): Promise<Appointment> {
-  
+
   // Create the appointment
   const { data: appointment, error } = await supabase
     .from('appointments')
@@ -115,7 +115,7 @@ export async function createAppointmentWithNotification(appointmentData: {
   try {
     const patient = appointment.patient;
     const dentist = appointment.dentist;
-    
+
     if (patient?.email && dentist?.profiles) {
       const appointmentDate = new Date(appointment.appointment_date);
       const formattedDate = appointmentDate.toLocaleDateString('en-US', {
@@ -180,7 +180,9 @@ export async function createAppointmentWithNotification(appointmentData: {
           messageType: 'appointment_confirmation',
           patientId: appointment.patient_id,
           dentistId: appointment.dentist_id,
-          isSystemNotification: true
+          isSystemNotification: true,
+          appointmentDate: formattedDate,
+          appointmentTime: formattedTime
         }
       });
     }
@@ -312,14 +314,14 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
       }
 
       // Optimistically update local state
-      setAppointments(prev => 
-        prev.map(apt => 
+      setAppointments(prev =>
+        prev.map(apt =>
           apt.id === id ? { ...apt, ...updates } : apt
         )
       );
 
       // Recalculate counts
-      const updatedAppointments = appointments.map(apt => 
+      const updatedAppointments = appointments.map(apt =>
         apt.id === id ? { ...apt, ...updates } : apt
       );
       setCounts(calculateCounts(updatedAppointments));
@@ -369,11 +371,11 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
           event: '*',
           schema: 'public',
           table: 'appointments',
-          filter: params.dentistId 
+          filter: params.dentistId
             ? `dentist_id=eq.${params.dentistId}`
-            : params.patientId 
-            ? `patient_id=eq.${params.patientId}`
-            : undefined
+            : params.patientId
+              ? `patient_id=eq.${params.patientId}`
+              : undefined
         },
         () => {
           // Refetch data when changes occur

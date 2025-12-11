@@ -384,7 +384,9 @@ export const EnhancedAppointmentBooking = ({
             messageType: 'appointment_confirmation',
             patientId: profile.id,
             dentistId: selectedDentist,
-            isSystemNotification: true
+            isSystemNotification: true,
+            appointmentDate: appointmentDetails.date,
+            appointmentTime: appointmentDetails.time
           }
         });
       } catch (emailError) {
