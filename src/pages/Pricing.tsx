@@ -49,7 +49,7 @@ export default function Pricing() {
     },
   });
 
-  const handleSubscribe = async (planId: string) => {
+  const handleSubscribe = async (planId: string, planName: string) => {
     setLoading(planId);
     try {
       // Check if user is logged in
@@ -62,11 +62,44 @@ export default function Pricing() {
         return;
       }
 
+      // Get user's business
+      const businessId = sessionStorage.getItem('currentBusinessId');
+      if (!businessId) {
+        toast.error("Please select a business first");
+        navigate("/select-business");
+        setLoading(null);
+        return;
+      }
+
+      // If promo code is validated and it's 100% free, apply directly
+      if (validPromo && validPromo.discount_type === 'free') {
+        const { data, error } = await supabase.functions.invoke('apply-promo-code', {
+          body: {
+            promo_code: promoCode.trim(),
+            business_id: businessId,
+            plan_name: planName,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        toast.success(`${planName} activated with promo code!`);
+        setPromoCode('');
+        setValidPromo(null);
+        navigate('/dentist');
+        return;
+      }
+
+      // If promo code with percentage discount, include in checkout
+      const promoCodeToSend = validPromo ? promoCode.trim() : undefined;
+
       // Create Stripe checkout session
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
         body: {
           planId,
           billingCycle,
+          promoCode: promoCodeToSend,
         },
       });
 
@@ -241,7 +274,7 @@ export default function Pricing() {
                   </div>
 
                   <Button
-                    onClick={() => handleSubscribe(plan.id)}
+                    onClick={() => handleSubscribe(plan.id, plan.name)}
                     disabled={loading === plan.id}
                     className={`w-full ${isPro
                       ? "bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 text-primary-foreground shadow-lg"
@@ -253,6 +286,8 @@ export default function Pricing() {
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Processing...
                       </>
+                    ) : validPromo && validPromo.discount_type === 'free' ? (
+                      'Activate FREE'
                     ) : (
                       'Get Started'
                     )}
@@ -318,19 +353,13 @@ export default function Pricing() {
             </div>
 
             {validPromo && (
-              <Button
-                onClick={applyPromoCode}
-                disabled={applyingPromo}
-                size="lg"
-                className="w-full"
-              >
-                {applyingPromo && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {validPromo.discount_type === 'free' ? 'Activate Free Access' : 'Apply Discount'}
-              </Button>
+              <p className="text-sm font-medium text-primary">
+                ✓ Now click on a plan above to {validPromo.discount_type === 'free' ? 'activate it FREE!' : 'apply your discount'}
+              </p>
             )}
 
             <p className="text-xs text-muted-foreground">
-              Promo codes are applied to your current business
+              Promo codes are applied when you select a plan
             </p>
           </div>
         </Card>
