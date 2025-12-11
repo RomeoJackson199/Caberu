@@ -36,10 +36,17 @@ serve(async (req) => {
       throw new Error('Authorization header required');
     }
 
+    // User client (with RLS based on user)
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Admin client (bypasses RLS for authorization lookups)
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
@@ -86,8 +93,8 @@ serve(async (req) => {
     let effectiveDentistId = dentist_id;
 
     if (dentist_id) {
-      // Check if the actor OWNS this dentist record
-      let { data: dentistRecord, error: dentistError } = await supabaseClient
+      // Check if the actor OWNS this dentist record (use adminClient to bypass RLS)
+      let { data: dentistRecord, error: dentistError } = await adminClient
         .from('dentists')
         .select('id, business_id')
         .eq('id', dentist_id)
@@ -97,7 +104,7 @@ serve(async (req) => {
       // If not the dentist themselves, check if they are a business owner/admin for this dentist
       if (!dentistRecord) {
         // First get the dentist's business_id
-        const { data: targetDentist, error: targetError } = await supabaseClient
+        const { data: targetDentist, error: targetError } = await adminClient
           .from('dentists')
           .select('business_id')
           .eq('id', dentist_id)
@@ -105,7 +112,7 @@ serve(async (req) => {
 
         if (targetDentist && targetDentist.business_id) {
           // Check if current user is member of this business (allow all roles for now to fix auth error)
-          const { data: membership } = await supabaseClient
+          const { data: membership } = await adminClient
             .from('business_members')
             .select('role')
             .eq('business_id', targetDentist.business_id)
@@ -123,8 +130,8 @@ serve(async (req) => {
         console.log('⚠️ Provided dentist_id not found or not authorized, attempting fallback...');
         console.log('Looking for user\'s own dentist profile with profile_id:', actorProfile.id);
 
-        // Find the user's own active dentist record
-        const { data: ownDentist } = await supabaseClient
+        // Find the user's own active dentist record (use adminClient to bypass RLS)
+        const { data: ownDentist } = await adminClient
           .from('dentists')
           .select('id, business_id')
           .eq('profile_id', actorProfile.id)
@@ -137,7 +144,7 @@ serve(async (req) => {
           effectiveDentistId = ownDentist.id; // Use the user's actual dentist ID
         } else {
           // Final fallback: check if user is a member of ANY business and get a dentist from there
-          const { data: anyMembership } = await supabaseClient
+          const { data: anyMembership } = await adminClient
             .from('business_members')
             .select('business_id, role')
             .eq('profile_id', actorProfile.id)
@@ -146,7 +153,7 @@ serve(async (req) => {
 
           if (anyMembership) {
             // Get a dentist from this business
-            const { data: businessDentist } = await supabaseClient
+            const { data: businessDentist } = await adminClient
               .from('dentists')
               .select('id, business_id')
               .eq('business_id', anyMembership.business_id)
