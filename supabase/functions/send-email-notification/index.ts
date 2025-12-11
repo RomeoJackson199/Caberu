@@ -278,6 +278,27 @@ serve(async (req) => {
 
     console.log(`✅ Email sent successfully for ${messageType}`);
 
+    // Increment business email count if associated with a business
+    // We need to re-fetch or ensure businessId is available. 
+    // Since businessId variable scope was limited, let's try to resolve it again or rely on the fact that if we have dentistId we can find it.
+    if (dentistId) {
+      try {
+        // Quick lookup for business_id via membership if we don't have it handy in this scope
+        const { data: memberData } = await supabase
+          .from('business_members')
+          .select('business_id')
+          .eq('profile_id', (await supabase.from('dentists').select('profile_id').eq('id', dentistId).single()).data?.profile_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (memberData?.business_id) {
+          await supabase.rpc('increment_email_count', { business_uuid: memberData.business_id });
+        }
+      } catch (incError) {
+        console.error('Error incrementing email count:', incError);
+      }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       notificationId,

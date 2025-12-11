@@ -85,15 +85,40 @@ serve(async (req) => {
     // 2. If creating a new request (dentist_id provided), verify they own that dentist record
     if (dentist_id) {
       // Check if the actor OWNS this dentist record
-      const { data: dentistRecord, error: dentistError } = await supabaseClient
+      let { data: dentistRecord, error: dentistError } = await supabaseClient
         .from('dentists')
-        .select('id, business_id') // assuming business_id might be here or via link
+        .select('id, business_id')
         .eq('id', dentist_id)
         .eq('profile_id', actorProfile.id)
         .maybeSingle();
 
-      if (dentistError || !dentistRecord) {
-        throw new Error('Unauthorized: You can only create payment requests for your own dentist profile.');
+      // If not the dentist themselves, check if they are a business owner/admin for this dentist
+      if (!dentistRecord) {
+        // First get the dentist's business_id
+        const { data: targetDentist, error: targetError } = await supabaseClient
+          .from('dentists')
+          .select('business_id')
+          .eq('id', dentist_id)
+          .single();
+
+        if (targetDentist && targetDentist.business_id) {
+          // Check if current user is owner/admin of this business
+          const { data: membership } = await supabaseClient
+            .from('business_members')
+            .select('role')
+            .eq('business_id', targetDentist.business_id)
+            .eq('profile_id', actorProfile.id)
+            .in('role', ['owner', 'admin'])
+            .maybeSingle();
+
+          if (membership) {
+            dentistRecord = { id: dentist_id, business_id: targetDentist.business_id };
+          }
+        }
+      }
+
+      if (!dentistRecord) {
+        throw new Error('Unauthorized: You can only create payment requests for your own dentist profile or business.');
       }
 
       // Optional: Enforce 'dentist' or 'provider' role if your app uses role-based access

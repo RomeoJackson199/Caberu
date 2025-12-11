@@ -163,8 +163,33 @@ export function CancelSubscriptionSection() {
                     .select('*', { count: 'exact', head: true })
                     .eq('business_id', businessId);
 
+                // Calculate customer count dynamically if business count is 0
+                let customerCount = business.customer_count || 0;
+
+                if (customerCount === 0) {
+                    // Try counting unique patients from appointments
+                    const { data: appointments } = await supabase
+                        .from('appointments')
+                        .select('patient_id')
+                        .eq('business_id', businessId);
+
+                    if (appointments) {
+                        const uniquePatients = new Set(appointments.map(a => a.patient_id));
+                        customerCount = uniquePatients.size;
+                    }
+
+                    // If still 0, try patients table explicitly
+                    if (customerCount === 0) {
+                        const { count: patientTblCount } = await supabase
+                            .from('patients')
+                            .select('*', { count: 'exact', head: true })
+                            .eq('business_id', businessId);
+                        customerCount = patientTblCount || 0;
+                    }
+                }
+
                 setUsageStats({
-                    customerCount: business.customer_count || 0,
+                    customerCount: customerCount,
                     teamMembers: teamCount || 0,
                     emailsSent: business.emails_sent_count || 0,
                 });
