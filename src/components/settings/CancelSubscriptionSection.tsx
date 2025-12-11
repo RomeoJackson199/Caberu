@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CreditCard, AlertTriangle, Calendar } from 'lucide-react';
+import { Loader2, CreditCard, AlertTriangle, Calendar, Users, CheckCircle2 } from 'lucide-react';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface Subscription {
@@ -34,11 +34,17 @@ interface Subscription {
     };
 }
 
+interface PlanLimits {
+    customer_limit: number;
+    features: string[];
+}
+
 export function CancelSubscriptionSection() {
     const { toast } = useToast();
     const navigate = useNavigate();
     const { businessId } = useBusinessContext();
     const [subscription, setSubscription] = useState<Subscription | null>(null);
+    const [planLimits, setPlanLimits] = useState<PlanLimits | null>(null);
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState(false);
     const [promoCode, setPromoCode] = useState('');
@@ -83,6 +89,28 @@ export function CancelSubscriptionSection() {
                         price_monthly: 0,
                     },
                 });
+
+                // Fetch plan limits from subscription_plans table
+                if (business.subscription_plan) {
+                    const { data: plan } = await supabase
+                        .from('subscription_plans')
+                        .select('customer_limit, features')
+                        .ilike('name', `%${business.subscription_plan}%`)
+                        .maybeSingle();
+
+                    if (plan) {
+                        setPlanLimits({
+                            customer_limit: plan.customer_limit || 100,
+                            features: plan.features || ['Basic features'],
+                        });
+                    } else {
+                        // Default limits for promo/free plans
+                        setPlanLimits({
+                            customer_limit: 500,
+                            features: ['All features included for promotion period'],
+                        });
+                    }
+                }
             } else if (business?.subscription_plan) {
                 // Business has a plan but no end date (e.g., free plan)
                 setSubscription({
@@ -95,8 +123,13 @@ export function CancelSubscriptionSection() {
                         price_monthly: 0,
                     },
                 });
+                setPlanLimits({
+                    customer_limit: 100,
+                    features: ['Basic features'],
+                });
             } else {
                 setSubscription(null);
+                setPlanLimits(null);
             }
         } catch (err) {
             console.error('Error loading subscription:', err);
@@ -254,12 +287,16 @@ export function CancelSubscriptionSection() {
                     <div className="border rounded-lg p-4 bg-muted/30">
                         <p className="text-xs text-muted-foreground uppercase tracking-wide">Next bill date</p>
                         <p className="text-base font-semibold">
-                            {subscription.cancel_at_period_end ? 'Access ends' : 'Renews'} on {periodEndDate.toLocaleDateString()}
+                            {periodEndDate
+                                ? `${isCancelling ? 'Access ends' : 'Renews'} on ${periodEndDate.toLocaleDateString()}`
+                                : 'No end date set'}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{daysRemaining} days remaining</span>
-                        </div>
+                        {periodEndDate && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                <Calendar className="h-4 w-4" />
+                                <span>{daysRemaining} days remaining</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="border rounded-lg p-4 bg-muted/30">
@@ -276,6 +313,39 @@ export function CancelSubscriptionSection() {
                         </p>
                     </div>
                 </div>
+
+                {/* Plan Limits */}
+                {planLimits && (
+                    <div className="border rounded-lg p-4 bg-muted/10">
+                        <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Plan Limits
+                        </h4>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+                                <span className="text-sm text-muted-foreground">Maximum Customers</span>
+                                <span className="font-semibold">{planLimits.customer_limit.toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-background rounded-md border">
+                                <span className="text-sm text-muted-foreground">Plan Type</span>
+                                <span className="font-semibold capitalize">{subscription.subscription_plans?.name || 'Standard'}</span>
+                            </div>
+                        </div>
+                        {planLimits.features && planLimits.features.length > 0 && (
+                            <div className="mt-3">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Features Included</p>
+                                <div className="grid gap-1.5 sm:grid-cols-2">
+                                    {planLimits.features.slice(0, 6).map((feature, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-sm">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+                                            <span>{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <div className="flex flex-col sm:flex-row gap-3">
                     <Button
