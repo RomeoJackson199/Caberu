@@ -91,15 +91,14 @@ export default function Pricing() {
     setValidatingPromo(true);
     try {
       const { data, error } = await supabase.functions.invoke('validate-promo-code', {
-        body: JSON.stringify({ code: promoCode.trim().toUpperCase() }),
-        headers: { 'Content-Type': 'application/json' },
+        body: { code: promoCode.trim().toUpperCase() },
       });
 
       if (error) throw error;
 
       if (data?.valid) {
         setValidPromo(data.promoCode);
-        toast.success('Promo code validated! Click "Apply Promo Code" to activate.');
+        toast.success('Promo code applied successfully!');
       } else {
         toast.error('Invalid or expired promo code');
         setValidPromo(null);
@@ -269,69 +268,71 @@ export default function Pricing() {
           <p>All plans include free updates and can be cancelled anytime.</p>
         </div>
 
-        {/* Promo Code Section */}
-        <Card className="max-w-md mx-auto mt-12 p-6 border-2 border-dashed border-primary/30">
+        {/* Promo Code Section - Same as BusinessPaymentStep */}
+        <Card className="max-w-md mx-auto mt-12 p-6 border-2 border-primary/20">
           <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2 text-primary">
-              <Tag className="w-5 h-5" />
-              <h3 className="font-semibold">Have a Promo Code?</h3>
+            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+              <Tag className="w-8 h-8 text-primary" />
             </div>
 
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter promo code"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                disabled={validatingPromo || !!validPromo}
-                className="flex-1"
-              />
-              {!validPromo ? (
+            <div>
+              <h3 className="text-xl font-semibold">Have a Promo Code?</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Redeem your promo code for free access
+              </p>
+            </div>
+
+            {/* Promo Code Input */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Tag className="w-4 h-4" />
+                <span>Enter your promo code below</span>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  disabled={validatingPromo || !!validPromo}
+                  className="flex-1"
+                />
                 <Button
                   onClick={validatePromoCode}
-                  disabled={validatingPromo || !promoCode.trim()}
+                  disabled={validatingPromo || !promoCode.trim() || !!validPromo}
                   variant="outline"
                 >
-                  {validatingPromo ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Validate'}
+                  {validatingPromo && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {validPromo && <Check className="w-4 h-4 mr-2" />}
+                  {validPromo ? 'Applied' : 'Apply'}
                 </Button>
-              ) : (
-                <Button
-                  onClick={() => { setValidPromo(null); setPromoCode(''); }}
-                  variant="ghost"
-                  size="sm"
-                >
-                  Clear
-                </Button>
+              </div>
+              {validPromo && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm text-green-700 dark:text-green-400">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="font-medium">
+                      {validPromo.discount_type === 'free' ? 'FREE!' : `Discount applied: ${validPromo.discount_value}%`}
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
 
             {validPromo && (
-              <>
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm text-green-700 dark:text-green-400">
-                  <div className="flex items-center gap-2 justify-center">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span className="font-medium">
-                      {validPromo.discount_type === 'free'
-                        ? 'FREE 1 Month!'
-                        : `${validPromo.discount_value}% off`}
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  onClick={applyPromoCode}
-                  disabled={applyingPromo}
-                  className="w-full bg-gradient-to-r from-primary to-primary-glow"
-                >
-                  {applyingPromo ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Applying...
-                    </>
-                  ) : (
-                    'Apply Promo Code'
-                  )}
-                </Button>
-              </>
+              <Button
+                onClick={applyPromoCode}
+                disabled={applyingPromo}
+                size="lg"
+                className="w-full"
+              >
+                {applyingPromo && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {validPromo.discount_type === 'free' ? 'Activate Free Access' : 'Apply Discount'}
+              </Button>
             )}
+
+            <p className="text-xs text-muted-foreground">
+              Promo codes are applied to your current business
+            </p>
           </div>
         </Card>
       </div>
