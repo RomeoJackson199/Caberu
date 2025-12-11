@@ -139,10 +139,10 @@ export function CancelSubscriptionSection() {
             setApplyingPromo(true);
 
             const { data, error } = await supabase.functions.invoke('apply-promo-code', {
-                body: {
+                body: JSON.stringify({
                     promo_code: promoCode.trim(),
                     business_id: businessId,
-                },
+                }),
                 headers: { 'Content-Type': 'application/json' },
             });
 
