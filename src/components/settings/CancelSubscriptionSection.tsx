@@ -23,6 +23,9 @@ interface Subscription {
     id: string;
     status: string;
     current_period_end: string;
+    current_period_start?: string;
+    billing_cycle?: 'monthly' | 'yearly';
+    plan_id?: string;
     cancel_at_period_end: boolean;
     subscription_plans: {
         name: string;
@@ -74,6 +77,8 @@ export function CancelSubscriptionSection() {
                 .select(`
           id,
           status,
+          billing_cycle,
+          current_period_start,
           current_period_end,
           cancel_at_period_end,
           subscription_plans (name, price_monthly)
@@ -145,7 +150,9 @@ export function CancelSubscriptionSection() {
 
             toast({
                 title: 'Promo Code Applied!',
-                description: data.message || 'Your subscription has been extended.',
+                description: data.new_period_end
+                    ? `You're covered until ${new Date(data.new_period_end).toLocaleDateString()}.`
+                    : data.message || 'Your subscription has been extended.',
             });
 
             setPromoCode('');
@@ -221,6 +228,8 @@ export function CancelSubscriptionSection() {
 
     const periodEndDate = new Date(subscription.current_period_end);
     const isActive = subscription.status === 'active' && !subscription.cancel_at_period_end;
+    const daysRemaining = Math.max(0, Math.ceil((periodEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    const cycleLabel = subscription.billing_cycle === 'yearly' ? 'yearly' : 'monthly';
 
     return (
         <Card>
@@ -239,35 +248,59 @@ export function CancelSubscriptionSection() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        {subscription.cancel_at_period_end ? (
-                            <span>Access ends on {periodEndDate.toLocaleDateString()}</span>
-                        ) : (
-                            <span>Renews on {periodEndDate.toLocaleDateString()}</span>
-                        )}
+                <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="border rounded-lg p-4 bg-muted/30">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Plan</p>
+                        <p className="text-base font-semibold">
+                            {subscription.subscription_plans?.name || 'Current Plan'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Billed {cycleLabel}</p>
                     </div>
 
-                    <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-                        <h4 className="font-medium text-sm">Redeem Promo Code</h4>
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="Enter promo code"
-                                value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value)}
-                                className="bg-background"
-                            />
-                            <Button
-                                onClick={handleApplyPromoCode}
-                                disabled={applyingPromo || !promoCode}
-                                variant="outline"
-                            >
-                                {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-                            </Button>
+                    <div className="border rounded-lg p-4 bg-muted/30">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Next bill date</p>
+                        <p className="text-base font-semibold">
+                            {subscription.cancel_at_period_end ? 'Access ends' : 'Renews'} on {periodEndDate.toLocaleDateString()}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>{daysRemaining} days remaining</span>
                         </div>
-                        <p className="text-xs text-muted-foreground">Apply a promo code to extend your subscription.</p>
                     </div>
+
+                    <div className="border rounded-lg p-4 bg-muted/30">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Status</p>
+                        <p className="text-base font-semibold capitalize">{subscription.status}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {subscription.cancel_at_period_end
+                                ? 'Your subscription stays active until the end of this period.'
+                                : 'Active and set to auto-renew.'}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                    <h4 className="font-medium text-sm">Redeem Promo Code</h4>
+                    <div className="flex gap-2 flex-col sm:flex-row">
+                        <Input
+                            placeholder="Enter promo code"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                            className="bg-background"
+                        />
+                        <Button
+                            onClick={handleApplyPromoCode}
+                            disabled={applyingPromo || !promoCode}
+                            variant="outline"
+                            className="sm:min-w-[120px]"
+                        >
+                            {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                        </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Applying a valid promo code immediately extends your paid-through date. Your free month will appear in the
+                        next bill date shown above.
+                    </p>
                 </div>
 
                 {subscription.cancel_at_period_end ? (
