@@ -199,13 +199,27 @@ serve(async (req) => {
       }
     }
 
+    // Fetch patient data if available
+    let patientName = 'Valued Patient';
+    if (patientId) {
+      const { data: pData } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', patientId)
+        .maybeSingle(); // Use maybeSingle to be safe
+      if (pData) {
+        patientName = `${pData.first_name || ''} ${pData.last_name || ''}`.trim() || 'Valued Patient';
+      }
+    }
+
     // Replace template variables with real data
     const replaceVars = (text: string) => {
       let result = text
         .replace(/\{\{clinic_name\}\}/g, businessData?.name || 'Your Dental Practice')
         .replace(/\{\{clinic_phone\}\}/g, businessData?.phone || '')
         .replace(/\{\{clinic_address\}\}/g, businessData?.address || '')
-        .replace(/\{\{dentist_name\}\}/g, dentistFullName || 'Your Dentist');
+        .replace(/\{\{dentist_name\}\}/g, dentistFullName || 'Your Dentist')
+        .replace(/\{\{patient_name\}\}/g, patientName);
 
       if (appointmentDate) {
         result = result.replace(/\{\{appointment_date\}\}/g, appointmentDate);
