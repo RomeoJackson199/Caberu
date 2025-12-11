@@ -146,13 +146,12 @@ serve(async (req) => {
                     .maybeSingle();
 
                 const planId = trialPlan?.id;
+                const now = new Date();
+                const oneMonthFromNow = new Date(now);
+                oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
                 if (planId) {
                     // Create subscription with 1-month period
-                    const now = new Date();
-                    const oneMonthFromNow = new Date(now);
-                    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
-
                     await supabaseClient
                         .from('subscriptions')
                         .insert({
@@ -165,7 +164,43 @@ serve(async (req) => {
                             cancel_at_period_end: true, // Will expire after 1 month
                         });
                 }
+
+                // Update businesses table with subscription info
+                await supabaseClient
+                    .from('businesses')
+                    .update({
+                        subscription_status: 'active',
+                        subscription_plan: 'promo',
+                        subscription_started_at: now.toISOString(),
+                        subscription_ends_at: oneMonthFromNow.toISOString(),
+                    })
+                    .eq('id', business.id);
             }
+        } else {
+            // No promo code - still set up active subscription for paid users
+            const now = new Date();
+            const oneMonthFromNow = new Date(now);
+            oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+            // Create dentist record for paid user
+            await supabaseClient
+                .from('dentists')
+                .insert({
+                    profile_id: profile.id,
+                    business_id: business.id,
+                    specialty: 'General Dentistry',
+                });
+
+            // Update businesses table with active subscription
+            await supabaseClient
+                .from('businesses')
+                .update({
+                    subscription_status: 'active',
+                    subscription_plan: 'paid',
+                    subscription_started_at: now.toISOString(),
+                    subscription_ends_at: oneMonthFromNow.toISOString(),
+                })
+                .eq('id', business.id);
         }
 
         // 10. Mark Onboarding Complete
