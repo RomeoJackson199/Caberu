@@ -45,6 +45,7 @@ import { Label } from "@/components/ui/label";
 import { TreatmentPlan, NewTreatmentPlanForm } from "@/types/dental";
 import { logger } from '@/lib/logger';
 import { useBusinessContext } from "@/hooks/useBusinessContext";
+import { TreatmentPlanDetailView } from "@/components/treatment/TreatmentPlanDetailView";
 
 interface TreatmentPlanManagerProps {
   patientId: string;
@@ -77,6 +78,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
   });
   const [newGoal, setNewGoal] = useState('');
   const [newProcedure, setNewProcedure] = useState('');
+  const [showDetailView, setShowDetailView] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -338,8 +340,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
 
   const handleView = (treatmentPlan: TreatmentPlan) => {
     setSelectedTreatmentPlan(treatmentPlan);
-    setIsEditMode(false);
-    setIsDialogOpen(true);
+    setShowDetailView(true);
   };
 
   const resetForm = () => {
@@ -833,6 +834,19 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Treatment Plan Detail View */}
+      {selectedTreatmentPlan && (
+        <TreatmentPlanDetailView
+          isOpen={showDetailView}
+          onClose={() => {
+            setShowDetailView(false);
+            setSelectedTreatmentPlan(null);
+          }}
+          treatmentPlanId={selectedTreatmentPlan.id}
+          patientId={patientId}
+        />
+      )}
     </div>
   );
 }
