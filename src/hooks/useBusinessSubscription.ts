@@ -54,6 +54,17 @@ export function useBusinessSubscription() {
                 const notExpired = !endsAt || endsAt > now;
                 const isActive = hasValidStatus && notExpired;
 
+                // Debug logging
+                console.log('🔐 Subscription Check:', {
+                    businessId,
+                    status: business.subscription_status,
+                    endsAt: endsAt?.toISOString(),
+                    now: now.toISOString(),
+                    hasValidStatus,
+                    notExpired,
+                    isActive
+                });
+
                 setStatus({
                     hasSubscription: !!business.subscription_status,
                     isActive,
