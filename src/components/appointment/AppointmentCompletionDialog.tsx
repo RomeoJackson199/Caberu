@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import { NotificationService } from '@/lib/notificationService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { logger } from '@/lib/logger';
 import { ImagingUploader } from '@/components/imaging/ImagingUploader';
 import { ImagingGallery } from '@/components/imaging/ImagingGallery';
@@ -83,6 +84,7 @@ export function AppointmentCompletionDialog({
 
   // Template-driven behavior
   const { template, hasFeature } = useBusinessTemplate();
+  const { businessId } = useBusinessContext();
   const steps = useMemo(() => {
     const defs = template?.completionSteps?.filter(s => s.enabled) ?? [
       { id: 'overview', title: 'Overview' },
@@ -443,30 +445,37 @@ export function AppointmentCompletionDialog({
       let treatmentPlanId = formData.selectedTreatmentPlan;
 
       if (formData.createNewTreatmentPlan && formData.newTreatmentPlanForm.title.trim()) {
-        const { data: newPlan } = await supabase
+        console.log('Creating new treatment plan...');
+        const { data: newPlan, error: planError } = await supabase
           .from('treatment_plans')
           .insert({
             patient_id: appointment.patient_id,
             dentist_id: appointment.dentist_id,
+            business_id: businessId,
             title: formData.newTreatmentPlanForm.title,
             description: formData.newTreatmentPlanForm.description || null,
             diagnosis: formData.newTreatmentPlanForm.diagnosis || null,
-            priority: formData.newTreatmentPlanForm.priority,
+            priority: formData.newTreatmentPlanForm.priority || 'normal',
             estimated_cost: formData.newTreatmentPlanForm.estimated_cost ? parseFloat(formData.newTreatmentPlanForm.estimated_cost) : null,
-            estimated_duration_weeks: formData.newTreatmentPlanForm.estimated_duration_weeks ? parseInt(formData.newTreatmentPlanForm.estimated_duration_weeks) : null,
+            estimated_duration: formData.newTreatmentPlanForm.estimated_duration_weeks ? `${formData.newTreatmentPlanForm.estimated_duration_weeks} weeks` : null,
             status: 'active',
             start_date: new Date().toISOString()
           })
           .select()
           .single();
 
+        if (planError) {
+          console.error('Treatment plan insert error:', planError);
+        }
         if (newPlan) {
           treatmentPlanId = newPlan.id;
+          console.log('Created treatment plan:', treatmentPlanId);
         }
       }
 
       // 6. Update appointment status
-      await supabase
+      console.log('Updating appointment status to completed...');
+      const { error: updateError } = await supabase
         .from('appointments')
         .update({
           status: 'completed',
@@ -475,6 +484,12 @@ export function AppointmentCompletionDialog({
           treatment_plan_id: treatmentPlanId || null
         })
         .eq('id', appointment.id);
+
+      if (updateError) {
+        console.error('Appointment update error:', updateError);
+      } else {
+        console.log('Appointment marked as completed successfully!');
+      }
 
       // 7. Schedule follow-up if needed
       if (formData.followUpNeeded && formData.followUpDate) {
