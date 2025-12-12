@@ -835,17 +835,18 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
         </DialogContent>
       </Dialog>
 
-      {/* Treatment Plan Detail View */}
-      {selectedTreatmentPlan && (
-        <TreatmentPlanDetailView
-          isOpen={showDetailView}
-          onClose={() => {
-            setShowDetailView(false);
-            setSelectedTreatmentPlan(null);
-          }}
-          treatmentPlanId={selectedTreatmentPlan.id}
-          patientId={patientId}
-        />
+      {/* Treatment Plan Detail View - Embedded */}
+      {showDetailView && selectedTreatmentPlan && (
+        <div className="fixed inset-0 z-50 bg-white">
+          <TreatmentPlanDetailView
+            treatmentPlanId={selectedTreatmentPlan.id}
+            patientId={patientId}
+            onBack={() => {
+              setShowDetailView(false);
+              setSelectedTreatmentPlan(null);
+            }}
+          />
+        </div>
       )}
     </div>
   );
