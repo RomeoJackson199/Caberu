@@ -15,6 +15,7 @@ import { clinicTimeToUtc, utcToClinicTime, getClinicTimeSlots, formatClinicTime,
 import { logger } from '@/lib/logger';
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 import { format } from 'date-fns';
+import { handleEmailError } from '@/hooks/useEmailLimit';
 
 interface EnhancedAppointmentBookingProps {
   user: User;
@@ -384,13 +385,15 @@ export const EnhancedAppointmentBooking = ({
             messageType: 'appointment_confirmation',
             patientId: profile.id,
             dentistId: selectedDentist,
-            isSystemNotification: true,
             appointmentDate: appointmentDetails.date,
             appointmentTime: appointmentDetails.time
           }
         });
-      } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
+      } catch (emailError: any) {
+        // Check if it's an email limit error and show popup
+        if (!handleEmailError(emailError)) {
+          console.error('Failed to send confirmation email:', emailError);
+        }
         // Don't fail the booking if email fails
       }
 

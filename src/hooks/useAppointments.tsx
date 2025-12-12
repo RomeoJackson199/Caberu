@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { utcToClinicTime } from '@/lib/timezone';
 import { useBusinessContext } from './useBusinessContext';
 import { logger } from '@/lib/logger';
+import { handleEmailError } from '@/hooks/useEmailLimit';
 
 export interface Appointment {
   id: string;
@@ -185,8 +186,11 @@ export async function createAppointmentWithNotification(appointmentData: {
         }
       });
     }
-  } catch (emailError) {
-    logger.error('Failed to send appointment confirmation email:', emailError);
+  } catch (emailError: any) {
+    // Check if it's an email limit error and show popup
+    if (!handleEmailError(emailError)) {
+      logger.error('Failed to send appointment confirmation email:', emailError);
+    }
     // Don't fail the appointment creation if email fails
   }
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { EmailLimitDialog } from '@/components/subscription/EmailLimitDialog';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,11 +9,48 @@ interface EmailLimitContextType {
 
 const EmailLimitContext = createContext<EmailLimitContextType | null>(null);
 
+// Global function to dispatch email limit error (can be called from anywhere)
+export function dispatchEmailLimitError(emailsSent: number, emailLimit: number) {
+    window.dispatchEvent(new CustomEvent('email-limit-exceeded', {
+        detail: { emailsSent, emailLimit }
+    }));
+}
+
+// Helper to check if an error is email limit related and dispatch if so
+export function handleEmailError(error: any): boolean {
+    const errorMessage = error?.message || error?.error || (typeof error === 'string' ? error : JSON.stringify(error));
+
+    if (errorMessage.includes('Email limit exceeded')) {
+        const match = errorMessage.match(/(\d+)\/(\d+)/);
+        if (match) {
+            dispatchEmailLimitError(parseInt(match[1]), parseInt(match[2]));
+        } else {
+            dispatchEmailLimitError(0, 0);
+        }
+        return true;
+    }
+    return false;
+}
+
 export function EmailLimitProvider({ children }: { children: ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
     const [emailsSent, setEmailsSent] = useState(0);
     const [emailLimit, setEmailLimit] = useState(2000);
     const navigate = useNavigate();
+
+    // Listen for global email limit error events
+    useEffect(() => {
+        const handleEmailLimitEvent = (event: CustomEvent<{ emailsSent: number; emailLimit: number }>) => {
+            setEmailsSent(event.detail.emailsSent);
+            setEmailLimit(event.detail.emailLimit);
+            setIsOpen(true);
+        };
+
+        window.addEventListener('email-limit-exceeded', handleEmailLimitEvent as EventListener);
+        return () => {
+            window.removeEventListener('email-limit-exceeded', handleEmailLimitEvent as EventListener);
+        };
+    }, []);
 
     const showEmailLimitPopup = useCallback((sent?: number, limit?: number) => {
         if (sent !== undefined) setEmailsSent(sent);
@@ -21,21 +58,8 @@ export function EmailLimitProvider({ children }: { children: ReactNode }) {
         setIsOpen(true);
     }, []);
 
-    // Check if an error is an email limit error and show popup if so
     const checkEmailError = useCallback((error: any): boolean => {
-        const errorMessage = error?.message || error?.error || (typeof error === 'string' ? error : '');
-
-        if (errorMessage.includes('Email limit exceeded')) {
-            // Parse the numbers from the error message
-            const match = errorMessage.match(/(\d+)\/(\d+)/);
-            if (match) {
-                setEmailsSent(parseInt(match[1]));
-                setEmailLimit(parseInt(match[2]));
-            }
-            setIsOpen(true);
-            return true;
-        }
-        return false;
+        return handleEmailError(error);
     }, []);
 
     const handleUpgrade = useCallback(() => {
@@ -64,11 +88,11 @@ export function EmailLimitProvider({ children }: { children: ReactNode }) {
 export function useEmailLimit() {
     const context = useContext(EmailLimitContext);
     if (!context) {
-        // Return a no-op version if not wrapped in provider
         return {
-            checkEmailError: () => false,
+            checkEmailError: handleEmailError,
             showEmailLimitPopup: () => { },
         };
     }
     return context;
 }
+
