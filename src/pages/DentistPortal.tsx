@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 import { DentistAppShell, DentistSection } from "@/components/layout/DentistAppShell";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
+import { useBusinessSubscription } from "@/hooks/useBusinessSubscription";
 
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
@@ -49,6 +50,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   const location = useLocation();
   const [businessInfo, setBusinessInfo] = useState<{ id: string; name: string } | null>(null);
   const { template, hasFeature, loading: templateLoading } = useBusinessTemplate();
+  const { isActive: hasActiveSubscription, loading: subscriptionLoading, status: subscriptionStatus, endsAt: subscriptionEndsAt } = useBusinessSubscription();
   const { showTour, closeTour } = useUserTour("dentist");
   const [showDemoTour, setShowDemoTour] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
@@ -220,7 +222,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     }
   };
 
-  if (loading || templateLoading) {
+  if (loading || templateLoading || subscriptionLoading) {
     return <ModernLoadingSpinner variant="overlay" message="Loading portal..." />;
   }
 
@@ -233,6 +235,15 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   }
 
   const renderContent = () => {
+    // If no active subscription and not on settings, force to settings
+    if (!hasActiveSubscription && activeSection !== 'settings') {
+      // Force redirect to settings
+      if (activeSection !== 'settings') {
+        setActiveSection('settings');
+        return <ModernLoadingSpinner variant="card" message="Redirecting to billing..." />;
+      }
+    }
+
     // If trying to access clinical section without medical features, redirect to dashboard
     if (activeSection === 'clinical' && !hasFeature('medicalRecords') && !hasFeature('prescriptions') && !hasFeature('treatmentPlans')) {
       setActiveSection('dashboard');

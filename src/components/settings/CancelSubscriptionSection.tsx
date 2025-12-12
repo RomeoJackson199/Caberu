@@ -315,9 +315,10 @@ export function CancelSubscriptionSection() {
     }
 
     const periodEndDate = subscription.current_period_end ? new Date(subscription.current_period_end) : null;
-    const isActive = subscription.status === 'active' && !subscription.cancel_at_period_end;
-    const isCancelled = subscription.status === 'cancelled';
-    const isCancelling = subscription.status === 'cancelling' || subscription.cancel_at_period_end;
+    const isExpired = periodEndDate && periodEndDate < new Date(); // Check if subscription period has ended
+    const isActive = subscription.status === 'active' && !subscription.cancel_at_period_end && !isExpired;
+    const isCancelled = subscription.status === 'cancelled' || isExpired; // Also cancelled if expired
+    const isCancelling = (subscription.status === 'cancelling' || subscription.cancel_at_period_end) && !isExpired;
     const daysRemaining = periodEndDate ? Math.max(0, Math.ceil((periodEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
     const cycleLabel = subscription.billing_cycle === 'yearly' ? 'yearly' : 'monthly';
 
