@@ -241,7 +241,12 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       return (
         <SubscriptionExpiredDialog
           planName={subscriptionStatus === 'cancelling' ? 'subscription' : 'subscription'}
-          onReactivate={() => setActiveSection('settings')}
+          onReactivate={() => {
+            // Navigate to settings with billing tab
+            setActiveSection('settings');
+            // Update URL to open billing tab
+            window.history.pushState({}, '', '/dentist/settings?tab=billing');
+          }}
           onLogout={async () => {
             await supabase.auth.signOut();
             window.location.href = '/';
