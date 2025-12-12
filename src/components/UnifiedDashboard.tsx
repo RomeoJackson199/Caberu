@@ -1,35 +1,42 @@
-import React, { useState, useEffect, useCallback, memo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { memo } from "react";
 import { User } from "@supabase/supabase-js";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PatientDashboard } from "./PatientDashboard";
 import { AiOptOutPrompt } from "./AiOptOutPrompt";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
 import { PremiumLoadingScreen } from "@/components/ui/premium-loading-screen";
-import { useUserRole } from "@/hooks/useUserRole";
 import { useIsSuperAdmin } from "@/hooks/useSuperAdmin";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 
 interface UnifiedDashboardProps {
   user: User;
 }
 
 export const UnifiedDashboard = memo(({ user }: UnifiedDashboardProps) => {
-  const { loading: roleLoading, isDentist } = useUserRole();
   const navigate = useNavigate();
   const { data: isSuperAdmin, isLoading: superAdminLoading } = useIsSuperAdmin();
+  const { loading: businessLoading, membershipRole } = useBusinessContext();
 
   React.useEffect(() => {
-    if (!roleLoading && !superAdminLoading && isDentist && !isSuperAdmin) {
-      // Redirect business owners/providers (who are not super admins) to their dashboard
-      // Only redirect if we're not already at a dentist route to prevent loops
-      const currentPath = window.location.pathname;
-      if (!currentPath.startsWith('/dentist')) {
-        navigate('/dentist/dashboard', { replace: true });
-      }
-    }
-  }, [roleLoading, superAdminLoading, isDentist, isSuperAdmin, navigate]);
+    if (!businessLoading && !superAdminLoading && !isSuperAdmin) {
+      // Check if user is a provider/dentist in the CURRENT business context
+      const isProviderInCurrentBusiness =
+        membershipRole === 'dentist' ||
+        membershipRole === 'admin' ||
+        membershipRole === 'owner';
 
-  if (roleLoading || superAdminLoading) {
+      if (isProviderInCurrentBusiness) {
+        // Redirect providers to dentist dashboard
+        // Only redirect if we're not already at a dentist route to prevent loops
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/dentist')) {
+          navigate('/dentist/dashboard', { replace: true });
+        }
+      }
+      // If not a provider in current business, stay on patient dashboard
+    }
+  }, [businessLoading, superAdminLoading, membershipRole, isSuperAdmin, navigate]);
+
+  if (businessLoading || superAdminLoading) {
     return (
       <PremiumLoadingScreen
         message="Loading Dashboard"
@@ -38,7 +45,7 @@ export const UnifiedDashboard = memo(({ user }: UnifiedDashboardProps) => {
     );
   }
 
-  // Show patient dashboard for patients and those without provider role
+  // Show patient dashboard for patients and those without provider role in current business
   return (
     <>
       <PatientDashboard user={user} />
@@ -50,3 +57,4 @@ export const UnifiedDashboard = memo(({ user }: UnifiedDashboardProps) => {
 UnifiedDashboard.displayName = 'UnifiedDashboard';
 
 export default UnifiedDashboard;
+
