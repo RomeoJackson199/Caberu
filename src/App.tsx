@@ -26,6 +26,7 @@ import { DentistPortal } from "@/pages/DentistPortal";
 import { PatientPortalNav } from "@/components/patient/PatientPortalNav";
 import { RoleBasedRouter } from "@/components/RoleBasedRouter";
 import { DentistInvitationDialog } from "@/components/DentistInvitationDialog";
+import { SubscriptionGuard } from "@/components/auth/SubscriptionGuard";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CookieConsent } from "@/components/CookieConsent";
 import { OnboardingOrchestrator } from "@/components/onboarding/OnboardingOrchestrator";
@@ -329,9 +330,21 @@ const App = () => {
                       {/* Role-based dashboard routing */}
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/patient/*" element={<Dashboard />} />
-                      {/* Dentist routes with tab-based navigation */}
-                      <Route path="/dentist/*" element={<RoleBasedRouter requiredRole='dentist'><DentistPortal /></RoleBasedRouter>} />
-                      <Route path="/dentist-services" element={<RoleBasedRouter requiredRole='dentist'><DentistServices /></RoleBasedRouter>} />
+                      {/* Dentist routes with tab-based navigation and subscription guard */}
+                      <Route path="/dentist/*" element={
+                        <RoleBasedRouter requiredRole='dentist'>
+                          <SubscriptionGuard>
+                            <DentistPortal />
+                          </SubscriptionGuard>
+                        </RoleBasedRouter>
+                      } />
+                      <Route path="/dentist-services" element={
+                        <RoleBasedRouter requiredRole='dentist'>
+                          <SubscriptionGuard>
+                            <DentistServices />
+                          </SubscriptionGuard>
+                        </RoleBasedRouter>
+                      } />
                       {/* Patient portal routes with patient nav */}
                       <Route element={<PatientPortalNav><></></PatientPortalNav>}>
                         <Route path="/care" element={<PatientCareHome />} />
