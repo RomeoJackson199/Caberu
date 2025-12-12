@@ -50,7 +50,9 @@ serve(async (req) => {
     }
 
     const { to, subject, message, messageType, patientId, dentistId, businessId: requestBusinessId, isSystemNotification, appointmentDate, appointmentTime }: EmailRequest = await req.json();
-    const isSystem = isSystemNotification === true || messageType === 'system';
+    // Only skip authentication AND limit check for EXPLICIT system notifications (2FA codes, password resets)
+    // messageType='system' is still a business email and should count toward limits
+    const isSystem = isSystemNotification === true;
 
     let supabase;
     let authedUserId: string | null = null;
