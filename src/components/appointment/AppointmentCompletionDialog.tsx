@@ -131,13 +131,14 @@ export function AppointmentCompletionDialog({
   // Fetch treatment plans on mount
   useEffect(() => {
     const fetchTreatmentPlans = async () => {
-      const { data } = await supabase
+      console.log('Fetching treatment plans for patient:', appointment.patient_id);
+      const { data, error } = await supabase
         .from('treatment_plans')
         .select('*')
         .eq('patient_id', appointment.patient_id)
-        .eq('dentist_id', appointment.dentist_id)
-        .eq('status', 'active');
+        .in('status', ['active', 'draft']); // Include draft plans too
 
+      console.log('Treatment plans result:', data, error);
       if (data) {
         setTreatmentPlans(data);
       }
@@ -146,7 +147,7 @@ export function AppointmentCompletionDialog({
     if (open) {
       fetchTreatmentPlans();
     }
-  }, [open, appointment]);
+  }, [open, appointment.patient_id]);
 
   // Auto-enable treatment plan link if plans available
   useEffect(() => {
