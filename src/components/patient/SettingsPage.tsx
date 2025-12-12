@@ -14,6 +14,7 @@ import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { PatientSecuritySettings } from "@/components/patient/PatientSecuritySettings";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SettingsPageProps {
   user: User;
@@ -233,31 +234,238 @@ const Security: React.FC = () => {
 };
 
 const LegalSupport: React.FC = () => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const { toast } = useToast();
+
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Fetch all user data
+      const [
+        { data: profile },
+        { data: appointments },
+        { data: prescriptions },
+        { data: notes },
+        { data: treatmentPlans },
+        { data: invoices },
+        { data: paymentRequests }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', user.id).single(),
+        supabase.from('appointments').select('*').eq('patient_id', user.id),
+        supabase.from('prescriptions').select('*').eq('patient_id', user.id),
+        supabase.from('notes').select('*').eq('patient_id', user.id),
+        supabase.from('treatment_plans').select('*').eq('patient_id', user.id),
+        supabase.from('invoices').select('*').eq('patient_id', user.id),
+        supabase.from('payment_requests').select('*').eq('patient_id', user.id)
+      ]);
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        user: {
+          id: user.id,
+          email: user.email,
+          createdAt: user.created_at
+        },
+        profile,
+        appointments: appointments || [],
+        prescriptions: prescriptions || [],
+        notes: notes || [],
+        treatmentPlans: treatmentPlans || [],
+        invoices: invoices || [],
+        paymentRequests: paymentRequests || []
+      };
+
+      // Download as JSON
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my-dental-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Data exported",
+        description: "Your data has been downloaded as a JSON file.",
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "Could not export your data",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password to confirm account deletion.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Not authenticated');
+
+      // Verify password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: deletePassword
+      });
+
+      if (signInError) {
+        throw new Error('Incorrect password');
+      }
+
+      // Get profile ID first
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        // Delete related data in order (respecting foreign keys)
+        await supabase.from('notes').delete().eq('patient_id', profile.id);
+        await supabase.from('prescriptions').delete().eq('patient_id', profile.id);
+        await supabase.from('appointments').delete().eq('patient_id', profile.id);
+        await supabase.from('treatment_plans').delete().eq('patient_id', profile.id);
+        await supabase.from('invoices').delete().eq('patient_id', profile.id);
+        await supabase.from('payment_requests').delete().eq('patient_id', profile.id);
+        await supabase.from('profiles').delete().eq('id', profile.id);
+      }
+
+      // Delete auth user - this will sign them out
+      const { error: deleteError } = await supabase.functions.invoke('delete-user-account', {
+        body: { userId: user.id }
+      });
+
+      if (deleteError) {
+        // If edge function doesn't exist, just sign out
+        console.warn('Could not delete auth user, signing out:', deleteError);
+      }
+
+      // Sign out and redirect
+      await supabase.auth.signOut();
+      window.location.href = '/';
+
+    } catch (error) {
+      console.error('Delete account failed:', error);
+      toast({
+        title: "Could not delete account",
+        description: error instanceof Error ? error.message : "Failed to delete your account",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setDeletePassword('');
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Legal & Support</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span>Privacy Policy</span>
-          <Button variant="outline" asChild>
-            <a href="/privacy">View</a>
-          </Button>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Legal & Support</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span>Privacy Policy</span>
+            <Button variant="outline" asChild>
+              <a href="/privacy">View</a>
+            </Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>Terms of Service</span>
+            <Button variant="outline" asChild>
+              <a href="/terms">View</a>
+            </Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>Contact Support</span>
+            <Button asChild>
+              <a href="/support">Get Help</a>
+            </Button>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h4 className="font-medium mb-3">Your Data</h4>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="block">Export Your Data</span>
+                <span className="text-sm text-muted-foreground">Download all your data as JSON</span>
+              </div>
+              <Button variant="outline" onClick={handleExportData} disabled={exporting}>
+                {exporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h4 className="font-medium text-destructive mb-3">Danger Zone</h4>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="block text-destructive">Delete Account</span>
+                <span className="text-sm text-muted-foreground">Permanently delete your account and all data</span>
+              </div>
+              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                Delete Account
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Delete Account Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="text-destructive">Delete Account</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                This action is <strong>permanent</strong> and cannot be undone. All your data including appointments, prescriptions, and medical history will be deleted.
+              </p>
+              <div>
+                <Label htmlFor="delete-password">Enter your password to confirm</Label>
+                <Input
+                  id="delete-password"
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Your password"
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setDeletePassword(''); }}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting || !deletePassword.trim()}>
+                  {deleting ? 'Deleting...' : 'Permanently Delete'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <div className="flex items-center justify-between">
-          <span>Terms of Service</span>
-          <Button variant="outline" asChild>
-            <a href="/terms">View</a>
-          </Button>
-        </div>
-        <div className="flex items-center justify-between">
-          <span>Contact Support</span>
-          <Button asChild>
-            <a href="/support">Get Help</a>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
 };
