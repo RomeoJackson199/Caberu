@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useSearchParams } from "react-router-dom";
 import { showEnhancedErrorToast } from "@/lib/enhancedErrorHandling";
@@ -16,25 +15,26 @@ import {
   CreditCard,
   Mail,
   Phone,
-  MapPin,
   Plus,
   Clock,
   LayoutGrid,
   ClipboardList,
-  Pill,
   Image as ImageIcon,
   CheckCircle2,
   AlertTriangle,
-  DollarSign,
   ChevronDown,
+  ChevronRight,
   Folder,
   UserPlus,
-  Check
+  Check,
+  Edit2,
+  MapPin,
+  MoreVertical,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
 import { QuickAppointmentDialog } from "@/components/appointments/QuickAppointmentDialog";
-import { PrescriptionManager } from "@/components/PrescriptionManager";
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
 import { useImaging, ImagingFile } from "@/hooks/useImaging";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,7 +45,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Patient {
   id: string;
@@ -112,14 +124,15 @@ const statusConfig: Record<string, { bg: string; text: string }> = {
 export function ModernPatientManagement({ dentistId }: ModernPatientManagementProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [patientSearchTerm, setPatientSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
-  const [selectedTreatmentId, setSelectedTreatmentId] = useState<string | null>(null);
-  const [selectedProcedure, setSelectedProcedure] = useState<any | null>(null);
-  const [treatmentImages, setTreatmentImages] = useState<{ files: ImagingFile[]; urls: Record<string, string> }>({ files: [], urls: {} });
+  const [expandedTreatments, setExpandedTreatments] = useState<Set<string>>(new Set());
+  const [treatmentAppointments, setTreatmentAppointments] = useState<Record<string, Appointment[]>>({});
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [appointmentDetailOpen, setAppointmentDetailOpen] = useState(false);
+  const [appointmentImages, setAppointmentImages] = useState<{ files: ImagingFile[]; urls: Record<string, string> }>({ files: [], urls: {} });
   const [patientFlags, setPatientFlags] = useState<Record<string, PatientFlags>>({});
   const [newPatientDialogOpen, setNewPatientDialogOpen] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
@@ -251,17 +264,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         .order('created_at', { ascending: false });
 
       setTreatmentPlans(data || []);
-      if (data && data.length > 0) {
-        setSelectedTreatmentId(data[0].id);
-      }
     } catch (error) {
       console.error('Error fetching treatment plans:', error);
     }
   };
 
-  const fetchTreatmentImages = async (patientId: string) => {
+  const fetchAppointmentImages = async (appointmentId: string) => {
     try {
-      const sets = await fetchImagingSets({ patientId });
+      const sets = await fetchImagingSets({ appointmentId });
       const allFiles: ImagingFile[] = [];
       const urls: Record<string, string> = {};
 
@@ -275,9 +285,43 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         }
       }
 
-      setTreatmentImages({ files: allFiles, urls });
+      setAppointmentImages({ files: allFiles, urls });
     } catch (error) {
       console.error('Error fetching images:', error);
+    }
+  };
+
+  const handleCompleteAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'completed' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({ title: 'Appointment completed' });
+      fetchPatientAppointments(selectedPatient!.id);
+      setAppointmentDetailOpen(false);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to complete appointment', variant: 'destructive' });
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'cancelled' })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      toast({ title: 'Appointment cancelled' });
+      fetchPatientAppointments(selectedPatient!.id);
+      setAppointmentDetailOpen(false);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to cancel appointment', variant: 'destructive' });
     }
   };
 
@@ -300,9 +344,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     if (selectedPatient) {
       fetchPatientAppointments(selectedPatient.id);
       fetchTreatmentPlans(selectedPatient.id);
-      fetchTreatmentImages(selectedPatient.id);
     }
   }, [selectedPatient, dentistId]);
+
+  useEffect(() => {
+    if (selectedAppointment) {
+      fetchAppointmentImages(selectedAppointment.id);
+    }
+  }, [selectedAppointment]);
 
   const filteredPatients = patients.filter(patient => {
     const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
@@ -327,14 +376,25 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     { id: 'financial' as TabType, label: 'Financial', icon: CreditCard },
   ];
 
-  const selectedTreatment = treatmentPlans.find(t => t.id === selectedTreatmentId);
   const upcomingAppts = appointments.filter(a => new Date(a.appointment_date) > new Date() && a.status !== 'cancelled');
-  const pastAppts = appointments.filter(a => new Date(a.appointment_date) <= new Date() || a.status === 'completed');
+  const pastAppts = appointments.filter(a => a.status === 'completed');
 
-  // Calculate treatment progress
-  const completedProcedures = selectedTreatment?.procedures?.filter((p: any) => p.status === 'completed').length || 0;
-  const totalProcedures = selectedTreatment?.procedures?.length || 1;
-  const progressPercent = Math.round((completedProcedures / totalProcedures) * 100);
+  const toggleTreatment = (treatmentId: string) => {
+    setExpandedTreatments(prev => {
+      const next = new Set(prev);
+      if (next.has(treatmentId)) {
+        next.delete(treatmentId);
+      } else {
+        next.add(treatmentId);
+      }
+      return next;
+    });
+  };
+
+  const openAppointmentDetail = (appt: Appointment) => {
+    setSelectedAppointment(appt);
+    setAppointmentDetailOpen(true);
+  };
 
   if (loading) {
     return (
@@ -392,7 +452,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             {selectedPatient.first_name} {selectedPatient.last_name}
                           </p>
                           <p className="text-xs text-slate-500">
-                            #PT_{patients.indexOf(selectedPatient) + 1} • {getAge(selectedPatient.date_of_birth)} Years
+                            #PT_{String(patients.indexOf(selectedPatient) + 1).padStart(2, '0')} • {getAge(selectedPatient.date_of_birth)} Years
                           </p>
                         </div>
                         <ChevronDown className="h-4 w-4 text-slate-400 ml-2" />
@@ -415,7 +475,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     </div>
                   </div>
                   <div className="max-h-64 overflow-y-auto p-2">
-                    {filteredPatients.map((patient) => {
+                    {filteredPatients.map((patient, idx) => {
                       const isSelected = selectedPatient?.id === patient.id;
                       return (
                         <button
@@ -438,7 +498,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               {patient.first_name} {patient.last_name}
                             </p>
                             <p className="text-xs text-slate-500">
-                              #PT_{patients.indexOf(patient) + 1} • {getAge(patient.date_of_birth)}y
+                              #PT_{String(idx + 1).padStart(2, '0')} • {getAge(patient.date_of_birth)}y
                             </p>
                           </div>
                           {isSelected && <Check className="h-4 w-4 text-teal-600" />}
@@ -499,99 +559,129 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
             </div>
           ) : (
             <>
+              {/* OVERVIEW TAB */}
               {activeTab === 'overview' && (
-                <div className="p-8 space-y-6 max-w-5xl">
-                  {/* Contact & Info Cards */}
+                <div className="p-8 space-y-6 max-w-4xl mx-auto">
+                  {/* Patient Info Card */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-6">
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
+                          <AvatarFallback className="bg-slate-200 text-slate-600 text-3xl font-semibold">
+                            {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h2 className="text-2xl font-bold text-slate-800">
+                                {selectedPatient.first_name} {selectedPatient.last_name}
+                              </h2>
+                              <p className="text-slate-500 mt-1 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                {selectedPatient.date_of_birth
+                                  ? `${format(new Date(selectedPatient.date_of_birth), 'yyyy-MM-dd')} (${getAge(selectedPatient.date_of_birth)}y)`
+                                  : 'No DOB'
+                                }
+                              </p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <Edit2 className="h-4 w-4 mr-2" />
+                              Edit Profile
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 mt-4">
+                            {selectedPatient.email && (
+                              <div className="flex items-center gap-2 text-sm text-slate-600">
+                                <Mail className="h-4 w-4 text-slate-400" />
+                                {selectedPatient.email}
+                              </div>
+                            )}
+                            {selectedPatient.phone && (
+                              <div className="flex items-center gap-2 text-sm text-slate-600">
+                                <Phone className="h-4 w-4 text-slate-400" />
+                                {selectedPatient.phone}
+                              </div>
+                            )}
+                            {selectedPatient.address && (
+                              <div className="flex items-center gap-2 text-sm text-slate-600 col-span-2">
+                                <MapPin className="h-4 w-4 text-slate-400" />
+                                {selectedPatient.address}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <div className="grid grid-cols-2 gap-6">
+                    {/* Alerts Card */}
                     <Card>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-base font-medium text-slate-700">Contact</CardTitle>
+                        <CardTitle className="text-base font-medium text-slate-700 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-rose-500" />
+                          Alerts
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex items-center gap-3 text-sm">
-                          <Mail className="h-4 w-4 text-slate-400" />
-                          <span>{selectedPatient.email}</span>
-                        </div>
-                        {selectedPatient.phone && (
-                          <div className="flex items-center gap-3 text-sm">
-                            <Phone className="h-4 w-4 text-slate-400" />
-                            <span>{selectedPatient.phone}</span>
+                      <CardContent>
+                        {selectedPatient.medical_history ? (
+                          <div className="bg-rose-50 border border-rose-200 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-rose-600" />
+                              <span className="font-medium text-rose-700">Penicillin</span>
+                            </div>
+                            <p className="text-sm text-rose-600 mt-1">
+                              {sanitizeText(selectedPatient.medical_history)}
+                            </p>
                           </div>
-                        )}
-                        {selectedPatient.address && (
-                          <div className="flex items-center gap-3 text-sm">
-                            <MapPin className="h-4 w-4 text-slate-400" />
-                            <span>{selectedPatient.address}</span>
-                          </div>
+                        ) : (
+                          <p className="text-slate-400 text-sm">No alerts</p>
                         )}
                       </CardContent>
                     </Card>
 
                     {/* Quick Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <Card>
-                        <CardContent className="p-4 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
-                            <CheckCircle2 className="h-5 w-5 text-teal-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-500">Completed</p>
-                            <p className="text-lg font-semibold">{patientFlags[selectedPatient.id]?.completedAppointments || 0}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-sky-50 flex items-center justify-center">
-                            <Calendar className="h-5 w-5 text-sky-600" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-500">Visits</p>
-                            <p className="text-lg font-semibold">{patientFlags[selectedPatient.id]?.totalAppointments || 0}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-
-                  {/* Upcoming Appointments */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-medium text-slate-700">Upcoming</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {upcomingAppts.length === 0 ? (
-                        <p className="text-sm text-slate-400">No upcoming appointments</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {upcomingAppts.slice(0, 3).map(appt => (
-                            <div key={appt.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <div className="text-center">
-                                  <p className="text-xs text-teal-600 font-medium uppercase">{format(new Date(appt.appointment_date), 'MMM')}</p>
-                                  <p className="text-xl font-bold text-slate-800">{format(new Date(appt.appointment_date), 'd')}</p>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-slate-800">{appt.reason || 'Appointment'}</p>
-                                  <p className="text-sm text-slate-500">{format(new Date(appt.appointment_date), 'h:mm a')}</p>
-                                </div>
-                              </div>
-                              <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
-                                {appt.status}
-                              </Badge>
-                            </div>
-                          ))}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-medium text-slate-700">Quick Info</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Total Visits</span>
+                          <span className="font-semibold">{patientFlags[selectedPatient.id]?.totalAppointments || 0}</span>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Completed</span>
+                          <span className="font-semibold text-teal-600">{patientFlags[selectedPatient.id]?.completedAppointments || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Last Visit</span>
+                          <span className="font-semibold">
+                            {patientFlags[selectedPatient.id]?.lastVisitDate
+                              ? format(new Date(patientFlags[selectedPatient.id].lastVisitDate!), 'MMM d, yyyy')
+                              : '-'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Balance</span>
+                          <span className={cn("font-semibold", (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 && "text-rose-600")}>
+                            €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               )}
 
+              {/* CLINICAL TAB */}
               {activeTab === 'clinical' && (
                 <div className="flex h-full">
                   {/* Treatment History Sidebar */}
-                  <div className="w-72 bg-white border-r p-4 overflow-y-auto">
+                  <div className="w-80 bg-white border-r p-4 overflow-y-auto">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-slate-700">Treatment History</h3>
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-teal-600">
@@ -599,64 +689,61 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                       </Button>
                     </div>
 
-                    <div className="space-y-3">
-                      {treatmentPlans.map((plan) => (
-                        <div key={plan.id} className="space-y-1">
-                          <button
-                            onClick={() => {
-                              setSelectedTreatmentId(plan.id);
-                              setSelectedProcedure(null);
-                            }}
-                            className={cn(
-                              "w-full text-left p-3 rounded-lg transition-all",
-                              selectedTreatmentId === plan.id && !selectedProcedure
-                                ? "bg-teal-50 border-l-4 border-l-teal-500"
-                                : "hover:bg-slate-50 border-l-4 border-l-transparent"
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Folder className="h-4 w-4 text-teal-600" />
-                              <span className="font-medium text-sm text-slate-800">{plan.title}</span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className={cn(
-                                "w-2 h-2 rounded-full",
-                                plan.status === 'active' ? "bg-teal-500" : "bg-slate-300"
-                              )} />
-                              <span className="text-xs text-slate-500 uppercase">{plan.status}</span>
-                            </div>
-                          </button>
+                    <div className="space-y-2">
+                      {treatmentPlans.map((plan) => {
+                        const isExpanded = expandedTreatments.has(plan.id);
+                        const linkedAppts = appointments.filter(a =>
+                          a.reason?.toLowerCase().includes(plan.title.toLowerCase().split(' ')[0])
+                        );
 
-                          {/* Procedures under this treatment */}
-                          {plan.procedures && plan.procedures.length > 0 && (
-                            <div className="ml-6 space-y-1">
-                              {plan.procedures.map((proc: any, idx: number) => (
-                                <button
-                                  key={idx}
-                                  onClick={() => {
-                                    setSelectedTreatmentId(plan.id);
-                                    setSelectedProcedure(proc);
-                                  }}
-                                  className={cn(
-                                    "w-full text-left p-2 rounded-lg text-sm flex items-center justify-between transition-all",
-                                    selectedProcedure?.name === proc.name
-                                      ? "bg-slate-100"
-                                      : "hover:bg-slate-50"
-                                  )}
-                                >
-                                  <div>
-                                    <p className="font-medium text-slate-700">{proc.name}</p>
-                                    <p className="text-xs text-slate-400">{proc.date || 'Scheduled'}</p>
+                        return (
+                          <Collapsible key={plan.id} open={isExpanded} onOpenChange={() => toggleTreatment(plan.id)}>
+                            <CollapsibleTrigger asChild>
+                              <button className="w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+                                  <Folder className="h-4 w-4 text-teal-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm text-slate-800">{plan.title}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className={cn(
+                                      "w-1.5 h-1.5 rounded-full",
+                                      plan.status === 'active' ? "bg-teal-500" : "bg-slate-300"
+                                    )} />
+                                    <span className="text-xs text-slate-500 uppercase">{plan.status}</span>
                                   </div>
-                                  {proc.status === 'completed' && (
-                                    <CheckCircle2 className="h-4 w-4 text-teal-500" />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                </div>
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                                )}
+                              </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="ml-11 space-y-1 mt-1">
+                                {linkedAppts.length > 0 ? linkedAppts.map((appt) => (
+                                  <button
+                                    key={appt.id}
+                                    onClick={() => openAppointmentDetail(appt)}
+                                    className="w-full text-left p-2 rounded-lg hover:bg-slate-100 transition-all flex items-center justify-between"
+                                  >
+                                    <div>
+                                      <p className="text-sm font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
+                                      <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d')}</p>
+                                    </div>
+                                    {appt.status === 'completed' && (
+                                      <CheckCircle2 className="h-4 w-4 text-teal-500" />
+                                    )}
+                                  </button>
+                                )) : (
+                                  <p className="text-xs text-slate-400 p-2">No linked appointments</p>
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        );
+                      })}
 
                       {treatmentPlans.length === 0 && (
                         <p className="text-sm text-slate-400 text-center py-8">No treatment plans yet</p>
@@ -664,146 +751,23 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     </div>
                   </div>
 
-                  {/* Treatment Detail Content */}
-                  <div className="flex-1 p-6 overflow-y-auto">
-                    {selectedTreatment ? (
-                      <div className="space-y-6">
-                        {/* Treatment Header */}
-                        <div className="flex items-center gap-3">
-                          <Folder className="h-5 w-5 text-teal-600" />
-                          <h2 className="text-xl font-semibold text-slate-800">
-                            {selectedProcedure ? selectedProcedure.name : selectedTreatment.title}
-                          </h2>
-                        </div>
-
-                        {!selectedProcedure ? (
-                          <>
-                            {/* Plan Overview */}
-                            <Card>
-                              <CardContent className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h3 className="font-semibold text-slate-700">Plan Overview</h3>
-                                  <Badge className={cn(statusConfig[selectedTreatment.status]?.bg, statusConfig[selectedTreatment.status]?.text, "uppercase text-xs")}>
-                                    {selectedTreatment.status}
-                                  </Badge>
-                                </div>
-                                <p className="text-slate-600 mb-4">{selectedTreatment.description || 'No description'}</p>
-                                <Progress value={progressPercent} className="h-2" />
-                              </CardContent>
-                            </Card>
-
-                            {/* Gallery */}
-                            <Card>
-                              <CardHeader className="pb-3">
-                                <CardTitle className="text-base font-medium text-slate-700 flex items-center gap-2">
-                                  <ImageIcon className="h-4 w-4" />
-                                  Gallery
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                {treatmentImages.files.length > 0 ? (
-                                  <div className="grid grid-cols-3 gap-4">
-                                    {treatmentImages.files.slice(0, 6).map((file) => (
-                                      <div
-                                        key={file.id}
-                                        className="relative aspect-square rounded-xl overflow-hidden bg-slate-200 cursor-pointer hover:ring-2 hover:ring-teal-300 transition-all"
-                                      >
-                                        {treatmentImages.urls[file.id] ? (
-                                          <img
-                                            src={treatmentImages.urls[file.id]}
-                                            alt={file.filename}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex items-center justify-center h-full">
-                                            <ImageIcon className="h-8 w-8 text-slate-400" />
-                                          </div>
-                                        )}
-                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                                          <p className="text-white text-sm font-medium truncate">{file.filename}</p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="text-center py-8 text-slate-400">
-                                    <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                    <p className="text-sm">No images yet</p>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </>
-                        ) : (
-                          /* Procedure Detail View */
-                          <div className="grid grid-cols-2 gap-6">
-                            <Card>
-                              <CardHeader className="pb-3">
-                                <CardTitle className="text-base font-medium text-slate-700">Notes</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <p className="text-slate-600">
-                                  {selectedProcedure.notes || 'No notes for this procedure'}
-                                </p>
-                              </CardContent>
-                            </Card>
-
-                            <Card>
-                              <CardHeader className="pb-3">
-                                <CardTitle className="text-base font-medium text-slate-700">Images</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                {treatmentImages.files.length > 0 ? (
-                                  <div className="grid grid-cols-2 gap-3">
-                                    {treatmentImages.files.slice(0, 4).map((file) => (
-                                      <div
-                                        key={file.id}
-                                        className="relative aspect-square rounded-lg overflow-hidden bg-slate-200"
-                                      >
-                                        {treatmentImages.urls[file.id] ? (
-                                          <img
-                                            src={treatmentImages.urls[file.id]}
-                                            alt={file.filename}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        ) : (
-                                          <div className="flex items-center justify-center h-full">
-                                            <ImageIcon className="h-6 w-6 text-slate-400" />
-                                          </div>
-                                        )}
-                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                                          <p className="text-white text-xs truncate">{file.filename}</p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="text-center py-6 text-slate-400">
-                                    <ImageIcon className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                                    <p className="text-sm">No images</p>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-slate-400">
-                        <div className="text-center">
-                          <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                          <p>Select a treatment plan</p>
-                        </div>
-                      </div>
-                    )}
+                  {/* Main Content */}
+                  <div className="flex-1 p-6 overflow-y-auto flex items-center justify-center text-slate-400">
+                    <div className="text-center">
+                      <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p>Select a treatment or appointment from the sidebar</p>
+                    </div>
                   </div>
                 </div>
               )}
 
+              {/* SCHEDULE TAB */}
               {activeTab === 'schedule' && (
-                <div className="p-8 space-y-6 max-w-4xl">
+                <div className="p-8 max-w-4xl mx-auto">
+                  <h2 className="text-xl font-semibold text-slate-800 mb-6">Appointments</h2>
+
                   {/* Upcoming */}
-                  <div>
+                  <div className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-2 h-2 rounded-full bg-teal-500" />
                       <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Upcoming</span>
@@ -813,24 +777,28 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     ) : (
                       <div className="space-y-3">
                         {upcomingAppts.map((appt) => (
-                          <Card key={appt.id}>
+                          <Card key={appt.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
                             <CardContent className="p-4 flex items-center justify-between">
                               <div className="flex items-center gap-4">
-                                <div className="text-center w-16">
+                                <div className="text-center w-14 py-2 bg-teal-50 rounded-lg">
                                   <p className="text-xs text-teal-600 font-medium uppercase">{format(new Date(appt.appointment_date), 'MMM')}</p>
-                                  <p className="text-2xl font-bold text-slate-800">{format(new Date(appt.appointment_date), 'd')}</p>
+                                  <p className="text-xl font-bold text-slate-800">{format(new Date(appt.appointment_date), 'd')}</p>
                                 </div>
                                 <div>
                                   <p className="font-medium text-slate-800">{appt.reason || 'Appointment'}</p>
                                   <p className="text-sm text-slate-500">
+                                    <Clock className="h-3 w-3 inline mr-1" />
                                     {format(new Date(appt.appointment_date), 'h:mm a')}
                                     {appt.duration_minutes && ` (${appt.duration_minutes} min)`}
                                   </p>
                                 </div>
                               </div>
-                              <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
-                                {appt.status}
-                              </Badge>
+                              <div className="flex items-center gap-3">
+                                <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                                  {appt.status}
+                                </Badge>
+                                <ChevronRight className="h-5 w-5 text-slate-300" />
+                              </div>
                             </CardContent>
                           </Card>
                         ))}
@@ -849,12 +817,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     ) : (
                       <div className="space-y-2">
                         {pastAppts.map((appt) => (
-                          <div key={appt.id} className="flex items-center gap-4 py-3 border-b border-slate-100 last:border-0">
-                            <p className="text-sm text-slate-500 w-20">{format(new Date(appt.appointment_date), 'MMM d')}</p>
+                          <div
+                            key={appt.id}
+                            onClick={() => openAppointmentDetail(appt)}
+                            className="flex items-center gap-4 py-3 px-4 rounded-lg hover:bg-white hover:shadow-sm cursor-pointer transition-all"
+                          >
+                            <p className="text-sm text-slate-500 w-24">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
                             <p className="flex-1 font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
-                            <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text, "text-xs")}>
-                              {appt.status === 'completed' ? 'Attended' : appt.status}
-                            </Badge>
+                            <Badge className="bg-teal-50 text-teal-700 text-xs">Attended</Badge>
                           </div>
                         ))}
                       </div>
@@ -863,8 +833,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 </div>
               )}
 
+              {/* FINANCIAL TAB */}
               {activeTab === 'financial' && (
-                <div className="p-8 space-y-6 max-w-5xl">
+                <div className="p-8 space-y-6 max-w-5xl mx-auto">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-slate-800">Financial Ledger</h2>
                     <div className="flex items-center gap-4">
@@ -889,6 +860,89 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           )}
         </div>
       </div>
+
+      {/* Appointment Detail Dialog */}
+      <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedAppointment?.reason || 'Appointment Details'}</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Date & Time</p>
+                  <p className="font-medium">
+                    {format(new Date(selectedAppointment.appointment_date), 'MMM d, yyyy')} at{' '}
+                    {format(new Date(selectedAppointment.appointment_date), 'h:mm a')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Status</p>
+                  <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text)}>
+                    {selectedAppointment.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {selectedAppointment.notes && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Notes</p>
+                  <p className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3">
+                    {selectedAppointment.notes}
+                  </p>
+                </div>
+              )}
+
+              {appointmentImages.files.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-2">Images</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {appointmentImages.files.map((file) => (
+                      <div key={file.id} className="aspect-square rounded-lg overflow-hidden bg-slate-100">
+                        {appointmentImages.urls[file.id] ? (
+                          <img src={appointmentImages.urls[file.id]} alt={file.filename} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <ImageIcon className="h-6 w-6 text-slate-300" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4 border-t">
+                {selectedAppointment.status !== 'completed' && selectedAppointment.status !== 'cancelled' && (
+                  <>
+                    <Button
+                      onClick={() => handleCompleteAppointment(selectedAppointment.id)}
+                      className="flex-1 bg-teal-600 hover:bg-teal-700"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Complete
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleCancelAppointment(selectedAppointment.id)}
+                      className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </>
+                )}
+                {(selectedAppointment.status === 'completed' || selectedAppointment.status === 'cancelled') && (
+                  <Button variant="outline" onClick={() => setAppointmentDetailOpen(false)} className="w-full">
+                    Close
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <NewPatientDialog
         open={newPatientDialogOpen}
