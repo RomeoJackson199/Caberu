@@ -88,6 +88,7 @@ export function AppointmentCompletionDialog({
       { id: 'overview', title: 'Overview' },
       { id: 'treatments', title: 'Treatments' },
       { id: 'notes', title: 'Notes' },
+      { id: 'imaging', title: 'Imaging' },
       { id: 'billing', title: 'Billing' },
       { id: 'complete', title: 'Complete' },
     ];

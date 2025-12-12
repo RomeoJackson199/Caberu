@@ -71,23 +71,50 @@ serve(async (req) => {
             );
         }
 
-        // Verify user has access to this business
+        // Verify user has access to this business (check business_members OR if user is business owner)
         const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-        const { data: membership, error: memberError } = await adminClient
+
+        // Check business_members first
+        const { data: membership } = await adminClient
             .from('business_members')
             .select('role')
             .eq('business_id', businessId)
             .eq('profile_id', user.id)
             .single();
 
-        if (memberError || !membership) {
+        // Also check if user is the business owner
+        let isOwner = false;
+        if (!membership) {
+            const { data: business } = await adminClient
+                .from('businesses')
+                .select('owner_id')
+                .eq('id', businessId)
+                .single();
+            isOwner = business?.owner_id === user.id;
+        }
+
+        // Also check if user is a dentist associated with this business
+        let isDentist = false;
+        if (!membership && !isOwner) {
+            const { data: dentist } = await adminClient
+                .from('dentists')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('business_id', businessId)
+                .single();
+            isDentist = !!dentist;
+        }
+
+        if (!membership && !isOwner && !isDentist) {
+            console.log('Access denied - user:', user.id, 'business:', businessId);
             return new Response(
                 JSON.stringify({ error: 'You do not have access to this business' }),
                 { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        if (!['admin', 'dentist', 'staff'].includes(membership.role)) {
+        const role = membership?.role || (isOwner ? 'admin' : (isDentist ? 'dentist' : null));
+        if (!role || !['admin', 'dentist', 'staff', 'owner'].includes(role)) {
             return new Response(
                 JSON.stringify({ error: 'Insufficient permissions to upload imaging' }),
                 { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
