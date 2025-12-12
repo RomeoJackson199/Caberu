@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { RescheduleAssistant } from "@/components/RescheduleAssistant";
 import { logger } from '@/lib/logger';
+import { AppointmentImagingTab } from "@/components/imaging";
 
 interface AppointmentDetailsSidebarProps {
   appointment: any;
@@ -40,7 +41,7 @@ export function AppointmentDetailsSidebar({
   const [loadingSummaries, setLoadingSummaries] = useState(false);
   const [nextAppointment, setNextAppointment] = useState<any>(null);
   const [serviceDetails, setServiceDetails] = useState<any>(null);
-  
+
   const patientName = `${appointment.patient?.first_name || ""} ${appointment.patient?.last_name || ""}`.trim() || appointment.patient_name || "Unknown Patient";
   const appointmentDate = parseISO(appointment.appointment_date);
   const statusConfig = STATUS_CONFIG[appointment.status as keyof typeof STATUS_CONFIG];
@@ -99,18 +100,18 @@ export function AppointmentDetailsSidebar({
 
     generateSummaries();
     fetchNextAppointment();
-    
+
     // Fetch service details if service_id exists
     const fetchServiceDetails = async () => {
       if (!appointment.service_id) return;
-      
+
       try {
         const { data, error } = await supabase
           .from('business_services')
           .select('name, price_cents')
           .eq('id', appointment.service_id)
           .single();
-        
+
         if (!error && data) {
           setServiceDetails(data);
         }
@@ -118,7 +119,7 @@ export function AppointmentDetailsSidebar({
         console.error("Error fetching service details:", error);
       }
     };
-    
+
     fetchServiceDetails();
   }, [appointment.id, appointment.patient_id, appointment.appointment_date, appointment.service_id]);
 
@@ -176,7 +177,7 @@ export function AppointmentDetailsSidebar({
                   <p className="text-xs font-medium text-muted-foreground">Date of Birth</p>
                 </div>
                 <p className="text-sm font-medium">
-                  {appointment.patient?.date_of_birth 
+                  {appointment.patient?.date_of_birth
                     ? format(new Date(appointment.patient.date_of_birth), "dd MMM yyyy")
                     : 'Not provided'}
                 </p>
@@ -197,7 +198,7 @@ export function AppointmentDetailsSidebar({
           {/* Summary Section */}
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Summary</h3>
-            
+
             {loadingSummaries ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -227,7 +228,7 @@ export function AppointmentDetailsSidebar({
           {/* Appointment Details */}
           <div className="space-y-4">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Appointment Details</h3>
-            
+
             <div className="bg-muted/30 rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-primary mt-0.5" />
@@ -280,6 +281,13 @@ export function AppointmentDetailsSidebar({
               </div>
             </>
           )}
+
+          {/* Imaging Section */}
+          <Separator />
+          <AppointmentImagingTab
+            patientId={appointment.patient_id}
+            appointmentId={appointment.id}
+          />
 
           <Separator />
 
