@@ -8,6 +8,7 @@ import { DentistAppShell, DentistSection } from "@/components/layout/DentistAppS
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { useBusinessSubscription } from "@/hooks/useBusinessSubscription";
+import { SubscriptionExpiredDialog } from "@/components/subscription/SubscriptionExpiredDialog";
 
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
@@ -235,13 +236,18 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   }
 
   const renderContent = () => {
-    // If no active subscription and not on settings, force to settings
+    // If no active subscription and not on settings, show popup
     if (!hasActiveSubscription && activeSection !== 'settings') {
-      // Force redirect to settings
-      if (activeSection !== 'settings') {
-        setActiveSection('settings');
-        return <ModernLoadingSpinner variant="card" message="Redirecting to billing..." />;
-      }
+      return (
+        <SubscriptionExpiredDialog
+          planName={subscriptionStatus === 'cancelling' ? 'subscription' : 'subscription'}
+          onReactivate={() => setActiveSection('settings')}
+          onLogout={async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/';
+          }}
+        />
+      );
     }
 
     // If trying to access clinical section without medical features, redirect to dashboard
