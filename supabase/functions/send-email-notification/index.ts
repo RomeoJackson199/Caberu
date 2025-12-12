@@ -100,6 +100,63 @@ serve(async (req) => {
       console.log('📧 System notification - skipping dentist authorization');
     }
 
+    // EMAIL LIMIT ENFORCEMENT - Check if business has exceeded their email limit
+    if (dentistId && !isSystem) {
+      try {
+        // Get dentist's profile_id
+        const { data: dentistData } = await supabase
+          .from('dentists')
+          .select('profile_id')
+          .eq('id', dentistId)
+          .single();
+
+        if (dentistData?.profile_id) {
+          // Get business_id
+          const { data: memberData } = await supabase
+            .from('business_members')
+            .select('business_id')
+            .eq('profile_id', dentistData.profile_id)
+            .limit(1)
+            .maybeSingle();
+
+          if (memberData?.business_id) {
+            // Get business email count and subscription plan
+            const { data: business } = await supabase
+              .from('businesses')
+              .select('emails_sent_count, subscription_plan')
+              .eq('id', memberData.business_id)
+              .single();
+
+            if (business?.subscription_plan) {
+              // Get plan email limit
+              const { data: plan } = await supabase
+                .from('subscription_plans')
+                .select('email_limit_monthly')
+                .eq('name', business.subscription_plan)
+                .maybeSingle();
+
+              const emailLimit = plan?.email_limit_monthly || 10000; // Default high limit
+              const emailsSent = business.emails_sent_count || 0;
+
+              console.log(`📊 Email limit check: ${emailsSent}/${emailLimit}`);
+
+              if (emailsSent >= emailLimit) {
+                console.log('❌ Email limit exceeded!');
+                throw new Error(`Email limit exceeded. You have sent ${emailsSent}/${emailLimit} emails this month. Please upgrade your plan to send more emails.`);
+              }
+            }
+          }
+        }
+      } catch (limitError) {
+        // If it's our custom limit error, re-throw it
+        if (limitError.message?.includes('Email limit exceeded')) {
+          throw limitError;
+        }
+        // Otherwise just log and continue (don't block emails due to lookup errors)
+        console.error('Email limit check error:', limitError);
+      }
+    }
+
     // Create email notification record
     let notificationId;
     if (patientId && dentistId && !isSystem) {
