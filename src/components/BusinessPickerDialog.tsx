@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Building2, Check } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 
 interface BusinessPickerDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
   const [selecting, setSelecting] = useState(false);
   const [allBusinesses, setAllBusinesses] = useState<any[]>([]);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
+  const navigate = useNavigate();
 
   // Always fetch all businesses to allow switching to any
   useEffect(() => {
@@ -53,6 +55,18 @@ export function BusinessPickerDialog({ open, onOpenChange }: BusinessPickerDialo
     try {
       await switchBusiness(targetBusinessId);
       onOpenChange?.(false);
+
+      // Find membership for this business to determine role
+      const membership = memberships.find(m => m.business_id === targetBusinessId);
+      const role = membership?.role || 'patient';
+
+      // Redirect based on role in that business
+      const isProvider = role === 'dentist' || role === 'admin' || role === 'owner';
+      if (isProvider) {
+        navigate('/dentist/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } finally {
       setSelecting(false);
     }
