@@ -98,6 +98,7 @@ export function AppointmentImagingTab({
 
             {/* Gallery */}
             <ImagingGallery
+                key={`gallery-${imagingCount}`}
                 patientId={patientId}
                 appointmentId={appointmentId}
                 onImagingCountChange={setImagingCount}
