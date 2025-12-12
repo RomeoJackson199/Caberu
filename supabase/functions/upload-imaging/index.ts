@@ -71,18 +71,31 @@ serve(async (req) => {
             );
         }
 
-        // Verify user has access to this business (check business_members OR if user is business owner)
+        // Verify user has access to this business
         const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-        // Check business_members first
-        const { data: membership } = await adminClient
-            .from('business_members')
-            .select('role')
-            .eq('business_id', businessId)
-            .eq('profile_id', user.id)
+        // First, get the user's profile (profile_id is different from user.id)
+        const { data: profile } = await adminClient
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
             .single();
 
-        // Also check if user is the business owner
+        const profileId = profile?.id;
+
+        // Check business_members using profile_id
+        let membership = null;
+        if (profileId) {
+            const { data } = await adminClient
+                .from('business_members')
+                .select('role')
+                .eq('business_id', businessId)
+                .eq('profile_id', profileId)
+                .single();
+            membership = data;
+        }
+
+        // Also check if user is the business owner (owner_id might be user.id or profile.id)
         let isOwner = false;
         if (!membership) {
             const { data: business } = await adminClient
@@ -90,7 +103,8 @@ serve(async (req) => {
                 .select('owner_id')
                 .eq('id', businessId)
                 .single();
-            isOwner = business?.owner_id === user.id;
+            // Check both user.id and profile.id against owner_id
+            isOwner = business?.owner_id === user.id || business?.owner_id === profileId;
         }
 
         // Also check if user is a dentist associated with this business
@@ -106,7 +120,7 @@ serve(async (req) => {
         }
 
         if (!membership && !isOwner && !isDentist) {
-            console.log('Access denied - user:', user.id, 'business:', businessId);
+            console.log('Access denied - user:', user.id, 'profileId:', profileId, 'business:', businessId);
             return new Response(
                 JSON.stringify({ error: 'You do not have access to this business' }),
                 { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
