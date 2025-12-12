@@ -401,28 +401,7 @@ export function CancelSubscriptionSection() {
                         </h4>
 
                         {/* Usage Stats Grid */}
-                        <div className="grid gap-3 sm:grid-cols-3 mb-4">
-                            {/* Customers Usage */}
-                            <div className="p-3 bg-background rounded-md border">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs text-muted-foreground">Customers</span>
-                                    <span className="text-xs font-medium">
-                                        {usageStats?.customerCount || 0} / {planLimits.customer_limit.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-muted rounded-full h-2">
-                                    <div
-                                        className={`h-2 rounded-full transition-all ${(usageStats?.customerCount || 0) >= planLimits.customer_limit
-                                            ? 'bg-red-500'
-                                            : (usageStats?.customerCount || 0) >= planLimits.customer_limit * 0.8
-                                                ? 'bg-yellow-500'
-                                                : 'bg-green-500'
-                                            }`}
-                                        style={{ width: `${Math.min(100, ((usageStats?.customerCount || 0) / planLimits.customer_limit) * 100)}%` }}
-                                    />
-                                </div>
-                            </div>
-
+                        <div className="grid gap-3 sm:grid-cols-2 mb-4">
                             {/* Team Members */}
                             <div className="p-3 bg-background rounded-md border">
                                 <div className="flex items-center justify-between mb-1">
