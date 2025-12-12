@@ -396,11 +396,12 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   }, [searchParams, patients, setSearchParams]);
 
   useEffect(() => {
-    if (selectedPatient) {
+    if (selectedPatient && businessId) {
+      console.log('Fetching appointments for patient:', selectedPatient.id, 'business:', businessId);
       fetchPatientAppointments(selectedPatient.id);
       fetchTreatmentPlans(selectedPatient.id);
     }
-  }, [selectedPatient, dentistId]);
+  }, [selectedPatient, dentistId, businessId]);
 
   useEffect(() => {
     if (selectedAppointment) {
