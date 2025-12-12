@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard } from "lucide-react";
 import { EnhancedAvailabilitySettings } from "@/components/enhanced/EnhancedAvailabilitySettings";
 import DentistAdminBranding from "./DentistAdminBranding";
@@ -17,7 +19,6 @@ import { useToast } from "@/hooks/use-toast";
 import { getCurrentBusinessId } from "@/lib/businessUtils";
 import { logger } from '@/lib/logger';
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { CancelSubscriptionSection } from "@/components/settings/CancelSubscriptionSection";
 
 export default function DentistSettings() {
@@ -30,6 +31,9 @@ export default function DentistSettings() {
   const [requireApproval, setRequireApproval] = useState(false);
   const [appointmentLoading, setAppointmentLoading] = useState(true);
   const [savingAppointments, setSavingAppointments] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [leavePassword, setLeavePassword] = useState('');
+  const [leavingClinic, setLeavingClinic] = useState(false);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -68,13 +72,40 @@ export default function DentistSettings() {
   }, [dentistId, toast]);
 
   const handleLeaveClinic = async () => {
+    if (!leavePassword.trim()) {
+      toast({
+        title: "Password required",
+        description: "Please enter your password to confirm leaving the clinic.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLeavingClinic(true);
     try {
+      // Verify password first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error('Not authenticated');
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: leavePassword
+      });
+
+      if (signInError) {
+        throw new Error('Incorrect password');
+      }
+
+      // Password verified, now leave the clinic
       const businessId = await getCurrentBusinessId();
       const { data, error } = await supabase.rpc('leave_clinic', { p_business_id: businessId });
       if (error) throw error;
 
       const remaining = (data as any)?.remaining_businesses ?? null;
       const businessDeleted = (data as any)?.business_deleted ?? false;
+
+      setShowLeaveDialog(false);
+      setLeavePassword('');
 
       if (businessDeleted) {
         toast({
@@ -98,9 +129,11 @@ export default function DentistSettings() {
       logger.error('Error leaving clinic:', error);
       toast({
         title: "Error",
-        description: "Failed to leave clinic. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to leave clinic. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLeavingClinic(false);
     }
   };
 
@@ -280,7 +313,7 @@ export default function DentistSettings() {
             <CardContent>
               <Button
                 variant="destructive"
-                onClick={handleLeaveClinic}
+                onClick={() => setShowLeaveDialog(true)}
                 className="gap-2"
               >
                 <LogOut className="h-4 w-4" />
@@ -296,6 +329,44 @@ export default function DentistSettings() {
         </TabsContent>
 
       </Tabs>
+
+      {/* Leave Clinic Confirmation Dialog */}
+      {showLeaveDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle className="text-destructive">Leave Clinic</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                This action is <strong>irreversible</strong>. You will lose access to all clinic data, appointments, and patient records.
+              </p>
+              <p className="text-sm text-destructive font-medium">
+                ⚠️ If you are the last member, the entire business will be permanently deleted.
+              </p>
+              <div>
+                <Label htmlFor="leave-password">Enter your password to confirm</Label>
+                <Input
+                  id="leave-password"
+                  type="password"
+                  value={leavePassword}
+                  onChange={(e) => setLeavePassword(e.target.value)}
+                  placeholder="Your password"
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => { setShowLeaveDialog(false); setLeavePassword(''); }}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleLeaveClinic} disabled={leavingClinic || !leavePassword.trim()}>
+                  {leavingClinic ? 'Leaving...' : 'Leave Clinic'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
