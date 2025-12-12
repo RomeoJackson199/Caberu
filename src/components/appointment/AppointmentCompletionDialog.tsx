@@ -20,7 +20,8 @@ import {
   Pill,
   ClipboardList as ClipboardListIcon,
   Plus,
-  Trash2
+  Trash2,
+  Camera
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +30,8 @@ import { NotificationService } from '@/lib/notificationService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
 import { logger } from '@/lib/logger';
+import { ImagingUploader } from '@/components/imaging/ImagingUploader';
+import { ImagingGallery } from '@/components/imaging/ImagingGallery';
 
 interface AppointmentCompletionDialogProps {
   open: boolean;
@@ -61,6 +64,7 @@ const allStepMeta: Record<string, { title: string; icon: any }> = {
   treatments: { title: 'Treatments', icon: FileText },
   services: { title: 'Treatments Provided', icon: FileText },
   notes: { title: 'Notes', icon: FileText },
+  imaging: { title: 'Imaging', icon: Camera },
   prescriptions: { title: 'Prescriptions', icon: Pill },
   'treatment-plan': { title: 'Treatment Plan', icon: ClipboardListIcon },
   billing: { title: 'Billing', icon: DollarSign },
@@ -119,6 +123,8 @@ export function AppointmentCompletionDialog({
     estimated_cost: '',
     estimated_duration_weeks: ''
   });
+  const [uploadedImagingSetId, setUploadedImagingSetId] = useState<string | null>(null);
+  const [imagingCount, setImagingCount] = useState(0);
 
   // Fetch treatment plans on mount
   useEffect(() => {
@@ -996,6 +1002,40 @@ export function AppointmentCompletionDialog({
                 </div>
               </CardContent>
             </Card>
+          </div>
+        );
+
+      case 'imaging':
+        return (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Camera className="h-5 w-5" />
+                Appointment Imaging
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Upload X-rays, photos, or scans from this visit
+              </p>
+            </div>
+
+            <ImagingUploader
+              patientId={appointment.patient_id}
+              appointmentId={appointment.id}
+              onUploadComplete={() => setImagingCount(prev => prev + 1)}
+            />
+
+            <Separator />
+
+            <div className="space-y-2">
+              <h4 className="font-medium">Images from this appointment</h4>
+              <ImagingGallery
+                patientId={appointment.patient_id}
+                appointmentId={appointment.id}
+                onImagingCountChange={setImagingCount}
+                showHeader={false}
+                compact
+              />
+            </div>
           </div>
         );
 
