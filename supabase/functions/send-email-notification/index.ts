@@ -31,6 +31,7 @@ interface EmailRequest {
   messageType: 'appointment_confirmation' | 'appointment_reminder' | 'appointment_cancelled' | 'payment_received' | 'payment_reminder' | 'prescription' | 'emergency' | 'system';
   patientId?: string;
   dentistId?: string;
+  businessId?: string; // Direct business ID for email limit checking
   isSystemNotification?: boolean;
   appointmentDate?: string;
   appointmentTime?: string;
@@ -48,7 +49,7 @@ serve(async (req) => {
       throw new Error('Supabase credentials not configured');
     }
 
-    const { to, subject, message, messageType, patientId, dentistId, isSystemNotification, appointmentDate, appointmentTime }: EmailRequest = await req.json();
+    const { to, subject, message, messageType, patientId, dentistId, businessId: requestBusinessId, isSystemNotification, appointmentDate, appointmentTime }: EmailRequest = await req.json();
     const isSystem = isSystemNotification === true || messageType === 'system';
 
     let supabase;
@@ -101,58 +102,75 @@ serve(async (req) => {
     }
 
     // EMAIL LIMIT ENFORCEMENT - Check if business has exceeded their email limit
-    if (dentistId && !isSystem) {
+    // Skip for system notifications only
+    if (!isSystem) {
       try {
-        // Get dentist's profile_id
-        const { data: dentistData } = await supabase
-          .from('dentists')
-          .select('profile_id')
-          .eq('id', dentistId)
-          .single();
+        let businessIdToCheck: string | null = requestBusinessId || null;
 
-        if (dentistData?.profile_id) {
-          // Get business_id
-          const { data: memberData } = await supabase
-            .from('business_members')
+        // Try to find businessId from dentistId if not provided directly
+        if (!businessIdToCheck && dentistId) {
+          const { data: dentistData } = await supabase
+            .from('dentists')
+            .select('profile_id')
+            .eq('id', dentistId)
+            .single();
+
+          if (dentistData?.profile_id) {
+            const { data: memberData } = await supabase
+              .from('business_members')
+              .select('business_id')
+              .eq('profile_id', dentistData.profile_id)
+              .limit(1)
+              .maybeSingle();
+
+            businessIdToCheck = memberData?.business_id || null;
+          }
+        }
+
+        // Try to find businessId from patientId if still not found
+        if (!businessIdToCheck && patientId) {
+          const { data: patientData } = await supabase
+            .from('patients')
             .select('business_id')
-            .eq('profile_id', dentistData.profile_id)
+            .eq('profile_id', patientId)
             .limit(1)
             .maybeSingle();
 
-          if (memberData?.business_id) {
-            // Get business email count and subscription plan
-            const { data: business } = await supabase
-              .from('businesses')
-              .select('emails_sent_count, subscription_plan')
-              .eq('id', memberData.business_id)
-              .single();
+          businessIdToCheck = patientData?.business_id || null;
+        }
 
-            if (business?.subscription_plan) {
-              // Get plan email limit
-              const { data: plan } = await supabase
-                .from('subscription_plans')
-                .select('email_limit_monthly')
-                .eq('name', business.subscription_plan)
-                .maybeSingle();
+        // Now check the email limit if we found a business
+        if (businessIdToCheck) {
+          const { data: business } = await supabase
+            .from('businesses')
+            .select('emails_sent_count, subscription_plan')
+            .eq('id', businessIdToCheck)
+            .single();
 
-              const emailLimit = plan?.email_limit_monthly || 10000; // Default high limit
-              const emailsSent = business.emails_sent_count || 0;
+          if (business?.subscription_plan) {
+            const { data: plan } = await supabase
+              .from('subscription_plans')
+              .select('email_limit_monthly')
+              .ilike('name', `%${business.subscription_plan}%`)
+              .maybeSingle();
 
-              console.log(`📊 Email limit check: ${emailsSent}/${emailLimit}`);
+            const emailLimit = plan?.email_limit_monthly || 10000;
+            const emailsSent = business.emails_sent_count || 0;
 
-              if (emailsSent >= emailLimit) {
-                console.log('❌ Email limit exceeded!');
-                throw new Error(`Email limit exceeded. You have sent ${emailsSent}/${emailLimit} emails this month. Please upgrade your plan to send more emails.`);
-              }
+            console.log(`📊 Email limit check for business ${businessIdToCheck}: ${emailsSent}/${emailLimit}`);
+
+            if (emailsSent >= emailLimit) {
+              console.log('❌ Email limit exceeded!');
+              throw new Error(`Email limit exceeded. You have sent ${emailsSent}/${emailLimit} emails this month. Please upgrade your plan to send more emails.`);
             }
           }
+        } else {
+          console.log('⚠️ Could not determine business for email limit check, proceeding with email');
         }
       } catch (limitError) {
-        // If it's our custom limit error, re-throw it
         if (limitError.message?.includes('Email limit exceeded')) {
           throw limitError;
         }
-        // Otherwise just log and continue (don't block emails due to lookup errors)
         console.error('Email limit check error:', limitError);
       }
     }
