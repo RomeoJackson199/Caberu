@@ -53,11 +53,14 @@ export function ImagingGallery({
 
     // Fetch imaging sets
     const loadImagingSets = useCallback(async () => {
+        console.log('Loading imaging sets for:', { patientId, appointmentId });
         const sets = await fetchImagingSets({ patientId, appointmentId });
+        console.log('Loaded imaging sets:', sets);
         setImagingSets(sets);
 
         // Count total files
         const totalFiles = sets.reduce((acc, set) => acc + (set.files?.length || 0), 0);
+        console.log('Total files:', totalFiles);
         onImagingCountChange?.(totalFiles);
     }, [fetchImagingSets, patientId, appointmentId, onImagingCountChange]);
 

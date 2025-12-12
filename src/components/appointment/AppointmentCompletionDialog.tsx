@@ -480,8 +480,7 @@ export function AppointmentCompletionDialog({
         .update({
           status: 'completed',
           reason: aiGeneratedReason,
-          consultation_notes: formData.consultationNotes || formData.notes || null,
-          treatment_plan_id: treatmentPlanId || null
+          consultation_notes: formData.consultationNotes || formData.notes || null
         })
         .eq('id', appointment.id);
 
