@@ -25,6 +25,16 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
         location.pathname.startsWith(path)
     );
 
+    // Debug logging
+    console.log('🛡️ SubscriptionGuard:', {
+        pathname: location.pathname,
+        isActive,
+        loading,
+        status,
+        isAllowedPath,
+        shouldRedirect: !loading && !isActive && !isAllowedPath
+    });
+
     // Show loading while checking subscription
     if (loading) {
         return (
@@ -37,10 +47,12 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
 
     // If subscription is active or user is on allowed path, render children
     if (isActive || isAllowedPath) {
+        console.log('🛡️ SubscriptionGuard: Allowing access');
         return <>{children}</>;
     }
 
     // No active subscription - redirect to billing page with message
+    console.log('🛡️ SubscriptionGuard: REDIRECTING to billing!');
     return (
         <Navigate
             to="/dentist/settings?tab=billing"
