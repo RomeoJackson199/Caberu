@@ -36,6 +36,7 @@ interface Subscription {
 
 interface PlanLimits {
     customer_limit: number;
+    email_limit_monthly: number;
     features: string[];
 }
 
@@ -107,19 +108,21 @@ export function CancelSubscriptionSection() {
                 if (business.subscription_plan) {
                     const { data: plan } = await supabase
                         .from('subscription_plans')
-                        .select('customer_limit, features')
+                        .select('customer_limit, email_limit_monthly, features')
                         .ilike('name', `%${business.subscription_plan}%`)
                         .maybeSingle();
 
                     if (plan) {
                         setPlanLimits({
                             customer_limit: plan.customer_limit || 100,
+                            email_limit_monthly: plan.email_limit_monthly || 500,
                             features: plan.features || ['Basic features'],
                         });
                     } else {
                         // Default limits for promo/free plans
                         setPlanLimits({
                             customer_limit: 500,
+                            email_limit_monthly: 1000,
                             features: ['All features included for promotion period'],
                         });
                     }
@@ -138,6 +141,7 @@ export function CancelSubscriptionSection() {
                 });
                 setPlanLimits({
                     customer_limit: 100,
+                    email_limit_monthly: 500,
                     features: ['Basic features'],
                 });
             } else {
@@ -411,13 +415,25 @@ export function CancelSubscriptionSection() {
                                 <div className="text-lg font-semibold">{usageStats?.teamMembers || 0}</div>
                             </div>
 
-                            {/* Emails Sent */}
+                            {/* Emails Sent with Progress Bar */}
                             <div className="p-3 bg-background rounded-md border">
                                 <div className="flex items-center justify-between mb-1">
                                     <span className="text-xs text-muted-foreground">Emails Sent</span>
-                                    <span className="text-xs font-medium">{usageStats?.emailsSent || 0}</span>
+                                    <span className="text-xs font-medium">
+                                        {usageStats?.emailsSent || 0} / {planLimits.email_limit_monthly?.toLocaleString() || '∞'}
+                                    </span>
                                 </div>
-                                <div className="text-lg font-semibold">{usageStats?.emailsSent || 0}</div>
+                                <div className="w-full bg-muted rounded-full h-2 mb-1">
+                                    <div
+                                        className={`h-2 rounded-full transition-all ${(usageStats?.emailsSent || 0) >= (planLimits.email_limit_monthly || 10000)
+                                            ? 'bg-red-500'
+                                            : (usageStats?.emailsSent || 0) >= (planLimits.email_limit_monthly || 10000) * 0.8
+                                                ? 'bg-yellow-500'
+                                                : 'bg-green-500'
+                                            }`}
+                                        style={{ width: `${Math.min(100, ((usageStats?.emailsSent || 0) / (planLimits.email_limit_monthly || 10000)) * 100)}%` }}
+                                    />
+                                </div>
                             </div>
                         </div>
 
