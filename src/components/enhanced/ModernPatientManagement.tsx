@@ -246,12 +246,18 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const fetchPatientAppointments = async (patientId: string) => {
     try {
-      const { data } = await supabase
+      let query = supabase
         .from('appointments')
         .select('*')
         .eq('patient_id', patientId)
-        .eq('dentist_id', dentistId)
-        .order('appointment_date', { ascending: false });
+        .eq('dentist_id', dentistId);
+
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
+
+      const { data, error } = await query.order('appointment_date', { ascending: false });
+      if (error) console.error('Appointments fetch error:', error);
       setAppointments(data || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -260,13 +266,18 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const fetchTreatmentPlans = async (patientId: string) => {
     try {
-      const { data } = await supabase
+      let query = supabase
         .from('treatment_plans')
         .select('*')
         .eq('patient_id', patientId)
-        .eq('dentist_id', dentistId)
-        .order('created_at', { ascending: false });
+        .eq('dentist_id', dentistId);
 
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) console.error('Treatment plans fetch error:', error);
       setTreatmentPlans(data || []);
     } catch (error) {
       console.error('Error fetching treatment plans:', error);
