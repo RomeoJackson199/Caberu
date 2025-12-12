@@ -153,7 +153,7 @@ serve(async (req) => {
                 business_id: businessId,
                 patient_id: patientId,
                 appointment_id: appointmentId || null,
-                uploaded_by: user.id,
+                uploaded_by: profileId,
                 imaging_type: imagingType || 'unknown',
                 notes: notes || null
             })
