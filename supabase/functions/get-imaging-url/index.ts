@@ -75,18 +75,28 @@ serve(async (req) => {
             }
 
             // Verify user has access to this business
+            // First get profile_id from user_id
+            const { data: profile } = await adminClient
+                .from('profiles')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+
+            const profileId = profile?.id;
+
             const { data: membership } = await adminClient
                 .from('business_members')
                 .select('role')
                 .eq('business_id', file.imaging_set.business_id)
-                .eq('profile_id', user.id)
+                .eq('profile_id', profileId)
                 .single();
 
             // Check if user is business member OR the patient
             const isBusinessMember = !!membership;
-            const isPatient = file.imaging_set.patient_id === user.id;
+            const isPatient = file.imaging_set.patient_id === profileId;
 
             if (!isBusinessMember && !isPatient) {
+                console.log('Access denied - user:', user.id, 'profileId:', profileId, 'patientId:', file.imaging_set.patient_id);
                 return new Response(
                     JSON.stringify({ error: 'You do not have access to this file' }),
                     { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -75,13 +75,17 @@ export function TreatmentPlanDetailView({
                 if (planError) throw planError;
                 setTreatmentPlan(plan);
 
-                // Fetch linked appointments
+                // Fetch appointments for this patient (since appointments don't have treatment_plan_id column)
+                // We show completed appointments for this patient to give context
                 const { data: appointments, error: apptError } = await supabase
                     .from('appointments')
                     .select('id, appointment_date, status, reason, notes')
-                    .eq('treatment_plan_id', treatmentPlanId)
-                    .order('appointment_date', { ascending: false });
+                    .eq('patient_id', patientId)
+                    .in('status', ['completed', 'confirmed'])
+                    .order('appointment_date', { ascending: false })
+                    .limit(10);
 
+                console.log('Fetched appointments for patient:', patientId, appointments);
                 if (!apptError && appointments) {
                     setLinkedAppointments(appointments);
                 }
