@@ -1097,6 +1097,15 @@ export function AppointmentCompletionDialog({
                     </div>
                   )}
 
+                  {/* No plans message */}
+                  {treatmentPlans.length === 0 && !createNewTreatmentPlan && (
+                    <div className="text-center py-4">
+                      <ClipboardListIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">No treatment plans exist for this patient yet.</p>
+                      <p className="text-sm text-muted-foreground">Check the box below to create one.</p>
+                    </div>
+                  )}
+
                   {/* Create new toggle */}
                   <div className="flex items-center space-x-2">
                     <input
