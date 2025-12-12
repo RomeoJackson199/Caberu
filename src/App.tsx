@@ -34,6 +34,7 @@ import { initializeErrorReporting } from "@/lib/errorReporting";
 import { GlobalDashboardErrorListener } from "@/components/dashboard/GlobalDashboardErrorListener";
 import { getUserFriendlyErrorMessage } from "@/lib/errorHandling";
 import { toast } from "@/hooks/use-toast";
+import { EmailLimitProvider } from "@/hooks/useEmailLimit";
 
 // Force resync: 2025-12-07T19:03
 
@@ -307,97 +308,99 @@ const App = () => {
                 <PWAInstallPrompt />
                 <ProfileCompletionDialog />
                 <BrowserRouter>
-                  <DentistInvitationDialog />
-                  <CommandPalette />
-                  <CookieConsent isAuthenticated={!!user} />
-                  <OnboardingOrchestrator user={user} />
-                  <SeoManager />
-                  <Suspense fallback={<ModernLoadingSpinner variant="overlay" message="Loading..." />}>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      {/* Demo routes */}
-                      <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
-                      {/* Auth routes */}
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/signup" element={<Signup />} />
-                      <Route path="/forgot-password" element={<ForgotPassword />} />
-                      <Route path="/create-business" element={<CreateBusiness />} />
-                      <Route path="/onboarding" element={<Onboarding />} />
-                      {/* Post-auth redirect handler */}
-                      <Route path="/auth-redirect" element={<AuthRedirect />} />
-                      {/* Business selection page (protected) */}
-                      <Route path="/select-business" element={<SelectBusiness />} />
-                      {/* Role-based dashboard routing */}
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/patient/*" element={<Dashboard />} />
-                      {/* Dentist routes with tab-based navigation and subscription guard */}
-                      <Route path="/dentist/*" element={
-                        <RoleBasedRouter requiredRole='dentist'>
-                          <SubscriptionGuard>
-                            <DentistPortal />
-                          </SubscriptionGuard>
-                        </RoleBasedRouter>
-                      } />
-                      <Route path="/dentist-services" element={
-                        <RoleBasedRouter requiredRole='dentist'>
-                          <SubscriptionGuard>
-                            <DentistServices />
-                          </SubscriptionGuard>
-                        </RoleBasedRouter>
-                      } />
-                      {/* Patient portal routes with patient nav */}
-                      <Route element={<PatientPortalNav><></></PatientPortalNav>}>
-                        <Route path="/care" element={<PatientCareHome />} />
-                        <Route path="/care/appointments" element={<PatientAppointmentsPage />} />
-                        <Route path="/care/prescriptions" element={<PatientPrescriptionsPage />} />
-                        <Route path="/care/history" element={<PatientTreatmentHistoryPage />} />
-                        <Route path="/billing" element={<PatientBillingPage />} />
-                        <Route path="/docs" element={<PatientDocumentsPage />} />
-                        <Route path="/account/profile" element={<PatientAccountProfilePage />} />
-                        <Route path="/account/insurance" element={<PatientAccountInsurancePage />} />
-                        <Route path="/account/privacy" element={<PatientAccountPrivacyPage />} />
-                        <Route path="/account/help" element={<PatientAccountHelpPage />} />
-                        <Route path="/account/settings" element={<PatientSettingsPage />} />
-                      </Route>
-                      {/* Public routes */}
-                      <Route path="/dentists" element={<DentistProfiles />} />
-                      <Route path="/terms" element={<Terms />} />
-                      <Route path="/privacy" element={<PrivacyPolicy />} />
-                      <Route path="/dpa" element={<DataProcessingAgreement />} />
-                      <Route path="/about" element={<About />} />
-                      <Route path="/payment-success" element={<PaymentSuccess />} />
-                      <Route path="/payment-cancelled" element={<PaymentCancelled />} />
-                      <Route path="/support" element={<Support />} />
-                      <Route path="/features/:id" element={<FeatureDetail />} />
-                      <Route path="/language-test" element={<LanguageTest />} />
-                      <Route path="/chat" element={<Chat />} />
-                      <Route path="/messages" element={<Messages />} />
-                      <Route path="/invite" element={<Invite />} />
-                      <Route path="/claim" element={<Claim />} />
-                      <Route path="/pricing" element={<Pricing />} />
-                      <Route path="/faq" element={<FAQ />} />
-                      <Route path="/ai-info" element={<AIInfo />} />
-                      <Route path="/google-calendar-callback" element={<GoogleCalendarCallback />} />
-                      {/* Super Admin Dashboard - Protected */}
-                      <Route path="/super-admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
-                      {/* Main booking route */}
-                      <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
-                      {/* Redirect old routes to main booking */}
-                      <Route path="/book-appointment-legacy" element={<Navigate to="/book-appointment" replace />} />
-                      <Route path="/book-appointment-ai" element={<Navigate to="/book-appointment" replace />} />
-                      <Route path="/smart-book-appointment" element={<Navigate to="/book-appointment" replace />} />
-                      {/* Business portal route - must come before catch-all */}
-                      <Route path="/clinic/:slug" element={<BusinessPortal />} />
-                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
+                  <EmailLimitProvider>
+                    <DentistInvitationDialog />
+                    <CommandPalette />
+                    <CookieConsent isAuthenticated={!!user} />
+                    <OnboardingOrchestrator user={user} />
+                    <SeoManager />
+                    <Suspense fallback={<ModernLoadingSpinner variant="overlay" message="Loading..." />}>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        {/* Demo routes */}
+                        <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
+                        {/* Auth routes */}
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/signup" element={<Signup />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/create-business" element={<CreateBusiness />} />
+                        <Route path="/onboarding" element={<Onboarding />} />
+                        {/* Post-auth redirect handler */}
+                        <Route path="/auth-redirect" element={<AuthRedirect />} />
+                        {/* Business selection page (protected) */}
+                        <Route path="/select-business" element={<SelectBusiness />} />
+                        {/* Role-based dashboard routing */}
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/patient/*" element={<Dashboard />} />
+                        {/* Dentist routes with tab-based navigation and subscription guard */}
+                        <Route path="/dentist/*" element={
+                          <RoleBasedRouter requiredRole='dentist'>
+                            <SubscriptionGuard>
+                              <DentistPortal />
+                            </SubscriptionGuard>
+                          </RoleBasedRouter>
+                        } />
+                        <Route path="/dentist-services" element={
+                          <RoleBasedRouter requiredRole='dentist'>
+                            <SubscriptionGuard>
+                              <DentistServices />
+                            </SubscriptionGuard>
+                          </RoleBasedRouter>
+                        } />
+                        {/* Patient portal routes with patient nav */}
+                        <Route element={<PatientPortalNav><></></PatientPortalNav>}>
+                          <Route path="/care" element={<PatientCareHome />} />
+                          <Route path="/care/appointments" element={<PatientAppointmentsPage />} />
+                          <Route path="/care/prescriptions" element={<PatientPrescriptionsPage />} />
+                          <Route path="/care/history" element={<PatientTreatmentHistoryPage />} />
+                          <Route path="/billing" element={<PatientBillingPage />} />
+                          <Route path="/docs" element={<PatientDocumentsPage />} />
+                          <Route path="/account/profile" element={<PatientAccountProfilePage />} />
+                          <Route path="/account/insurance" element={<PatientAccountInsurancePage />} />
+                          <Route path="/account/privacy" element={<PatientAccountPrivacyPage />} />
+                          <Route path="/account/help" element={<PatientAccountHelpPage />} />
+                          <Route path="/account/settings" element={<PatientSettingsPage />} />
+                        </Route>
+                        {/* Public routes */}
+                        <Route path="/dentists" element={<DentistProfiles />} />
+                        <Route path="/terms" element={<Terms />} />
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/dpa" element={<DataProcessingAgreement />} />
+                        <Route path="/about" element={<About />} />
+                        <Route path="/payment-success" element={<PaymentSuccess />} />
+                        <Route path="/payment-cancelled" element={<PaymentCancelled />} />
+                        <Route path="/support" element={<Support />} />
+                        <Route path="/features/:id" element={<FeatureDetail />} />
+                        <Route path="/language-test" element={<LanguageTest />} />
+                        <Route path="/chat" element={<Chat />} />
+                        <Route path="/messages" element={<Messages />} />
+                        <Route path="/invite" element={<Invite />} />
+                        <Route path="/claim" element={<Claim />} />
+                        <Route path="/pricing" element={<Pricing />} />
+                        <Route path="/faq" element={<FAQ />} />
+                        <Route path="/ai-info" element={<AIInfo />} />
+                        <Route path="/google-calendar-callback" element={<GoogleCalendarCallback />} />
+                        {/* Super Admin Dashboard - Protected */}
+                        <Route path="/super-admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
+                        {/* Main booking route */}
+                        <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
+                        {/* Redirect old routes to main booking */}
+                        <Route path="/book-appointment-legacy" element={<Navigate to="/book-appointment" replace />} />
+                        <Route path="/book-appointment-ai" element={<Navigate to="/book-appointment" replace />} />
+                        <Route path="/smart-book-appointment" element={<Navigate to="/book-appointment" replace />} />
+                        {/* Business portal route - must come before catch-all */}
+                        <Route path="/clinic/:slug" element={<BusinessPortal />} />
+                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
 
-                  {/* Business Picker Dialog */}
-                  <BusinessGate
-                    showBusinessPicker={showBusinessPicker}
-                    setShowBusinessPicker={setShowBusinessPicker}
-                  />
+                    {/* Business Picker Dialog */}
+                    <BusinessGate
+                      showBusinessPicker={showBusinessPicker}
+                      setShowBusinessPicker={setShowBusinessPicker}
+                    />
+                  </EmailLimitProvider>
                 </BrowserRouter>
               </TooltipProvider>
             </BusinessProvider>

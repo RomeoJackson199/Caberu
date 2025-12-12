@@ -180,7 +180,6 @@ export async function createAppointmentWithNotification(appointmentData: {
           messageType: 'appointment_confirmation',
           patientId: appointment.patient_id,
           dentistId: appointment.dentist_id,
-          isSystemNotification: true,
           appointmentDate: formattedDate,
           appointmentTime: formattedTime
         }
