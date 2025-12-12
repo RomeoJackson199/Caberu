@@ -241,7 +241,7 @@ serve(async (req) => {
             body: JSON.stringify({
               to: patient_email, subject: `Payment request from your dentist`,
               message: `Thanks for your visit.\n\nAmount: €${(totalAmount / 100).toFixed(2)}\nDescription: ${description}\n\nPay here: ${session.url}`,
-              messageType: 'system', isSystemNotification: true, patientId: patient_id, dentistId: dentist_id,
+              messageType: 'payment_reminder', patientId: patient_id, dentistId: dentist_id, businessId: business_id,
             })
           });
           // Insert reminder via adminClient
