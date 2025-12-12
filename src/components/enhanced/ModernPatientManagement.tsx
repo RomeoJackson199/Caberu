@@ -692,9 +692,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     <div className="space-y-2">
                       {treatmentPlans.map((plan) => {
                         const isExpanded = expandedTreatments.has(plan.id);
-                        const linkedAppts = appointments.filter(a =>
-                          a.reason?.toLowerCase().includes(plan.title.toLowerCase().split(' ')[0])
-                        );
+                        // Show all appointments for this patient under each treatment plan
+                        const linkedAppts = appointments;
 
                         return (
                           <Collapsible key={plan.id} open={isExpanded} onOpenChange={() => toggleTreatment(plan.id)}>
