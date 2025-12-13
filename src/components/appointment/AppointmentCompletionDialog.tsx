@@ -334,6 +334,22 @@ export function AppointmentCompletionDialog({
         console.error('AI reason generation failed:', error);
       }
 
+      // 0. Update appointment status to completed and link to treatment plan
+      const appointmentUpdate: { status: string; reason?: string; treatment_plan_id?: string | null } = {
+        status: 'completed',
+        reason: aiGeneratedReason,
+      };
+
+      // Only set treatment_plan_id if a plan was selected
+      if (formData.selectedTreatmentPlan) {
+        appointmentUpdate.treatment_plan_id = formData.selectedTreatmentPlan;
+      }
+
+      await supabase
+        .from('appointments')
+        .update(appointmentUpdate)
+        .eq('id', appointment.id);
+
       // 1. Save treatment records as notes
       if (formData.treatments.length > 0) {
         const treatmentNotes = formData.treatments.map(treatment =>
