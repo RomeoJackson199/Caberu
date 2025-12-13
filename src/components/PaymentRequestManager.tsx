@@ -26,9 +26,10 @@ interface PaymentRequest {
 
 interface PaymentRequestManagerProps {
   dentistId: string;
+  patientId?: string; // Optional: filter by specific patient
 }
 
-export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ dentistId }) => {
+export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ dentistId, patientId }) => {
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -97,7 +98,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
     if (creatorScope && creatorScope !== 'any') params.set('creator', creatorScope);
     navigate({ search: params.toString() }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dentistId, statusFilter, query, amountMin, amountMax, dateStart, dateEnd, patientTerm, creatorScope, myProfileId]);
+  }, [dentistId, patientId, statusFilter, query, amountMin, amountMax, dateStart, dateEnd, patientTerm, creatorScope, myProfileId]);
 
   const fetchPaymentRequests = async () => {
     try {
@@ -106,6 +107,8 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
         .from('payment_requests')
         .select('*')
         .eq('dentist_id', dentistId);
+      // Filter by patient if provided
+      if (patientId) q = q.eq('patient_id', patientId);
       if (statusFilter) q = q.eq('status', statusFilter);
       if (query) q = q.ilike('description', `%${query}%`);
       if (patientTerm) q = q.ilike('patient_email', `%${patientTerm}%`);
@@ -148,7 +151,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
     const colors = { pending: 'bg-yellow-100 text-yellow-800 border-yellow-200', paid: 'bg-green-100 text-green-800 border-green-200', cancelled: 'bg-red-100 text-red-800 border-red-200', overdue: 'bg-red-100 text-red-800 border-red-200', failed: 'bg-red-100 text-red-800 border-red-200', sent: 'bg-blue-100 text-blue-800 border-blue-200', draft: 'bg-gray-100 text-gray-800 border-gray-200' } as const;
 
     return (
-      <Badge 
+      <Badge
         variant={variants[status as keyof typeof variants] || 'default'}
         className={`${colors[status as keyof typeof colors] || colors.pending} font-medium px-3 py-1`}
       >
@@ -204,7 +207,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
   };
 
   const exportCsv = () => {
-    const rows = paymentRequests.map((r) => ({ id: r.id, patient_email: r.patient_email, amount: (r.amount/100).toFixed(2), status: r.status, created_at: r.created_at }));
+    const rows = paymentRequests.map((r) => ({ id: r.id, patient_email: r.patient_email, amount: (r.amount / 100).toFixed(2), status: r.status, created_at: r.created_at }));
     const header = Object.keys(rows[0] || { id: '', patient_email: '', amount: '', status: '', created_at: '' });
     const csv = [header.join(','), ...rows.map((r) => header.map((k) => (r as any)[k]).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -224,7 +227,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
           description: editForm.description
         })
         .eq('id', editingRequest.id);
-      
+
       if (error) throw error;
       toast({ title: 'Payment request updated' });
       setEditingRequest(null);
@@ -252,7 +255,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
           <p className="text-sm sm:text-base text-dental-text/70">Manage and track patient payment requests</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowWizard(true)} size="lg" className="h-12 px-6 rounded-xl bg-gradient-to-r from-dental-accent to-dental-accent/80 hover:from-dental-accent/90 hover:to-dental-accent/70 text-white font-semibold shadow-lg hover:shadow-xl transition-all"> 
+          <Button onClick={() => setShowWizard(true)} size="lg" className="h-12 px-6 rounded-xl bg-gradient-to-r from-dental-accent to-dental-accent/80 hover:from-dental-accent/90 hover:to-dental-accent/70 text-white font-semibold shadow-lg hover:shadow-xl transition-all">
             <Plus className="h-5 w-5 mr-2" /> New Payment
           </Button>
           <DropdownMenu>
@@ -277,7 +280,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
           </div>
           <select className="border rounded-md p-2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">All statuses</option>
-            {['draft','sent','pending','paid','overdue','failed','cancelled'].map((s) => <option key={s} value={s}>{s}</option>)}
+            {['draft', 'sent', 'pending', 'paid', 'overdue', 'failed', 'cancelled'].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <div className="relative w-full sm:w-64">
             <Input placeholder="Patient email" value={patientTerm} onChange={(e) => setPatientTerm(e.target.value)} />
@@ -318,7 +321,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
               <DollarSign className="h-12 sm:h-16 w-12 sm:w-16 mx-auto text-dental-primary/30 mb-6" />
               <h3 className="text-lg sm:text-xl font-semibold text-dental-primary mb-2">No payment requests yet</h3>
               <p className="text-sm sm:text-base text-dental-text/60 mb-6">Create your first payment request to get started</p>
-              <Button 
+              <Button
                 onClick={() => setShowForm(true)}
                 size="lg"
                 className="h-12 px-6 rounded-xl bg-gradient-to-r from-dental-accent to-dental-accent/80 hover:from-dental-accent/90 hover:to-dental-accent/70 text-white font-semibold"
@@ -378,8 +381,8 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                           (async () => {
                             try {
                               const { error } = await supabase.from('payment_requests').update({ status: 'cancelled' }).eq('id', request.id);
-                              if (error) throw error; 
-                              toast({ title: 'Cancelled' }); 
+                              if (error) throw error;
+                              toast({ title: 'Cancelled' });
                               fetchPaymentRequests();
                             } catch {
                               toast({ title: 'Error', description: 'Failed to cancel', variant: 'destructive' });
@@ -397,7 +400,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                       {(itemsById[request.id] || []).map((it) => (
                         <div key={it.id} className="flex justify-between">
                           <div>{it.code ? `[${it.code}] ` : ''}{it.description} × {it.quantity}</div>
-                          <div>€{((it.quantity * it.unit_price_cents + it.tax_cents)/100).toFixed(2)}</div>
+                          <div>€{((it.quantity * it.unit_price_cents + it.tax_cents) / 100).toFixed(2)}</div>
                         </div>
                       ))}
                       {(!itemsById[request.id] || itemsById[request.id].length === 0) && (
@@ -433,18 +436,18 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
           <div className="space-y-4">
             <div>
               <Label>Amount (€)</Label>
-              <Input 
-                type="number" 
+              <Input
+                type="number"
                 step="0.01"
                 value={editForm.amount}
-                onChange={(e) => setEditForm({...editForm, amount: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
               />
             </div>
             <div>
               <Label>Description</Label>
-              <Input 
+              <Input
                 value={editForm.description}
-                onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               />
             </div>
             <Button onClick={handleEditPayment} className="w-full">Save Changes</Button>
