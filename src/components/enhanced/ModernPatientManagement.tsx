@@ -117,13 +117,13 @@ interface ModernPatientManagementProps {
 type TabType = 'overview' | 'clinical' | 'schedule' | 'financial';
 
 const statusConfig: Record<string, { bg: string; text: string }> = {
-  completed: { bg: 'bg-teal-50', text: 'text-teal-700' },
-  confirmed: { bg: 'bg-sky-50', text: 'text-sky-700' },
+  completed: { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+  confirmed: { bg: 'bg-indigo-50', text: 'text-indigo-700' },
   scheduled: { bg: 'bg-amber-50', text: 'text-amber-700' },
-  pending: { bg: 'bg-amber-50', text: 'text-amber-700' },
-  active: { bg: 'bg-teal-50', text: 'text-teal-700' },
-  draft: { bg: 'bg-slate-50', text: 'text-slate-700' },
-  cancelled: { bg: 'bg-rose-50', text: 'text-rose-700' },
+  pending: { bg: 'bg-orange-50', text: 'text-orange-700' },
+  active: { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+  draft: { bg: 'bg-slate-100', text: 'text-slate-600' },
+  cancelled: { bg: 'bg-rose-50', text: 'text-rose-600' },
 };
 
 export function ModernPatientManagement({ dentistId }: ModernPatientManagementProps) {
@@ -481,7 +481,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               className={cn(
                 "w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all",
                 isActive
-                  ? "bg-teal-500 text-white"
+                  ? "bg-indigo-500 text-white"
                   : "text-slate-400 hover:text-white hover:bg-slate-800"
               )}
             >
@@ -506,7 +506,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                       <>
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
-                          <AvatarFallback className="bg-teal-100 text-teal-700 font-semibold">
+                          <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
                             {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -564,7 +564,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               #PT_{String(idx + 1).padStart(2, '0')} • {getAge(patient.date_of_birth)}y
                             </p>
                           </div>
-                          {isSelected && <Check className="h-4 w-4 text-teal-600" />}
+                          {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
                         </button>
                       );
                     })}
@@ -572,7 +572,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   <div className="p-2 border-t">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                      className="w-full justify-start text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                       onClick={() => {
                         setNewPatientDialogOpen(true);
                         setPatientDropdownOpen(false);
@@ -603,7 +603,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   </p>
                 </div>
               ) : null}
-              <Button onClick={() => setBookingDialogOpen(true)} className="bg-teal-600 hover:bg-teal-700">
+              <Button onClick={() => setBookingDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Action
               </Button>
@@ -718,7 +718,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-slate-500">Completed</span>
-                          <span className="font-semibold text-teal-600">{patientFlags[selectedPatient.id]?.completedAppointments || 0}</span>
+                          <span className="font-semibold text-indigo-600">{patientFlags[selectedPatient.id]?.completedAppointments || 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-slate-500">Last Visit</span>
@@ -748,7 +748,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     {/* Header */}
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="font-semibold text-slate-800 text-lg">Treatment History</h3>
-                      <button className="w-8 h-8 rounded-xl bg-teal-50 hover:bg-teal-100 flex items-center justify-center text-teal-600 transition-all">
+                      <button className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 flex items-center justify-center text-indigo-600 transition-all">
                         <Plus className="h-4 w-4" />
                       </button>
                     </div>
@@ -767,12 +767,12 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 className={cn(
                                   "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3",
                                   selectedTreatmentPlan?.id === plan.id
-                                    ? "bg-white shadow-md border border-teal-200/50"
+                                    ? "bg-white shadow-md border border-indigo-200/50"
                                     : "hover:bg-white/80 hover:shadow-sm"
                                 )}>
                                 <div className={cn(
                                   "w-9 h-9 rounded-xl flex items-center justify-center",
-                                  plan.status === 'active' ? "bg-gradient-to-br from-teal-400 to-teal-600" : "bg-slate-200"
+                                  plan.status === 'active' ? "bg-gradient-to-br from-indigo-400 to-indigo-600" : "bg-slate-200"
                                 )}>
                                   <Folder className={cn("h-4 w-4", plan.status === 'active' ? "text-white" : "text-slate-500")} />
                                 </div>
@@ -781,7 +781,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   <div className="flex items-center gap-2 mt-0.5">
                                     <span className={cn(
                                       "text-xs font-medium px-1.5 py-0.5 rounded-full",
-                                      plan.status === 'active' ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-500"
+                                      plan.status === 'active' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
                                     )}>{plan.status}</span>
                                     <span className="text-xs text-slate-400">{linkedAppts.length} appt{linkedAppts.length !== 1 ? 's' : ''}</span>
                                   </div>
@@ -803,7 +803,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     className={cn(
                                       "w-full text-left p-2.5 rounded-lg transition-all flex items-center justify-between group",
                                       selectedAppointment?.id === appt.id
-                                        ? "bg-teal-50 border border-teal-200"
+                                        ? "bg-indigo-50 border border-indigo-200"
                                         : "hover:bg-slate-50"
                                     )}
                                   >
@@ -814,7 +814,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                       {appt.status === 'pending' && (
                                         <>
-                                          <button onClick={(e) => { e.stopPropagation(); handleConfirmAppointment(appt.id, e); }} className="p-1.5 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-600" title="Approve">
+                                          <button onClick={(e) => { e.stopPropagation(); handleConfirmAppointment(appt.id, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Approve">
                                             <Check className="h-3 w-3" />
                                           </button>
                                           <button onClick={(e) => { e.stopPropagation(); handleQuickCancel(appt.id, e); }} className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600" title="Reject">
@@ -824,13 +824,13 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                       )}
                                       {appt.status === 'confirmed' && (
                                         <>
-                                          <button onClick={(e) => { e.stopPropagation(); handleQuickComplete(appt, e); }} className="p-1.5 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-600" title="Complete">
+                                          <button onClick={(e) => { e.stopPropagation(); handleQuickComplete(appt, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Complete">
                                             <CheckCircle2 className="h-3 w-3" />
                                           </button>
                                         </>
                                       )}
                                     </div>
-                                    {appt.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-teal-500 flex-shrink-0" />}
+                                    {appt.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-indigo-500 flex-shrink-0" />}
                                     {appt.status === 'cancelled' && <X className="h-4 w-4 text-slate-300 flex-shrink-0" />}
                                   </button>
                                 )) : (
@@ -859,7 +859,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-slate-700 flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-teal-600" />
+                          <Calendar className="h-4 w-4 text-indigo-600" />
                           All Appointments
                         </h4>
                         <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{appointments.length}</span>
@@ -872,7 +872,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             className={cn(
                               "w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group",
                               selectedAppointment?.id === appt.id
-                                ? "bg-white shadow-md border border-teal-200/50"
+                                ? "bg-white shadow-md border border-indigo-200/50"
                                 : "hover:bg-white/80 hover:shadow-sm"
                             )}
                           >
@@ -883,7 +883,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             <div className="flex items-center gap-1.5">
                               <span className={cn(
                                 "text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0",
-                                appt.status === 'completed' && "bg-teal-100 text-teal-700",
+                                appt.status === 'completed' && "bg-indigo-100 text-indigo-700",
                                 appt.status === 'confirmed' && "bg-blue-100 text-blue-700",
                                 appt.status === 'pending' && "bg-amber-100 text-amber-700",
                                 appt.status === 'cancelled' && "bg-slate-100 text-slate-500"
@@ -950,7 +950,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                       else if (!compareImages.right) setCompareImages({ ...compareImages, right: url });
                                       else setCompareImages({ left: url, right: null });
                                     }}
-                                    className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-teal-400 transition-all"
+                                    className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-400 transition-all"
                                   >
                                     <img src={appointmentImages.urls[file.id]} alt={file.description || 'Image'} className="w-full h-full object-cover" />
                                   </button>
@@ -987,9 +987,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setCompareMode(true)}
-                                  className="border-slate-200 hover:border-teal-400 hover:bg-teal-50"
+                                  className="border-slate-200 hover:border-indigo-400 hover:bg-indigo-50"
                                 >
-                                  <ImageIcon className="h-4 w-4 mr-2 text-teal-600" />
+                                  <ImageIcon className="h-4 w-4 mr-2 text-indigo-600" />
                                   Compare
                                 </Button>
                               </div>
@@ -1004,7 +1004,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   value={selectedAppointment.notes || ''}
                                   onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
                                   placeholder="Add notes..."
-                                  className="w-full min-h-[140px] text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border-0 resize-none focus:ring-2 focus:ring-teal-200 focus:bg-white transition-all"
+                                  className="w-full min-h-[140px] text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border-0 resize-none focus:ring-2 focus:ring-indigo-200 focus:bg-white transition-all"
                                 />
                               </div>
 
@@ -1016,7 +1016,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setImageUploaderOpen(true)}
-                                    className="h-7 text-xs text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                    className="h-7 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                                   >
                                     <Plus className="h-3.5 w-3.5 mr-1" />
                                     Add
@@ -1027,7 +1027,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     {appointmentImages.files.slice(0, 4).map((file) => (
                                       <div
                                         key={file.id}
-                                        className="aspect-video bg-slate-100 rounded-xl overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-teal-300 transition-all"
+                                        className="aspect-video bg-slate-100 rounded-xl overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-indigo-300 transition-all"
                                         onClick={() => setCompareMode(true)}
                                       >
                                         {appointmentImages.urls[file.id] ? (
@@ -1050,7 +1050,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 ) : (
                                   <button
                                     onClick={() => setImageUploaderOpen(true)}
-                                    className="w-full py-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-teal-300 hover:bg-teal-50/50 transition-all flex flex-col items-center gap-2"
+                                    className="w-full py-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all flex flex-col items-center gap-2"
                                   >
                                     <Camera className="h-8 w-8 text-slate-300" />
                                     <span className="text-sm text-slate-400">Click to add images</span>
@@ -1067,7 +1067,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <select
                                   value={selectedAppointment.treatment_plan_id || ''}
                                   onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
-                                  className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:ring-2 focus:ring-teal-200 focus:border-teal-300 transition-all"
+                                  className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
                                 >
                                   <option value="">No treatment plan linked</option>
                                   {treatmentPlans.map(plan => (
@@ -1108,7 +1108,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 {selectedAppointment.status === 'confirmed' && (
                                   <Button
                                     variant="outline"
-                                    className="border-teal-200 text-teal-700 hover:bg-teal-50"
+                                    className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                                     onClick={() => handleQuickComplete(selectedAppointment)}
                                   >
                                     <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -1116,7 +1116,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   </Button>
                                 )}
                                 <Button
-                                  className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md"
+                                  className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-md"
                                   onClick={async () => {
                                     const { error } = await supabase
                                       .from('appointments')
@@ -1183,7 +1183,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           </h3>
                           <div className="space-y-2">
                             {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).map(appt => (
-                              <Card key={appt.id} className="border-slate-200 hover:border-teal-300 transition-colors cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
+                              <Card key={appt.id} className="border-slate-200 hover:border-indigo-300 transition-colors cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
                                 <CardContent className="p-4 flex items-center justify-between">
                                   <div>
                                     <p className="font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
@@ -1221,7 +1221,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   {/* Upcoming */}
                   <div className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-2 h-2 rounded-full bg-teal-500" />
+                      <div className="w-2 h-2 rounded-full bg-indigo-500" />
                       <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Upcoming</span>
                     </div>
                     {upcomingAppts.length === 0 ? (
@@ -1232,8 +1232,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <Card key={appt.id} className="hover:shadow-md transition-shadow group">
                             <CardContent className="p-4 flex items-center justify-between">
                               <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
-                                <div className="text-center w-14 py-2 bg-teal-50 rounded-lg">
-                                  <p className="text-xs text-teal-600 font-medium uppercase">{format(new Date(appt.appointment_date), 'MMM')}</p>
+                                <div className="text-center w-14 py-2 bg-indigo-50 rounded-lg">
+                                  <p className="text-xs text-indigo-600 font-medium uppercase">{format(new Date(appt.appointment_date), 'MMM')}</p>
                                   <p className="text-xl font-bold text-slate-800">{format(new Date(appt.appointment_date), 'd')}</p>
                                 </div>
                                 <div>
@@ -1254,7 +1254,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   <div className="flex gap-1 ml-2">
                                     <button
                                       onClick={(e) => handleConfirmAppointment(appt.id, e)}
-                                      className="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-600 transition-colors"
+                                      className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
                                       title="Approve"
                                     >
                                       <Check className="h-4 w-4" />
@@ -1273,7 +1273,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   <div className="flex gap-1 ml-2">
                                     <button
                                       onClick={(e) => handleQuickComplete(appt, e)}
-                                      className="p-2 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-600 transition-colors"
+                                      className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
                                       title="Complete"
                                     >
                                       <CheckCircle2 className="h-4 w-4" />
@@ -1313,7 +1313,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           >
                             <p className="text-sm text-slate-500 w-24">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
                             <p className="flex-1 font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
-                            <Badge className="bg-teal-50 text-teal-700 text-xs">Attended</Badge>
+                            <Badge className="bg-indigo-50 text-indigo-700 text-xs">Attended</Badge>
                           </div>
                         ))}
                       </div>
@@ -1407,7 +1407,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   <>
                     <Button
                       onClick={() => handleCompleteAppointment(selectedAppointment.id)}
-                      className="flex-1 bg-teal-600 hover:bg-teal-700"
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700"
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
                       Complete
