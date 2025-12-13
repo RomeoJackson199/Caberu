@@ -149,10 +149,28 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [compareImages, setCompareImages] = useState<{ left: string | null; right: string | null }>({ left: null, right: null });
   const [imageUploaderOpen, setImageUploaderOpen] = useState(false);
   const [newTreatmentPlanOpen, setNewTreatmentPlanOpen] = useState(false);
-  const [newTreatmentPlan, setNewTreatmentPlan] = useState({ title: '', description: '', status: 'active' });
+  const [newTreatmentPlan, setNewTreatmentPlan] = useState({
+    title: '',
+    description: '',
+    status: 'active',
+    priority: 'normal',
+    estimated_cost: '',
+    diagnosis: '',
+    target_completion_date: ''
+  });
   const [editPatientOpen, setEditPatientOpen] = useState(false);
-  const [editPatientForm, setEditPatientForm] = useState({ first_name: '', last_name: '', phone: '', email: '', date_of_birth: '' });
+  const [editPatientForm, setEditPatientForm] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    date_of_birth: '',
+    address: '',
+    emergency_contact: '',
+    medical_history: ''
+  });
   const [appointmentSearchTerm, setAppointmentSearchTerm] = useState('');
+  const [quickNote, setQuickNote] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -494,6 +512,10 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         title: newTreatmentPlan.title,
         description: newTreatmentPlan.description || null,
         status: newTreatmentPlan.status,
+        priority: newTreatmentPlan.priority,
+        estimated_cost: newTreatmentPlan.estimated_cost ? parseFloat(newTreatmentPlan.estimated_cost) : null,
+        diagnosis: newTreatmentPlan.diagnosis || null,
+        target_completion_date: newTreatmentPlan.target_completion_date || null,
       });
       if (error) {
         console.error('Treatment plan error:', error);
@@ -501,7 +523,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       }
       toast({ title: 'Treatment plan created' });
       setNewTreatmentPlanOpen(false);
-      setNewTreatmentPlan({ title: '', description: '', status: 'active' });
+      setNewTreatmentPlan({ title: '', description: '', status: 'active', priority: 'normal', estimated_cost: '', diagnosis: '', target_completion_date: '' });
       fetchTreatmentPlans(selectedPatient.id);
     } catch (err: any) {
       console.error('Treatment plan creation error:', err);
@@ -517,6 +539,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       phone: selectedPatient.phone || '',
       email: selectedPatient.email || '',
       date_of_birth: selectedPatient.date_of_birth || '',
+      address: selectedPatient.address || '',
+      emergency_contact: selectedPatient.emergency_contact || '',
+      medical_history: selectedPatient.medical_history || '',
     });
     setEditPatientOpen(true);
   };
@@ -531,16 +556,62 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           last_name: editPatientForm.last_name,
           phone: editPatientForm.phone,
           date_of_birth: editPatientForm.date_of_birth || null,
+          address: editPatientForm.address || null,
+          emergency_contact: editPatientForm.emergency_contact || null,
+          medical_history: editPatientForm.medical_history || null,
         })
         .eq('id', selectedPatient.id);
       if (error) throw error;
       toast({ title: 'Patient updated' });
       setEditPatientOpen(false);
-      // Update local state
       setSelectedPatient({ ...selectedPatient, ...editPatientForm });
       fetchPatients();
     } catch (err) {
       toast({ title: 'Error', description: 'Failed to update patient', variant: 'destructive' });
+    }
+  };
+
+  const deleteTreatmentPlan = async (planId: string) => {
+    if (!confirm('Delete this treatment plan?')) return;
+    try {
+      const { error } = await supabase.from('treatment_plans').delete().eq('id', planId);
+      if (error) throw error;
+      toast({ title: 'Treatment plan deleted' });
+      setSelectedTreatmentPlan(null);
+      fetchTreatmentPlans(selectedPatient!.id);
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to delete treatment plan', variant: 'destructive' });
+    }
+  };
+
+  const deleteAppointment = async (appointmentId: string) => {
+    if (!confirm('Delete this appointment permanently?')) return;
+    try {
+      const { error } = await supabase.from('appointments').delete().eq('id', appointmentId);
+      if (error) throw error;
+      toast({ title: 'Appointment deleted' });
+      setSelectedAppointment(null);
+      fetchPatientAppointments(selectedPatient!.id);
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to delete appointment', variant: 'destructive' });
+    }
+  };
+
+  const addQuickNote = async () => {
+    if (!selectedPatient || !quickNote.trim()) return;
+    try {
+      const { error } = await supabase.from('patient_notes').insert({
+        patient_id: selectedPatient.id,
+        dentist_id: dentistId,
+        title: 'Quick Note',
+        content: quickNote,
+        note_type: 'general',
+      });
+      if (error) throw error;
+      toast({ title: 'Note added' });
+      setQuickNote('');
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to add note', variant: 'destructive' });
     }
   };
 
@@ -694,10 +765,32 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   </p>
                 </div>
               ) : null}
-              <Button onClick={() => setBookingDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Action
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Quick Actions
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setBookingDialogOpen(true)}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Appointment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('financial')}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Create Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('clinical')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Add Treatment Plan
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => document.getElementById('quick-note-input')?.focus()}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Add Quick Note
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -825,6 +918,37 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}
                           </span>
                         </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Completion Rate</span>
+                          <span className="font-semibold text-emerald-600">
+                            {patientFlags[selectedPatient.id]?.totalAppointments
+                              ? Math.round((patientFlags[selectedPatient.id]?.completedAppointments || 0) / patientFlags[selectedPatient.id]?.totalAppointments * 100)
+                              : 0}%
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Quick Notes */}
+                    <Card>
+                      <CardContent className="p-4">
+                        <h4 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-indigo-600" />
+                          Quick Note
+                        </h4>
+                        <div className="flex gap-2">
+                          <Input
+                            id="quick-note-input"
+                            placeholder="Add a quick note..."
+                            value={quickNote}
+                            onChange={(e) => setQuickNote(e.target.value)}
+                            className="flex-1"
+                            onKeyDown={(e) => e.key === 'Enter' && addQuickNote()}
+                          />
+                          <Button onClick={addQuickNote} className="bg-indigo-600 hover:bg-indigo-700" disabled={!quickNote.trim()}>
+                            Add
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -863,20 +987,54 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, title: e.target.value })}
                             className="text-sm"
                           />
+                          <Input
+                            placeholder="Diagnosis..."
+                            value={newTreatmentPlan.diagnosis}
+                            onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, diagnosis: e.target.value })}
+                            className="text-sm"
+                          />
                           <textarea
                             placeholder="Description (optional)"
                             value={newTreatmentPlan.description}
                             onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
                             className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
                           />
-                          <select
-                            value={newTreatmentPlan.status}
-                            onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
-                            className="w-full p-2 text-sm rounded-lg border border-slate-200"
-                          >
-                            <option value="active">Active</option>
-                            <option value="draft">Draft</option>
-                          </select>
+                          <div className="grid grid-cols-2 gap-2">
+                            <select
+                              value={newTreatmentPlan.status}
+                              onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
+                              className="p-2 text-sm rounded-lg border border-slate-200"
+                            >
+                              <option value="active">Active</option>
+                              <option value="draft">Draft</option>
+                            </select>
+                            <select
+                              value={newTreatmentPlan.priority}
+                              onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, priority: e.target.value })}
+                              className="p-2 text-sm rounded-lg border border-slate-200"
+                            >
+                              <option value="low">Low Priority</option>
+                              <option value="normal">Normal</option>
+                              <option value="high">High Priority</option>
+                              <option value="urgent">Urgent</option>
+                            </select>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              type="number"
+                              placeholder="Est. Cost €"
+                              value={newTreatmentPlan.estimated_cost}
+                              onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, estimated_cost: e.target.value })}
+                              className="text-sm"
+                            />
+                            <Input
+                              type="date"
+                              placeholder="Target Date"
+                              value={newTreatmentPlan.target_completion_date}
+                              onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, target_completion_date: e.target.value })}
+                              className="text-sm"
+                            />
+                          </div>
                           <div className="flex gap-2">
                             <Button
                               onClick={createTreatmentPlan}
@@ -1644,7 +1802,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       {/* Edit Patient Dialog */}
       {editPatientOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold text-slate-800 mb-4">Edit Patient</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -1663,19 +1821,46 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
+                  <Input
+                    value={editPatientForm.phone}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Date of Birth</label>
+                  <Input
+                    type="date"
+                    value={editPatientForm.date_of_birth}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, date_of_birth: e.target.value })}
+                  />
+                </div>
+              </div>
               <div>
-                <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Address</label>
                 <Input
-                  value={editPatientForm.phone}
-                  onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
+                  placeholder="Street, City, Postal Code"
+                  value={editPatientForm.address}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, address: e.target.value })}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-600 mb-1 block">Date of Birth</label>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Emergency Contact</label>
                 <Input
-                  type="date"
-                  value={editPatientForm.date_of_birth}
-                  onChange={(e) => setEditPatientForm({ ...editPatientForm, date_of_birth: e.target.value })}
+                  placeholder="Name & Phone Number"
+                  value={editPatientForm.emergency_contact}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, emergency_contact: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Medical History / Allergies</label>
+                <textarea
+                  placeholder="e.g. Penicillin allergy, diabetes, heart conditions..."
+                  value={editPatientForm.medical_history}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, medical_history: e.target.value })}
+                  className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-20"
                 />
               </div>
             </div>
