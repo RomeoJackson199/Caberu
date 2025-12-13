@@ -746,33 +746,82 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     </div>
 
                     <div className="space-y-2">
-                      {treatmentPlans.map((plan) => (
-                        <button
-                          key={plan.id}
-                          onClick={() => openAppointmentDetail(null)} // TODO: open treatment detail
-                          className="w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
-                            <Folder className="h-4 w-4 text-teal-600" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-sm text-slate-800">{plan.title}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className={cn(
-                                "w-1.5 h-1.5 rounded-full",
-                                plan.status === 'active' ? "bg-teal-500" : "bg-slate-300"
-                              )} />
-                              <span className="text-xs text-slate-500 uppercase">{plan.status}</span>
-                              {plan.description && (
-                                <span className="text-xs text-slate-400 truncate max-w-[150px]">{plan.description}</span>
-                              )}
-                            </div>
-                          </div>
-                          <Badge className={cn(statusConfig[plan.status]?.bg || 'bg-slate-50', statusConfig[plan.status]?.text || 'text-slate-600', 'text-xs')}>
-                            {plan.status}
-                          </Badge>
-                        </button>
-                      ))}
+                      {treatmentPlans.map((plan) => {
+                        const isExpanded = expandedTreatments.has(plan.id);
+                        const linkedAppts = appointments.filter(a => a.treatment_plan_id === plan.id);
+
+                        return (
+                          <Collapsible key={plan.id} open={isExpanded} onOpenChange={() => toggleTreatment(plan.id)}>
+                            <CollapsibleTrigger asChild>
+                              <button className="w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+                                  <Folder className="h-4 w-4 text-teal-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm text-slate-800">{plan.title}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className={cn(
+                                      "w-1.5 h-1.5 rounded-full",
+                                      plan.status === 'active' ? "bg-teal-500" : "bg-slate-300"
+                                    )} />
+                                    <span className="text-xs text-slate-500 uppercase">{plan.status}</span>
+                                    <span className="text-xs text-slate-400">• {linkedAppts.length} appt{linkedAppts.length !== 1 ? 's' : ''}</span>
+                                  </div>
+                                </div>
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                                )}
+                              </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="ml-11 space-y-1 mt-1">
+                                {linkedAppts.length > 0 ? linkedAppts.map((appt) => (
+                                  <div
+                                    key={appt.id}
+                                    className="w-full p-2 rounded-lg hover:bg-slate-50 transition-all flex items-center justify-between group"
+                                  >
+                                    <button
+                                      onClick={() => openAppointmentDetail(appt)}
+                                      className="flex-1 text-left"
+                                    >
+                                      <p className="text-sm font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
+                                      <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d, h:mm a')}</p>
+                                    </button>
+                                    <div className="flex items-center gap-1">
+                                      {appt.status === 'pending' && (
+                                        <>
+                                          <button onClick={(e) => handleConfirmAppointment(appt.id, e)} className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-600" title="Approve">
+                                            <Check className="h-3.5 w-3.5" />
+                                          </button>
+                                          <button onClick={(e) => handleQuickCancel(appt.id, e)} className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600" title="Reject">
+                                            <X className="h-3.5 w-3.5" />
+                                          </button>
+                                        </>
+                                      )}
+                                      {appt.status === 'confirmed' && (
+                                        <>
+                                          <button onClick={(e) => handleQuickComplete(appt, e)} className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-600" title="Complete">
+                                            <CheckCircle2 className="h-3.5 w-3.5" />
+                                          </button>
+                                          <button onClick={(e) => handleQuickCancel(appt.id, e)} className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600" title="Cancel">
+                                            <X className="h-3.5 w-3.5" />
+                                          </button>
+                                        </>
+                                      )}
+                                      {appt.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-teal-500" />}
+                                      {appt.status === 'cancelled' && <X className="h-4 w-4 text-slate-400" />}
+                                    </div>
+                                  </div>
+                                )) : (
+                                  <p className="text-xs text-slate-400 p-2">No appointments linked to this treatment</p>
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        );
+                      })}
 
                       {treatmentPlans.length === 0 && (
                         <p className="text-sm text-slate-400 text-center py-4">No treatment plans yet</p>
