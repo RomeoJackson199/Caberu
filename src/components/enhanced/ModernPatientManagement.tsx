@@ -171,6 +171,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   });
   const [appointmentSearchTerm, setAppointmentSearchTerm] = useState('');
   const [quickNote, setQuickNote] = useState('');
+  const [patientNotes, setPatientNotes] = useState<{ id: string; title: string; content: string; created_at: string }[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -448,6 +449,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       console.log('Fetching appointments for patient:', selectedPatient.id, 'business:', businessId);
       fetchPatientAppointments(selectedPatient.id);
       fetchTreatmentPlans(selectedPatient.id);
+      fetchPatientNotes(selectedPatient.id);
     }
   }, [selectedPatient, dentistId, businessId]);
 
@@ -598,6 +600,22 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     }
   };
 
+  const fetchPatientNotes = async (patientId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('patient_notes')
+        .select('id, title, content, created_at')
+        .eq('patient_id', patientId)
+        .eq('dentist_id', dentistId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      setPatientNotes(data || []);
+    } catch (err) {
+      console.error('Failed to fetch notes:', err);
+    }
+  };
+
   const addQuickNote = async () => {
     if (!selectedPatient || !quickNote.trim()) return;
     try {
@@ -611,6 +629,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       if (error) throw error;
       toast({ title: 'Note added' });
       setQuickNote('');
+      fetchPatientNotes(selectedPatient.id);
     } catch (err) {
       toast({ title: 'Error', description: 'Failed to add note', variant: 'destructive' });
     }
@@ -937,7 +956,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <FileText className="h-4 w-4 text-indigo-600" />
                           Quick Note
                         </h4>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 mb-3">
                           <Input
                             id="quick-note-input"
                             placeholder="Add a quick note..."
@@ -950,6 +969,18 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             Add
                           </Button>
                         </div>
+                        {patientNotes.length > 0 && (
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {patientNotes.map((note) => (
+                              <div key={note.id} className="bg-slate-50 rounded-lg p-2 text-sm">
+                                <p className="text-slate-700">{note.content}</p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
