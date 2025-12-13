@@ -450,7 +450,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const openAppointmentDetail = (appt: Appointment) => {
     setSelectedAppointment(appt);
-    setAppointmentDetailOpen(true);
+    setSelectedTreatmentPlan(null); // Clear treatment selection to show appointment
   };
 
   if (loading) {
@@ -918,7 +918,103 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
                   {/* Main Content */}
                   <div className="flex-1 p-6 overflow-y-auto">
-                    {selectedTreatmentPlan ? (
+                    {selectedAppointment && !selectedTreatmentPlan ? (
+                      /* Appointment Detail/Edit View */
+                      <div className="space-y-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedAppointment(null)}
+                              className="text-slate-500"
+                            >
+                              ← Back
+                            </Button>
+                            <div>
+                              <h2 className="text-xl font-semibold text-slate-800">Appointment Details</h2>
+                              <p className="text-slate-500">{format(new Date(selectedAppointment.appointment_date), 'PPP p')}</p>
+                            </div>
+                          </div>
+                          <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text, 'text-sm px-3 py-1')}>
+                            {selectedAppointment.status}
+                          </Badge>
+                        </div>
+
+                        {/* Editable Form */}
+                        <Card className="border-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Edit2 className="h-4 w-4" />
+                              Edit Appointment
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div>
+                              <label className="text-sm font-medium text-slate-700 block mb-1">Reason</label>
+                              <Input
+                                value={selectedAppointment.reason || ''}
+                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, reason: e.target.value })}
+                                placeholder="Appointment reason"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-700 block mb-1">Notes</label>
+                              <textarea
+                                value={selectedAppointment.notes || ''}
+                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
+                                placeholder="Add notes..."
+                                className="w-full min-h-[100px] p-3 rounded-md border border-slate-200 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-700 block mb-1">Status</label>
+                              <select
+                                value={selectedAppointment.status}
+                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, status: e.target.value })}
+                                className="w-full p-2 rounded-md border border-slate-200 text-sm"
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                className="bg-teal-600 hover:bg-teal-700"
+                                onClick={async () => {
+                                  const { error } = await supabase
+                                    .from('appointments')
+                                    .update({
+                                      reason: selectedAppointment.reason,
+                                      notes: selectedAppointment.notes,
+                                      status: selectedAppointment.status,
+                                    })
+                                    .eq('id', selectedAppointment.id);
+                                  if (!error) {
+                                    toast({ title: 'Appointment updated' });
+                                    fetchPatientAppointments(selectedPatient!.id);
+                                  } else {
+                                    toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
+                                  }
+                                }}
+                              >
+                                Save Changes
+                              </Button>
+                              {selectedAppointment.status === 'confirmed' && (
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handleQuickComplete(selectedAppointment)}
+                                >
+                                  Complete with Details
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    ) : selectedTreatmentPlan ? (
                       <div className="space-y-6">
                         {/* Treatment Header */}
                         <div className="flex items-start justify-between">
@@ -981,7 +1077,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                       <div className="flex items-center justify-center h-full text-slate-400">
                         <div className="text-center">
                           <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                          <p>Select a treatment from the sidebar</p>
+                          <p>Select a treatment or appointment from the sidebar</p>
                         </div>
                       </div>
                     )}
