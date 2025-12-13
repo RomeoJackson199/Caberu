@@ -145,6 +145,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [appointmentToComplete, setAppointmentToComplete] = useState<Appointment | null>(null);
   const [selectedTreatmentPlan, setSelectedTreatmentPlan] = useState<TreatmentPlan | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareImages, setCompareImages] = useState<{ left: string | null; right: string | null }>({ left: null, right: null });
+  const [imageUploaderOpen, setImageUploaderOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -922,190 +925,245 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   {/* Main Content */}
                   <div className="flex-1 p-6 overflow-y-auto">
                     {selectedAppointment && !selectedTreatmentPlan ? (
-                      /* DentView-style Appointment Detail */
-                      <div className="space-y-6">
-                        {/* Header with title and Compare button */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => setSelectedAppointment(null)}
-                              className="text-slate-400 hover:text-slate-600"
-                            >
-                              <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                                <FileText className="h-4 w-4 text-amber-600" />
+                      /* Modern Appointment Detail */
+                      <div className="max-w-4xl mx-auto">
+                        {/* Compare Mode View */}
+                        {compareMode ? (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between mb-4">
+                              <h2 className="text-lg font-semibold text-slate-800">Compare Images</h2>
+                              <Button variant="outline" size="sm" onClick={() => setCompareMode(false)}>
+                                <X className="h-4 w-4 mr-1" /> Close
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              {/* Left Image Slot */}
+                              <div className="border-2 border-dashed border-slate-200 rounded-xl aspect-square flex items-center justify-center bg-slate-50">
+                                {compareImages.left ? (
+                                  <img src={compareImages.left} alt="Compare Left" className="w-full h-full object-contain rounded-xl" />
+                                ) : (
+                                  <div className="text-center text-slate-400">
+                                    <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                                    <p className="text-sm">Select an image</p>
+                                  </div>
+                                )}
                               </div>
-                              <h2 className="text-lg font-semibold text-slate-800">
-                                {selectedAppointment.reason || 'Appointment'}
-                              </h2>
+                              {/* Right Image Slot */}
+                              <div className="border-2 border-dashed border-slate-200 rounded-xl aspect-square flex items-center justify-center bg-slate-50">
+                                {compareImages.right ? (
+                                  <img src={compareImages.right} alt="Compare Right" className="w-full h-full object-contain rounded-xl" />
+                                ) : (
+                                  <div className="text-center text-slate-400">
+                                    <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                                    <p className="text-sm">Select an image</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {/* Image Selection */}
+                            <div className="bg-slate-50 rounded-xl p-4">
+                              <p className="text-sm font-medium text-slate-700 mb-3">Select images to compare:</p>
+                              <div className="grid grid-cols-4 gap-2">
+                                {appointmentImages.files.map((file) => (
+                                  <button
+                                    key={file.id}
+                                    onClick={() => {
+                                      const url = appointmentImages.urls[file.id];
+                                      if (!compareImages.left) setCompareImages({ ...compareImages, left: url });
+                                      else if (!compareImages.right) setCompareImages({ ...compareImages, right: url });
+                                      else setCompareImages({ left: url, right: null });
+                                    }}
+                                    className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-teal-400 transition-all"
+                                  >
+                                    <img src={appointmentImages.urls[file.id]} alt={file.description || 'Image'} className="w-full h-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text)}>
-                              {selectedAppointment.status}
-                            </Badge>
-                            <Button variant="outline" size="sm" className="text-teal-600 border-teal-300">
-                              <ImageIcon className="h-4 w-4 mr-1" />
-                              Compare
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Date and Status Banner */}
-                        <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between text-sm">
-                          <span className="text-slate-600">{format(new Date(selectedAppointment.appointment_date), 'EEEE, MMMM d, yyyy · h:mm a')}</span>
-                        </div>
-
-                        {/* Two Column Layout */}
-                        <div className="grid grid-cols-2 gap-6">
-                          {/* Notes Section */}
-                          <Card className="border-slate-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-slate-700">Notes</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <textarea
-                                value={selectedAppointment.notes || ''}
-                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
-                                placeholder="Add notes about this appointment..."
-                                className="w-full min-h-[120px] p-2 text-sm border-0 resize-none focus:ring-0 bg-transparent text-slate-600"
-                              />
-                            </CardContent>
-                          </Card>
-
-                          {/* Images Section */}
-                          <Card className="border-slate-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-slate-700 flex items-center justify-between">
-                                Images
-                                <Button variant="ghost" size="sm" className="h-6 text-xs text-teal-600">
-                                  <Plus className="h-3 w-3 mr-1" />
-                                  Add
+                        ) : (
+                          /* Normal View */
+                          <div className="space-y-6">
+                            {/* Header */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <button
+                                  onClick={() => setSelectedAppointment(null)}
+                                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                                >
+                                  <ChevronLeft className="h-5 w-5 text-slate-600" />
+                                </button>
+                                <div>
+                                  <h2 className="text-xl font-semibold text-slate-800">
+                                    {selectedAppointment.reason || 'Appointment'}
+                                  </h2>
+                                  <p className="text-sm text-slate-500">
+                                    {format(new Date(selectedAppointment.appointment_date), 'EEEE, MMMM d, yyyy · h:mm a')}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text, 'px-3 py-1')}>
+                                  {selectedAppointment.status}
+                                </Badge>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setCompareMode(true)}
+                                  className="border-slate-200 hover:border-teal-400 hover:bg-teal-50"
+                                >
+                                  <ImageIcon className="h-4 w-4 mr-2 text-teal-600" />
+                                  Compare
                                 </Button>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              {appointmentImages.files.length > 0 ? (
-                                <div className="grid grid-cols-2 gap-2">
-                                  {appointmentImages.files.map((file) => (
-                                    <div
-                                      key={file.id}
-                                      className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group cursor-pointer"
-                                    >
-                                      {appointmentImages.urls[file.id] ? (
-                                        <img
-                                          src={appointmentImages.urls[file.id]}
-                                          alt={file.description || 'Image'}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : (
-                                        <div className="flex items-center justify-center h-full">
-                                          <ImageIcon className="h-6 w-6 text-slate-300" />
-                                        </div>
-                                      )}
-                                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                                        <span className="text-xs text-white font-medium">{file.description || 'Image'}</span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-                                  <Camera className="h-8 w-8 mb-2 opacity-30" />
-                                  <p className="text-sm">No images yet</p>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </div>
+                              </div>
+                            </div>
 
-                        {/* Treatment Plan & Billing Row */}
-                        <div className="grid grid-cols-2 gap-6">
-                          {/* Treatment Plan Link */}
-                          <Card className="border-slate-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-slate-700">Treatment Plan</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <select
-                                value={selectedAppointment.treatment_plan_id || ''}
-                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
-                                className="w-full p-2 rounded-md border border-slate-200 text-sm"
-                              >
-                                <option value="">No treatment plan</option>
-                                {treatmentPlans.map(plan => (
-                                  <option key={plan.id} value={plan.id}>{plan.title}</option>
-                                ))}
-                              </select>
-                            </CardContent>
-                          </Card>
-
-                          {/* Amount Owed */}
-                          <Card className="border-slate-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-slate-700">Amount</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="flex items-center gap-2">
-                                <span className="text-slate-500">€</span>
-                                <Input
-                                  type="number"
-                                  value={selectedAppointment.amount_cents ? selectedAppointment.amount_cents / 100 : ''}
-                                  onChange={(e) => setSelectedAppointment({
-                                    ...selectedAppointment,
-                                    amount_cents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null
-                                  })}
-                                  placeholder="0.00"
-                                  className="text-lg font-medium"
+                            {/* Content Cards */}
+                            <div className="grid grid-cols-2 gap-5">
+                              {/* Notes */}
+                              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                <h3 className="text-sm font-semibold text-slate-700 mb-3">Notes</h3>
+                                <textarea
+                                  value={selectedAppointment.notes || ''}
+                                  onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
+                                  placeholder="Add notes..."
+                                  className="w-full min-h-[140px] text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border-0 resize-none focus:ring-2 focus:ring-teal-200 focus:bg-white transition-all"
                                 />
                               </div>
-                            </CardContent>
-                          </Card>
-                        </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center justify-between pt-4 border-t">
-                          <Button
-                            variant="outline"
-                            onClick={() => setSelectedAppointment(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <div className="flex gap-2">
-                            {selectedAppointment.status === 'confirmed' && (
+                              {/* Images */}
+                              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h3 className="text-sm font-semibold text-slate-700">Images</h3>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setImageUploaderOpen(true)}
+                                    className="h-7 text-xs text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                  >
+                                    <Plus className="h-3.5 w-3.5 mr-1" />
+                                    Add
+                                  </Button>
+                                </div>
+                                {appointmentImages.files.length > 0 ? (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {appointmentImages.files.slice(0, 4).map((file) => (
+                                      <div
+                                        key={file.id}
+                                        className="aspect-video bg-slate-100 rounded-xl overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-teal-300 transition-all"
+                                        onClick={() => setCompareMode(true)}
+                                      >
+                                        {appointmentImages.urls[file.id] ? (
+                                          <img
+                                            src={appointmentImages.urls[file.id]}
+                                            alt={file.description || 'Image'}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        ) : (
+                                          <div className="flex items-center justify-center h-full">
+                                            <Camera className="h-6 w-6 text-slate-300" />
+                                          </div>
+                                        )}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
+                                          <span className="text-xs text-white font-medium">{file.description || 'View'}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setImageUploaderOpen(true)}
+                                    className="w-full py-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-teal-300 hover:bg-teal-50/50 transition-all flex flex-col items-center gap-2"
+                                  >
+                                    <Camera className="h-8 w-8 text-slate-300" />
+                                    <span className="text-sm text-slate-400">Click to add images</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Bottom Row */}
+                            <div className="grid grid-cols-2 gap-5">
+                              {/* Treatment Plan */}
+                              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                <h3 className="text-sm font-semibold text-slate-700 mb-3">Treatment Plan</h3>
+                                <select
+                                  value={selectedAppointment.treatment_plan_id || ''}
+                                  onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
+                                  className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:ring-2 focus:ring-teal-200 focus:border-teal-300 transition-all"
+                                >
+                                  <option value="">No treatment plan linked</option>
+                                  {treatmentPlans.map(plan => (
+                                    <option key={plan.id} value={plan.id}>{plan.title}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Amount */}
+                              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                <h3 className="text-sm font-semibold text-slate-700 mb-3">Amount Due</h3>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xl font-medium text-slate-400">€</span>
+                                  <Input
+                                    type="number"
+                                    value={selectedAppointment.amount_cents ? selectedAppointment.amount_cents / 100 : ''}
+                                    onChange={(e) => setSelectedAppointment({
+                                      ...selectedAppointment,
+                                      amount_cents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null
+                                    })}
+                                    placeholder="0.00"
+                                    className="text-2xl font-semibold border-0 bg-transparent focus:ring-0 p-0"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-between pt-5 border-t border-slate-100">
                               <Button
-                                variant="outline"
-                                onClick={() => handleQuickComplete(selectedAppointment)}
+                                variant="ghost"
+                                className="text-slate-500 hover:text-slate-700"
+                                onClick={() => setSelectedAppointment(null)}
                               >
-                                Complete with Details
+                                Cancel
                               </Button>
-                            )}
-                            <Button
-                              className="bg-teal-600 hover:bg-teal-700"
-                              onClick={async () => {
-                                const { error } = await supabase
-                                  .from('appointments')
-                                  .update({
-                                    reason: selectedAppointment.reason,
-                                    notes: selectedAppointment.notes,
-                                    status: selectedAppointment.status,
-                                    treatment_plan_id: selectedAppointment.treatment_plan_id,
-                                  })
-                                  .eq('id', selectedAppointment.id);
-                                if (!error) {
-                                  toast({ title: 'Appointment saved' });
-                                  fetchPatientAppointments(selectedPatient!.id);
-                                } else {
-                                  toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
-                                }
-                              }}
-                            >
-                              Save Changes
-                            </Button>
+                              <div className="flex gap-3">
+                                {selectedAppointment.status === 'confirmed' && (
+                                  <Button
+                                    variant="outline"
+                                    className="border-teal-200 text-teal-700 hover:bg-teal-50"
+                                    onClick={() => handleQuickComplete(selectedAppointment)}
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                    Complete
+                                  </Button>
+                                )}
+                                <Button
+                                  className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md"
+                                  onClick={async () => {
+                                    const { error } = await supabase
+                                      .from('appointments')
+                                      .update({
+                                        reason: selectedAppointment.reason,
+                                        notes: selectedAppointment.notes,
+                                        status: selectedAppointment.status,
+                                        treatment_plan_id: selectedAppointment.treatment_plan_id,
+                                      })
+                                      .eq('id', selectedAppointment.id);
+                                    if (!error) {
+                                      toast({ title: 'Saved successfully' });
+                                      fetchPatientAppointments(selectedPatient!.id);
+                                    } else {
+                                      toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
+                                    }
+                                  }}
+                                >
+                                  Save Changes
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     ) : selectedTreatmentPlan ? (
                       <div className="space-y-6">
