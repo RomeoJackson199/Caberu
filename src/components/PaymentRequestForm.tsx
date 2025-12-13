@@ -32,30 +32,37 @@ export const PaymentRequestForm: React.FC<PaymentRequestFormProps> = ({
 
   const fetchPatients = async () => {
     try {
-      const { data, error } = await supabase
+      // First get patient IDs from appointments for this dentist
+      const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
-        .select(`
-          patient_id,
-          profiles(id, first_name, last_name, email)
-        `)
-        .eq('dentist_id', dentistId)
-        .not('profiles', 'is', null);
+        .select('patient_id')
+        .eq('dentist_id', dentistId);
 
-      if (error) {
-        console.error('Error fetching patients:', error);
-        throw error;
+      if (appointmentsError) {
+        console.error('Error fetching appointments:', appointmentsError);
+        throw appointmentsError;
       }
 
-      // Get unique patients
-      const uniquePatients = data?.reduce((acc: any[], appointment: any) => {
-        const patient = appointment.profiles;
-        if (patient && !acc.find(p => p.id === patient.id)) {
-          acc.push(patient);
-        }
-        return acc;
-      }, []) || [];
+      // Get unique patient IDs
+      const patientIds = [...new Set(appointmentsData?.map(a => a.patient_id) || [])];
 
-      setPatients(uniquePatients);
+      if (patientIds.length === 0) {
+        setPatients([]);
+        return;
+      }
+
+      // Fetch patient profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', patientIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      setPatients(profilesData || []);
     } catch (error) {
       console.error('Error fetching patients:', error);
       toast({

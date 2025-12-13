@@ -509,6 +509,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       const { error } = await supabase.from('treatment_plans').insert({
         patient_id: selectedPatient.id,
         dentist_id: dentistId,
+        business_id: businessId,
         title: newTreatmentPlan.title,
         description: newTreatmentPlan.description || null,
         status: newTreatmentPlan.status,
