@@ -1119,7 +1119,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               <button
                                 onClick={() => setSelectedTreatmentPlan(plan)}
                                 className={cn(
-                                  "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3",
+                                  "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group",
                                   selectedTreatmentPlan?.id === plan.id
                                     ? "bg-white shadow-md border border-indigo-200/50"
                                     : "hover:bg-white/80 hover:shadow-sm"
