@@ -471,18 +471,22 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     try {
       const { error } = await supabase.from('treatment_plans').insert({
         patient_id: selectedPatient.id,
+        dentist_id: dentistId,
         title: newTreatmentPlan.title,
-        description: newTreatmentPlan.description,
+        description: newTreatmentPlan.description || null,
         status: newTreatmentPlan.status,
-        business_id: businessId,
       });
-      if (error) throw error;
+      if (error) {
+        console.error('Treatment plan error:', error);
+        throw error;
+      }
       toast({ title: 'Treatment plan created' });
       setNewTreatmentPlanOpen(false);
       setNewTreatmentPlan({ title: '', description: '', status: 'active' });
       fetchTreatmentPlans(selectedPatient.id);
-    } catch (err) {
-      toast({ title: 'Error', description: 'Failed to create treatment plan', variant: 'destructive' });
+    } catch (err: any) {
+      console.error('Treatment plan creation error:', err);
+      toast({ title: 'Error', description: err?.message || 'Failed to create treatment plan', variant: 'destructive' });
     }
   };
 
