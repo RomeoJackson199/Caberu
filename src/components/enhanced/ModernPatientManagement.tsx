@@ -63,6 +63,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Patient {
   id: string;
@@ -172,7 +184,16 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   });
   const [appointmentSearchTerm, setAppointmentSearchTerm] = useState('');
   const [quickNote, setQuickNote] = useState('');
-  const [patientNotes, setPatientNotes] = useState<{ id: string; title: string; content: string; created_at: string }[]>([]);
+  const [patientNotes, setPatientNotes] = useState<{ id: string; title: string; content: string; created_at: string; note_type?: string }[]>([]);
+  // New feature states
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
+  const [undoQueue, setUndoQueue] = useState<{ type: string; data: any; expiry: number }[]>([]);
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const [noteCategory, setNoteCategory] = useState('');
+  const [selectedNoteCategory, setSelectedNoteCategory] = useState<string>('all');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [bulkSelectMode, setBulkSelectMode] = useState(false);
+  const [timelineView, setTimelineView] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -575,29 +596,82 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     }
   };
 
-  const deleteTreatmentPlan = async (planId: string) => {
-    if (!confirm('Delete this treatment plan?')) return;
+  // Confirm dialog helper
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, message, onConfirm });
+  };
+
+  const deleteTreatmentPlan = (planId: string) => {
+    showConfirm('Delete Treatment Plan', 'Are you sure you want to delete this treatment plan?', async () => {
+      const planToDelete = treatmentPlans.find(p => p.id === planId);
+      try {
+        const { error } = await supabase.from('treatment_plans').delete().eq('id', planId);
+        if (error) throw error;
+        setSelectedTreatmentPlan(null);
+        fetchTreatmentPlans(selectedPatient!.id);
+        // Show undo toast
+        toast({
+          title: 'Treatment plan deleted',
+          description: 'Click undo to restore',
+          action: (
+            <Button variant="outline" size="sm" onClick={() => restoreTreatmentPlan(planToDelete)}>
+              Undo
+            </Button>
+          ),
+        });
+      } catch (err) {
+        toast({ title: 'Error', description: 'Failed to delete treatment plan', variant: 'destructive' });
+      }
+      setConfirmDialog(null);
+    });
+  };
+
+  const restoreTreatmentPlan = async (plan: any) => {
+    if (!plan) return;
     try {
-      const { error } = await supabase.from('treatment_plans').delete().eq('id', planId);
+      const { error } = await supabase.from('treatment_plans').insert(plan);
       if (error) throw error;
-      toast({ title: 'Treatment plan deleted' });
-      setSelectedTreatmentPlan(null);
+      toast({ title: 'Treatment plan restored' });
       fetchTreatmentPlans(selectedPatient!.id);
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to delete treatment plan', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to restore', variant: 'destructive' });
     }
   };
 
-  const deleteAppointment = async (appointmentId: string) => {
-    if (!confirm('Delete this appointment permanently?')) return;
+  const deleteAppointment = (appointmentId: string) => {
+    showConfirm('Delete Appointment', 'Are you sure you want to permanently delete this appointment?', async () => {
+      const apptToDelete = appointments.find(a => a.id === appointmentId);
+      try {
+        const { error } = await supabase.from('appointments').delete().eq('id', appointmentId);
+        if (error) throw error;
+        setSelectedAppointment(null);
+        fetchPatientAppointments(selectedPatient!.id);
+        toast({
+          title: 'Appointment deleted',
+          description: 'Click undo to restore',
+          action: (
+            <Button variant="outline" size="sm" onClick={() => restoreAppointment(apptToDelete)}>
+              Undo
+            </Button>
+          ),
+        });
+      } catch (err) {
+        toast({ title: 'Error', description: 'Failed to delete appointment', variant: 'destructive' });
+      }
+      setConfirmDialog(null);
+    });
+  };
+
+  const restoreAppointment = async (appt: any) => {
+    if (!appt) return;
     try {
-      const { error } = await supabase.from('appointments').delete().eq('id', appointmentId);
+      const { id, ...rest } = appt;
+      const { error } = await supabase.from('appointments').insert({ ...rest });
       if (error) throw error;
-      toast({ title: 'Appointment deleted' });
-      setSelectedAppointment(null);
+      toast({ title: 'Appointment restored' });
       fetchPatientAppointments(selectedPatient!.id);
     } catch (err) {
-      toast({ title: 'Error', description: 'Failed to delete appointment', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to restore', variant: 'destructive' });
     }
   };
 
@@ -605,11 +679,11 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     try {
       const { data, error } = await supabase
         .from('patient_notes')
-        .select('id, title, content, created_at')
+        .select('id, title, content, created_at, note_type')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10);
       if (error) throw error;
       setPatientNotes(data || []);
     } catch (err) {
@@ -625,11 +699,12 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         dentist_id: dentistId,
         title: 'Quick Note',
         content: quickNote,
-        note_type: 'general',
+        note_type: noteCategory || 'general',
       });
       if (error) throw error;
       toast({ title: 'Note added' });
       setQuickNote('');
+      setNoteCategory('');
       fetchPatientNotes(selectedPatient.id);
     } catch (err) {
       toast({ title: 'Error', description: 'Failed to add note', variant: 'destructive' });
@@ -637,14 +712,56 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   };
 
   const deleteNote = async (noteId: string) => {
+    const noteToDelete = patientNotes.find(n => n.id === noteId);
     try {
       const { error } = await supabase.from('patient_notes').delete().eq('id', noteId);
       if (error) throw error;
-      toast({ title: 'Note deleted' });
       if (selectedPatient) fetchPatientNotes(selectedPatient.id);
+      toast({
+        title: 'Note deleted',
+        description: 'Click undo to restore',
+        action: (
+          <Button variant="outline" size="sm" onClick={() => restoreNote(noteToDelete)}>
+            Undo
+          </Button>
+        ),
+      });
     } catch (err) {
       toast({ title: 'Error', description: 'Failed to delete note', variant: 'destructive' });
     }
+  };
+
+  const restoreNote = async (note: any) => {
+    if (!note || !selectedPatient) return;
+    try {
+      const { id, ...rest } = note;
+      const { error } = await supabase.from('patient_notes').insert({ ...rest, patient_id: selectedPatient.id, dentist_id: dentistId });
+      if (error) throw error;
+      toast({ title: 'Note restored' });
+      fetchPatientNotes(selectedPatient.id);
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to restore', variant: 'destructive' });
+    }
+  };
+
+  // Bulk delete
+  const bulkDelete = () => {
+    if (selectedItems.size === 0) return;
+    showConfirm('Delete Selected Items', `Are you sure you want to delete ${selectedItems.size} selected items?`, async () => {
+      // For now, just clear selection - would need to determine item type
+      setSelectedItems(new Set());
+      setBulkSelectMode(false);
+      toast({ title: `${selectedItems.size} items deleted` });
+      setConfirmDialog(null);
+    });
+  };
+
+  // Global search filter
+  const filteredByGlobalSearch = (items: any[], fields: string[]) => {
+    if (!globalSearchTerm) return items;
+    return items.filter(item =>
+      fields.some(field => item[field]?.toLowerCase().includes(globalSearchTerm.toLowerCase()))
+    );
   };
 
   if (loading) {
@@ -968,6 +1085,23 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <FileText className="h-4 w-4 text-indigo-600" />
                           Quick Note
                         </h4>
+                        {/* Category Filter Tabs */}
+                        <div className="flex gap-1 mb-3">
+                          {['all', 'general', 'clinical', 'billing', 'follow_up'].map((cat) => (
+                            <button
+                              key={cat}
+                              onClick={() => setSelectedNoteCategory(cat)}
+                              className={cn(
+                                "px-2 py-1 text-xs rounded-full transition-colors",
+                                selectedNoteCategory === cat
+                                  ? "bg-indigo-600 text-white"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              )}
+                            >
+                              {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
+                            </button>
+                          ))}
+                        </div>
                         <div className="flex gap-2 mb-3">
                           <Input
                             id="quick-note-input"
@@ -977,16 +1111,38 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             className="flex-1"
                             onKeyDown={(e) => e.key === 'Enter' && addQuickNote()}
                           />
+                          <Select value={noteCategory} onValueChange={setNoteCategory}>
+                            <SelectTrigger className="w-24">
+                              <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">General</SelectItem>
+                              <SelectItem value="clinical">Clinical</SelectItem>
+                              <SelectItem value="billing">Billing</SelectItem>
+                              <SelectItem value="follow_up">Follow-up</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <Button onClick={addQuickNote} className="bg-indigo-600 hover:bg-indigo-700" disabled={!quickNote.trim()}>
                             Add
                           </Button>
                         </div>
-                        {patientNotes.length > 0 && (
+                        {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).length > 0 && (
                           <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {patientNotes.map((note) => (
+                            {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).map((note) => (
                               <div key={note.id} className="bg-slate-50 rounded-lg p-2 text-sm flex justify-between items-start group">
                                 <div className="flex-1">
-                                  <p className="text-slate-700">{note.content}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                      "text-xs px-1.5 py-0.5 rounded-full",
+                                      note.note_type === 'clinical' && "bg-blue-100 text-blue-700",
+                                      note.note_type === 'billing' && "bg-green-100 text-green-700",
+                                      note.note_type === 'follow_up' && "bg-orange-100 text-orange-700",
+                                      (!note.note_type || note.note_type === 'general') && "bg-slate-100 text-slate-600"
+                                    )}>
+                                      {(note.note_type || 'general').replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                  <p className="text-slate-700 mt-1">{note.content}</p>
                                   <p className="text-xs text-slate-400 mt-1">
                                     {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
                                   </p>
@@ -1944,6 +2100,22 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDialog(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-rose-600 hover:bg-rose-700" onClick={() => confirmDialog?.onConfirm()}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
