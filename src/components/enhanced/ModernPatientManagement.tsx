@@ -141,6 +141,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [patientDropdownOpen, setPatientDropdownOpen] = useState(false);
   const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
   const [appointmentToComplete, setAppointmentToComplete] = useState<Appointment | null>(null);
+  const [selectedTreatmentPlan, setSelectedTreatmentPlan] = useState<TreatmentPlan | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -751,9 +752,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         const linkedAppts = appointments.filter(a => a.treatment_plan_id === plan.id);
 
                         return (
-                          <Collapsible key={plan.id} open={isExpanded} onOpenChange={() => toggleTreatment(plan.id)}>
+                          <Collapsible key={plan.id} open={isExpanded} onOpenChange={() => { toggleTreatment(plan.id); setSelectedTreatmentPlan(plan); }}>
                             <CollapsibleTrigger asChild>
-                              <button className="w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3">
+                              <button
+                                onClick={() => setSelectedTreatmentPlan(plan)}
+                                className={cn(
+                                  "w-full text-left p-3 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3",
+                                  selectedTreatmentPlan?.id === plan.id && "bg-teal-50 border border-teal-200"
+                                )}>
                                 <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
                                   <Folder className="h-4 w-4 text-teal-600" />
                                 </div>
@@ -911,11 +917,74 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   </div>
 
                   {/* Main Content */}
-                  <div className="flex-1 p-6 overflow-y-auto flex items-center justify-center text-slate-400">
-                    <div className="text-center">
-                      <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                      <p>Select a treatment or appointment from the sidebar</p>
-                    </div>
+                  <div className="flex-1 p-6 overflow-y-auto">
+                    {selectedTreatmentPlan ? (
+                      <div className="space-y-6">
+                        {/* Treatment Header */}
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h2 className="text-xl font-semibold text-slate-800">{selectedTreatmentPlan.title}</h2>
+                            <p className="text-slate-500 mt-1">{selectedTreatmentPlan.description || 'No description'}</p>
+                          </div>
+                          <Badge className={cn(statusConfig[selectedTreatmentPlan.status]?.bg, statusConfig[selectedTreatmentPlan.status]?.text, 'text-sm px-3 py-1')}>
+                            {selectedTreatmentPlan.status}
+                          </Badge>
+                        </div>
+
+                        {/* Treatment Info Cards */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <Card className="border-slate-200">
+                            <CardContent className="p-4">
+                              <p className="text-xs text-slate-500 mb-1">Created</p>
+                              <p className="font-medium text-slate-700">
+                                {format(new Date(selectedTreatmentPlan.created_at), 'PPP')}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card className="border-slate-200">
+                            <CardContent className="p-4">
+                              <p className="text-xs text-slate-500 mb-1">Linked Appointments</p>
+                              <p className="font-medium text-slate-700">
+                                {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Linked Appointments List */}
+                        <div>
+                          <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            Appointments for this Treatment
+                          </h3>
+                          <div className="space-y-2">
+                            {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).map(appt => (
+                              <Card key={appt.id} className="border-slate-200 hover:border-teal-300 transition-colors cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
+                                <CardContent className="p-4 flex items-center justify-between">
+                                  <div>
+                                    <p className="font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
+                                    <p className="text-sm text-slate-500">{format(new Date(appt.appointment_date), 'PPP p')}</p>
+                                  </div>
+                                  <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                                    {appt.status}
+                                  </Badge>
+                                </CardContent>
+                              </Card>
+                            ))}
+                            {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length === 0 && (
+                              <p className="text-sm text-slate-400 text-center py-8">No appointments linked to this treatment yet</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-slate-400">
+                        <div className="text-center">
+                          <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                          <p>Select a treatment from the sidebar</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
