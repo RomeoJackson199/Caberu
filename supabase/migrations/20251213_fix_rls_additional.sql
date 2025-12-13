@@ -1,5 +1,3 @@
--- Additional RLS policy fixes for appointments, profiles, and patient_notes
-
 -- =============================================
 -- APPOINTMENTS - Dentists can SELECT their own appointments
 -- =============================================
@@ -39,25 +37,9 @@ CREATE POLICY "Dentists can view patient profiles" ON public.profiles
     )
   );
 
--- =============================================
--- PATIENT_NOTES - Dentists can INSERT, SELECT, UPDATE, DELETE
--- =============================================
-DROP POLICY IF EXISTS "Dentists can view their patients' notes" ON public.patient_notes;
-DROP POLICY IF EXISTS "Dentists can create notes for their patients" ON public.patient_notes;
-DROP POLICY IF EXISTS "Dentists can update their patients' notes" ON public.patient_notes;
-DROP POLICY IF EXISTS "Dentists can delete patient notes" ON public.patient_notes;
-
--- SELECT
-CREATE POLICY "Dentists can view patient notes" ON public.patient_notes
-  FOR SELECT USING (
-    dentist_id IN (
-      SELECT d.id FROM public.dentists d
-      JOIN public.profiles p ON p.id = d.profile_id
-      WHERE p.user_id = auth.uid()
-    )
-  );
-
--- INSERT  
+-- Note: patient_notes table needs to be created first before adding its policies
+-- Run this after creating the patient_notes table:
+/*
 CREATE POLICY "Dentists can insert patient notes" ON public.patient_notes
   FOR INSERT WITH CHECK (
     dentist_id IN (
@@ -66,23 +48,4 @@ CREATE POLICY "Dentists can insert patient notes" ON public.patient_notes
       WHERE p.user_id = auth.uid()
     )
   );
-
--- UPDATE
-CREATE POLICY "Dentists can update patient notes" ON public.patient_notes
-  FOR UPDATE USING (
-    dentist_id IN (
-      SELECT d.id FROM public.dentists d
-      JOIN public.profiles p ON p.id = d.profile_id
-      WHERE p.user_id = auth.uid()
-    )
-  );
-
--- DELETE
-CREATE POLICY "Dentists can delete patient notes" ON public.patient_notes
-  FOR DELETE USING (
-    dentist_id IN (
-      SELECT d.id FROM public.dentists d
-      JOIN public.profiles p ON p.id = d.profile_id
-      WHERE p.user_id = auth.uid()
-    )
-  );
+*/
