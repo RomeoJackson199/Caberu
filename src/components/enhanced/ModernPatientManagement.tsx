@@ -152,6 +152,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [newTreatmentPlan, setNewTreatmentPlan] = useState({ title: '', description: '', status: 'active' });
   const [editPatientOpen, setEditPatientOpen] = useState(false);
   const [editPatientForm, setEditPatientForm] = useState({ first_name: '', last_name: '', phone: '', email: '', date_of_birth: '' });
+  const [appointmentSearchTerm, setAppointmentSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -599,7 +600,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             {selectedPatient.first_name} {selectedPatient.last_name}
                           </p>
                           <p className="text-xs text-slate-500">
-                            #PT_{String(patients.indexOf(selectedPatient) + 1).padStart(2, '0')} • {getAge(selectedPatient.date_of_birth)} Years
+                            {getAge(selectedPatient.date_of_birth)} Years
                           </p>
                         </div>
                         <ChevronDown className="h-4 w-4 text-slate-400 ml-2" />
@@ -645,7 +646,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               {patient.first_name} {patient.last_name}
                             </p>
                             <p className="text-xs text-slate-500">
-                              #PT_{String(idx + 1).padStart(2, '0')} • {getAge(patient.date_of_birth)}y
+                              {getAge(patient.date_of_birth)} years old
                             </p>
                           </div>
                           {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
@@ -673,7 +674,13 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               {selectedPatient?.medical_history && (
                 <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  Penicillin
+                  Medical Alert
+                </Badge>
+              )}
+              {patientFlags[selectedPatient?.id || '']?.hasUnpaidBalance && (
+                <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
+                  <CreditCard className="h-3 w-3 mr-1" />
+                  Unpaid Balance
                 </Badge>
               )}
             </div>
@@ -996,39 +1003,58 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-slate-700 flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-indigo-600" />
-                          All Appointments
+                          Appointments
                         </h4>
                         <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{appointments.length}</span>
                       </div>
-                      <div className="space-y-1">
-                        {appointments.length > 0 ? appointments.map((appt) => (
-                          <button
-                            key={appt.id}
-                            onClick={() => openAppointmentDetail(appt)}
-                            className={cn(
-                              "w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group",
-                              selectedAppointment?.id === appt.id
-                                ? "bg-white shadow-md border border-indigo-200/50"
-                                : "hover:bg-white/80 hover:shadow-sm"
-                            )}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
-                              <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d · h:mm a')}</p>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className={cn(
-                                "text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0",
-                                appt.status === 'completed' && "bg-indigo-100 text-indigo-700",
-                                appt.status === 'confirmed' && "bg-blue-100 text-blue-700",
-                                appt.status === 'pending' && "bg-amber-100 text-amber-700",
-                                appt.status === 'cancelled' && "bg-slate-100 text-slate-500"
-                              )}>
-                                {appt.status}
-                              </span>
-                            </div>
-                          </button>
-                        )) : (
+                      {/* Search */}
+                      <div className="relative mb-3">
+                        <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Search appointments..."
+                          value={appointmentSearchTerm}
+                          onChange={(e) => setAppointmentSearchTerm(e.target.value)}
+                          className="h-8 pl-8 text-xs bg-white"
+                        />
+                      </div>
+                      <div className="space-y-1 max-h-64 overflow-y-auto">
+                        {appointments
+                          .filter(appt =>
+                            !appointmentSearchTerm ||
+                            appt.reason?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
+                            appt.notes?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
+                            appt.status.toLowerCase().includes(appointmentSearchTerm.toLowerCase())
+                          )
+                          .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
+                          .map((appt) => (
+                            <button
+                              key={appt.id}
+                              onClick={() => openAppointmentDetail(appt)}
+                              className={cn(
+                                "w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group",
+                                selectedAppointment?.id === appt.id
+                                  ? "bg-white shadow-md border border-indigo-200/50"
+                                  : "hover:bg-white/80 hover:shadow-sm"
+                              )}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
+                                <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d · h:mm a')}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className={cn(
+                                  "text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0",
+                                  appt.status === 'completed' && "bg-indigo-100 text-indigo-700",
+                                  appt.status === 'confirmed' && "bg-blue-100 text-blue-700",
+                                  appt.status === 'pending' && "bg-amber-100 text-amber-700",
+                                  appt.status === 'cancelled' && "bg-slate-100 text-slate-500"
+                                )}>
+                                  {appt.status}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        {appointments.length === 0 && (
                           <p className="text-xs text-slate-400 text-center py-6">No appointments</p>
                         )}
                       </div>
