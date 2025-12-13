@@ -33,7 +33,8 @@ import {
   X,
   ChevronLeft,
   Camera,
-  FileText
+  FileText,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
@@ -635,6 +636,17 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     }
   };
 
+  const deleteNote = async (noteId: string) => {
+    try {
+      const { error } = await supabase.from('patient_notes').delete().eq('id', noteId);
+      if (error) throw error;
+      toast({ title: 'Note deleted' });
+      if (selectedPatient) fetchPatientNotes(selectedPatient.id);
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to delete note', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-[calc(100vh-64px)] items-center justify-center">
@@ -972,11 +984,20 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         {patientNotes.length > 0 && (
                           <div className="space-y-2 max-h-40 overflow-y-auto">
                             {patientNotes.map((note) => (
-                              <div key={note.id} className="bg-slate-50 rounded-lg p-2 text-sm">
-                                <p className="text-slate-700">{note.content}</p>
-                                <p className="text-xs text-slate-400 mt-1">
-                                  {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
-                                </p>
+                              <div key={note.id} className="bg-slate-50 rounded-lg p-2 text-sm flex justify-between items-start group">
+                                <div className="flex-1">
+                                  <p className="text-slate-700">{note.content}</p>
+                                  <p className="text-xs text-slate-400 mt-1">
+                                    {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => deleteNote(note.id)}
+                                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
+                                  title="Delete note"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -1119,11 +1140,20 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     <span className="text-xs text-slate-400">{linkedAppts.length} appt{linkedAppts.length !== 1 ? 's' : ''}</span>
                                   </div>
                                 </div>
-                                <div className={cn(
-                                  "w-6 h-6 rounded-lg flex items-center justify-center transition-transform",
-                                  isExpanded && "rotate-90"
-                                )}>
-                                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); deleteTreatmentPlan(plan.id); }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
+                                    title="Delete treatment plan"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                  </button>
+                                  <div className={cn(
+                                    "w-6 h-6 rounded-lg flex items-center justify-center transition-transform",
+                                    isExpanded && "rotate-90"
+                                  )}>
+                                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                                  </div>
                                 </div>
                               </button>
                             </CollapsibleTrigger>
@@ -1241,6 +1271,13 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 )}>
                                   {appt.status}
                                 </span>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); deleteAppointment(appt.id); }}
+                                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
+                                  title="Delete appointment"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                </button>
                               </div>
                             </button>
                           ))}
