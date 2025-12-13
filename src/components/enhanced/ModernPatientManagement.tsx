@@ -150,6 +150,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [imageUploaderOpen, setImageUploaderOpen] = useState(false);
   const [newTreatmentPlanOpen, setNewTreatmentPlanOpen] = useState(false);
   const [newTreatmentPlan, setNewTreatmentPlan] = useState({ title: '', description: '', status: 'active' });
+  const [editPatientOpen, setEditPatientOpen] = useState(false);
+  const [editPatientForm, setEditPatientForm] = useState({ first_name: '', last_name: '', phone: '', email: '', date_of_birth: '' });
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -484,6 +486,41 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     }
   };
 
+  const openEditPatient = () => {
+    if (!selectedPatient) return;
+    setEditPatientForm({
+      first_name: selectedPatient.first_name || '',
+      last_name: selectedPatient.last_name || '',
+      phone: selectedPatient.phone || '',
+      email: selectedPatient.email || '',
+      date_of_birth: selectedPatient.date_of_birth || '',
+    });
+    setEditPatientOpen(true);
+  };
+
+  const updatePatient = async () => {
+    if (!selectedPatient) return;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editPatientForm.first_name,
+          last_name: editPatientForm.last_name,
+          phone: editPatientForm.phone,
+          date_of_birth: editPatientForm.date_of_birth || null,
+        })
+        .eq('id', selectedPatient.id);
+      if (error) throw error;
+      toast({ title: 'Patient updated' });
+      setEditPatientOpen(false);
+      // Update local state
+      setSelectedPatient({ ...selectedPatient, ...editPatientForm });
+      fetchPatients();
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to update patient', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-[calc(100vh-64px)] items-center justify-center">
@@ -674,7 +711,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 }
                               </p>
                             </div>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={openEditPatient}>
                               <Edit2 className="h-4 w-4 mr-2" />
                               Edit Profile
                             </Button>
@@ -1554,6 +1591,56 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
             fetchPatientFlags(selectedPatient.id);
           }}
         />
+      )}
+
+      {/* Edit Patient Dialog */}
+      {editPatientOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Edit Patient</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">First Name</label>
+                  <Input
+                    value={editPatientForm.first_name}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, first_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Last Name</label>
+                  <Input
+                    value={editPatientForm.last_name}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, last_name: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
+                <Input
+                  value={editPatientForm.phone}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Date of Birth</label>
+                <Input
+                  type="date"
+                  value={editPatientForm.date_of_birth}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, date_of_birth: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button variant="outline" className="flex-1" onClick={() => setEditPatientOpen(false)}>
+                Cancel
+              </Button>
+              <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={updatePatient}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
