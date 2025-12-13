@@ -148,6 +148,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [compareMode, setCompareMode] = useState(false);
   const [compareImages, setCompareImages] = useState<{ left: string | null; right: string | null }>({ left: null, right: null });
   const [imageUploaderOpen, setImageUploaderOpen] = useState(false);
+  const [newTreatmentPlanOpen, setNewTreatmentPlanOpen] = useState(false);
+  const [newTreatmentPlan, setNewTreatmentPlan] = useState({ title: '', description: '', status: 'active' });
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -459,6 +461,29 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     setSelectedTreatmentPlan(null); // Clear treatment selection to show appointment
   };
 
+  const createTreatmentPlan = async () => {
+    if (!selectedPatient || !newTreatmentPlan.title.trim()) {
+      toast({ title: 'Error', description: 'Please enter a title', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { error } = await supabase.from('treatment_plans').insert({
+        patient_id: selectedPatient.id,
+        title: newTreatmentPlan.title,
+        description: newTreatmentPlan.description,
+        status: newTreatmentPlan.status,
+        business_id: businessId,
+      });
+      if (error) throw error;
+      toast({ title: 'Treatment plan created' });
+      setNewTreatmentPlanOpen(false);
+      setNewTreatmentPlan({ title: '', description: '', status: 'active' });
+      fetchTreatmentPlans(selectedPatient.id);
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to create treatment plan', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-[calc(100vh-64px)] items-center justify-center">
@@ -746,12 +771,64 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   {/* Modern Treatment History Sidebar */}
                   <div className="w-80 bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/50 p-5 overflow-y-auto">
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-slate-800 text-lg">Treatment History</h3>
-                      <button className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 flex items-center justify-center text-indigo-600 transition-all">
+                      <button
+                        onClick={() => setNewTreatmentPlanOpen(!newTreatmentPlanOpen)}
+                        className={cn(
+                          "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+                          newTreatmentPlanOpen
+                            ? "bg-indigo-600 text-white rotate-45"
+                            : "bg-indigo-50 hover:bg-indigo-100 text-indigo-600"
+                        )}
+                      >
                         <Plus className="h-4 w-4" />
                       </button>
                     </div>
+
+                    {/* New Treatment Plan Form */}
+                    {newTreatmentPlanOpen && (
+                      <div className="mb-4 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
+                        <h4 className="font-medium text-sm text-slate-700 mb-3">New Treatment Plan</h4>
+                        <div className="space-y-3">
+                          <Input
+                            placeholder="Treatment title..."
+                            value={newTreatmentPlan.title}
+                            onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, title: e.target.value })}
+                            className="text-sm"
+                          />
+                          <textarea
+                            placeholder="Description (optional)"
+                            value={newTreatmentPlan.description}
+                            onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
+                            className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
+                          />
+                          <select
+                            value={newTreatmentPlan.status}
+                            onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
+                            className="w-full p-2 text-sm rounded-lg border border-slate-200"
+                          >
+                            <option value="active">Active</option>
+                            <option value="draft">Draft</option>
+                          </select>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={createTreatmentPlan}
+                              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-sm h-9"
+                            >
+                              Create
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => setNewTreatmentPlanOpen(false)}
+                              className="text-sm h-9"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Treatment Plans */}
                     <div className="space-y-2">
