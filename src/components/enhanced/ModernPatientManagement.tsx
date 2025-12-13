@@ -30,7 +30,10 @@ import {
   Edit2,
   MapPin,
   MoreVertical,
-  X
+  X,
+  ChevronLeft,
+  Camera,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
@@ -919,100 +922,190 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   {/* Main Content */}
                   <div className="flex-1 p-6 overflow-y-auto">
                     {selectedAppointment && !selectedTreatmentPlan ? (
-                      /* Appointment Detail/Edit View */
+                      /* DentView-style Appointment Detail */
                       <div className="space-y-6">
-                        <div className="flex items-start justify-between">
+                        {/* Header with title and Compare button */}
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            <button
                               onClick={() => setSelectedAppointment(null)}
-                              className="text-slate-500"
+                              className="text-slate-400 hover:text-slate-600"
                             >
-                              ← Back
-                            </Button>
-                            <div>
-                              <h2 className="text-xl font-semibold text-slate-800">Appointment Details</h2>
-                              <p className="text-slate-500">{format(new Date(selectedAppointment.appointment_date), 'PPP p')}</p>
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                                <FileText className="h-4 w-4 text-amber-600" />
+                              </div>
+                              <h2 className="text-lg font-semibold text-slate-800">
+                                {selectedAppointment.reason || 'Appointment'}
+                              </h2>
                             </div>
                           </div>
-                          <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text, 'text-sm px-3 py-1')}>
-                            {selectedAppointment.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text)}>
+                              {selectedAppointment.status}
+                            </Badge>
+                            <Button variant="outline" size="sm" className="text-teal-600 border-teal-300">
+                              <ImageIcon className="h-4 w-4 mr-1" />
+                              Compare
+                            </Button>
+                          </div>
                         </div>
 
-                        {/* Editable Form */}
-                        <Card className="border-slate-200">
-                          <CardHeader className="pb-4">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <Edit2 className="h-4 w-4" />
-                              Edit Appointment
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div>
-                              <label className="text-sm font-medium text-slate-700 block mb-1">Reason</label>
-                              <Input
-                                value={selectedAppointment.reason || ''}
-                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, reason: e.target.value })}
-                                placeholder="Appointment reason"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-700 block mb-1">Notes</label>
+                        {/* Date and Status Banner */}
+                        <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between text-sm">
+                          <span className="text-slate-600">{format(new Date(selectedAppointment.appointment_date), 'EEEE, MMMM d, yyyy · h:mm a')}</span>
+                        </div>
+
+                        {/* Two Column Layout */}
+                        <div className="grid grid-cols-2 gap-6">
+                          {/* Notes Section */}
+                          <Card className="border-slate-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-slate-700">Notes</CardTitle>
+                            </CardHeader>
+                            <CardContent>
                               <textarea
                                 value={selectedAppointment.notes || ''}
                                 onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
-                                placeholder="Add notes..."
-                                className="w-full min-h-[100px] p-3 rounded-md border border-slate-200 text-sm"
+                                placeholder="Add notes about this appointment..."
+                                className="w-full min-h-[120px] p-2 text-sm border-0 resize-none focus:ring-0 bg-transparent text-slate-600"
                               />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-700 block mb-1">Status</label>
+                            </CardContent>
+                          </Card>
+
+                          {/* Images Section */}
+                          <Card className="border-slate-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-slate-700 flex items-center justify-between">
+                                Images
+                                <Button variant="ghost" size="sm" className="h-6 text-xs text-teal-600">
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Add
+                                </Button>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              {appointmentImages.files.length > 0 ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                  {appointmentImages.files.map((file) => (
+                                    <div
+                                      key={file.id}
+                                      className="aspect-video bg-slate-100 rounded-lg overflow-hidden relative group cursor-pointer"
+                                    >
+                                      {appointmentImages.urls[file.id] ? (
+                                        <img
+                                          src={appointmentImages.urls[file.id]}
+                                          alt={file.description || 'Image'}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="flex items-center justify-center h-full">
+                                          <ImageIcon className="h-6 w-6 text-slate-300" />
+                                        </div>
+                                      )}
+                                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                        <span className="text-xs text-white font-medium">{file.description || 'Image'}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                                  <Camera className="h-8 w-8 mb-2 opacity-30" />
+                                  <p className="text-sm">No images yet</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Treatment Plan & Billing Row */}
+                        <div className="grid grid-cols-2 gap-6">
+                          {/* Treatment Plan Link */}
+                          <Card className="border-slate-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-slate-700">Treatment Plan</CardTitle>
+                            </CardHeader>
+                            <CardContent>
                               <select
-                                value={selectedAppointment.status}
-                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, status: e.target.value })}
+                                value={selectedAppointment.treatment_plan_id || ''}
+                                onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
                                 className="w-full p-2 rounded-md border border-slate-200 text-sm"
                               >
-                                <option value="pending">Pending</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="">No treatment plan</option>
+                                {treatmentPlans.map(plan => (
+                                  <option key={plan.id} value={plan.id}>{plan.title}</option>
+                                ))}
                               </select>
-                            </div>
-                            <div className="flex gap-2 pt-2">
+                            </CardContent>
+                          </Card>
+
+                          {/* Amount Owed */}
+                          <Card className="border-slate-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-slate-700">Amount</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-500">€</span>
+                                <Input
+                                  type="number"
+                                  value={selectedAppointment.amount_cents ? selectedAppointment.amount_cents / 100 : ''}
+                                  onChange={(e) => setSelectedAppointment({
+                                    ...selectedAppointment,
+                                    amount_cents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null
+                                  })}
+                                  placeholder="0.00"
+                                  className="text-lg font-medium"
+                                />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            onClick={() => setSelectedAppointment(null)}
+                          >
+                            Cancel
+                          </Button>
+                          <div className="flex gap-2">
+                            {selectedAppointment.status === 'confirmed' && (
                               <Button
-                                className="bg-teal-600 hover:bg-teal-700"
-                                onClick={async () => {
-                                  const { error } = await supabase
-                                    .from('appointments')
-                                    .update({
-                                      reason: selectedAppointment.reason,
-                                      notes: selectedAppointment.notes,
-                                      status: selectedAppointment.status,
-                                    })
-                                    .eq('id', selectedAppointment.id);
-                                  if (!error) {
-                                    toast({ title: 'Appointment updated' });
-                                    fetchPatientAppointments(selectedPatient!.id);
-                                  } else {
-                                    toast({ title: 'Error', description: 'Failed to update', variant: 'destructive' });
-                                  }
-                                }}
+                                variant="outline"
+                                onClick={() => handleQuickComplete(selectedAppointment)}
                               >
-                                Save Changes
+                                Complete with Details
                               </Button>
-                              {selectedAppointment.status === 'confirmed' && (
-                                <Button
-                                  variant="outline"
-                                  onClick={() => handleQuickComplete(selectedAppointment)}
-                                >
-                                  Complete with Details
-                                </Button>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+                            )}
+                            <Button
+                              className="bg-teal-600 hover:bg-teal-700"
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from('appointments')
+                                  .update({
+                                    reason: selectedAppointment.reason,
+                                    notes: selectedAppointment.notes,
+                                    status: selectedAppointment.status,
+                                    treatment_plan_id: selectedAppointment.treatment_plan_id,
+                                  })
+                                  .eq('id', selectedAppointment.id);
+                                if (!error) {
+                                  toast({ title: 'Appointment saved' });
+                                  fetchPatientAppointments(selectedPatient!.id);
+                                } else {
+                                  toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
+                                }
+                              }}
+                            >
+                              Save Changes
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     ) : selectedTreatmentPlan ? (
                       <div className="space-y-6">
