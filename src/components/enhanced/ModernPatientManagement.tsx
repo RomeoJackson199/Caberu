@@ -361,7 +361,16 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
       if (error) throw error;
 
-      toast({ title: 'Appointment confirmed' });
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-appointment-decision', {
+          body: { appointment_id: appointmentId, decision: 'approved' }
+        });
+      } catch (emailErr) {
+        console.error('Email notification failed:', emailErr);
+      }
+
+      toast({ title: 'Appointment confirmed', description: 'Patient has been notified by email' });
       fetchPatientAppointments(selectedPatient!.id);
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to confirm appointment', variant: 'destructive' });
@@ -384,7 +393,16 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
       if (error) throw error;
 
-      toast({ title: 'Appointment cancelled' });
+      // Send email notification
+      try {
+        await supabase.functions.invoke('send-appointment-decision', {
+          body: { appointment_id: appointmentId, decision: 'rejected' }
+        });
+      } catch (emailErr) {
+        console.error('Email notification failed:', emailErr);
+      }
+
+      toast({ title: 'Appointment cancelled', description: 'Patient has been notified by email' });
       fetchPatientAppointments(selectedPatient!.id);
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to cancel appointment', variant: 'destructive' });
