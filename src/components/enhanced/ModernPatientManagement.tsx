@@ -1005,34 +1005,43 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-slate-50">
-      {/* Vertical Tabs Sidebar */}
-      <div className="w-20 bg-slate-900 flex flex-col items-center py-6 gap-2">
+    <div className="flex h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden">
+      {/* Vertical Tabs Sidebar - Refined glassmorphism */}
+      <div className="w-20 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center py-6 gap-3 shadow-xl">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
-            <button
+            <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className={cn(
-                "w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all",
+                "w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-200 relative",
                 isActive
-                  ? "bg-indigo-500 text-white"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+                  ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                  : "text-slate-400 hover:text-white hover:bg-white/10"
               )}
             >
+              {isActive && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600"
+                  style={{ zIndex: -1 }}
+                />
+              )}
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{tab.label}</span>
-            </button>
+              <span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
+            </motion.button>
           );
         })}
       </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Header with Patient Dropdown */}
-        <div className="bg-white border-b px-6 py-4">
+        {/* Header with Patient Dropdown - Glassmorphism */}
+        <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-6 py-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Patient Dropdown Selector */}
@@ -1289,56 +1298,65 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 <>
                   {/* OVERVIEW TAB */}
                   {activeTab === 'overview' && (
-                    <div className="p-8 space-y-6 max-w-4xl mx-auto">
-                      {/* Patient Info Card */}
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="flex items-start gap-6">
-                            <Avatar className="h-24 w-24">
-                              <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
-                              <AvatarFallback className="bg-slate-200 text-slate-600 text-3xl font-semibold">
-                                {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h2 className="text-2xl font-bold text-slate-800">
-                                    {selectedPatient.first_name} {selectedPatient.last_name}
-                                  </h2>
-                                  <p className="text-slate-500 mt-1 flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    {selectedPatient.date_of_birth
-                                      ? `${format(new Date(selectedPatient.date_of_birth), 'yyyy-MM-dd')} (${getAge(selectedPatient.date_of_birth)}y)`
-                                      : 'No DOB'
-                                    }
-                                  </p>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-8 space-y-6 max-w-4xl mx-auto"
+                    >
+                      {/* Patient Info Card - Enhanced */}
+                      <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+                        <CardContent className="p-0">
+                          <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-500 h-24 relative">
+                            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+                          </div>
+                          <div className="px-8 pb-8 -mt-12">
+                            <div className="flex items-end gap-6">
+                              <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
+                                <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
+                                <AvatarFallback className={cn("text-white text-3xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
+                                  {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <h2 className="text-2xl font-bold text-slate-800">
+                                      {selectedPatient.first_name} {selectedPatient.last_name}
+                                    </h2>
+                                    <p className="text-slate-500 mt-1 flex items-center gap-2">
+                                      <Calendar className="h-4 w-4" />
+                                      {selectedPatient.date_of_birth
+                                        ? `${format(new Date(selectedPatient.date_of_birth), 'yyyy-MM-dd')} (${getAge(selectedPatient.date_of_birth)}y)`
+                                        : 'No DOB'
+                                      }
+                                    </p>
+                                  </div>
+                                  <Button variant="outline" size="sm" onClick={openEditPatient}>
+                                    <Edit2 className="h-4 w-4 mr-2" />
+                                    Edit Profile
+                                  </Button>
                                 </div>
-                                <Button variant="outline" size="sm" onClick={openEditPatient}>
-                                  <Edit2 className="h-4 w-4 mr-2" />
-                                  Edit Profile
-                                </Button>
-                              </div>
 
-                              <div className="grid grid-cols-2 gap-4 mt-4">
-                                {selectedPatient.email && (
-                                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                                    <Mail className="h-4 w-4 text-slate-400" />
-                                    {selectedPatient.email}
-                                  </div>
-                                )}
-                                {selectedPatient.phone && (
-                                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                                    <Phone className="h-4 w-4 text-slate-400" />
-                                    {selectedPatient.phone}
-                                  </div>
-                                )}
-                                {selectedPatient.address && (
-                                  <div className="flex items-center gap-2 text-sm text-slate-600 col-span-2">
-                                    <MapPin className="h-4 w-4 text-slate-400" />
-                                    {selectedPatient.address}
-                                  </div>
-                                )}
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                  {selectedPatient.email && (
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                      <Mail className="h-4 w-4 text-slate-400" />
+                                      {selectedPatient.email}
+                                    </div>
+                                  )}
+                                  {selectedPatient.phone && (
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                      <Phone className="h-4 w-4 text-slate-400" />
+                                      {selectedPatient.phone}
+                                    </div>
+                                  )}
+                                  {selectedPatient.address && (
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 col-span-2">
+                                      <MapPin className="h-4 w-4 text-slate-400" />
+                                      {selectedPatient.address}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
