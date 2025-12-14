@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useSearchParams } from "react-router-dom";
 import { showEnhancedErrorToast } from "@/lib/enhancedErrorHandling";
+import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   Search,
@@ -35,7 +37,11 @@ import {
   Camera,
   FileText,
   Trash2,
-  Download
+  Download,
+  Send,
+  Bell,
+  BellOff,
+  Zap
 } from "lucide-react";
 import { format } from "date-fns";
 import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
@@ -76,6 +82,36 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Generate unique gradient based on name
+const generateGradient = (name: string): string => {
+  const hash = name.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+  const gradients = [
+    'from-rose-400 to-pink-500',
+    'from-violet-400 to-purple-500',
+    'from-blue-400 to-indigo-500',
+    'from-cyan-400 to-teal-500',
+    'from-emerald-400 to-green-500',
+    'from-amber-400 to-orange-500',
+    'from-fuchsia-400 to-pink-500',
+    'from-sky-400 to-blue-500',
+    'from-indigo-400 to-violet-500',
+    'from-teal-400 to-cyan-500',
+  ];
+  return gradients[Math.abs(hash) % gradients.length];
+};
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.2 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+};
 
 interface Patient {
   id: string;
@@ -896,10 +932,74 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     printWindow.print();
   };
 
+  // Send treatment summary email
+  const sendTreatmentSummaryEmail = async () => {
+    if (!selectedPatient?.email) {
+      toast({ title: 'No email', description: 'Patient has no email address', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('send-email-notification', {
+        body: {
+          to: selectedPatient.email,
+          subject: 'Your Treatment Summary',
+          html: `
+            <h1>Treatment Summary for ${selectedPatient.first_name} ${selectedPatient.last_name}</h1>
+            <h2>Active Treatment Plans</h2>
+            ${treatmentPlans.map(plan => `
+              <div style="margin: 10px 0; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <strong>${plan.title}</strong> - ${plan.status}
+                <p>${plan.description || 'No description'}</p>
+              </div>
+            `).join('')}
+            <h2>Upcoming Appointments</h2>
+            ${appointments.filter(a => new Date(a.appointment_date) > new Date()).map(appt => `
+              <div style="margin: 10px 0; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <strong>${appt.reason || 'Appointment'}</strong>
+                <p>${format(new Date(appt.appointment_date), 'MMMM d, yyyy')} at ${format(new Date(appt.appointment_date), 'h:mm a')}</p>
+              </div>
+            `).join('')}
+            <p style="margin-top: 20px; color: #64748b;">Sent from Caberu Dental Practice Management</p>
+          `
+        }
+      });
+
+      if (error) throw error;
+      toast({ title: 'Email sent', description: `Summary sent to ${selectedPatient.email}` });
+    } catch (err) {
+      toast({ title: 'Error', description: 'Failed to send email', variant: 'destructive' });
+    }
+  };
+
+  // Quick action FAB state
+  const [fabOpen, setFabOpen] = useState(false);
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center">
-        <div className="animate-pulse text-slate-400">Loading patients...</div>
+      <div className="flex h-[calc(100vh-64px)] bg-slate-50">
+        {/* Skeleton Sidebar */}
+        <div className="w-20 bg-slate-900 flex flex-col items-center py-6 gap-2">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="w-12 h-12 rounded-xl bg-slate-700" />
+          ))}
+        </div>
+        {/* Skeleton Content */}
+        <div className="flex-1 p-6 space-y-4">
+          <div className="flex items-center gap-4 mb-6">
+            <Skeleton className="h-12 w-48 rounded-xl" />
+            <Skeleton className="h-12 w-32 rounded-xl" />
+          </div>
+          <Skeleton className="h-32 w-full rounded-2xl" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-24 rounded-xl" />
+            <Skeleton className="h-24 rounded-xl" />
+          </div>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -989,7 +1089,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         >
                           <Avatar className="h-9 w-9">
                             <AvatarImage src={patient.profile_picture_url || undefined} />
-                            <AvatarFallback className="bg-slate-100 text-slate-600 text-sm">
+                            <AvatarFallback className={cn("bg-gradient-to-br text-white text-sm font-medium", generateGradient(`${patient.first_name}${patient.last_name}`))}>
                               {`${patient.first_name[0]}${patient.last_name[0]}`.toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -2142,6 +2242,72 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           )}
         </div>
       </div>
+
+      {/* Quick Actions FAB */}
+      {selectedPatient && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <AnimatePresence>
+            {fabOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                className="absolute bottom-16 right-0 flex flex-col gap-2 items-end"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { setBookingDialogOpen(true); setFabOpen(false); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                >
+                  <Calendar className="h-4 w-4 text-indigo-600" />
+                  <span className="text-sm font-medium">New Appointment</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { document.getElementById('quick-note-input')?.focus(); setFabOpen(false); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                >
+                  <FileText className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-medium">Add Note</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { sendTreatmentSummaryEmail(); setFabOpen(false); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                >
+                  <Send className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Email Summary</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { exportPatientPDF(); setFabOpen(false); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                >
+                  <Download className="h-4 w-4 text-violet-600" />
+                  <span className="text-sm font-medium">Export PDF</span>
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setFabOpen(!fabOpen)}
+            className={cn(
+              "w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors",
+              fabOpen ? "bg-slate-700 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
+            )}
+          >
+            <motion.div animate={{ rotate: fabOpen ? 45 : 0 }}>
+              <Zap className="h-6 w-6" />
+            </motion.div>
+          </motion.button>
+        </div>
+      )}
 
       {/* Appointment Detail Dialog */}
       <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
