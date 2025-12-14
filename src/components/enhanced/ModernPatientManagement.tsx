@@ -2138,230 +2138,232 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   )}
                 </>
               )}
-            </div>
+            </>
+          )}
         </div>
+      </div>
 
-        {/* Appointment Detail Dialog */}
-        <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{selectedAppointment?.reason || 'Appointment Details'}</DialogTitle>
-            </DialogHeader>
-            {selectedAppointment && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Date & Time</p>
-                    <p className="font-medium">
-                      {format(new Date(selectedAppointment.appointment_date), 'MMM d, yyyy')} at{' '}
-                      {format(new Date(selectedAppointment.appointment_date), 'h:mm a')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Status</p>
-                    <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text)}>
-                      {selectedAppointment.status}
-                    </Badge>
+      {/* Appointment Detail Dialog */}
+      <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedAppointment?.reason || 'Appointment Details'}</DialogTitle>
+          </DialogHeader>
+          {selectedAppointment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Date & Time</p>
+                  <p className="font-medium">
+                    {format(new Date(selectedAppointment.appointment_date), 'MMM d, yyyy')} at{' '}
+                    {format(new Date(selectedAppointment.appointment_date), 'h:mm a')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Status</p>
+                  <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text)}>
+                    {selectedAppointment.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {selectedAppointment.notes && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Notes</p>
+                  <p className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3">
+                    {selectedAppointment.notes}
+                  </p>
+                </div>
+              )}
+
+              {appointmentImages.files.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-2">Images</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {appointmentImages.files.map((file) => (
+                      <div key={file.id} className="aspect-square rounded-lg overflow-hidden bg-slate-100">
+                        {appointmentImages.urls[file.id] ? (
+                          <img src={appointmentImages.urls[file.id]} alt={file.filename} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <ImageIcon className="h-6 w-6 text-slate-300" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {selectedAppointment.notes && (
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Notes</p>
-                    <p className="text-sm text-slate-700 bg-slate-50 rounded-lg p-3">
-                      {selectedAppointment.notes}
-                    </p>
-                  </div>
-                )}
-
-                {appointmentImages.files.length > 0 && (
-                  <div>
-                    <p className="text-xs text-slate-500 mb-2">Images</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {appointmentImages.files.map((file) => (
-                        <div key={file.id} className="aspect-square rounded-lg overflow-hidden bg-slate-100">
-                          {appointmentImages.urls[file.id] ? (
-                            <img src={appointmentImages.urls[file.id]} alt={file.filename} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <ImageIcon className="h-6 w-6 text-slate-300" />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-4 border-t">
-                  {selectedAppointment.status !== 'completed' && selectedAppointment.status !== 'cancelled' && (
-                    <>
-                      <Button
-                        onClick={() => handleCompleteAppointment(selectedAppointment.id)}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700"
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Complete
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleCancelAppointment(selectedAppointment.id)}
-                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Cancel
-                      </Button>
-                    </>
-                  )}
-                  {(selectedAppointment.status === 'completed' || selectedAppointment.status === 'cancelled') && (
-                    <Button variant="outline" onClick={() => setAppointmentDetailOpen(false)} className="w-full">
-                      Close
+              <div className="flex gap-3 pt-4 border-t">
+                {selectedAppointment.status !== 'completed' && selectedAppointment.status !== 'cancelled' && (
+                  <>
+                    <Button
+                      onClick={() => handleCompleteAppointment(selectedAppointment.id)}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Complete
                     </Button>
-                  )}
-                </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleCancelAppointment(selectedAppointment.id)}
+                      className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </>
+                )}
+                {(selectedAppointment.status === 'completed' || selectedAppointment.status === 'cancelled') && (
+                  <Button variant="outline" onClick={() => setAppointmentDetailOpen(false)} className="w-full">
+                    Close
+                  </Button>
+                )}
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-        <NewPatientDialog
-          open={newPatientDialogOpen}
-          onOpenChange={setNewPatientDialogOpen}
+      <NewPatientDialog
+        open={newPatientDialogOpen}
+        onOpenChange={setNewPatientDialogOpen}
+        dentistId={dentistId}
+        onPatientCreated={fetchPatients}
+      />
+
+      {selectedPatient && (
+        <QuickAppointmentDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
           dentistId={dentistId}
-          onPatientCreated={fetchPatients}
+          selectedDate={new Date()}
+          selectedTime={format(new Date(), 'HH:00')}
+          patient={selectedPatient}
         />
+      )}
 
-        {selectedPatient && (
-          <QuickAppointmentDialog
-            open={bookingDialogOpen}
-            onOpenChange={setBookingDialogOpen}
-            dentistId={dentistId}
-            selectedDate={new Date()}
-            selectedTime={format(new Date(), 'HH:00')}
-            patient={selectedPatient}
-          />
-        )}
+      {appointmentToComplete && selectedPatient && (
+        <AppointmentCompletionDialog
+          open={completionDialogOpen}
+          onOpenChange={(open) => {
+            setCompletionDialogOpen(open);
+            if (!open) setAppointmentToComplete(null);
+          }}
+          appointment={{
+            id: appointmentToComplete.id,
+            patient_id: appointmentToComplete.patient_id,
+            dentist_id: appointmentToComplete.dentist_id,
+            appointment_date: appointmentToComplete.appointment_date,
+            reason: appointmentToComplete.reason,
+            patient: {
+              first_name: selectedPatient.first_name,
+              last_name: selectedPatient.last_name,
+              email: selectedPatient.email,
+            },
+          }}
+          onCompleted={() => {
+            setCompletionDialogOpen(false);
+            setAppointmentToComplete(null);
+            fetchPatientAppointments(selectedPatient.id);
+            fetchPatientFlags(selectedPatient.id);
+          }}
+        />
+      )}
 
-        {appointmentToComplete && selectedPatient && (
-          <AppointmentCompletionDialog
-            open={completionDialogOpen}
-            onOpenChange={(open) => {
-              setCompletionDialogOpen(open);
-              if (!open) setAppointmentToComplete(null);
-            }}
-            appointment={{
-              id: appointmentToComplete.id,
-              patient_id: appointmentToComplete.patient_id,
-              dentist_id: appointmentToComplete.dentist_id,
-              appointment_date: appointmentToComplete.appointment_date,
-              reason: appointmentToComplete.reason,
-              patient: {
-                first_name: selectedPatient.first_name,
-                last_name: selectedPatient.last_name,
-                email: selectedPatient.email,
-              },
-            }}
-            onCompleted={() => {
-              setCompletionDialogOpen(false);
-              setAppointmentToComplete(null);
-              fetchPatientAppointments(selectedPatient.id);
-              fetchPatientFlags(selectedPatient.id);
-            }}
-          />
-        )}
-
-        {/* Edit Patient Dialog */}
-        {editPatientOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-semibold text-slate-800 mb-4">Edit Patient</h2>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 mb-1 block">First Name</label>
-                    <Input
-                      value={editPatientForm.first_name}
-                      onChange={(e) => setEditPatientForm({ ...editPatientForm, first_name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 mb-1 block">Last Name</label>
-                    <Input
-                      value={editPatientForm.last_name}
-                      onChange={(e) => setEditPatientForm({ ...editPatientForm, last_name: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
-                    <Input
-                      value={editPatientForm.phone}
-                      onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600 mb-1 block">Date of Birth</label>
-                    <Input
-                      type="date"
-                      value={editPatientForm.date_of_birth}
-                      onChange={(e) => setEditPatientForm({ ...editPatientForm, date_of_birth: e.target.value })}
-                    />
-                  </div>
-                </div>
+      {/* Edit Patient Dialog */}
+      {editPatientOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">Edit Patient</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-slate-600 mb-1 block">Address</label>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">First Name</label>
                   <Input
-                    placeholder="Street, City, Postal Code"
-                    value={editPatientForm.address}
-                    onChange={(e) => setEditPatientForm({ ...editPatientForm, address: e.target.value })}
+                    value={editPatientForm.first_name}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, first_name: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-600 mb-1 block">Emergency Contact</label>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Last Name</label>
                   <Input
-                    placeholder="Name & Phone Number"
-                    value={editPatientForm.emergency_contact}
-                    onChange={(e) => setEditPatientForm({ ...editPatientForm, emergency_contact: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-slate-600 mb-1 block">Medical History / Allergies</label>
-                  <textarea
-                    placeholder="e.g. Penicillin allergy, diabetes, heart conditions..."
-                    value={editPatientForm.medical_history}
-                    onChange={(e) => setEditPatientForm({ ...editPatientForm, medical_history: e.target.value })}
-                    className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-20"
+                    value={editPatientForm.last_name}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, last_name: e.target.value })}
                   />
                 </div>
               </div>
-              <div className="flex gap-3 mt-6">
-                <Button variant="outline" className="flex-1" onClick={() => setEditPatientOpen(false)}>
-                  Cancel
-                </Button>
-                <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={updatePatient}>
-                  Save Changes
-                </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
+                  <Input
+                    value={editPatientForm.phone}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Date of Birth</label>
+                  <Input
+                    type="date"
+                    value={editPatientForm.date_of_birth}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, date_of_birth: e.target.value })}
+                  />
+                </div>
               </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Address</label>
+                <Input
+                  placeholder="Street, City, Postal Code"
+                  value={editPatientForm.address}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, address: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Emergency Contact</label>
+                <Input
+                  placeholder="Name & Phone Number"
+                  value={editPatientForm.emergency_contact}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, emergency_contact: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-600 mb-1 block">Medical History / Allergies</label>
+                <textarea
+                  placeholder="e.g. Penicillin allergy, diabetes, heart conditions..."
+                  value={editPatientForm.medical_history}
+                  onChange={(e) => setEditPatientForm({ ...editPatientForm, medical_history: e.target.value })}
+                  className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-20"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button variant="outline" className="flex-1" onClick={() => setEditPatientOpen(false)}>
+                Cancel
+              </Button>
+              <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={updatePatient}>
+                Save Changes
+              </Button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Confirm Dialog */}
-        <AlertDialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{confirmDialog?.title}</AlertDialogTitle>
-              <AlertDialogDescription>{confirmDialog?.message}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setConfirmDialog(null)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction className="bg-rose-600 hover:bg-rose-700" onClick={() => confirmDialog?.onConfirm()}>
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-      );
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDialog(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-rose-600 hover:bg-rose-700" onClick={() => confirmDialog?.onConfirm()}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
