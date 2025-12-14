@@ -2202,68 +2202,84 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <p className="text-slate-400 text-sm ml-4">No upcoming appointments</p>
                         ) : (
                           <div className="space-y-3">
-                            {upcomingAppts.map((appt) => (
-                              <Card key={appt.id} className="hover:shadow-md transition-shadow group">
-                                <CardContent className="p-4 flex items-center justify-between">
-                                  <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
-                                    <div className="text-center w-14 py-2 bg-indigo-50 rounded-lg">
-                                      <p className="text-xs text-indigo-600 font-medium uppercase">{format(new Date(appt.appointment_date), 'MMM')}</p>
-                                      <p className="text-xl font-bold text-slate-800">{format(new Date(appt.appointment_date), 'd')}</p>
-                                    </div>
-                                    <div>
-                                      <p className="font-medium text-slate-800">{appt.reason || 'Appointment'}</p>
-                                      <p className="text-sm text-slate-500">
-                                        <Clock className="h-3 w-3 inline mr-1" />
-                                        {format(new Date(appt.appointment_date), 'h:mm a')}
-                                        {appt.duration_minutes && ` (${appt.duration_minutes} min)`}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
-                                      {appt.status}
-                                    </Badge>
-                                    {/* Pending: Approve/Reject */}
-                                    {appt.status === 'pending' && (
-                                      <div className="flex gap-1 ml-2">
-                                        <button
-                                          onClick={(e) => handleConfirmAppointment(appt.id, e)}
-                                          className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
-                                          title="Approve"
-                                        >
-                                          <Check className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                          onClick={(e) => handleQuickCancel(appt.id, e)}
-                                          className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                          title="Reject"
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </button>
+                            {upcomingAppts.map((appt, idx) => (
+                              <motion.div
+                                key={appt.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                              >
+                                <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white/80 backdrop-blur-sm overflow-hidden">
+                                  <CardContent className="p-0">
+                                    <div className="flex items-stretch">
+                                      {/* Date Column */}
+                                      <div className="w-20 bg-gradient-to-br from-emerald-500 to-teal-500 flex flex-col items-center justify-center py-4 text-white">
+                                        <p className="text-xs font-medium uppercase opacity-80">{format(new Date(appt.appointment_date), 'MMM')}</p>
+                                        <p className="text-2xl font-bold">{format(new Date(appt.appointment_date), 'd')}</p>
+                                        <p className="text-xs opacity-80">{format(new Date(appt.appointment_date), 'EEE')}</p>
                                       </div>
-                                    )}
-                                    {/* Confirmed: Complete/Cancel */}
-                                    {appt.status === 'confirmed' && (
-                                      <div className="flex gap-1 ml-2">
-                                        <button
-                                          onClick={(e) => handleQuickComplete(appt, e)}
-                                          className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
-                                          title="Complete"
-                                        >
-                                          <CheckCircle2 className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                          onClick={(e) => handleQuickCancel(appt.id, e)}
-                                          className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                          title="Cancel"
-                                        >
-                                          <X className="h-4 w-4" />
-                                        </button>
+                                      {/* Content */}
+                                      <div className="flex-1 p-4 flex items-center justify-between cursor-pointer group-hover:bg-slate-50/50" onClick={() => openAppointmentDetail(appt)}>
+                                        <div>
+                                          <p className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">{appt.reason || 'Appointment'}</p>
+                                          <div className="flex items-center gap-3 mt-1">
+                                            <span className="text-sm text-slate-500 flex items-center gap-1">
+                                              <Clock className="h-3.5 w-3.5" />
+                                              {format(new Date(appt.appointment_date), 'h:mm a')}
+                                            </span>
+                                            {appt.duration_minutes && (
+                                              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                                {appt.duration_minutes} min
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <Badge className={cn("text-xs", statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                                          {appt.status}
+                                        </Badge>
+                                        {/* Pending: Approve/Reject */}
+                                        {appt.status === 'pending' && (
+                                          <div className="flex gap-1 ml-2">
+                                            <button
+                                              onClick={(e) => handleConfirmAppointment(appt.id, e)}
+                                              className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
+                                              title="Approve"
+                                            >
+                                              <Check className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                              onClick={(e) => handleQuickCancel(appt.id, e)}
+                                              className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                                              title="Reject"
+                                            >
+                                              <X className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        )}
+                                        {/* Confirmed: Complete/Cancel */}
+                                        {appt.status === 'confirmed' && (
+                                          <div className="flex gap-1 ml-2">
+                                            <button
+                                              onClick={(e) => handleQuickComplete(appt, e)}
+                                              className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
+                                              title="Complete"
+                                            >
+                                              <CheckCircle2 className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                              onClick={(e) => handleQuickCancel(appt.id, e)}
+                                              className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                                              title="Cancel"
+                                            >
+                                              <X className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                </CardContent>
-                              </Card>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
                             ))}
                           </div>
                         )}
