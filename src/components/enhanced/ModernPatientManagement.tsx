@@ -1555,23 +1555,37 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
                   {/* CLINICAL TAB */}
                   {activeTab === 'clinical' && (
-                    <div className="flex h-full">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex h-full"
+                    >
                       {/* Modern Treatment History Sidebar */}
-                      <div className="w-80 bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/50 p-5 overflow-y-auto">
+                      <div className="w-80 bg-gradient-to-b from-slate-50/80 to-white border-r border-slate-200/50 p-5 overflow-y-auto backdrop-blur-sm">
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="font-semibold text-slate-800 text-lg">Treatment History</h3>
-                          <button
+                        <div className="flex items-center justify-between mb-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-200">
+                              <ClipboardList className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-slate-800">Treatments</h3>
+                              <p className="text-xs text-slate-500">{treatmentPlans.length} plan{treatmentPlans.length !== 1 ? 's' : ''}</p>
+                            </div>
+                          </div>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={() => setNewTreatmentPlanOpen(!newTreatmentPlanOpen)}
                             className={cn(
-                              "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+                              "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
                               newTreatmentPlanOpen
                                 ? "bg-indigo-600 text-white rotate-45"
-                                : "bg-indigo-50 hover:bg-indigo-100 text-indigo-600"
+                                : "bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200"
                             )}
                           >
-                            <Plus className="h-4 w-4" />
-                          </button>
+                            <Plus className="h-5 w-5" />
+                          </motion.button>
                         </div>
 
                         {/* New Treatment Plan Form */}
@@ -2158,18 +2172,30 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           </div>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   )}
 
                   {/* SCHEDULE TAB */}
                   {activeTab === 'schedule' && (
-                    <div className="p-8 max-w-4xl mx-auto">
-                      <h2 className="text-xl font-semibold text-slate-800 mb-6">Appointments</h2>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-8 max-w-4xl mx-auto"
+                    >
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200">
+                          <Calendar className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold text-slate-800">Appointments</h2>
+                          <p className="text-sm text-slate-500">{appointments.length} total · {upcomingAppts.length} upcoming</p>
+                        </div>
+                      </div>
 
                       {/* Upcoming */}
                       <div className="mb-8">
                         <div className="flex items-center gap-2 mb-4">
-                          <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                           <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Upcoming</span>
                         </div>
                         {upcomingAppts.length === 0 ? (
@@ -2267,7 +2293,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           </div>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   )}
 
                   {/* FINANCIAL TAB */}
