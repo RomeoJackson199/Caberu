@@ -34,7 +34,8 @@ import {
   ChevronLeft,
   Camera,
   FileText,
-  Trash2
+  Trash2,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
@@ -764,6 +765,93 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     );
   };
 
+  // Export Patient PDF
+  const exportPatientPDF = () => {
+    if (!selectedPatient) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Patient Summary - ${selectedPatient.first_name} ${selectedPatient.last_name}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+          h1 { color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+          h2 { color: #475569; margin-top: 30px; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+          .info-item { padding: 10px; background: #f8fafc; border-radius: 8px; }
+          .info-label { font-size: 12px; color: #64748b; }
+          .info-value { font-weight: bold; color: #1e293b; }
+          .section { margin: 20px 0; }
+          .item { padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; margin: 10px 0; }
+          .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+          .badge-completed { background: #dbeafe; color: #1d4ed8; }
+          .badge-pending { background: #fef3c7; color: #b45309; }
+          .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 12px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <h1>Patient Summary</h1>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-label">Name</div><div class="info-value">${selectedPatient.first_name} ${selectedPatient.last_name}</div></div>
+          <div class="info-item"><div class="info-label">Email</div><div class="info-value">${selectedPatient.email || 'N/A'}</div></div>
+          <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${selectedPatient.phone || 'N/A'}</div></div>
+          <div class="info-item"><div class="info-label">Date of Birth</div><div class="info-value">${selectedPatient.date_of_birth ? format(new Date(selectedPatient.date_of_birth), 'MMM d, yyyy') : 'N/A'}</div></div>
+          <div class="info-item"><div class="info-label">Address</div><div class="info-value">${selectedPatient.address || 'N/A'}</div></div>
+          <div class="info-item"><div class="info-label">Medical History</div><div class="info-value">${selectedPatient.medical_history || 'None recorded'}</div></div>
+        </div>
+        
+        <h2>Treatment Plans (${treatmentPlans.length})</h2>
+        <div class="section">
+          ${treatmentPlans.map(plan => `
+            <div class="item">
+              <strong>${plan.title}</strong>
+              <span class="badge badge-${plan.status}">${plan.status}</span>
+              <p style="margin: 5px 0 0; color: #64748b;">${plan.description || 'No description'}</p>
+            </div>
+          `).join('')}
+          ${treatmentPlans.length === 0 ? '<p>No treatment plans.</p>' : ''}
+        </div>
+        
+        <h2>Appointments (${appointments.length})</h2>
+        <div class="section">
+          ${appointments.map(appt => `
+            <div class="item">
+              <strong>${appt.reason || 'Appointment'}</strong>
+              <span class="badge badge-${appt.status}">${appt.status}</span>
+              <p style="margin: 5px 0 0; color: #64748b;">${format(new Date(appt.appointment_date), 'MMM d, yyyy h:mm a')}</p>
+            </div>
+          `).join('')}
+          ${appointments.length === 0 ? '<p>No appointments.</p>' : ''}
+        </div>
+        
+        <h2>Notes (${patientNotes.length})</h2>
+        <div class="section">
+          ${patientNotes.map(note => `
+            <div class="item">
+              <span class="badge">${(note.note_type || 'general').replace('_', ' ')}</span>
+              <p style="margin: 5px 0;">${note.content}</p>
+              <small style="color: #94a3b8;">${format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}</small>
+            </div>
+          `).join('')}
+          ${patientNotes.length === 0 ? '<p>No notes.</p>' : ''}
+        </div>
+        
+        <div class="footer">
+          Generated on ${format(new Date(), 'MMMM d, yyyy')} • Caberu Dental Practice Management
+        </div>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   if (loading) {
     return (
       <div className="flex h-[calc(100vh-64px)] items-center justify-center">
@@ -937,6 +1025,10 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                   <DropdownMenuItem onClick={() => document.getElementById('quick-note-input')?.focus()}>
                     <Edit2 className="h-4 w-4 mr-2" />
                     Add Quick Note
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportPatientPDF}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export PDF
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
