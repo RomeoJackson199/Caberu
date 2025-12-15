@@ -149,6 +149,10 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
 
         if (memberError) throw memberError;
 
+        // Get the selected plan name
+        const selectedPlanData = plans?.find(p => p.id === selectedPlan);
+        const planName = selectedPlanData?.name || 'Free';
+
         // Update subscription status for promo activation
         const now = new Date();
         const oneMonthFromNow = new Date(now);
@@ -158,7 +162,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
           .from('businesses')
           .update({
             subscription_status: 'active',
-            subscription_plan: 'promo',
+            subscription_plan: planName,
             subscription_started_at: now.toISOString(),
             subscription_ends_at: oneMonthFromNow.toISOString(),
             promo_code_used: validPromo.code,
@@ -255,10 +259,10 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
             <Card
               key={plan.id}
               className={`relative p-8 cursor-pointer transition-all ${isPopular
-                  ? 'ring-2 ring-primary shadow-2xl scale-105 bg-gradient-to-br from-primary/5 to-background'
-                  : isSelected
-                    ? 'ring-2 ring-primary shadow-lg'
-                    : 'hover:shadow-lg hover:scale-[1.02]'
+                ? 'ring-2 ring-primary shadow-2xl scale-105 bg-gradient-to-br from-primary/5 to-background'
+                : isSelected
+                  ? 'ring-2 ring-primary shadow-lg'
+                  : 'hover:shadow-lg hover:scale-[1.02]'
                 }`}
               onClick={() => setSelectedPlan(plan.id)}
             >
@@ -297,12 +301,12 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                   {Array.isArray(plan.features) && plan.features.map((feature, idx) => (
                     <div key={idx} className="flex items-start gap-3">
                       <div className={`mt-0.5 rounded-full p-1 ${isPopular ? 'bg-blue-100 dark:bg-blue-900' :
-                          isPremium ? 'bg-purple-100 dark:bg-purple-900' :
-                            'bg-green-100 dark:bg-green-900'
+                        isPremium ? 'bg-purple-100 dark:bg-purple-900' :
+                          'bg-green-100 dark:bg-green-900'
                         }`}>
                         <Check className={`h-4 w-4 ${isPopular ? 'text-blue-600 dark:text-blue-400' :
-                            isPremium ? 'text-purple-600 dark:text-purple-400' :
-                              'text-green-600 dark:text-green-400'
+                          isPremium ? 'text-purple-600 dark:text-purple-400' :
+                            'text-green-600 dark:text-green-400'
                           }`} />
                       </div>
                       <span className="text-sm flex-1">{feature}</span>
