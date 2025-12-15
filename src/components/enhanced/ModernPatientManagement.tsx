@@ -2603,8 +2603,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 </motion.div>
                               ))}
                             </div>
+                          )}
 
-                        {/* Past Appointments */}
+                          {/* Past Appointments */}
                           <div>
                             <div className="flex items-center gap-3 mb-4">
                               <div className="flex items-center gap-2">
