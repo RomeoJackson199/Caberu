@@ -3163,7 +3163,6 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         </SheetContent>
       </Sheet>
 
-    </AlertDialog>
-    </div >
+    </div>
   );
 }
