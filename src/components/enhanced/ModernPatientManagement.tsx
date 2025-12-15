@@ -1535,6 +1535,129 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         </div>
                       </div>
 
+                      {/* Two Column Layout: Upcoming + Activity */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Upcoming Appointments Preview */}
+                        <Card className="border-0 bg-white shadow-sm overflow-hidden">
+                          <CardContent className="p-0">
+                            <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-white flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                  <Calendar className="h-4 w-4 text-indigo-600" />
+                                </div>
+                                <span className="font-semibold text-slate-800 text-sm">Upcoming</span>
+                              </div>
+                              <Button variant="ghost" size="sm" className="h-7 text-xs text-indigo-600" onClick={() => setActiveTab('schedule')}>
+                                View All →
+                              </Button>
+                            </div>
+                            <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
+                              {appointments.filter(a => new Date(a.appointment_date) >= new Date() && a.status !== 'cancelled').slice(0, 3).length > 0 ? (
+                                appointments.filter(a => new Date(a.appointment_date) >= new Date() && a.status !== 'cancelled').slice(0, 3).map((apt, idx) => (
+                                  <motion.div
+                                    key={apt.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-colors cursor-pointer group"
+                                    onClick={() => { setSelectedAppointment(apt); setAppointmentDetailOpen(true); }}
+                                  >
+                                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex flex-col items-center justify-center text-white shrink-0">
+                                      <span className="text-xs font-medium">{format(new Date(apt.appointment_date), 'MMM')}</span>
+                                      <span className="text-lg font-bold leading-none">{format(new Date(apt.appointment_date), 'd')}</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-slate-800 truncate">{apt.reason || 'Appointment'}</p>
+                                      <p className="text-xs text-slate-500">{format(new Date(apt.appointment_date), 'h:mm a')} • {apt.duration_minutes}min</p>
+                                    </div>
+                                    <Badge className={cn("text-[10px] shrink-0", statusConfig[apt.status]?.bg, statusConfig[apt.status]?.text)}>
+                                      {apt.status}
+                                    </Badge>
+                                  </motion.div>
+                                ))
+                              ) : (
+                                <div className="text-center py-6 text-slate-400">
+                                  <Calendar className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                                  <p className="text-xs">No upcoming appointments</p>
+                                  <Button variant="ghost" size="sm" className="mt-2 h-7 text-xs text-indigo-600" onClick={() => setBookingDialogOpen(true)}>
+                                    <Plus className="h-3 w-3 mr-1" /> Schedule Now
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Recent Activity Feed */}
+                        <Card className="border-0 bg-white shadow-sm overflow-hidden">
+                          <CardContent className="p-0">
+                            <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                  <Clock className="h-4 w-4 text-emerald-600" />
+                                </div>
+                                <span className="font-semibold text-slate-800 text-sm">Recent Activity</span>
+                              </div>
+                            </div>
+                            <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
+                              {(() => {
+                                // Combine recent appointments and notes into activity feed
+                                const recentAppointments = appointments
+                                  .filter(a => new Date(a.appointment_date) < new Date())
+                                  .slice(0, 3)
+                                  .map(a => ({ type: 'appointment' as const, date: a.appointment_date, data: a }));
+                                const recentNotes = patientNotes
+                                  .slice(0, 3)
+                                  .map(n => ({ type: 'note' as const, date: n.created_at, data: n }));
+                                const combined = [...recentAppointments, ...recentNotes]
+                                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                  .slice(0, 4);
+
+                                if (combined.length === 0) {
+                                  return (
+                                    <div className="text-center py-6 text-slate-400">
+                                      <Clock className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                                      <p className="text-xs">No recent activity</p>
+                                    </div>
+                                  );
+                                }
+
+                                return combined.map((item, idx) => (
+                                  <motion.div
+                                    key={`${item.type}-${idx}`}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-50"
+                                  >
+                                    <div className={cn(
+                                      "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                                      item.type === 'appointment' ? "bg-indigo-100" : "bg-emerald-100"
+                                    )}>
+                                      {item.type === 'appointment' ? (
+                                        <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+                                      ) : (
+                                        <FileText className="h-4 w-4 text-emerald-600" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-slate-700 truncate">
+                                        {item.type === 'appointment'
+                                          ? `${(item.data as Appointment).reason || 'Appointment'} - ${(item.data as Appointment).status}`
+                                          : (item.data as any).content}
+                                      </p>
+                                      <p className="text-[10px] text-slate-400 mt-0.5">
+                                        {format(new Date(item.date), 'MMM d, yyyy')}
+                                      </p>
+                                    </div>
+                                  </motion.div>
+                                ));
+                              })()}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+
                       {/* Alerts & Medical Info */}
                       {selectedPatient.medical_history && (
                         <motion.div
