@@ -2643,6 +2643,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             </div>
                           )}
                         </div>
+                      </div>
                     </motion.div>
                   )}
 
