@@ -1131,1269 +1131,1287 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Alert Badges - Hidden on mobile */}
-              <div className="hidden md:flex items-center gap-2">
-                {selectedPatient?.medical_history && (
-                  <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    Medical Alert
-                  </Badge>
-                )}
-                {patientFlags[selectedPatient?.id || '']?.hasUnpaidBalance && (
-                  <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
-                    <CreditCard className="h-3 w-3 mr-1" />
-                    Unpaid
-                  </Badge>
-                )}
-              </div>
+              {/* Alert Badges */}
+              {selectedPatient?.medical_history && (
+                <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Medical Alert
+                </Badge>
+              )}
+              {patientFlags[selectedPatient?.id || '']?.hasUnpaidBalance && (
+                <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
+                  <CreditCard className="h-3 w-3 mr-1" />
+                  Unpaid Balance
+                </Badge>
+              )}
             </div>
 
-
-            {/* Balance - Hidden on mobile */}
-            {patientFlags[selectedPatient?.id || '']?.outstandingCents ? (
-              <div className="text-right hidden md:block flex-shrink-0">
-                <p className="text-xs text-slate-500">BALANCE</p>
-                <p className="text-lg font-bold text-slate-800">
-                  €{((patientFlags[selectedPatient?.id || '']?.outstandingCents || 0) / 100).toFixed(2)}
-                </p>
-              </div>
-            ) : null}
+            <div className="flex items-center gap-4">
+              {patientFlags[selectedPatient?.id || '']?.outstandingCents ? (
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">BALANCE</p>
+                  <p className="text-lg font-bold text-slate-800">
+                    €{((patientFlags[selectedPatient?.id || '']?.outstandingCents || 0) / 100).toFixed(2)}
+                  </p>
+                </div>
+              ) : null}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Quick Actions
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setBookingDialogOpen(true)}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Appointment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('financial')}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Create Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('clinical')}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Add Treatment Plan
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => document.getElementById('quick-note-input')?.focus()}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Add Quick Note
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportPatientPDF}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
 
-        {/* Global Search Bar */}
-        <div className="px-6 py-3 border-t border-slate-100">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search notes, appointments, treatments..."
-                value={globalSearchTerm}
-                onChange={(e) => setGlobalSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button
-              variant={timelineView ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimelineView(!timelineView)}
-              className={timelineView ? "bg-indigo-600 hover:bg-indigo-700" : ""}
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Timeline
-            </Button>
-            <Button
-              variant={bulkSelectMode ? "default" : "outline"}
-              size="sm"
-              onClick={() => { setBulkSelectMode(!bulkSelectMode); setSelectedItems(new Set()); }}
-              className={bulkSelectMode ? "bg-indigo-600 hover:bg-indigo-700" : ""}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Select
-            </Button>
-            {bulkSelectMode && selectedItems.size > 0 && (
-              <Button variant="destructive" size="sm" onClick={bulkDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete ({selectedItems.size})
+          {/* Global Search Bar */}
+          <div className="px-6 py-3 border-t border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search notes, appointments, treatments..."
+                  value={globalSearchTerm}
+                  onChange={(e) => setGlobalSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant={timelineView ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTimelineView(!timelineView)}
+                className={timelineView ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Timeline
               </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto">
-        {!selectedPatient ? (
-          <div className="flex-1 flex items-center justify-center text-slate-400 h-full">
-            <div className="text-center">
-              <User className="h-16 w-16 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium">No patients yet</p>
+              <Button
+                variant={bulkSelectMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => { setBulkSelectMode(!bulkSelectMode); setSelectedItems(new Set()); }}
+                className={bulkSelectMode ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Select
+              </Button>
+              {bulkSelectMode && selectedItems.size > 0 && (
+                <Button variant="destructive" size="sm" onClick={bulkDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete ({selectedItems.size})
+                </Button>
+              )}
             </div>
           </div>
-        ) : (
-          <>
-            {/* TIMELINE VIEW */}
-            {timelineView ? (
-              <div className="p-8 max-w-4xl mx-auto">
-                <h2 className="text-xl font-bold text-slate-800 mb-6">Patient Timeline</h2>
-                <div className="relative border-l-2 border-indigo-200 ml-4 space-y-4">
-                  {[
-                    ...patientNotes.map(n => ({ type: 'note' as const, data: n, date: new Date(n.created_at) })),
-                    ...appointments.map(a => ({ type: 'appointment' as const, data: a, date: new Date(a.appointment_date) }))
-                  ]
-                    .filter(item => {
-                      if (!globalSearchTerm) return true;
-                      const searchLower = globalSearchTerm.toLowerCase();
-                      if (item.type === 'note') return item.data.content?.toLowerCase().includes(searchLower);
-                      return item.data.reason?.toLowerCase().includes(searchLower) || item.data.notes?.toLowerCase().includes(searchLower);
-                    })
-                    .sort((a, b) => b.date.getTime() - a.date.getTime())
-                    .map((item, idx) => (
-                      <div key={idx} className="relative pl-8">
-                        <div className={cn(
-                          "absolute left-[-9px] w-4 h-4 rounded-full border-2 border-white",
-                          item.type === 'note' ? "bg-indigo-500" : "bg-emerald-500"
-                        )} />
-                        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2">
+        </div>
+
+        {/* Tab Content */}
+        <div className="flex-1 overflow-y-auto">
+          {!selectedPatient ? (
+            <div className="flex-1 flex items-center justify-center text-slate-400 h-full">
+              <div className="text-center">
+                <User className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-medium">No patients yet</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* TIMELINE VIEW */}
+              {timelineView ? (
+                <div className="p-8 max-w-4xl mx-auto">
+                  <h2 className="text-xl font-bold text-slate-800 mb-6">Patient Timeline</h2>
+                  <div className="relative border-l-2 border-indigo-200 ml-4 space-y-4">
+                    {[
+                      ...patientNotes.map(n => ({ type: 'note' as const, data: n, date: new Date(n.created_at) })),
+                      ...appointments.map(a => ({ type: 'appointment' as const, data: a, date: new Date(a.appointment_date) }))
+                    ]
+                      .filter(item => {
+                        if (!globalSearchTerm) return true;
+                        const searchLower = globalSearchTerm.toLowerCase();
+                        if (item.type === 'note') return item.data.content?.toLowerCase().includes(searchLower);
+                        return item.data.reason?.toLowerCase().includes(searchLower) || item.data.notes?.toLowerCase().includes(searchLower);
+                      })
+                      .sort((a, b) => b.date.getTime() - a.date.getTime())
+                      .map((item, idx) => (
+                        <div key={idx} className="relative pl-8">
+                          <div className={cn(
+                            "absolute left-[-9px] w-4 h-4 rounded-full border-2 border-white",
+                            item.type === 'note' ? "bg-indigo-500" : "bg-emerald-500"
+                          )} />
+                          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                              {item.type === 'note' ? (
+                                <Badge className="bg-indigo-100 text-indigo-700">Note</Badge>
+                              ) : (
+                                <Badge className="bg-emerald-100 text-emerald-700">Appointment</Badge>
+                              )}
+                              <span className="text-xs text-slate-400">
+                                {format(item.date, 'MMM d, yyyy h:mm a')}
+                              </span>
+                            </div>
                             {item.type === 'note' ? (
-                              <Badge className="bg-indigo-100 text-indigo-700">Note</Badge>
+                              <p className="text-slate-700">{item.data.content}</p>
                             ) : (
-                              <Badge className="bg-emerald-100 text-emerald-700">Appointment</Badge>
+                              <div>
+                                <p className="font-medium text-slate-800">{item.data.reason || 'Appointment'}</p>
+                                <p className="text-sm text-slate-500">{item.data.notes}</p>
+                                <Badge className={cn(
+                                  "mt-2",
+                                  item.data.status === 'completed' && "bg-indigo-100 text-indigo-700",
+                                  item.data.status === 'confirmed' && "bg-blue-100 text-blue-700",
+                                  item.data.status === 'pending' && "bg-amber-100 text-amber-700",
+                                  item.data.status === 'cancelled' && "bg-slate-100 text-slate-500"
+                                )}>
+                                  {item.data.status}
+                                </Badge>
+                              </div>
                             )}
-                            <span className="text-xs text-slate-400">
-                              {format(item.date, 'MMM d, yyyy h:mm a')}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* OVERVIEW TAB */}
+                  {activeTab === 'overview' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-8 space-y-6 max-w-4xl mx-auto"
+                    >
+                      {/* Patient Info Card - Enhanced */}
+                      <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+                        <CardContent className="p-0">
+                          <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-500 h-24 relative">
+                            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+                          </div>
+                          <div className="px-8 pb-8 -mt-12">
+                            <div className="flex items-end gap-6">
+                              <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
+                                <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
+                                <AvatarFallback className={cn("text-white text-3xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
+                                  {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <h2 className="text-2xl font-bold text-slate-800">
+                                      {selectedPatient.first_name} {selectedPatient.last_name}
+                                    </h2>
+                                    <p className="text-slate-500 mt-1 flex items-center gap-2">
+                                      <Calendar className="h-4 w-4" />
+                                      {selectedPatient.date_of_birth
+                                        ? `${format(new Date(selectedPatient.date_of_birth), 'yyyy-MM-dd')} (${getAge(selectedPatient.date_of_birth)}y)`
+                                        : 'No DOB'
+                                      }
+                                    </p>
+                                  </div>
+                                  <Button variant="outline" size="sm" onClick={openEditPatient}>
+                                    <Edit2 className="h-4 w-4 mr-2" />
+                                    Edit Profile
+                                  </Button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                  {selectedPatient.email && (
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                      <Mail className="h-4 w-4 text-slate-400" />
+                                      {selectedPatient.email}
+                                    </div>
+                                  )}
+                                  {selectedPatient.phone && (
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                      <Phone className="h-4 w-4 text-slate-400" />
+                                      {selectedPatient.phone}
+                                    </div>
+                                  )}
+                                  {selectedPatient.address && (
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 col-span-2">
+                                      <MapPin className="h-4 w-4 text-slate-400" />
+                                      {selectedPatient.address}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+
+                      {/* Stats Grid - Modern visual cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        <motion.div
+                          whileHover={{ y: -2 }}
+                          className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                              <Calendar className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <span className="text-2xl font-bold text-slate-800">
+                              {patientFlags[selectedPatient.id]?.totalAppointments || 0}
                             </span>
                           </div>
-                          {item.type === 'note' ? (
-                            <p className="text-slate-700">{item.data.content}</p>
-                          ) : (
-                            <div>
-                              <p className="font-medium text-slate-800">{item.data.reason || 'Appointment'}</p>
-                              <p className="text-sm text-slate-500">{item.data.notes}</p>
-                              <Badge className={cn(
-                                "mt-2",
-                                item.data.status === 'completed' && "bg-indigo-100 text-indigo-700",
-                                item.data.status === 'confirmed' && "bg-blue-100 text-blue-700",
-                                item.data.status === 'pending' && "bg-amber-100 text-amber-700",
-                                item.data.status === 'cancelled' && "bg-slate-100 text-slate-500"
-                              )}>
-                                {item.data.status}
-                              </Badge>
+                          <p className="text-sm text-slate-500">Total Visits</p>
+                        </motion.div>
+
+                        <motion.div
+                          whileHover={{ y: -2 }}
+                          className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* OVERVIEW TAB */}
-                {activeTab === 'overview' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 md:p-8 space-y-4 md:space-y-6 max-w-4xl mx-auto overflow-y-auto"
-                  >
-                    {/* Patient Info Card - Enhanced */}
-                    <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
-                      <CardContent className="p-0">
-                        <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-500 h-12 md:h-24 relative">
-                          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
-                        </div>
-                        <div className="px-4 md:px-8 pb-4 md:pb-8 -mt-6 md:-mt-12">
-                          <div className="flex items-end gap-3 md:gap-6">
-                            <Avatar className="h-16 w-16 md:h-28 md:w-28 border-2 md:border-4 border-white shadow-xl">
-                              <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
-                              <AvatarFallback className={cn("text-white text-xl md:text-3xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
-                                {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <h2 className="text-lg md:text-2xl font-bold text-slate-800">
-                                    {selectedPatient.first_name} {selectedPatient.last_name}
-                                  </h2>
-                                  <p className="text-slate-500 mt-1 flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    {selectedPatient.date_of_birth
-                                      ? `${format(new Date(selectedPatient.date_of_birth), 'yyyy-MM-dd')} (${getAge(selectedPatient.date_of_birth)}y)`
-                                      : 'No DOB'
-                                    }
-                                  </p>
-                                </div>
-                                <Button variant="outline" size="sm" onClick={openEditPatient}>
-                                  <Edit2 className="h-4 w-4 mr-2" />
-                                  Edit Profile
-                                </Button>
-                              </div>
+                            <span className="text-2xl font-bold text-emerald-600">
+                              {patientFlags[selectedPatient.id]?.totalAppointments
+                                ? Math.round((patientFlags[selectedPatient.id]?.completedAppointments || 0) / patientFlags[selectedPatient.id]?.totalAppointments * 100)
+                                : 0}%
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-500">Completion Rate</p>
+                        </motion.div>
 
-                              <div className="grid grid-cols-2 gap-4 mt-4">
-                                {selectedPatient.email && (
-                                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                                    <Mail className="h-4 w-4 text-slate-400" />
-                                    {selectedPatient.email}
-                                  </div>
-                                )}
-                                {selectedPatient.phone && (
-                                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                                    <Phone className="h-4 w-4 text-slate-400" />
-                                    {selectedPatient.phone}
-                                  </div>
-                                )}
-                                {selectedPatient.address && (
-                                  <div className="flex items-center gap-2 text-sm text-slate-600 col-span-2">
-                                    <MapPin className="h-4 w-4 text-slate-400" />
-                                    {selectedPatient.address}
-                                  </div>
-                                )}
-                              </div>
+                        <motion.div
+                          whileHover={{ y: -2 }}
+                          className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                              <Clock className="h-5 w-5 text-violet-600" />
                             </div>
+                            <span className="text-sm font-semibold text-slate-700">
+                              {patientFlags[selectedPatient.id]?.lastVisitDate
+                                ? format(new Date(patientFlags[selectedPatient.id].lastVisitDate!), 'MMM d')
+                                : 'Never'}
+                            </span>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                          <p className="text-sm text-slate-500">Last Visit</p>
+                        </motion.div>
 
-
-                    {/* Stats Grid - Modern visual cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                      <motion.div
-                        whileHover={{ y: -2 }}
-                        className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                            <Calendar className="h-5 w-5 text-indigo-600" />
-                          </div>
-                          <span className="text-2xl font-bold text-slate-800">
-                            {patientFlags[selectedPatient.id]?.totalAppointments || 0}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-500">Total Visits</p>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ y: -2 }}
-                        className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                          </div>
-                          <span className="text-2xl font-bold text-emerald-600">
-                            {patientFlags[selectedPatient.id]?.totalAppointments
-                              ? Math.round((patientFlags[selectedPatient.id]?.completedAppointments || 0) / patientFlags[selectedPatient.id]?.totalAppointments * 100)
-                              : 0}%
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-500">Completion Rate</p>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ y: -2 }}
-                        className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                            <Clock className="h-5 w-5 text-violet-600" />
-                          </div>
-                          <span className="text-sm font-semibold text-slate-700">
-                            {patientFlags[selectedPatient.id]?.lastVisitDate
-                              ? format(new Date(patientFlags[selectedPatient.id].lastVisitDate!), 'MMM d')
-                              : 'Never'}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-500">Last Visit</p>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ y: -2 }}
-                        className={cn(
-                          "rounded-2xl p-5 shadow-sm border transition-shadow hover:shadow-md",
-                          (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0
-                            ? "bg-rose-50 border-rose-100"
-                            : "bg-white border-slate-100"
-                        )}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center",
-                            (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "bg-rose-100" : "bg-slate-100"
-                          )}>
-                            <CreditCard className={cn(
-                              "h-5 w-5",
-                              (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-600"
-                            )} />
-                          </div>
-                          <span className={cn(
-                            "text-2xl font-bold",
-                            (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-800"
-                          )}>
-                            €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(0)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-500">Balance Due</p>
-                      </motion.div>
-                    </div>
-
-                    {/* Alerts & Medical Info */}
-                    {selectedPatient.medical_history && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="bg-gradient-to-r from-rose-50 to-orange-50 border border-rose-200 rounded-2xl p-5"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
-                            <AlertTriangle className="h-5 w-5 text-rose-600" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-rose-800 mb-1">Medical Alert</h4>
-                            <p className="text-sm text-rose-700">{sanitizeText(selectedPatient.medical_history)}</p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Quick Notes */}
-                    <Card className="col-span-2 border-0 bg-white/70 backdrop-blur-sm shadow-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-semibold text-slate-800 flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                              <FileText className="h-4 w-4 text-indigo-600" />
-                            </div>
-                            Quick Notes
-                          </h4>
-                          {/* Category Filter Pills */}
-                          <div className="flex gap-1">
-                            {['all', 'general', 'clinical', 'billing', 'follow_up'].map((cat) => (
-                              <button
-                                key={cat}
-                                onClick={() => setSelectedNoteCategory(cat)}
-                                className={cn(
-                                  "px-3 py-1 text-xs font-medium rounded-full transition-all",
-                                  selectedNoteCategory === cat
-                                    ? "bg-indigo-600 text-white shadow-sm"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                )}
-                              >
-                                {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mb-3">
-                          <Input
-                            id="quick-note-input"
-                            placeholder="Add a quick note..."
-                            value={quickNote}
-                            onChange={(e) => setQuickNote(e.target.value)}
-                            className="flex-1"
-                            onKeyDown={(e) => e.key === 'Enter' && addQuickNote()}
-                          />
-                          <Select value={noteCategory} onValueChange={setNoteCategory}>
-                            <SelectTrigger className="w-24">
-                              <SelectValue placeholder="Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="general">General</SelectItem>
-                              <SelectItem value="clinical">Clinical</SelectItem>
-                              <SelectItem value="billing">Billing</SelectItem>
-                              <SelectItem value="follow_up">Follow-up</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button onClick={addQuickNote} className="bg-indigo-600 hover:bg-indigo-700" disabled={!quickNote.trim()}>
-                            Add
-                          </Button>
-                        </div>
-                        {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).length > 0 && (
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).map((note) => (
-                              <div key={note.id} className="bg-slate-50 rounded-lg p-2 text-sm flex justify-between items-start group">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className={cn(
-                                      "text-xs px-1.5 py-0.5 rounded-full",
-                                      note.note_type === 'clinical' && "bg-blue-100 text-blue-700",
-                                      note.note_type === 'billing' && "bg-green-100 text-green-700",
-                                      note.note_type === 'follow_up' && "bg-orange-100 text-orange-700",
-                                      (!note.note_type || note.note_type === 'general') && "bg-slate-100 text-slate-600"
-                                    )}>
-                                      {(note.note_type || 'general').replace('_', ' ')}
-                                    </span>
-                                  </div>
-                                  <p className="text-slate-700 mt-1">{note.content}</p>
-                                  <p className="text-xs text-slate-400 mt-1">
-                                    {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
-                                  </p>
-                                </div>
-                                <button
-                                  onClick={() => deleteNote(note.id)}
-                                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
-                                  title="Delete note"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )}
-
-                {/* CLINICAL TAB */}
-                {activeTab === 'clinical' && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex h-full"
-                  >
-                    {/* Modern Treatment History Sidebar */}
-                    <div className="w-80 bg-gradient-to-b from-slate-50/80 to-white border-r border-slate-200/50 p-5 overflow-y-auto backdrop-blur-sm">
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-200">
-                            <ClipboardList className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-slate-800">Treatments</h3>
-                            <p className="text-xs text-slate-500">{treatmentPlans.length} plan{treatmentPlans.length !== 1 ? 's' : ''}</p>
-                          </div>
-                        </div>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setNewTreatmentPlanOpen(!newTreatmentPlanOpen)}
+                        <motion.div
+                          whileHover={{ y: -2 }}
                           className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
-                            newTreatmentPlanOpen
-                              ? "bg-indigo-600 text-white rotate-45"
-                              : "bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200"
+                            "rounded-2xl p-5 shadow-sm border transition-shadow hover:shadow-md",
+                            (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0
+                              ? "bg-rose-50 border-rose-100"
+                              : "bg-white border-slate-100"
                           )}
                         >
-                          <Plus className="h-5 w-5" />
-                        </motion.button>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center",
+                              (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "bg-rose-100" : "bg-slate-100"
+                            )}>
+                              <CreditCard className={cn(
+                                "h-5 w-5",
+                                (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-600"
+                              )} />
+                            </div>
+                            <span className={cn(
+                              "text-2xl font-bold",
+                              (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-800"
+                            )}>
+                              €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(0)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-500">Balance Due</p>
+                        </motion.div>
                       </div>
 
-                      {/* New Treatment Plan Form */}
-                      {newTreatmentPlanOpen && (
-                        <div className="mb-4 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
-                          <h4 className="font-medium text-sm text-slate-700 mb-3">New Treatment Plan</h4>
-                          <div className="space-y-3">
-                            <Input
-                              placeholder="Treatment title..."
-                              value={newTreatmentPlan.title}
-                              onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, title: e.target.value })}
-                              className="text-sm"
-                            />
-                            <Input
-                              placeholder="Diagnosis..."
-                              value={newTreatmentPlan.diagnosis}
-                              onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, diagnosis: e.target.value })}
-                              className="text-sm"
-                            />
-                            <textarea
-                              placeholder="Description (optional)"
-                              value={newTreatmentPlan.description}
-                              onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
-                              className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
-                            />
-                            <div className="grid grid-cols-2 gap-2">
-                              <select
-                                value={newTreatmentPlan.status}
-                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
-                                className="p-2 text-sm rounded-lg border border-slate-200"
-                              >
-                                <option value="active">Active</option>
-                                <option value="draft">Draft</option>
-                              </select>
-                              <select
-                                value={newTreatmentPlan.priority}
-                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, priority: e.target.value })}
-                                className="p-2 text-sm rounded-lg border border-slate-200"
-                              >
-                                <option value="low">Low Priority</option>
-                                <option value="normal">Normal</option>
-                                <option value="high">High Priority</option>
-                                <option value="urgent">Urgent</option>
-                              </select>
+                      {/* Alerts & Medical Info */}
+                      {selectedPatient.medical_history && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="bg-gradient-to-r from-rose-50 to-orange-50 border border-rose-200 rounded-2xl p-5"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+                              <AlertTriangle className="h-5 w-5 text-rose-600" />
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="number"
-                                placeholder="Est. Cost €"
-                                value={newTreatmentPlan.estimated_cost}
-                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, estimated_cost: e.target.value })}
-                                className="text-sm"
-                              />
-                              <Input
-                                type="date"
-                                placeholder="Target Date"
-                                value={newTreatmentPlan.target_completion_date}
-                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, target_completion_date: e.target.value })}
-                                className="text-sm"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={createTreatmentPlan}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-sm h-9"
-                              >
-                                Create
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                onClick={() => setNewTreatmentPlanOpen(false)}
-                                className="text-sm h-9"
-                              >
-                                Cancel
-                              </Button>
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-rose-800 mb-1">Medical Alert</h4>
+                              <p className="text-sm text-rose-700">{sanitizeText(selectedPatient.medical_history)}</p>
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
                       )}
 
-                      {/* Treatment Plans */}
-                      <div className="space-y-2">
-                        {treatmentPlans.map((plan) => {
-                          const isExpanded = expandedTreatments.has(plan.id);
-                          const linkedAppts = appointments.filter(a => a.treatment_plan_id === plan.id);
-
-                          return (
-                            <div
-                              key={plan.id}
-                              onDragOver={(e) => handleDragOver(e, plan.id)}
-                              onDragLeave={handleDragLeave}
-                              onDrop={(e) => handleDrop(e, plan.id)}
-                              className={cn(
-                                "transition-all rounded-xl",
-                                dropTargetPlan === plan.id && "ring-2 ring-indigo-400 ring-offset-2 bg-indigo-50"
-                              )}
-                            >
-                              <Collapsible open={isExpanded} onOpenChange={() => { toggleTreatment(plan.id); setSelectedTreatmentPlan(plan); }}>
-                                <CollapsibleTrigger asChild>
-                                  <button
-                                    onClick={() => setSelectedTreatmentPlan(plan)}
-                                    className={cn(
-                                      "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group",
-                                      selectedTreatmentPlan?.id === plan.id
-                                        ? "bg-white shadow-md border border-indigo-200/50"
-                                        : "hover:bg-white/80 hover:shadow-sm"
-                                    )}>
-                                    <div className={cn(
-                                      "w-9 h-9 rounded-xl flex items-center justify-center",
-                                      plan.status === 'active' ? "bg-gradient-to-br from-indigo-400 to-indigo-600" : "bg-slate-200"
-                                    )}>
-                                      <Folder className={cn("h-4 w-4", plan.status === 'active' ? "text-white" : "text-slate-500")} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-medium text-sm text-slate-800 truncate">{plan.title}</p>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        <span className={cn(
-                                          "text-xs font-medium px-1.5 py-0.5 rounded-full",
-                                          plan.status === 'active' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
-                                        )}>{plan.status}</span>
-                                        <span className="text-xs text-slate-400">{linkedAppts.length} appt{linkedAppts.length !== 1 ? 's' : ''}</span>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); deleteTreatmentPlan(plan.id); }}
-                                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
-                                        title="Delete treatment plan"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                                      </button>
-                                      <div className={cn(
-                                        "w-6 h-6 rounded-lg flex items-center justify-center transition-transform",
-                                        isExpanded && "rotate-90"
-                                      )}>
-                                        <ChevronRight className="h-4 w-4 text-slate-400" />
-                                      </div>
-                                    </div>
-                                  </button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="ml-4 pl-5 border-l-2 border-slate-200 space-y-1 mt-2 pb-2">
-                                    {linkedAppts.length > 0 ? linkedAppts.map((appt) => (
-                                      <button
-                                        key={appt.id}
-                                        onClick={() => openAppointmentDetail(appt)}
-                                        className={cn(
-                                          "w-full text-left p-2.5 rounded-lg transition-all flex items-center justify-between group",
-                                          selectedAppointment?.id === appt.id
-                                            ? "bg-indigo-50 border border-indigo-200"
-                                            : "hover:bg-slate-50"
-                                        )}
-                                      >
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
-                                          <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d, h:mm a')}</p>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          {appt.status === 'pending' && (
-                                            <>
-                                              <button onClick={(e) => { e.stopPropagation(); handleConfirmAppointment(appt.id, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Approve">
-                                                <Check className="h-3 w-3" />
-                                              </button>
-                                              <button onClick={(e) => { e.stopPropagation(); handleQuickCancel(appt.id, e); }} className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600" title="Reject">
-                                                <X className="h-3 w-3" />
-                                              </button>
-                                            </>
-                                          )}
-                                          {appt.status === 'confirmed' && (
-                                            <>
-                                              <button onClick={(e) => { e.stopPropagation(); handleQuickComplete(appt, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Complete">
-                                                <CheckCircle2 className="h-3 w-3" />
-                                              </button>
-                                            </>
-                                          )}
-                                        </div>
-                                        {appt.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-indigo-500 flex-shrink-0" />}
-                                        {appt.status === 'cancelled' && <X className="h-4 w-4 text-slate-300 flex-shrink-0" />}
-                                      </button>
-                                    )) : (
-                                      <p className="text-xs text-slate-400 py-2">No appointments linked</p>
-                                    )}
-                                  </div>
-                                </CollapsibleContent>
-                              </Collapsible>
+                      {/* Quick Notes */}
+                      <Card className="col-span-2 border-0 bg-white/70 backdrop-blur-sm shadow-sm">
+                        <CardContent className="p-5">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-semibold text-slate-800 flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                <FileText className="h-4 w-4 text-indigo-600" />
+                              </div>
+                              Quick Notes
+                            </h4>
+                            {/* Category Filter Pills */}
+                            <div className="flex gap-1">
+                              {['all', 'general', 'clinical', 'billing', 'follow_up'].map((cat) => (
+                                <button
+                                  key={cat}
+                                  onClick={() => setSelectedNoteCategory(cat)}
+                                  className={cn(
+                                    "px-3 py-1 text-xs font-medium rounded-full transition-all",
+                                    selectedNoteCategory === cat
+                                      ? "bg-indigo-600 text-white shadow-sm"
+                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  )}
+                                >
+                                  {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
+                                </button>
+                              ))}
                             </div>
-                          );
-                        })}
-
-                        {treatmentPlans.length === 0 && (
-                          <div className="text-center py-8">
-                            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
-                              <Folder className="h-6 w-6 text-slate-300" />
-                            </div>
-                            <p className="text-sm text-slate-400">No treatment plans yet</p>
                           </div>
-                        )}
-                      </div>
-
-                      {/* Divider */}
-                      <div className="my-5 border-t border-slate-200/60" />
-
-                      {/* All Appointments */}
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-semibold text-slate-700 flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-indigo-600" />
-                            Appointments
-                          </h4>
-                          <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{appointments.length}</span>
-                        </div>
-                        {/* Search */}
-                        <div className="relative mb-3">
-                          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                          <Input
-                            placeholder="Search appointments..."
-                            value={appointmentSearchTerm}
-                            onChange={(e) => setAppointmentSearchTerm(e.target.value)}
-                            className="h-8 pl-8 text-xs bg-white"
-                          />
-                        </div>
-                        <div className="space-y-1 max-h-64 overflow-y-auto">
-                          {appointments
-                            .filter(appt =>
-                              !appointmentSearchTerm ||
-                              appt.reason?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
-                              appt.notes?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
-                              appt.status.toLowerCase().includes(appointmentSearchTerm.toLowerCase())
-                            )
-                            .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
-                            .map((appt) => (
-                              <button
-                                key={appt.id}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, appt.id)}
-                                onClick={() => openAppointmentDetail(appt)}
-                                className={cn(
-                                  "w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group cursor-grab active:cursor-grabbing",
-                                  selectedAppointment?.id === appt.id
-                                    ? "bg-white shadow-md border border-indigo-200/50"
-                                    : "hover:bg-white/80 hover:shadow-sm",
-                                  draggedAppointment === appt.id && "opacity-50"
-                                )}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
-                                  <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d · h:mm a')}</p>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className={cn(
-                                    "text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0",
-                                    appt.status === 'completed' && "bg-indigo-100 text-indigo-700",
-                                    appt.status === 'confirmed' && "bg-blue-100 text-blue-700",
-                                    appt.status === 'pending' && "bg-amber-100 text-amber-700",
-                                    appt.status === 'cancelled' && "bg-slate-100 text-slate-500"
-                                  )}>
-                                    {appt.status}
-                                  </span>
+                          <div className="flex gap-2 mb-3">
+                            <Input
+                              id="quick-note-input"
+                              placeholder="Add a quick note..."
+                              value={quickNote}
+                              onChange={(e) => setQuickNote(e.target.value)}
+                              className="flex-1"
+                              onKeyDown={(e) => e.key === 'Enter' && addQuickNote()}
+                            />
+                            <Select value={noteCategory} onValueChange={setNoteCategory}>
+                              <SelectTrigger className="w-24">
+                                <SelectValue placeholder="Type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="general">General</SelectItem>
+                                <SelectItem value="clinical">Clinical</SelectItem>
+                                <SelectItem value="billing">Billing</SelectItem>
+                                <SelectItem value="follow_up">Follow-up</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button onClick={addQuickNote} className="bg-indigo-600 hover:bg-indigo-700" disabled={!quickNote.trim()}>
+                              Add
+                            </Button>
+                          </div>
+                          {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).length > 0 && (
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).map((note) => (
+                                <div key={note.id} className="bg-slate-50 rounded-lg p-2 text-sm flex justify-between items-start group">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className={cn(
+                                        "text-xs px-1.5 py-0.5 rounded-full",
+                                        note.note_type === 'clinical' && "bg-blue-100 text-blue-700",
+                                        note.note_type === 'billing' && "bg-green-100 text-green-700",
+                                        note.note_type === 'follow_up' && "bg-orange-100 text-orange-700",
+                                        (!note.note_type || note.note_type === 'general') && "bg-slate-100 text-slate-600"
+                                      )}>
+                                        {(note.note_type || 'general').replace('_', ' ')}
+                                      </span>
+                                    </div>
+                                    <p className="text-slate-700 mt-1">{note.content}</p>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                      {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
+                                    </p>
+                                  </div>
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); deleteAppointment(appt.id); }}
+                                    onClick={() => deleteNote(note.id)}
                                     className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
-                                    title="Delete appointment"
+                                    title="Delete note"
                                   >
                                     <Trash2 className="h-3.5 w-3.5 text-rose-500" />
                                   </button>
                                 </div>
-                              </button>
-                            ))}
-                          {appointments.length === 0 && (
-                            <p className="text-xs text-slate-400 text-center py-6">No appointments</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1 p-6 overflow-y-auto">
-                      {selectedAppointment && !selectedTreatmentPlan ? (
-                        /* Modern Appointment Detail */
-                        <div className="max-w-4xl mx-auto">
-                          {/* Compare Mode View */}
-                          {compareMode ? (
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-slate-800">Compare Images</h2>
-                                <Button variant="outline" size="sm" onClick={() => setCompareMode(false)}>
-                                  <X className="h-4 w-4 mr-1" /> Close
-                                </Button>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                {/* Left Image Slot */}
-                                <div className="border-2 border-dashed border-slate-200 rounded-xl aspect-square flex items-center justify-center bg-slate-50">
-                                  {compareImages.left ? (
-                                    <img src={compareImages.left} alt="Compare Left" className="w-full h-full object-contain rounded-xl" />
-                                  ) : (
-                                    <div className="text-center text-slate-400">
-                                      <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                                      <p className="text-sm">Select an image</p>
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Right Image Slot */}
-                                <div className="border-2 border-dashed border-slate-200 rounded-xl aspect-square flex items-center justify-center bg-slate-50">
-                                  {compareImages.right ? (
-                                    <img src={compareImages.right} alt="Compare Right" className="w-full h-full object-contain rounded-xl" />
-                                  ) : (
-                                    <div className="text-center text-slate-400">
-                                      <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                                      <p className="text-sm">Select an image</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {/* Image Selection */}
-                              <div className="bg-slate-50 rounded-xl p-4">
-                                <p className="text-sm font-medium text-slate-700 mb-3">Select images to compare:</p>
-                                <div className="grid grid-cols-4 gap-2">
-                                  {appointmentImages.files.map((file) => (
-                                    <button
-                                      key={file.id}
-                                      onClick={() => {
-                                        const url = appointmentImages.urls[file.id];
-                                        if (!compareImages.left) setCompareImages({ ...compareImages, left: url });
-                                        else if (!compareImages.right) setCompareImages({ ...compareImages, right: url });
-                                        else setCompareImages({ left: url, right: null });
-                                      }}
-                                      className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-400 transition-all"
-                                    >
-                                      <img src={appointmentImages.urls[file.id]} alt={file.description || 'Image'} className="w-full h-full object-cover" />
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
+                              ))}
                             </div>
-                          ) : (
-                            /* Normal View */
-                            <div className="space-y-6">
-                              {/* Header */}
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <button
-                                    onClick={() => setSelectedAppointment(null)}
-                                    className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
-                                  >
-                                    <ChevronLeft className="h-5 w-5 text-slate-600" />
-                                  </button>
-                                  <div>
-                                    <h2 className="text-xl font-semibold text-slate-800">
-                                      {selectedAppointment.reason || 'Appointment'}
-                                    </h2>
-                                    <p className="text-sm text-slate-500">
-                                      {format(new Date(selectedAppointment.appointment_date), 'EEEE, MMMM d, yyyy · h:mm a')}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text, 'px-3 py-1')}>
-                                    {selectedAppointment.status}
-                                  </Badge>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCompareMode(true)}
-                                    className="border-slate-200 hover:border-indigo-400 hover:bg-indigo-50"
-                                  >
-                                    <ImageIcon className="h-4 w-4 mr-2 text-indigo-600" />
-                                    Compare
-                                  </Button>
-                                </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  )}
+
+                  {/* CLINICAL TAB */}
+                  {activeTab === 'clinical' && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex h-full"
+                    >
+                      {/* Modern Treatment History Sidebar */}
+                      <div className="w-80 bg-gradient-to-b from-slate-50/80 to-white border-r border-slate-200/50 p-5 overflow-y-auto backdrop-blur-sm">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-200">
+                              <ClipboardList className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-slate-800">Treatments</h3>
+                              <p className="text-xs text-slate-500">{treatmentPlans.length} plan{treatmentPlans.length !== 1 ? 's' : ''}</p>
+                            </div>
+                          </div>
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setNewTreatmentPlanOpen(!newTreatmentPlanOpen)}
+                            className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                              newTreatmentPlanOpen
+                                ? "bg-indigo-600 text-white rotate-45"
+                                : "bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200"
+                            )}
+                          >
+                            <Plus className="h-5 w-5" />
+                          </motion.button>
+                        </div>
+
+                        {/* New Treatment Plan Form */}
+                        {newTreatmentPlanOpen && (
+                          <div className="mb-4 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
+                            <h4 className="font-medium text-sm text-slate-700 mb-3">New Treatment Plan</h4>
+                            <div className="space-y-3">
+                              <Input
+                                placeholder="Treatment title..."
+                                value={newTreatmentPlan.title}
+                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, title: e.target.value })}
+                                className="text-sm"
+                              />
+                              <Input
+                                placeholder="Diagnosis..."
+                                value={newTreatmentPlan.diagnosis}
+                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, diagnosis: e.target.value })}
+                                className="text-sm"
+                              />
+                              <textarea
+                                placeholder="Description (optional)"
+                                value={newTreatmentPlan.description}
+                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
+                                className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
+                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <select
+                                  value={newTreatmentPlan.status}
+                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
+                                  className="p-2 text-sm rounded-lg border border-slate-200"
+                                >
+                                  <option value="active">Active</option>
+                                  <option value="draft">Draft</option>
+                                </select>
+                                <select
+                                  value={newTreatmentPlan.priority}
+                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, priority: e.target.value })}
+                                  className="p-2 text-sm rounded-lg border border-slate-200"
+                                >
+                                  <option value="low">Low Priority</option>
+                                  <option value="normal">Normal</option>
+                                  <option value="high">High Priority</option>
+                                  <option value="urgent">Urgent</option>
+                                </select>
                               </div>
-
-                              {/* Content Cards */}
-                              <div className="grid grid-cols-2 gap-5">
-                                {/* Notes */}
-                                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Notes</h3>
-                                  <textarea
-                                    value={selectedAppointment.notes || ''}
-                                    onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
-                                    placeholder="Add notes..."
-                                    className="w-full min-h-[140px] text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border-0 resize-none focus:ring-2 focus:ring-indigo-200 focus:bg-white transition-all"
-                                  />
-                                </div>
-
-                                {/* Images */}
-                                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-sm font-semibold text-slate-700">Images</h3>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setImageUploaderOpen(true)}
-                                      className="h-7 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                    >
-                                      <Plus className="h-3.5 w-3.5 mr-1" />
-                                      Add
-                                    </Button>
-                                  </div>
-                                  {appointmentImages.files.length > 0 ? (
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {appointmentImages.files.slice(0, 4).map((file) => (
-                                        <div
-                                          key={file.id}
-                                          className="aspect-video bg-slate-100 rounded-xl overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-indigo-300 transition-all"
-                                          onClick={() => setCompareMode(true)}
-                                        >
-                                          {appointmentImages.urls[file.id] ? (
-                                            <img
-                                              src={appointmentImages.urls[file.id]}
-                                              alt={file.description || 'Image'}
-                                              className="w-full h-full object-cover"
-                                            />
-                                          ) : (
-                                            <div className="flex items-center justify-center h-full">
-                                              <Camera className="h-6 w-6 text-slate-300" />
-                                            </div>
-                                          )}
-                                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
-                                            <span className="text-xs text-white font-medium">{file.description || 'View'}</span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <button
-                                      onClick={() => setImageUploaderOpen(true)}
-                                      className="w-full py-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all flex flex-col items-center gap-2"
-                                    >
-                                      <Camera className="h-8 w-8 text-slate-300" />
-                                      <span className="text-sm text-slate-400">Click to add images</span>
-                                    </button>
-                                  )}
-                                </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                  type="number"
+                                  placeholder="Est. Cost €"
+                                  value={newTreatmentPlan.estimated_cost}
+                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, estimated_cost: e.target.value })}
+                                  className="text-sm"
+                                />
+                                <Input
+                                  type="date"
+                                  placeholder="Target Date"
+                                  value={newTreatmentPlan.target_completion_date}
+                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, target_completion_date: e.target.value })}
+                                  className="text-sm"
+                                />
                               </div>
-
-                              {/* Bottom Row */}
-                              <div className="grid grid-cols-2 gap-5">
-                                {/* Treatment Plan */}
-                                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Treatment Plan</h3>
-                                  <select
-                                    value={selectedAppointment.treatment_plan_id || ''}
-                                    onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
-                                    className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
-                                  >
-                                    <option value="">No treatment plan linked</option>
-                                    {treatmentPlans.map(plan => (
-                                      <option key={plan.id} value={plan.id}>{plan.title}</option>
-                                    ))}
-                                  </select>
-                                </div>
-
-                                {/* Amount */}
-                                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Amount Due</h3>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xl font-medium text-slate-400">€</span>
-                                    <Input
-                                      type="number"
-                                      value={selectedAppointment.amount_cents ? selectedAppointment.amount_cents / 100 : ''}
-                                      onChange={(e) => setSelectedAppointment({
-                                        ...selectedAppointment,
-                                        amount_cents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null
-                                      })}
-                                      placeholder="0.00"
-                                      className="text-2xl font-semibold border-0 bg-transparent focus:ring-0 p-0"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Actions */}
-                              <div className="flex items-center justify-between pt-5 border-t border-slate-100">
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={createTreatmentPlan}
+                                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-sm h-9"
+                                >
+                                  Create
+                                </Button>
                                 <Button
                                   variant="ghost"
-                                  className="text-slate-500 hover:text-slate-700"
-                                  onClick={() => setSelectedAppointment(null)}
+                                  onClick={() => setNewTreatmentPlanOpen(false)}
+                                  className="text-sm h-9"
                                 >
                                   Cancel
                                 </Button>
-                                <div className="flex gap-3">
-                                  {selectedAppointment.status === 'confirmed' && (
-                                    <Button
-                                      variant="outline"
-                                      className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                                      onClick={() => handleQuickComplete(selectedAppointment)}
-                                    >
-                                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                                      Complete
-                                    </Button>
-                                  )}
-                                  <Button
-                                    className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-md"
-                                    onClick={async () => {
-                                      const { error } = await supabase
-                                        .from('appointments')
-                                        .update({
-                                          reason: selectedAppointment.reason,
-                                          notes: selectedAppointment.notes,
-                                          status: selectedAppointment.status,
-                                          treatment_plan_id: selectedAppointment.treatment_plan_id,
-                                        })
-                                        .eq('id', selectedAppointment.id);
-                                      if (!error) {
-                                        toast({ title: 'Saved successfully' });
-                                        fetchPatientAppointments(selectedPatient!.id);
-                                      } else {
-                                        toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
-                                      }
-                                    }}
-                                  >
-                                    Save Changes
-                                  </Button>
-                                </div>
                               </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Treatment Plans */}
+                        <div className="space-y-2">
+                          {treatmentPlans.map((plan) => {
+                            const isExpanded = expandedTreatments.has(plan.id);
+                            const linkedAppts = appointments.filter(a => a.treatment_plan_id === plan.id);
+
+                            return (
+                              <div
+                                key={plan.id}
+                                onDragOver={(e) => handleDragOver(e, plan.id)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, plan.id)}
+                                className={cn(
+                                  "transition-all rounded-xl",
+                                  dropTargetPlan === plan.id && "ring-2 ring-indigo-400 ring-offset-2 bg-indigo-50"
+                                )}
+                              >
+                                <Collapsible open={isExpanded} onOpenChange={() => { toggleTreatment(plan.id); setSelectedTreatmentPlan(plan); }}>
+                                  <CollapsibleTrigger asChild>
+                                    <button
+                                      onClick={() => setSelectedTreatmentPlan(plan)}
+                                      className={cn(
+                                        "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group",
+                                        selectedTreatmentPlan?.id === plan.id
+                                          ? "bg-white shadow-md border border-indigo-200/50"
+                                          : "hover:bg-white/80 hover:shadow-sm"
+                                      )}>
+                                      <div className={cn(
+                                        "w-9 h-9 rounded-xl flex items-center justify-center",
+                                        plan.status === 'active' ? "bg-gradient-to-br from-indigo-400 to-indigo-600" : "bg-slate-200"
+                                      )}>
+                                        <Folder className={cn("h-4 w-4", plan.status === 'active' ? "text-white" : "text-slate-500")} />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm text-slate-800 truncate">{plan.title}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <span className={cn(
+                                            "text-xs font-medium px-1.5 py-0.5 rounded-full",
+                                            plan.status === 'active' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
+                                          )}>{plan.status}</span>
+                                          <span className="text-xs text-slate-400">{linkedAppts.length} appt{linkedAppts.length !== 1 ? 's' : ''}</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); deleteTreatmentPlan(plan.id); }}
+                                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
+                                          title="Delete treatment plan"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                        </button>
+                                        <div className={cn(
+                                          "w-6 h-6 rounded-lg flex items-center justify-center transition-transform",
+                                          isExpanded && "rotate-90"
+                                        )}>
+                                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                                        </div>
+                                      </div>
+                                    </button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="ml-4 pl-5 border-l-2 border-slate-200 space-y-1 mt-2 pb-2">
+                                      {linkedAppts.length > 0 ? linkedAppts.map((appt) => (
+                                        <button
+                                          key={appt.id}
+                                          onClick={() => openAppointmentDetail(appt)}
+                                          className={cn(
+                                            "w-full text-left p-2.5 rounded-lg transition-all flex items-center justify-between group",
+                                            selectedAppointment?.id === appt.id
+                                              ? "bg-indigo-50 border border-indigo-200"
+                                              : "hover:bg-slate-50"
+                                          )}
+                                        >
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
+                                            <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d, h:mm a')}</p>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {appt.status === 'pending' && (
+                                              <>
+                                                <button onClick={(e) => { e.stopPropagation(); handleConfirmAppointment(appt.id, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Approve">
+                                                  <Check className="h-3 w-3" />
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleQuickCancel(appt.id, e); }} className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600" title="Reject">
+                                                  <X className="h-3 w-3" />
+                                                </button>
+                                              </>
+                                            )}
+                                            {appt.status === 'confirmed' && (
+                                              <>
+                                                <button onClick={(e) => { e.stopPropagation(); handleQuickComplete(appt, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Complete">
+                                                  <CheckCircle2 className="h-3 w-3" />
+                                                </button>
+                                              </>
+                                            )}
+                                          </div>
+                                          {appt.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-indigo-500 flex-shrink-0" />}
+                                          {appt.status === 'cancelled' && <X className="h-4 w-4 text-slate-300 flex-shrink-0" />}
+                                        </button>
+                                      )) : (
+                                        <p className="text-xs text-slate-400 py-2">No appointments linked</p>
+                                      )}
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </div>
+                            );
+                          })}
+
+                          {treatmentPlans.length === 0 && (
+                            <div className="text-center py-8">
+                              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                                <Folder className="h-6 w-6 text-slate-300" />
+                              </div>
+                              <p className="text-sm text-slate-400">No treatment plans yet</p>
                             </div>
                           )}
                         </div>
-                      ) : selectedTreatmentPlan ? (
-                        <div className="space-y-6">
-                          {/* Treatment Header */}
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h2 className="text-xl font-semibold text-slate-800">{selectedTreatmentPlan.title}</h2>
-                              <p className="text-slate-500 mt-1">{selectedTreatmentPlan.description || 'No description'}</p>
-                            </div>
-                            <Badge className={cn(statusConfig[selectedTreatmentPlan.status]?.bg, statusConfig[selectedTreatmentPlan.status]?.text, 'text-sm px-3 py-1')}>
-                              {selectedTreatmentPlan.status}
-                            </Badge>
-                          </div>
 
-                          {/* Treatment Info Cards */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <Card className="border-slate-200">
-                              <CardContent className="p-4">
-                                <p className="text-xs text-slate-500 mb-1">Created</p>
-                                <p className="font-medium text-slate-700">
-                                  {format(new Date(selectedTreatmentPlan.created_at), 'PPP')}
-                                </p>
-                              </CardContent>
-                            </Card>
-                            <Card className="border-slate-200">
-                              <CardContent className="p-4">
-                                <p className="text-xs text-slate-500 mb-1">Linked Appointments</p>
-                                <p className="font-medium text-slate-700">
-                                  {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length}
-                                </p>
-                              </CardContent>
-                            </Card>
-                          </div>
+                        {/* Divider */}
+                        <div className="my-5 border-t border-slate-200/60" />
 
-                          {/* Linked Appointments List */}
-                          <div>
-                            <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              Appointments for this Treatment
-                            </h3>
-                            <div className="space-y-2">
-                              {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).map(appt => (
-                                <Card key={appt.id} className="border-slate-200 hover:border-indigo-300 transition-colors cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
-                                  <CardContent className="p-4 flex items-center justify-between">
-                                    <div>
-                                      <p className="font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
-                                      <p className="text-sm text-slate-500">{format(new Date(appt.appointment_date), 'PPP p')}</p>
-                                    </div>
-                                    <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                        {/* All Appointments */}
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-slate-700 flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-indigo-600" />
+                              Appointments
+                            </h4>
+                            <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{appointments.length}</span>
+                          </div>
+                          {/* Search */}
+                          <div className="relative mb-3">
+                            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                            <Input
+                              placeholder="Search appointments..."
+                              value={appointmentSearchTerm}
+                              onChange={(e) => setAppointmentSearchTerm(e.target.value)}
+                              className="h-8 pl-8 text-xs bg-white"
+                            />
+                          </div>
+                          <div className="space-y-1 max-h-64 overflow-y-auto">
+                            {appointments
+                              .filter(appt =>
+                                !appointmentSearchTerm ||
+                                appt.reason?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
+                                appt.notes?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
+                                appt.status.toLowerCase().includes(appointmentSearchTerm.toLowerCase())
+                              )
+                              .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
+                              .map((appt) => (
+                                <button
+                                  key={appt.id}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, appt.id)}
+                                  onClick={() => openAppointmentDetail(appt)}
+                                  className={cn(
+                                    "w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group cursor-grab active:cursor-grabbing",
+                                    selectedAppointment?.id === appt.id
+                                      ? "bg-white shadow-md border border-indigo-200/50"
+                                      : "hover:bg-white/80 hover:shadow-sm",
+                                    draggedAppointment === appt.id && "opacity-50"
+                                  )}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
+                                    <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d · h:mm a')}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={cn(
+                                      "text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0",
+                                      appt.status === 'completed' && "bg-indigo-100 text-indigo-700",
+                                      appt.status === 'confirmed' && "bg-blue-100 text-blue-700",
+                                      appt.status === 'pending' && "bg-amber-100 text-amber-700",
+                                      appt.status === 'cancelled' && "bg-slate-100 text-slate-500"
+                                    )}>
                                       {appt.status}
-                                    </Badge>
-                                  </CardContent>
-                                </Card>
+                                    </span>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); deleteAppointment(appt.id); }}
+                                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
+                                      title="Delete appointment"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                    </button>
+                                  </div>
+                                </button>
                               ))}
-                              {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length === 0 && (
-                                <p className="text-sm text-slate-400 text-center py-8">No appointments linked to this treatment yet</p>
-                              )}
-                            </div>
+                            {appointments.length === 0 && (
+                              <p className="text-xs text-slate-400 text-center py-6">No appointments</p>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-slate-400">
-                          <div className="text-center">
-                            <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                            <p>Select a treatment or appointment from the sidebar</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+                      </div>
 
-                {/* SCHEDULE TAB */}
-                {activeTab === 'schedule' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-8 max-w-4xl mx-auto"
-                  >
-                    <div className="flex items-center gap-4 mb-8">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200">
-                        <Calendar className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-semibold text-slate-800">Appointments</h2>
-                        <p className="text-sm text-slate-500">{appointments.length} total · {upcomingAppts.length} upcoming</p>
-                      </div>
-                    </div>
-
-                    {/* Upcoming */}
-                    <div className="mb-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Upcoming</span>
-                      </div>
-                      {upcomingAppts.length === 0 ? (
-                        <p className="text-slate-400 text-sm ml-4">No upcoming appointments</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {upcomingAppts.map((appt, idx) => (
-                            <motion.div
-                              key={appt.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.05 }}
-                            >
-                              <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white/80 backdrop-blur-sm overflow-hidden">
-                                <CardContent className="p-0">
-                                  <div className="flex items-stretch">
-                                    {/* Date Column */}
-                                    <div className="w-20 bg-gradient-to-br from-emerald-500 to-teal-500 flex flex-col items-center justify-center py-4 text-white">
-                                      <p className="text-xs font-medium uppercase opacity-80">{format(new Date(appt.appointment_date), 'MMM')}</p>
-                                      <p className="text-2xl font-bold">{format(new Date(appt.appointment_date), 'd')}</p>
-                                      <p className="text-xs opacity-80">{format(new Date(appt.appointment_date), 'EEE')}</p>
-                                    </div>
-                                    {/* Content */}
-                                    <div className="flex-1 p-4 flex items-center justify-between cursor-pointer group-hover:bg-slate-50/50" onClick={() => openAppointmentDetail(appt)}>
-                                      <div>
-                                        <p className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">{appt.reason || 'Appointment'}</p>
-                                        <div className="flex items-center gap-3 mt-1">
-                                          <span className="text-sm text-slate-500 flex items-center gap-1">
-                                            <Clock className="h-3.5 w-3.5" />
-                                            {format(new Date(appt.appointment_date), 'h:mm a')}
-                                          </span>
-                                          {appt.duration_minutes && (
-                                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                                              {appt.duration_minutes} min
-                                            </span>
-                                          )}
-                                        </div>
+                      {/* Main Content */}
+                      <div className="flex-1 p-6 overflow-y-auto">
+                        {selectedAppointment && !selectedTreatmentPlan ? (
+                          /* Modern Appointment Detail */
+                          <div className="max-w-4xl mx-auto">
+                            {/* Compare Mode View */}
+                            {compareMode ? (
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h2 className="text-lg font-semibold text-slate-800">Compare Images</h2>
+                                  <Button variant="outline" size="sm" onClick={() => setCompareMode(false)}>
+                                    <X className="h-4 w-4 mr-1" /> Close
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  {/* Left Image Slot */}
+                                  <div className="border-2 border-dashed border-slate-200 rounded-xl aspect-square flex items-center justify-center bg-slate-50">
+                                    {compareImages.left ? (
+                                      <img src={compareImages.left} alt="Compare Left" className="w-full h-full object-contain rounded-xl" />
+                                    ) : (
+                                      <div className="text-center text-slate-400">
+                                        <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                                        <p className="text-sm">Select an image</p>
                                       </div>
-                                      <Badge className={cn("text-xs", statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
-                                        {appt.status}
-                                      </Badge>
-                                      {/* Pending: Approve/Reject */}
-                                      {appt.status === 'pending' && (
-                                        <div className="flex gap-1 ml-2">
-                                          <button
-                                            onClick={(e) => handleConfirmAppointment(appt.id, e)}
-                                            className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
-                                            title="Approve"
-                                          >
-                                            <Check className="h-4 w-4" />
-                                          </button>
-                                          <button
-                                            onClick={(e) => handleQuickCancel(appt.id, e)}
-                                            className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                            title="Reject"
-                                          >
-                                            <X className="h-4 w-4" />
-                                          </button>
-                                        </div>
-                                      )}
-                                      {/* Confirmed: Complete/Cancel */}
-                                      {appt.status === 'confirmed' && (
-                                        <div className="flex gap-1 ml-2">
-                                          <button
-                                            onClick={(e) => handleQuickComplete(appt, e)}
-                                            className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
-                                            title="Complete"
-                                          >
-                                            <CheckCircle2 className="h-4 w-4" />
-                                          </button>
-                                          <button
-                                            onClick={(e) => handleQuickCancel(appt.id, e)}
-                                            className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                            title="Cancel"
-                                          >
-                                            <X className="h-4 w-4" />
-                                          </button>
-                                        </div>
-                                      )}
+                                    )}
+                                  </div>
+                                  {/* Right Image Slot */}
+                                  <div className="border-2 border-dashed border-slate-200 rounded-xl aspect-square flex items-center justify-center bg-slate-50">
+                                    {compareImages.right ? (
+                                      <img src={compareImages.right} alt="Compare Right" className="w-full h-full object-contain rounded-xl" />
+                                    ) : (
+                                      <div className="text-center text-slate-400">
+                                        <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                                        <p className="text-sm">Select an image</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Image Selection */}
+                                <div className="bg-slate-50 rounded-xl p-4">
+                                  <p className="text-sm font-medium text-slate-700 mb-3">Select images to compare:</p>
+                                  <div className="grid grid-cols-4 gap-2">
+                                    {appointmentImages.files.map((file) => (
+                                      <button
+                                        key={file.id}
+                                        onClick={() => {
+                                          const url = appointmentImages.urls[file.id];
+                                          if (!compareImages.left) setCompareImages({ ...compareImages, left: url });
+                                          else if (!compareImages.right) setCompareImages({ ...compareImages, right: url });
+                                          else setCompareImages({ left: url, right: null });
+                                        }}
+                                        className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-400 transition-all"
+                                      >
+                                        <img src={appointmentImages.urls[file.id]} alt={file.description || 'Image'} className="w-full h-full object-cover" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              /* Normal View */
+                              <div className="space-y-6">
+                                {/* Header */}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <button
+                                      onClick={() => setSelectedAppointment(null)}
+                                      className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                                    >
+                                      <ChevronLeft className="h-5 w-5 text-slate-600" />
+                                    </button>
+                                    <div>
+                                      <h2 className="text-xl font-semibold text-slate-800">
+                                        {selectedAppointment.reason || 'Appointment'}
+                                      </h2>
+                                      <p className="text-sm text-slate-500">
+                                        {format(new Date(selectedAppointment.appointment_date), 'EEEE, MMMM d, yyyy · h:mm a')}
+                                      </p>
                                     </div>
                                   </div>
+                                  <div className="flex items-center gap-3">
+                                    <Badge className={cn(statusConfig[selectedAppointment.status]?.bg, statusConfig[selectedAppointment.status]?.text, 'px-3 py-1')}>
+                                      {selectedAppointment.status}
+                                    </Badge>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setCompareMode(true)}
+                                      className="border-slate-200 hover:border-indigo-400 hover:bg-indigo-50"
+                                    >
+                                      <ImageIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                                      Compare
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {/* Content Cards */}
+                                <div className="grid grid-cols-2 gap-5">
+                                  {/* Notes */}
+                                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Notes</h3>
+                                    <textarea
+                                      value={selectedAppointment.notes || ''}
+                                      onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
+                                      placeholder="Add notes..."
+                                      className="w-full min-h-[140px] text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border-0 resize-none focus:ring-2 focus:ring-indigo-200 focus:bg-white transition-all"
+                                    />
+                                  </div>
+
+                                  {/* Images */}
+                                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <h3 className="text-sm font-semibold text-slate-700">Images</h3>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setImageUploaderOpen(true)}
+                                        className="h-7 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                      >
+                                        <Plus className="h-3.5 w-3.5 mr-1" />
+                                        Add
+                                      </Button>
+                                    </div>
+                                    {appointmentImages.files.length > 0 ? (
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {appointmentImages.files.slice(0, 4).map((file) => (
+                                          <div
+                                            key={file.id}
+                                            className="aspect-video bg-slate-100 rounded-xl overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-indigo-300 transition-all"
+                                            onClick={() => setCompareMode(true)}
+                                          >
+                                            {appointmentImages.urls[file.id] ? (
+                                              <img
+                                                src={appointmentImages.urls[file.id]}
+                                                alt={file.description || 'Image'}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            ) : (
+                                              <div className="flex items-center justify-center h-full">
+                                                <Camera className="h-6 w-6 text-slate-300" />
+                                              </div>
+                                            )}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
+                                              <span className="text-xs text-white font-medium">{file.description || 'View'}</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => setImageUploaderOpen(true)}
+                                        className="w-full py-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all flex flex-col items-center gap-2"
+                                      >
+                                        <Camera className="h-8 w-8 text-slate-300" />
+                                        <span className="text-sm text-slate-400">Click to add images</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Bottom Row */}
+                                <div className="grid grid-cols-2 gap-5">
+                                  {/* Treatment Plan */}
+                                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Treatment Plan</h3>
+                                    <select
+                                      value={selectedAppointment.treatment_plan_id || ''}
+                                      onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
+                                      className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
+                                    >
+                                      <option value="">No treatment plan linked</option>
+                                      {treatmentPlans.map(plan => (
+                                        <option key={plan.id} value={plan.id}>{plan.title}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  {/* Amount */}
+                                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Amount Due</h3>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xl font-medium text-slate-400">€</span>
+                                      <Input
+                                        type="number"
+                                        value={selectedAppointment.amount_cents ? selectedAppointment.amount_cents / 100 : ''}
+                                        onChange={(e) => setSelectedAppointment({
+                                          ...selectedAppointment,
+                                          amount_cents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null
+                                        })}
+                                        placeholder="0.00"
+                                        className="text-2xl font-semibold border-0 bg-transparent focus:ring-0 p-0"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center justify-between pt-5 border-t border-slate-100">
+                                  <Button
+                                    variant="ghost"
+                                    className="text-slate-500 hover:text-slate-700"
+                                    onClick={() => setSelectedAppointment(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <div className="flex gap-3">
+                                    {selectedAppointment.status === 'confirmed' && (
+                                      <Button
+                                        variant="outline"
+                                        className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                                        onClick={() => handleQuickComplete(selectedAppointment)}
+                                      >
+                                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                                        Complete
+                                      </Button>
+                                    )}
+                                    <Button
+                                      className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-md"
+                                      onClick={async () => {
+                                        const { error } = await supabase
+                                          .from('appointments')
+                                          .update({
+                                            reason: selectedAppointment.reason,
+                                            notes: selectedAppointment.notes,
+                                            status: selectedAppointment.status,
+                                            treatment_plan_id: selectedAppointment.treatment_plan_id,
+                                          })
+                                          .eq('id', selectedAppointment.id);
+                                        if (!error) {
+                                          toast({ title: 'Saved successfully' });
+                                          fetchPatientAppointments(selectedPatient!.id);
+                                        } else {
+                                          toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
+                                        }
+                                      }}
+                                    >
+                                      Save Changes
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : selectedTreatmentPlan ? (
+                          <div className="space-y-6">
+                            {/* Treatment Header */}
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h2 className="text-xl font-semibold text-slate-800">{selectedTreatmentPlan.title}</h2>
+                                <p className="text-slate-500 mt-1">{selectedTreatmentPlan.description || 'No description'}</p>
+                              </div>
+                              <Badge className={cn(statusConfig[selectedTreatmentPlan.status]?.bg, statusConfig[selectedTreatmentPlan.status]?.text, 'text-sm px-3 py-1')}>
+                                {selectedTreatmentPlan.status}
+                              </Badge>
+                            </div>
+
+                            {/* Treatment Info Cards */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <Card className="border-slate-200">
+                                <CardContent className="p-4">
+                                  <p className="text-xs text-slate-500 mb-1">Created</p>
+                                  <p className="font-medium text-slate-700">
+                                    {format(new Date(selectedTreatmentPlan.created_at), 'PPP')}
+                                  </p>
                                 </CardContent>
                               </Card>
-                            </motion.div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* History */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-2 h-2 rounded-full bg-slate-400" />
-                        <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">History</span>
-                      </div>
-                      {pastAppts.length === 0 ? (
-                        <p className="text-slate-400 text-sm ml-4">No past appointments</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {pastAppts.map((appt) => (
-                            <div
-                              key={appt.id}
-                              onClick={() => openAppointmentDetail(appt)}
-                              className="flex items-center gap-4 py-3 px-4 rounded-lg hover:bg-white hover:shadow-sm cursor-pointer transition-all"
-                            >
-                              <p className="text-sm text-slate-500 w-24">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
-                              <p className="flex-1 font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
-                              <Badge className="bg-indigo-50 text-indigo-700 text-xs">Attended</Badge>
+                              <Card className="border-slate-200">
+                                <CardContent className="p-4">
+                                  <p className="text-xs text-slate-500 mb-1">Linked Appointments</p>
+                                  <p className="font-medium text-slate-700">
+                                    {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length}
+                                  </p>
+                                </CardContent>
+                              </Card>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
 
-                {/* FINANCIAL TAB */}
-                {activeTab === 'financial' && (
-                  <div className="p-8 space-y-6 max-w-5xl mx-auto">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-lg font-semibold text-slate-800">Financial Ledger</h2>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-slate-500">Balance:</span>
-                        <span className={cn(
-                          "text-xl font-bold",
-                          (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-800"
-                        )}>
-                          €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}
-                        </span>
+                            {/* Linked Appointments List */}
+                            <div>
+                              <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Appointments for this Treatment
+                              </h3>
+                              <div className="space-y-2">
+                                {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).map(appt => (
+                                  <Card key={appt.id} className="border-slate-200 hover:border-indigo-300 transition-colors cursor-pointer" onClick={() => openAppointmentDetail(appt)}>
+                                    <CardContent className="p-4 flex items-center justify-between">
+                                      <div>
+                                        <p className="font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
+                                        <p className="text-sm text-slate-500">{format(new Date(appt.appointment_date), 'PPP p')}</p>
+                                      </div>
+                                      <Badge className={cn(statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                                        {appt.status}
+                                      </Badge>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                                {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length === 0 && (
+                                  <p className="text-sm text-slate-400 text-center py-8">No appointments linked to this treatment yet</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-slate-400">
+                            <div className="text-center">
+                              <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                              <p>Select a treatment or appointment from the sidebar</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
+                    </motion.div>
+                  )}
+
+                  {/* SCHEDULE TAB */}
+                  {activeTab === 'schedule' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-8 max-w-4xl mx-auto"
+                    >
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200">
+                          <Calendar className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold text-slate-800">Appointments</h2>
+                          <p className="text-sm text-slate-500">{appointments.length} total · {upcomingAppts.length} upcoming</p>
+                        </div>
+                      </div>
+
+                      {/* Upcoming */}
+                      <div className="mb-8">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Upcoming</span>
+                        </div>
+                        {upcomingAppts.length === 0 ? (
+                          <p className="text-slate-400 text-sm ml-4">No upcoming appointments</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {upcomingAppts.map((appt, idx) => (
+                              <motion.div
+                                key={appt.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                              >
+                                <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white/80 backdrop-blur-sm overflow-hidden">
+                                  <CardContent className="p-0">
+                                    <div className="flex items-stretch">
+                                      {/* Date Column */}
+                                      <div className="w-20 bg-gradient-to-br from-emerald-500 to-teal-500 flex flex-col items-center justify-center py-4 text-white">
+                                        <p className="text-xs font-medium uppercase opacity-80">{format(new Date(appt.appointment_date), 'MMM')}</p>
+                                        <p className="text-2xl font-bold">{format(new Date(appt.appointment_date), 'd')}</p>
+                                        <p className="text-xs opacity-80">{format(new Date(appt.appointment_date), 'EEE')}</p>
+                                      </div>
+                                      {/* Content */}
+                                      <div className="flex-1 p-4 flex items-center justify-between cursor-pointer group-hover:bg-slate-50/50" onClick={() => openAppointmentDetail(appt)}>
+                                        <div>
+                                          <p className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">{appt.reason || 'Appointment'}</p>
+                                          <div className="flex items-center gap-3 mt-1">
+                                            <span className="text-sm text-slate-500 flex items-center gap-1">
+                                              <Clock className="h-3.5 w-3.5" />
+                                              {format(new Date(appt.appointment_date), 'h:mm a')}
+                                            </span>
+                                            {appt.duration_minutes && (
+                                              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                                {appt.duration_minutes} min
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <Badge className={cn("text-xs", statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                                          {appt.status}
+                                        </Badge>
+                                        {/* Pending: Approve/Reject */}
+                                        {appt.status === 'pending' && (
+                                          <div className="flex gap-1 ml-2">
+                                            <button
+                                              onClick={(e) => handleConfirmAppointment(appt.id, e)}
+                                              className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
+                                              title="Approve"
+                                            >
+                                              <Check className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                              onClick={(e) => handleQuickCancel(appt.id, e)}
+                                              className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                                              title="Reject"
+                                            >
+                                              <X className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        )}
+                                        {/* Confirmed: Complete/Cancel */}
+                                        {appt.status === 'confirmed' && (
+                                          <div className="flex gap-1 ml-2">
+                                            <button
+                                              onClick={(e) => handleQuickComplete(appt, e)}
+                                              className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
+                                              title="Complete"
+                                            >
+                                              <CheckCircle2 className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                              onClick={(e) => handleQuickCancel(appt.id, e)}
+                                              className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                                              title="Cancel"
+                                            >
+                                              <X className="h-4 w-4" />
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* History */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="w-2 h-2 rounded-full bg-slate-400" />
+                          <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">History</span>
+                        </div>
+                        {pastAppts.length === 0 ? (
+                          <p className="text-slate-400 text-sm ml-4">No past appointments</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {pastAppts.map((appt) => (
+                              <div
+                                key={appt.id}
+                                onClick={() => openAppointmentDetail(appt)}
+                                className="flex items-center gap-4 py-3 px-4 rounded-lg hover:bg-white hover:shadow-sm cursor-pointer transition-all"
+                              >
+                                <p className="text-sm text-slate-500 w-24">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
+                                <p className="flex-1 font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
+                                <Badge className="bg-indigo-50 text-indigo-700 text-xs">Attended</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* FINANCIAL TAB */}
+                  {activeTab === 'financial' && (
+                    <div className="p-8 space-y-6 max-w-5xl mx-auto">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-slate-800">Financial Ledger</h2>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm text-slate-500">Balance:</span>
+                          <span className={cn(
+                            "text-xl font-bold",
+                            (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-800"
+                          )}>
+                            €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <PaymentRequestManager
+                        patientId={selectedPatient.id}
+                        dentistId={dentistId}
+                        onPaymentCreated={() => fetchPatientFlags(selectedPatient.id)}
+                      />
                     </div>
-
-                    <PaymentRequestManager
-                      patientId={selectedPatient.id}
-                      dentistId={dentistId}
-                      onPaymentCreated={() => fetchPatientFlags(selectedPatient.id)}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
 
-    {/* Quick Actions FAB */ }
-  {
-    selectedPatient && (
-      <div className="fixed bottom-6 right-6 z-50">
-        <AnimatePresence>
-          {fabOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              className="absolute bottom-16 right-0 flex flex-col gap-2 items-end"
+      {/* Quick Actions FAB */}
+      {
+        selectedPatient && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <AnimatePresence>
+              {fabOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                  className="absolute bottom-16 right-0 flex flex-col gap-2 items-end"
+                >
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => { setBookingDialogOpen(true); setFabOpen(false); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                  >
+                    <Calendar className="h-4 w-4 text-indigo-600" />
+                    <span className="text-sm font-medium">New Appointment</span>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => { document.getElementById('quick-note-input')?.focus(); setFabOpen(false); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                  >
+                    <FileText className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-medium">Add Note</span>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => { sendTreatmentSummaryEmail(); setFabOpen(false); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                  >
+                    <Send className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium">Email Summary</span>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => { exportPatientPDF(); setFabOpen(false); }}
+                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
+                  >
+                    <Download className="h-4 w-4 text-violet-600" />
+                    <span className="text-sm font-medium">Export PDF</span>
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setFabOpen(!fabOpen)}
+              className={cn(
+                "w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors",
+                fabOpen ? "bg-slate-700 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
+              )}
             >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { setBookingDialogOpen(true); setFabOpen(false); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
-              >
-                <Calendar className="h-4 w-4 text-indigo-600" />
-                <span className="text-sm font-medium">New Appointment</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { setActiveTab('clinical'); setFabOpen(false); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
-              >
-                <ClipboardList className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium">Add Treatment</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { setActiveTab('financial'); setFabOpen(false); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
-              >
-                <CreditCard className="h-4 w-4 text-amber-600" />
-                <span className="text-sm font-medium">Create Payment</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { document.getElementById('quick-note-input')?.focus(); setFabOpen(false); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
-              >
-                <Edit2 className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm font-medium">Add Note</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { exportPatientPDF(); setFabOpen(false); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
-              >
-                <Download className="h-4 w-4 text-violet-600" />
-                <span className="text-sm font-medium">Export PDF</span>
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setFabOpen(!fabOpen)}
-          className={cn(
-            "w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors",
-            fabOpen ? "bg-slate-700 text-white" : "bg-indigo-600 text-white hover:bg-indigo-700"
-          )}
-        >
-          <motion.div animate={{ rotate: fabOpen ? 45 : 0 }}>
-            <Zap className="h-6 w-6" />
-          </motion.div>
-        </motion.button>
-      </div>
-    )
-  }
+              <motion.div animate={{ rotate: fabOpen ? 45 : 0 }}>
+                <Zap className="h-6 w-6" />
+              </motion.div>
+            </motion.button>
+          </div>
+        )
+      }
 
-  {/* Appointment Detail Dialog */ }
-    <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
+      {/* Appointment Detail Dialog */}
+      <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedAppointment?.reason || 'Appointment Details'}</DialogTitle>
@@ -2482,143 +2500,143 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         onPatientCreated={fetchPatients}
       />
 
-  {
-    selectedPatient && (
-      <QuickAppointmentDialog
-        open={bookingDialogOpen}
-        onOpenChange={setBookingDialogOpen}
-        dentistId={dentistId}
-        selectedDate={new Date()}
-        selectedTime={format(new Date(), 'HH:00')}
-        patient={selectedPatient}
-      />
-    )
-  }
+      {
+        selectedPatient && (
+          <QuickAppointmentDialog
+            open={bookingDialogOpen}
+            onOpenChange={setBookingDialogOpen}
+            dentistId={dentistId}
+            selectedDate={new Date()}
+            selectedTime={format(new Date(), 'HH:00')}
+            patient={selectedPatient}
+          />
+        )
+      }
 
-  {
-    appointmentToComplete && selectedPatient && (
-      <AppointmentCompletionDialog
-        open={completionDialogOpen}
-        onOpenChange={(open) => {
-          setCompletionDialogOpen(open);
-          if (!open) setAppointmentToComplete(null);
-        }}
-        appointment={{
-          id: appointmentToComplete.id,
-          patient_id: appointmentToComplete.patient_id,
-          dentist_id: appointmentToComplete.dentist_id,
-          appointment_date: appointmentToComplete.appointment_date,
-          reason: appointmentToComplete.reason,
-          patient: {
-            first_name: selectedPatient.first_name,
-            last_name: selectedPatient.last_name,
-            email: selectedPatient.email,
-          },
-        }}
-        onCompleted={() => {
-          setCompletionDialogOpen(false);
-          setAppointmentToComplete(null);
-          fetchPatientAppointments(selectedPatient.id);
-          fetchPatientFlags(selectedPatient.id);
-        }}
-      />
-    )
-  }
+      {
+        appointmentToComplete && selectedPatient && (
+          <AppointmentCompletionDialog
+            open={completionDialogOpen}
+            onOpenChange={(open) => {
+              setCompletionDialogOpen(open);
+              if (!open) setAppointmentToComplete(null);
+            }}
+            appointment={{
+              id: appointmentToComplete.id,
+              patient_id: appointmentToComplete.patient_id,
+              dentist_id: appointmentToComplete.dentist_id,
+              appointment_date: appointmentToComplete.appointment_date,
+              reason: appointmentToComplete.reason,
+              patient: {
+                first_name: selectedPatient.first_name,
+                last_name: selectedPatient.last_name,
+                email: selectedPatient.email,
+              },
+            }}
+            onCompleted={() => {
+              setCompletionDialogOpen(false);
+              setAppointmentToComplete(null);
+              fetchPatientAppointments(selectedPatient.id);
+              fetchPatientFlags(selectedPatient.id);
+            }}
+          />
+        )
+      }
 
-  {/* Edit Patient Dialog */ }
-  {
-    editPatientOpen && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-          <h2 className="text-xl font-semibold text-slate-800 mb-4">Edit Patient</h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium text-slate-600 mb-1 block">First Name</label>
-                <Input
-                  value={editPatientForm.first_name}
-                  onChange={(e) => setEditPatientForm({ ...editPatientForm, first_name: e.target.value })}
-                />
+      {/* Edit Patient Dialog */}
+      {
+        editPatientOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-semibold text-slate-800 mb-4">Edit Patient</h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-600 mb-1 block">First Name</label>
+                    <Input
+                      value={editPatientForm.first_name}
+                      onChange={(e) => setEditPatientForm({ ...editPatientForm, first_name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600 mb-1 block">Last Name</label>
+                    <Input
+                      value={editPatientForm.last_name}
+                      onChange={(e) => setEditPatientForm({ ...editPatientForm, last_name: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
+                    <Input
+                      value={editPatientForm.phone}
+                      onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600 mb-1 block">Date of Birth</label>
+                    <Input
+                      type="date"
+                      value={editPatientForm.date_of_birth}
+                      onChange={(e) => setEditPatientForm({ ...editPatientForm, date_of_birth: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Address</label>
+                  <Input
+                    placeholder="Street, City, Postal Code"
+                    value={editPatientForm.address}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, address: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Emergency Contact</label>
+                  <Input
+                    placeholder="Name & Phone Number"
+                    value={editPatientForm.emergency_contact}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, emergency_contact: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600 mb-1 block">Medical History / Allergies</label>
+                  <textarea
+                    placeholder="e.g. Penicillin allergy, diabetes, heart conditions..."
+                    value={editPatientForm.medical_history}
+                    onChange={(e) => setEditPatientForm({ ...editPatientForm, medical_history: e.target.value })}
+                    className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-20"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-slate-600 mb-1 block">Last Name</label>
-                <Input
-                  value={editPatientForm.last_name}
-                  onChange={(e) => setEditPatientForm({ ...editPatientForm, last_name: e.target.value })}
-                />
+              <div className="flex gap-3 mt-6">
+                <Button variant="outline" className="flex-1" onClick={() => setEditPatientOpen(false)}>
+                  Cancel
+                </Button>
+                <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={updatePatient}>
+                  Save Changes
+                </Button>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
-                <Input
-                  value={editPatientForm.phone}
-                  onChange={(e) => setEditPatientForm({ ...editPatientForm, phone: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-slate-600 mb-1 block">Date of Birth</label>
-                <Input
-                  type="date"
-                  value={editPatientForm.date_of_birth}
-                  onChange={(e) => setEditPatientForm({ ...editPatientForm, date_of_birth: e.target.value })}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-slate-600 mb-1 block">Address</label>
-              <Input
-                placeholder="Street, City, Postal Code"
-                value={editPatientForm.address}
-                onChange={(e) => setEditPatientForm({ ...editPatientForm, address: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-slate-600 mb-1 block">Emergency Contact</label>
-              <Input
-                placeholder="Name & Phone Number"
-                value={editPatientForm.emergency_contact}
-                onChange={(e) => setEditPatientForm({ ...editPatientForm, emergency_contact: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-slate-600 mb-1 block">Medical History / Allergies</label>
-              <textarea
-                placeholder="e.g. Penicillin allergy, diabetes, heart conditions..."
-                value={editPatientForm.medical_history}
-                onChange={(e) => setEditPatientForm({ ...editPatientForm, medical_history: e.target.value })}
-                className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-20"
-              />
             </div>
           </div>
-          <div className="flex gap-3 mt-6">
-            <Button variant="outline" className="flex-1" onClick={() => setEditPatientOpen(false)}>
-              Cancel
-            </Button>
-            <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={updatePatient}>
-              Save Changes
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+        )
+      }
 
-  {/* Confirm Dialog */ }
-  <AlertDialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>{confirmDialog?.title}</AlertDialogTitle>
-        <AlertDialogDescription>{confirmDialog?.message}</AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel onClick={() => setConfirmDialog(null)}>Cancel</AlertDialogCancel>
-        <AlertDialogAction className="bg-rose-600 hover:bg-rose-700" onClick={() => confirmDialog?.onConfirm()}>
-          Delete
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
-    </div >
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDialog(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-rose-600 hover:bg-rose-700" onClick={() => confirmDialog?.onConfirm()}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
