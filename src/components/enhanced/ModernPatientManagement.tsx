@@ -1005,9 +1005,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden">
-      {/* Vertical Tabs Sidebar - Refined glassmorphism */}
-      <div className="w-20 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center py-6 gap-3 shadow-xl">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden">
+      {/* Tabs - Horizontal on mobile, Vertical on desktop */}
+      <div className="md:w-20 bg-gradient-to-r md:bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex md:flex-col items-center justify-start md:justify-start px-4 md:px-0 py-3 md:py-6 gap-2 md:gap-3 shadow-xl overflow-x-auto md:overflow-visible">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1018,7 +1018,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className={cn(
-                "w-14 h-14 rounded-xl flex flex-col items-center justify-center gap-1 transition-all duration-200 relative",
+                "min-w-[56px] w-14 h-12 md:h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 md:gap-1 transition-all duration-200 relative flex-shrink-0",
                 isActive
                   ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30"
                   : "text-slate-400 hover:text-white hover:bg-white/10"
@@ -1032,7 +1032,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 />
               )}
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
+              <span className="text-[9px] md:text-[10px] font-medium tracking-wide">{tab.label}</span>
             </motion.button>
           );
         })}
@@ -1041,9 +1041,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       {/* Main Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {/* Header with Patient Dropdown - Glassmorphism */}
-        <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-6 py-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-3 md:px-6 py-3 md:py-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
               {/* Patient Dropdown Selector */}
               <DropdownMenu open={patientDropdownOpen} onOpenChange={setPatientDropdownOpen}>
                 <DropdownMenuTrigger asChild>
@@ -1365,7 +1365,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
 
                       {/* Stats Grid - Modern visual cards */}
-                      <div className="grid grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                         <motion.div
                           whileHover={{ y: -2 }}
                           className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
