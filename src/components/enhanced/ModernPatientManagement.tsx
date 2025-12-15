@@ -1131,24 +1131,27 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Alert Badges */}
-              {selectedPatient?.medical_history && (
-                <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Medical Alert
-                </Badge>
-              )}
-              {patientFlags[selectedPatient?.id || '']?.hasUnpaidBalance && (
-                <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
-                  <CreditCard className="h-3 w-3 mr-1" />
-                  Unpaid Balance
-                </Badge>
-              )}
+              {/* Alert Badges - Hidden on mobile */}
+              <div className="hidden md:flex items-center gap-2">
+                {selectedPatient?.medical_history && (
+                  <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Medical Alert
+                  </Badge>
+                )}
+                {patientFlags[selectedPatient?.id || '']?.hasUnpaidBalance && (
+                  <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
+                    <CreditCard className="h-3 w-3 mr-1" />
+                    Unpaid
+                  </Badge>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+              {/* Balance - Hidden on mobile */}
               {patientFlags[selectedPatient?.id || '']?.outstandingCents ? (
-                <div className="text-right">
+                <div className="text-right hidden md:block">
                   <p className="text-xs text-slate-500">BALANCE</p>
                   <p className="text-lg font-bold text-slate-800">
                     €{((patientFlags[selectedPatient?.id || '']?.outstandingCents || 0) / 100).toFixed(2)}
@@ -1157,9 +1160,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               ) : null}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Quick Actions
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 px-2 md:px-4">
+                    <Plus className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Quick Actions</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
