@@ -48,6 +48,7 @@ import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
 import { QuickAppointmentDialog } from "@/components/appointments/QuickAppointmentDialog";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
+import { AppointmentDetailsSidebar } from "@/components/appointments/AppointmentDetailsSidebar";
 import { useImaging, ImagingFile } from "@/hooks/useImaging";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBusinessContext } from '@/hooks/useBusinessContext';
@@ -82,6 +83,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 // Generate unique gradient based on name
 const generateGradient = (name: string): string => {
@@ -697,6 +699,11 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       }
       setConfirmDialog(null);
     });
+  };
+
+  const openAppointmentDetail = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setAppointmentDetailOpen(true);
   };
 
   const restoreAppointment = async (appt: any) => {
@@ -1984,302 +1991,256 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex h-full"
+                      className="flex flex-col md:flex-row h-full"
                     >
-                      {/* Modern Treatment History Sidebar */}
-                      <div className="w-80 bg-gradient-to-b from-slate-50/80 to-white border-r border-slate-200/50 p-5 overflow-y-auto backdrop-blur-sm">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-200">
-                              <ClipboardList className="h-5 w-5 text-white" />
+                      {/* Enhanced Treatment Sidebar */}
+                      <div className="w-full md:w-96 bg-gradient-to-b from-slate-50/90 to-white border-r border-slate-200/50 overflow-y-auto">
+                        {/* Header with Stats */}
+                        <div className="p-5 border-b border-slate-100 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
+                                <ClipboardList className="h-5 w-5 text-white" />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-slate-800">Treatment Plans</h3>
+                                <p className="text-xs text-slate-500">{treatmentPlans.length} total plans</p>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="font-semibold text-slate-800">Treatments</h3>
-                              <p className="text-xs text-slate-500">{treatmentPlans.length} plan{treatmentPlans.length !== 1 ? 's' : ''}</p>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => setNewTreatmentPlanOpen(!newTreatmentPlanOpen)}
+                              className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                                newTreatmentPlanOpen
+                                  ? "bg-violet-600 text-white rotate-45"
+                                  : "bg-white hover:bg-violet-50 text-violet-600 border border-slate-200"
+                              )}
+                            >
+                              <Plus className="h-5 w-5" />
+                            </motion.button>
+                          </div>
+
+                          {/* Stats Summary */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-violet-50 rounded-xl p-3 text-center">
+                              <p className="text-xl font-bold text-violet-700">
+                                {treatmentPlans.filter(p => p.status === 'active').length}
+                              </p>
+                              <p className="text-[10px] text-violet-600 font-medium uppercase">Active</p>
+                            </div>
+                            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                              <p className="text-xl font-bold text-emerald-700">
+                                {treatmentPlans.filter(p => p.status === 'completed').length}
+                              </p>
+                              <p className="text-[10px] text-emerald-600 font-medium uppercase">Done</p>
+                            </div>
+                            <div className="bg-slate-100 rounded-xl p-3 text-center">
+                              <p className="text-xl font-bold text-slate-700">
+                                {appointments.filter(a => treatmentPlans.some(p => a.treatment_plan_id === p.id)).length}
+                              </p>
+                              <p className="text-[10px] text-slate-600 font-medium uppercase">Appts</p>
                             </div>
                           </div>
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setNewTreatmentPlanOpen(!newTreatmentPlanOpen)}
-                            className={cn(
-                              "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
-                              newTreatmentPlanOpen
-                                ? "bg-indigo-600 text-white rotate-45"
-                                : "bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200"
-                            )}
-                          >
-                            <Plus className="h-5 w-5" />
-                          </motion.button>
                         </div>
 
-                        {/* New Treatment Plan Form */}
-                        {newTreatmentPlanOpen && (
-                          <div className="mb-4 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
-                            <h4 className="font-medium text-sm text-slate-700 mb-3">New Treatment Plan</h4>
-                            <div className="space-y-3">
-                              <Input
-                                placeholder="Treatment title..."
-                                value={newTreatmentPlan.title}
-                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, title: e.target.value })}
-                                className="text-sm"
-                              />
-                              <Input
-                                placeholder="Diagnosis..."
-                                value={newTreatmentPlan.diagnosis}
-                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, diagnosis: e.target.value })}
-                                className="text-sm"
-                              />
-                              <textarea
-                                placeholder="Description (optional)"
-                                value={newTreatmentPlan.description}
-                                onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
-                                className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
-                              />
-                              <div className="grid grid-cols-2 gap-2">
-                                <select
-                                  value={newTreatmentPlan.status}
-                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
-                                  className="p-2 text-sm rounded-lg border border-slate-200"
-                                >
-                                  <option value="active">Active</option>
-                                  <option value="draft">Draft</option>
-                                </select>
-                                <select
-                                  value={newTreatmentPlan.priority}
-                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, priority: e.target.value })}
-                                  className="p-2 text-sm rounded-lg border border-slate-200"
-                                >
-                                  <option value="low">Low Priority</option>
-                                  <option value="normal">Normal</option>
-                                  <option value="high">High Priority</option>
-                                  <option value="urgent">Urgent</option>
-                                </select>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
+                        <div className="p-4">
+
+                          {/* New Treatment Plan Form */}
+                          {newTreatmentPlanOpen && (
+                            <div className="mb-4 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
+                              <h4 className="font-medium text-sm text-slate-700 mb-3">New Treatment Plan</h4>
+                              <div className="space-y-3">
                                 <Input
-                                  type="number"
-                                  placeholder="Est. Cost €"
-                                  value={newTreatmentPlan.estimated_cost}
-                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, estimated_cost: e.target.value })}
+                                  placeholder="Treatment title..."
+                                  value={newTreatmentPlan.title}
+                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, title: e.target.value })}
                                   className="text-sm"
                                 />
                                 <Input
-                                  type="date"
-                                  placeholder="Target Date"
-                                  value={newTreatmentPlan.target_completion_date}
-                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, target_completion_date: e.target.value })}
+                                  placeholder="Diagnosis..."
+                                  value={newTreatmentPlan.diagnosis}
+                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, diagnosis: e.target.value })}
                                   className="text-sm"
                                 />
+                                <textarea
+                                  placeholder="Description (optional)"
+                                  value={newTreatmentPlan.description}
+                                  onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
+                                  className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <select
+                                    value={newTreatmentPlan.status}
+                                    onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
+                                    className="p-2 text-sm rounded-lg border border-slate-200"
+                                  >
+                                    <option value="active">Active</option>
+                                    <option value="draft">Draft</option>
+                                  </select>
+                                  <select
+                                    value={newTreatmentPlan.priority}
+                                    onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, priority: e.target.value })}
+                                    className="p-2 text-sm rounded-lg border border-slate-200"
+                                  >
+                                    <option value="low">Low Priority</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High Priority</option>
+                                    <option value="urgent">Urgent</option>
+                                  </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Input
+                                    type="number"
+                                    placeholder="Est. Cost €"
+                                    value={newTreatmentPlan.estimated_cost}
+                                    onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, estimated_cost: e.target.value })}
+                                    className="text-sm"
+                                  />
+                                  <Input
+                                    type="date"
+                                    placeholder="Target Date"
+                                    value={newTreatmentPlan.target_completion_date}
+                                    onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, target_completion_date: e.target.value })}
+                                    className="text-sm"
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={createTreatmentPlan}
+                                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-sm h-9"
+                                  >
+                                    Create
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => setNewTreatmentPlanOpen(false)}
+                                    className="text-sm h-9"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={createTreatmentPlan}
-                                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-sm h-9"
-                                >
-                                  Create
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => setNewTreatmentPlanOpen(false)}
-                                  className="text-sm h-9"
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Treatment Plans */}
-                        <div className="space-y-2">
-                          {treatmentPlans.map((plan) => {
-                            const isExpanded = expandedTreatments.has(plan.id);
-                            const linkedAppts = appointments.filter(a => a.treatment_plan_id === plan.id);
-
-                            return (
-                              <div
-                                key={plan.id}
-                                onDragOver={(e) => handleDragOver(e, plan.id)}
-                                onDragLeave={handleDragLeave}
-                                onDrop={(e) => handleDrop(e, plan.id)}
-                                className={cn(
-                                  "transition-all rounded-xl",
-                                  dropTargetPlan === plan.id && "ring-2 ring-indigo-400 ring-offset-2 bg-indigo-50"
-                                )}
-                              >
-                                <Collapsible open={isExpanded} onOpenChange={() => { toggleTreatment(plan.id); setSelectedTreatmentPlan(plan); }}>
-                                  <CollapsibleTrigger asChild>
-                                    <button
-                                      onClick={() => setSelectedTreatmentPlan(plan)}
-                                      className={cn(
-                                        "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group",
-                                        selectedTreatmentPlan?.id === plan.id
-                                          ? "bg-white shadow-md border border-indigo-200/50"
-                                          : "hover:bg-white/80 hover:shadow-sm"
-                                      )}>
-                                      <div className={cn(
-                                        "w-9 h-9 rounded-xl flex items-center justify-center",
-                                        plan.status === 'active' ? "bg-gradient-to-br from-indigo-400 to-indigo-600" : "bg-slate-200"
-                                      )}>
-                                        <Folder className={cn("h-4 w-4", plan.status === 'active' ? "text-white" : "text-slate-500")} />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm text-slate-800 truncate">{plan.title}</p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                          <span className={cn(
-                                            "text-xs font-medium px-1.5 py-0.5 rounded-full",
-                                            plan.status === 'active' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
-                                          )}>{plan.status}</span>
-                                          <span className="text-xs text-slate-400">{linkedAppts.length} appt{linkedAppts.length !== 1 ? 's' : ''}</span>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); deleteTreatmentPlan(plan.id); }}
-                                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
-                                          title="Delete treatment plan"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                                        </button>
-                                        <div className={cn(
-                                          "w-6 h-6 rounded-lg flex items-center justify-center transition-transform",
-                                          isExpanded && "rotate-90"
-                                        )}>
-                                          <ChevronRight className="h-4 w-4 text-slate-400" />
-                                        </div>
-                                      </div>
-                                    </button>
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent>
-                                    <div className="ml-4 pl-5 border-l-2 border-slate-200 space-y-1 mt-2 pb-2">
-                                      {linkedAppts.length > 0 ? linkedAppts.map((appt) => (
-                                        <button
-                                          key={appt.id}
-                                          onClick={() => openAppointmentDetail(appt)}
-                                          className={cn(
-                                            "w-full text-left p-2.5 rounded-lg transition-all flex items-center justify-between group",
-                                            selectedAppointment?.id === appt.id
-                                              ? "bg-indigo-50 border border-indigo-200"
-                                              : "hover:bg-slate-50"
-                                          )}
-                                        >
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
-                                            <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d, h:mm a')}</p>
-                                          </div>
-                                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {appt.status === 'pending' && (
-                                              <>
-                                                <button onClick={(e) => { e.stopPropagation(); handleConfirmAppointment(appt.id, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Approve">
-                                                  <Check className="h-3 w-3" />
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleQuickCancel(appt.id, e); }} className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600" title="Reject">
-                                                  <X className="h-3 w-3" />
-                                                </button>
-                                              </>
-                                            )}
-                                            {appt.status === 'confirmed' && (
-                                              <>
-                                                <button onClick={(e) => { e.stopPropagation(); handleQuickComplete(appt, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Complete">
-                                                  <CheckCircle2 className="h-3 w-3" />
-                                                </button>
-                                              </>
-                                            )}
-                                          </div>
-                                          {appt.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-indigo-500 flex-shrink-0" />}
-                                          {appt.status === 'cancelled' && <X className="h-4 w-4 text-slate-300 flex-shrink-0" />}
-                                        </button>
-                                      )) : (
-                                        <p className="text-xs text-slate-400 py-2">No appointments linked</p>
-                                      )}
-                                    </div>
-                                  </CollapsibleContent>
-                                </Collapsible>
-                              </div>
-                            );
-                          })}
-
-                          {treatmentPlans.length === 0 && (
-                            <div className="text-center py-8">
-                              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
-                                <Folder className="h-6 w-6 text-slate-300" />
-                              </div>
-                              <p className="text-sm text-slate-400">No treatment plans yet</p>
                             </div>
                           )}
-                        </div>
 
-                        {/* Divider */}
-                        <div className="my-5 border-t border-slate-200/60" />
+                          {/* Treatment Plans */}
+                          <div className="space-y-2">
+                            {treatmentPlans.map((plan) => {
+                              const isExpanded = expandedTreatments.has(plan.id);
+                              const linkedAppts = appointments.filter(a => a.treatment_plan_id === plan.id);
 
-                        {/* All Appointments */}
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-slate-700 flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-indigo-600" />
-                              Appointments
-                            </h4>
-                            <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{appointments.length}</span>
-                          </div>
-                          {/* Search */}
-                          <div className="relative mb-3">
-                            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                            <Input
-                              placeholder="Search appointments..."
-                              value={appointmentSearchTerm}
-                              onChange={(e) => setAppointmentSearchTerm(e.target.value)}
-                              className="h-8 pl-8 text-xs bg-white"
-                            />
-                          </div>
-                          <div className="space-y-1 max-h-64 overflow-y-auto">
-                            {appointments
-                              .filter(appt =>
-                                !appointmentSearchTerm ||
-                                appt.reason?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
-                                appt.notes?.toLowerCase().includes(appointmentSearchTerm.toLowerCase()) ||
-                                appt.status.toLowerCase().includes(appointmentSearchTerm.toLowerCase())
-                              )
-                              .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
-                              .map((appt) => (
-                                <button
-                                  key={appt.id}
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, appt.id)}
-                                  onClick={() => openAppointmentDetail(appt)}
+                              return (
+                                <div
+                                  key={plan.id}
+                                  onDragOver={(e) => handleDragOver(e, plan.id)}
+                                  onDragLeave={handleDragLeave}
+                                  onDrop={(e) => handleDrop(e, plan.id)}
                                   className={cn(
-                                    "w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group cursor-grab active:cursor-grabbing",
-                                    selectedAppointment?.id === appt.id
-                                      ? "bg-white shadow-md border border-indigo-200/50"
-                                      : "hover:bg-white/80 hover:shadow-sm",
-                                    draggedAppointment === appt.id && "opacity-50"
+                                    "transition-all rounded-xl",
+                                    dropTargetPlan === plan.id && "ring-2 ring-indigo-400 ring-offset-2 bg-indigo-50"
                                   )}
                                 >
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
-                                    <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d · h:mm a')}</p>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={cn(
-                                      "text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0",
-                                      appt.status === 'completed' && "bg-indigo-100 text-indigo-700",
-                                      appt.status === 'confirmed' && "bg-blue-100 text-blue-700",
-                                      appt.status === 'pending' && "bg-amber-100 text-amber-700",
-                                      appt.status === 'cancelled' && "bg-slate-100 text-slate-500"
-                                    )}>
-                                      {appt.status}
-                                    </span>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); deleteAppointment(appt.id); }}
-                                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
-                                      title="Delete appointment"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                                    </button>
-                                  </div>
-                                </button>
-                              ))}
+                                  <Collapsible open={isExpanded} onOpenChange={() => { toggleTreatment(plan.id); setSelectedTreatmentPlan(plan); }}>
+                                    <CollapsibleTrigger asChild>
+                                      <button
+                                        onClick={() => setSelectedTreatmentPlan(plan)}
+                                        className={cn(
+                                          "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group",
+                                          selectedTreatmentPlan?.id === plan.id
+                                            ? "bg-white shadow-md border border-indigo-200/50"
+                                            : "hover:bg-white/80 hover:shadow-sm"
+                                        )}>
+                                        <div className={cn(
+                                          "w-9 h-9 rounded-xl flex items-center justify-center",
+                                          plan.status === 'active' ? "bg-gradient-to-br from-indigo-400 to-indigo-600" : "bg-slate-200"
+                                        )}>
+                                          <Folder className={cn("h-4 w-4", plan.status === 'active' ? "text-white" : "text-slate-500")} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-sm text-slate-800 truncate">{plan.title}</p>
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <span className={cn(
+                                              "text-xs font-medium px-1.5 py-0.5 rounded-full",
+                                              plan.status === 'active' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"
+                                            )}>{plan.status}</span>
+                                            <span className="text-xs text-slate-400">{linkedAppts.length} appt{linkedAppts.length !== 1 ? 's' : ''}</span>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); deleteTreatmentPlan(plan.id); }}
+                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
+                                            title="Delete treatment plan"
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                          </button>
+                                          <div className={cn(
+                                            "w-6 h-6 rounded-lg flex items-center justify-center transition-transform",
+                                            isExpanded && "rotate-90"
+                                          )}>
+                                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                                          </div>
+                                        </div>
+                                      </button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                      <div className="ml-4 pl-5 border-l-2 border-slate-200 space-y-1 mt-2 pb-2">
+                                        {linkedAppts.length > 0 ? linkedAppts.map((appt) => (
+                                          <button
+                                            key={appt.id}
+                                            onClick={() => openAppointmentDetail(appt)}
+                                            className={cn(
+                                              "w-full text-left p-2.5 rounded-lg transition-all flex items-center justify-between group",
+                                              selectedAppointment?.id === appt.id
+                                                ? "bg-indigo-50 border border-indigo-200"
+                                                : "hover:bg-slate-50"
+                                            )}
+                                          >
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-sm font-medium text-slate-700 truncate">{appt.reason || 'Appointment'}</p>
+                                              <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM d, h:mm a')}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              {appt.status === 'pending' && (
+                                                <>
+                                                  <button onClick={(e) => { e.stopPropagation(); handleConfirmAppointment(appt.id, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Approve">
+                                                    <Check className="h-3 w-3" />
+                                                  </button>
+                                                  <button onClick={(e) => { e.stopPropagation(); handleQuickCancel(appt.id, e); }} className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-600" title="Reject">
+                                                    <X className="h-3 w-3" />
+                                                  </button>
+                                                </>
+                                              )}
+                                              {appt.status === 'confirmed' && (
+                                                <>
+                                                  <button onClick={(e) => { e.stopPropagation(); handleQuickComplete(appt, e); }} className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-600" title="Complete">
+                                                    <CheckCircle2 className="h-3 w-3" />
+                                                  </button>
+                                                </>
+                                              )}
+                                            </div>
+                                            {appt.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-indigo-500 flex-shrink-0" />}
+                                            {appt.status === 'cancelled' && <X className="h-4 w-4 text-slate-300 flex-shrink-0" />}
+                                          </button>
+                                        )) : (
+                                          <p className="text-xs text-slate-400 py-2">No appointments linked</p>
+                                        )}
+                                      </div>
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                </div>
+                              );
+                            })}
+
+                            {treatmentPlans.length === 0 && (
+                              <div className="text-center py-8">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                                  <Folder className="h-6 w-6 text-slate-300" />
+                                </div>
+                              </button>
+                            ))}
                             {appointments.length === 0 && (
                               <p className="text-xs text-slate-400 text-center py-6">No appointments</p>
                             )}
@@ -3161,6 +3122,50 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Appointment Detail Sidebar */}
+      <Sheet open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
+        <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto" side="right">
+          {selectedAppointment && (
+            <AppointmentDetailsSidebar
+              appointment={selectedAppointment}
+              onClose={() => setAppointmentDetailOpen(false)}
+              onStatusChange={async (id, status) => {
+                try {
+                  const { error } = await supabase
+                    .from('appointments')
+                    .update({ status })
+                    .eq('id', id);
+
+                  if (error) throw error;
+
+                  toast({
+                    title: "Status updated",
+                    description: `Appointment marked as ${status}`,
+                  });
+
+                  // Optimistic update
+                  setAppointments(appointments.map(a =>
+                    a.id === id ? { ...a, status } : a
+                  ));
+
+                  if (status === 'cancelled') {
+                    setAppointmentDetailOpen(false);
+                  }
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to update status",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+    </AlertDialog>
     </div >
   );
 }
