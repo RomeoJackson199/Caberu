@@ -2393,7 +2393,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   }
 
   {/* Appointment Detail Dialog */ }
-      <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
+    <Dialog open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedAppointment?.reason || 'Appointment Details'}</DialogTitle>
