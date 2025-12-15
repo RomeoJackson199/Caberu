@@ -124,149 +124,256 @@ export function AppointmentDetailsSidebar({
   }, [appointment.id, appointment.patient_id, appointment.appointment_date, appointment.service_id]);
 
   return (
-    <Card className="h-full border-none shadow-none bg-slate-50/50 flex flex-col">
-      <CardHeader className="border-b px-6 py-5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white shrink-0">
+    <Card className="h-full border-none shadow-none bg-background">
+      <CardHeader className="border-b px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-bold text-white">Appointment Details</CardTitle>
-            <p className="text-xs text-indigo-100 mt-1 flex items-center gap-2">
-              <Calendar className="h-3.5 w-3.5" />
-              {format(appointmentDate, "EEEE, MMMM d, yyyy")}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="text-white hover:bg-white/20 h-8 w-8 rounded-full"
-          >
+          <CardTitle className="text-xl font-semibold">Patient Details</CardTitle>
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
           </Button>
         </div>
       </CardHeader>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="h-[calc(100vh-200px)]">
         <CardContent className="px-6 py-6 space-y-6">
-          {/* Patient Card */}
-          <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-14 w-14 border-2 border-indigo-100 ring-2 ring-white shadow-sm">
-                <AvatarFallback className="bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-600 font-bold text-lg">
-                  {appointment.patient?.first_name?.[0]}{appointment.patient?.last_name?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h2 className="font-bold text-lg text-slate-900">{patientName}</h2>
-                <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
-                  <span className="bg-slate-100 px-2 py-0.5 rounded-full text-xs font-medium text-slate-600">
-                    {appointment.patient?.date_of_birth ? `${new Date().getFullYear() - new Date(appointment.patient.date_of_birth).getFullYear()} yo` : 'N/A'}
-                  </span>
-                  <a href={`tel:${appointment.patient?.phone}`} className="hover:text-indigo-600 transition-colors flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    {appointment.patient?.phone || 'No phone'}
-                  </a>
+          {/* Patient Header */}
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 border-2 border-primary/20">
+              <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
+                {appointment.patient?.first_name?.[0]}{appointment.patient?.last_name?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h2 className="font-semibold text-2xl text-foreground">{patientName}</h2>
+              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                <span>{appointment.patient?.date_of_birth ? `${new Date().getFullYear() - new Date(appointment.patient.date_of_birth).getFullYear()} yo` : 'Age N/A'}</span>
+                <span>•</span>
+                <span>Female</span>
+                <span>•</span>
+                <span>She/Her</span>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Patient Info Grid */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Contact Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs font-medium text-muted-foreground">Phone</p>
+                </div>
+                <p className="text-sm font-medium">
+                  {appointment.patient?.phone || 'Not provided'}
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Cake className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs font-medium text-muted-foreground">Date of Birth</p>
+                </div>
+                <p className="text-sm font-medium">
+                  {appointment.patient?.date_of_birth
+                    ? format(new Date(appointment.patient.date_of_birth), "dd MMM yyyy")
+                    : 'Not provided'}
+                </p>
+              </div>
+
+              <div className="col-span-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs font-medium text-muted-foreground">Insurance</p>
+                </div>
+                <p className="text-sm font-medium">Blue Cross Blue Shield</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Summary Section */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Summary</h3>
+
+            {loadingSummaries ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                  <p className="text-sm leading-relaxed text-foreground font-medium">
+                    {summaries?.short || "Generating summary..."}
+                  </p>
+                </div>
+
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Detailed Summary
+                  </h4>
+                  <p className="text-sm leading-relaxed text-foreground">
+                    {summaries?.long || "Generating detailed summary..."}
+                  </p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 rounded-full p-0 border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50"
-                onClick={() => navigate(`/dentist/patients?patient=${appointment.patient_id}`)}
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
+            )}
           </div>
 
-          {/* AI Summary Card */}
-          <div className="space-y-3">
-            <h3 className="font-bold text-xs text-slate-400 uppercase tracking-wider px-1">AI Overview</h3>
-            <div className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm space-y-4 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Sparkles className="h-12 w-12 text-indigo-500" />
-              </div>
+          <Separator />
 
-              {loadingSummaries ? (
-                <div className="flex items-center gap-3 py-2 text-sm text-slate-500">
-                  <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
-                  Generating insights...
+          {/* Appointment Details */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Appointment Details</h3>
+
+            <div className="bg-muted/30 rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground mb-1">Date & Time</p>
+                  <p className="font-medium text-sm">{format(appointmentDate, "EEEE, MMMM d, yyyy")}</p>
+                  <p className="text-sm text-muted-foreground">{format(appointmentDate, "h:mm a")}</p>
                 </div>
-              ) : (
-                <>
-                  <div className="bg-indigo-50/50 rounded-lg p-3 border border-indigo-100/50">
-                    <p className="text-sm font-medium text-indigo-900 leading-relaxed">
-                      {summaries?.short || "No summary available."}
-                    </p>
-                  </div>
-                  {summaries?.long && (
-                    <p className="text-sm text-slate-600 leading-relaxed pl-1 border-l-2 border-slate-100">
-                      {summaries.long}
-                    </p>
-                  )}
-                </>
-              )}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <Badge className={cn("gap-1", statusConfig?.className)}>
+                    <StatusIcon className="h-3 w-3" />
+                    {statusConfig?.label}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">Urgency</p>
+                  <Badge variant="outline" className={cn(
+                    "text-xs",
+                    appointment.urgency === "high" && "bg-red-100 text-red-800 border-red-200",
+                    appointment.urgency === "medium" && "bg-orange-100 text-orange-800 border-orange-200",
+                    appointment.urgency === "low" && "bg-gray-100 text-gray-800 border-gray-200"
+                  )}>
+                    {appointment.urgency.toUpperCase()}
+                  </Badge>
+                </div>
+
+                <div className="pt-2">
+                  <p className="text-xs text-muted-foreground mb-1">Reason</p>
+                  <p className="text-sm font-medium">{appointment.reason || "General consultation"}</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:border-indigo-200 transition-colors">
-              <div className="text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Time</div>
-              <div className="font-semibold text-slate-700 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-indigo-500" />
-                {format(appointmentDate, "h:mm a")}
-              </div>
-            </div>
-
-            <div className={cn(
-              "bg-white rounded-xl border p-4 shadow-sm transition-colors",
-              statusConfig?.className ? `border-${statusConfig.className.split('-')[1]}-200 bg-${statusConfig.className.split('-')[1]}-50/30` : "border-slate-100"
-            )}>
-              <div className="text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Status</div>
-              <div className="font-semibold text-slate-700 flex items-center gap-2">
-                <StatusIcon className={cn("h-4 w-4", statusConfig?.className?.split(' ')[1])} />
-                {statusConfig?.label}
-              </div>
-            </div>
-
-            <div className="col-span-2 bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <div className="text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Reason</div>
-              <div className="font-medium text-slate-700">{appointment.reason || "Check-up"}</div>
-            </div>
-          </div>
-
-          {/* Notes */}
           {appointment.notes && (
-            <div className="space-y-3">
-              <h3 className="font-bold text-xs text-slate-400 uppercase tracking-wider px-1">Clinical Notes</h3>
-              <div className="bg-amber-50/50 rounded-xl border border-amber-100 p-4 text-sm text-slate-700 leading-relaxed">
-                {appointment.notes}
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Notes</h3>
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-sm leading-relaxed">{appointment.notes}</p>
+                </div>
               </div>
-            </div>
+            </>
           )}
 
+          {/* Imaging Section */}
+          <Separator />
+          <AppointmentImagingTab
+            patientId={appointment.patient_id}
+            appointmentId={appointment.id}
+          />
+
+          <Separator />
+
+          {/* Next Appointment */}
+          {nextAppointment && (
+            <>
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Next Appointment</h3>
+                <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium">
+                      {format(parseISO(nextAppointment.appointment_date), "dd MMM yyyy 'at' h:mm a")}
+                    </p>
+                    <Badge variant="outline" className={cn(
+                      "gap-1",
+                      nextAppointment.status === "confirmed" && "bg-green-100 text-green-800 border-green-200",
+                      nextAppointment.status === "pending" && "bg-yellow-100 text-yellow-800 border-yellow-200"
+                    )}>
+                      <Activity className="h-3 w-3" />
+                      {nextAppointment.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{nextAppointment.reason}</p>
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
+
           {/* Actions */}
-          <div className="space-y-3 pt-4">
-            {(appointment.status !== 'completed' && appointment.status !== 'cancelled') && (
+          <div className="space-y-3 pt-2">
+            {/* Show Checkout for in_progress appointments */}
+            {appointment.status === "in_progress" && serviceDetails && (
               <Button
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200"
+                className="w-full gap-2"
                 size="lg"
-                onClick={() => setShowCompletionDialog(true)}
+                onClick={() => setShowCheckout(true)}
               >
-                Mark Completed
+                <ShoppingBag className="h-4 w-4" />
+                Check Out & Complete
               </Button>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full border-slate-200" onClick={() => setShowReschedule(true)}>
-                Reschedule
-              </Button>
-              {appointment.status !== 'cancelled' && (
-                <Button variant="ghost" className="w-full text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={() => onStatusChange(appointment.id, 'cancelled')}>
-                  Cancel
+            {(appointment.status !== "completed" && appointment.status !== "cancelled" && appointment.status !== "in_progress") && (
+              <>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => setShowCompletionDialog(true)}
+                >
+                  Mark as Completed
                 </Button>
-              )}
-            </div>
+
+                {/* Smart Reschedule Button */}
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-purple-300 hover:bg-purple-50"
+                  size="lg"
+                  onClick={() => setShowReschedule(true)}
+                >
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  Smart Reschedule
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                  onClick={() => onStatusChange(appointment.id, "cancelled")}
+                >
+                  Cancel Appointment
+                </Button>
+              </>
+            )}
+
+            <Button
+              variant="secondary"
+              className="w-full gap-2"
+              size="lg"
+              onClick={() => navigate(`/dentist/patients?patient=${appointment.patient_id}`)}
+            >
+              <User className="h-4 w-4" />
+              View Full Profile
+              <ExternalLink className="ml-auto h-4 w-4" />
+            </Button>
           </div>
         </CardContent>
       </ScrollArea>
@@ -281,13 +388,16 @@ export function AppointmentDetailsSidebar({
         }}
       />
 
+
+      {/* Smart Reschedule Assistant */}
       <RescheduleAssistant
         appointmentId={appointment.id}
         open={showReschedule}
         onOpenChange={setShowReschedule}
         onRescheduled={() => {
           setShowReschedule(false);
-          onClose(); // Close details on reschedule
+          // Refresh the appointment data
+          onClose();
         }}
         reason="patient_requested"
       />
