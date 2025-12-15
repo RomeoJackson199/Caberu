@@ -1301,26 +1301,26 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-8 space-y-6 max-w-4xl mx-auto"
+                      className="p-4 md:p-8 space-y-4 md:space-y-6 max-w-4xl mx-auto overflow-y-auto"
                     >
                       {/* Patient Info Card - Enhanced */}
                       <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
                         <CardContent className="p-0">
-                          <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-500 h-24 relative">
+                          <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-500 h-12 md:h-24 relative">
                             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
                           </div>
-                          <div className="px-8 pb-8 -mt-12">
-                            <div className="flex items-end gap-6">
-                              <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
+                          <div className="px-4 md:px-8 pb-4 md:pb-8 -mt-6 md:-mt-12">
+                            <div className="flex items-end gap-3 md:gap-6">
+                              <Avatar className="h-16 w-16 md:h-28 md:w-28 border-2 md:border-4 border-white shadow-xl">
                                 <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
-                                <AvatarFallback className={cn("text-white text-3xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
+                                <AvatarFallback className={cn("text-white text-xl md:text-3xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
                                   {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <div className="flex items-start justify-between">
                                   <div>
-                                    <h2 className="text-2xl font-bold text-slate-800">
+                                    <h2 className="text-lg md:text-2xl font-bold text-slate-800">
                                       {selectedPatient.first_name} {selectedPatient.last_name}
                                     </h2>
                                     <p className="text-slate-500 mt-1 flex items-center gap-2">
