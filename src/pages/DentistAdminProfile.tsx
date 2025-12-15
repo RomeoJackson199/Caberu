@@ -6,15 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, User, CalendarCheck } from "lucide-react";
+import { Loader2, Save, User } from "lucide-react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+
 
 export default function DentistAdminProfile() {
   const { businessId } = useBusinessContext();
@@ -33,7 +32,6 @@ export default function DentistAdminProfile() {
     bio: "",
     profile_picture_url: "",
   });
-  const [requireApproval, setRequireApproval] = useState(false);
   const [initialData, setInitialData] = useState(formData);
 
   useEffect(() => {
@@ -65,7 +63,6 @@ export default function DentistAdminProfile() {
         };
         setFormData(data);
         setInitialData(data);
-        setRequireApproval(dentistData.require_appointment_approval || false);
         setHasChanges(false);
       }
     } catch (error: any) {
@@ -95,7 +92,6 @@ export default function DentistAdminProfile() {
             specialization: formData.specialization,
             clinic_address: formData.clinic_address,
             profile_picture_url: formData.profile_picture_url,
-            require_appointment_approval: requireApproval,
           })
           .eq('id', dentistId),
         supabase
@@ -256,28 +252,6 @@ export default function DentistAdminProfile() {
                 placeholder="Tell patients about yourself, your experience, and specializations..."
                 rows={4}
               />
-            </div>
-
-            <Separator className="my-6" />
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <CalendarCheck className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold">Appointment Settings</h3>
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-                <div className="space-y-0.5">
-                  <p className="font-medium">Require Appointment Approval</p>
-                  <p className="text-sm text-muted-foreground">
-                    When enabled, patient appointments need your approval before confirmation
-                  </p>
-                </div>
-                <Switch
-                  checked={requireApproval}
-                  onCheckedChange={setRequireApproval}
-                />
-              </div>
             </div>
 
             <div className="flex justify-end">
