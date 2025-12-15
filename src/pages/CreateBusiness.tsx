@@ -44,8 +44,8 @@ export default function CreateBusiness() {
         toast.loading('Creating your business...');
 
         try {
-          const { data, error } = await supabase.functions.invoke('complete-business-subscription', {
-            body: { sessionId },
+          const { data, error } = await supabase.functions.invoke('complete-business-setup', {
+            body: { session_id: sessionId, business_data: {} },
           });
 
           if (error) throw error;
@@ -131,10 +131,10 @@ export default function CreateBusiness() {
                     animate={{ scale: currentStep === step.id ? 1.1 : 1 }}
                     transition={{ duration: 0.3 }}
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold transition-all shadow-lg ${currentStep > step.id
-                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
-                        : currentStep === step.id
-                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white ring-4 ring-blue-200 dark:ring-blue-900'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
+                      : currentStep === step.id
+                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white ring-4 ring-blue-200 dark:ring-blue-900'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                       }`}
                   >
                     {currentStep > step.id ? <CheckCircle2 className="w-6 h-6" /> : step.id}

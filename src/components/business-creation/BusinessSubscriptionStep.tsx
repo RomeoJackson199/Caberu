@@ -40,7 +40,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
         .select('*')
         .eq('is_active', true)
         .order('price_monthly', { ascending: true });
-      
+
       if (error) throw error;
 
       logger.debug('Loaded subscription plans:', data);
@@ -108,16 +108,16 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
         // Generate unique slug
         let uniqueSlug = businessData.slug;
         let slugCounter = 1;
-        
+
         while (true) {
           const { data: existingBusiness } = await supabase
             .from('businesses')
             .select('id')
             .eq('slug', uniqueSlug)
             .maybeSingle();
-          
+
           if (!existingBusiness) break;
-          
+
           uniqueSlug = `${businessData.slug}-${slugCounter}`;
           slugCounter++;
         }
@@ -148,6 +148,22 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
           });
 
         if (memberError) throw memberError;
+
+        // Update subscription status for promo activation
+        const now = new Date();
+        const oneMonthFromNow = new Date(now);
+        oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+        await supabase
+          .from('businesses')
+          .update({
+            subscription_status: 'active',
+            subscription_plan: 'promo',
+            subscription_started_at: now.toISOString(),
+            subscription_ends_at: oneMonthFromNow.toISOString(),
+            promo_code_used: validPromo.code,
+          })
+          .eq('id', business.id);
 
         // Set as current business
         await supabase.functions.invoke('set-current-business', {
@@ -238,13 +254,12 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
           return (
             <Card
               key={plan.id}
-              className={`relative p-8 cursor-pointer transition-all ${
-                isPopular 
-                  ? 'ring-2 ring-primary shadow-2xl scale-105 bg-gradient-to-br from-primary/5 to-background' 
+              className={`relative p-8 cursor-pointer transition-all ${isPopular
+                  ? 'ring-2 ring-primary shadow-2xl scale-105 bg-gradient-to-br from-primary/5 to-background'
                   : isSelected
-                  ? 'ring-2 ring-primary shadow-lg'
-                  : 'hover:shadow-lg hover:scale-[1.02]'
-              }`}
+                    ? 'ring-2 ring-primary shadow-lg'
+                    : 'hover:shadow-lg hover:scale-[1.02]'
+                }`}
               onClick={() => setSelectedPlan(plan.id)}
             >
               {/* Most Popular Badge */}
@@ -281,16 +296,14 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                 <div className="space-y-3 min-h-[300px]">
                   {Array.isArray(plan.features) && plan.features.map((feature, idx) => (
                     <div key={idx} className="flex items-start gap-3">
-                      <div className={`mt-0.5 rounded-full p-1 ${
-                        isPopular ? 'bg-blue-100 dark:bg-blue-900' : 
-                        isPremium ? 'bg-purple-100 dark:bg-purple-900' :
-                        'bg-green-100 dark:bg-green-900'
-                      }`}>
-                        <Check className={`h-4 w-4 ${
-                          isPopular ? 'text-blue-600 dark:text-blue-400' :
-                          isPremium ? 'text-purple-600 dark:text-purple-400' :
-                          'text-green-600 dark:text-green-400'
-                        }`} />
+                      <div className={`mt-0.5 rounded-full p-1 ${isPopular ? 'bg-blue-100 dark:bg-blue-900' :
+                          isPremium ? 'bg-purple-100 dark:bg-purple-900' :
+                            'bg-green-100 dark:bg-green-900'
+                        }`}>
+                        <Check className={`h-4 w-4 ${isPopular ? 'text-blue-600 dark:text-blue-400' :
+                            isPremium ? 'text-purple-600 dark:text-purple-400' :
+                              'text-green-600 dark:text-green-400'
+                          }`} />
                       </div>
                       <span className="text-sm flex-1">{feature}</span>
                     </div>
@@ -300,9 +313,8 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                 {/* CTA Button */}
                 <Button
                   variant={isPopular ? 'default' : isSelected ? 'default' : 'outline'}
-                  className={`w-full h-12 text-base font-semibold ${
-                    isPopular ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg' : ''
-                  }`}
+                  className={`w-full h-12 text-base font-semibold ${isPopular ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg' : ''
+                    }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedPlan(plan.id);
@@ -322,7 +334,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
           <Tag className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Have a Promo Code?</h3>
         </div>
-        
+
         {validPromo ? (
           <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
             <div className="flex items-center gap-2">
