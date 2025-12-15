@@ -2239,10 +2239,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
                                   <Folder className="h-6 w-6 text-slate-300" />
                                 </div>
-                              </button>
-                            ))}
-                            {appointments.length === 0 && (
-                              <p className="text-xs text-slate-400 text-center py-6">No appointments</p>
+                                <p className="text-sm text-slate-500 font-medium">No treatment plans yet</p>
+                              </div>
                             )}
                           </div>
                         </div>
