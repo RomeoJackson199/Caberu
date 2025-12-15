@@ -494,7 +494,7 @@ export function CancelSubscriptionSection() {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Your subscription will remain active until {periodEndDate.toLocaleDateString()}.
+                                        Your subscription will remain active until {periodEndDate ? periodEndDate.toLocaleDateString() : 'the end of the period'}.
                                         After that, you'll lose access to premium features.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>

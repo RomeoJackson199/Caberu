@@ -73,6 +73,10 @@ serve(async (req) => {
         primary_color: '#0F3D91',
         secondary_color: '#66D2D6',
         currency: 'USD',
+        subscription_status: 'active',
+        subscription_plan: 'monthly',
+        subscription_started_at: new Date().toISOString(),
+        subscription_ends_at: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(), // 1 year default
       })
       .select()
       .single();
