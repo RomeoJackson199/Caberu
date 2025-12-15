@@ -1006,21 +1006,21 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [fabOpen, setFabOpen] = useState(false);
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] bg-slate-50">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] bg-slate-50">
         {/* Skeleton Sidebar */}
-        <div className="w-20 bg-slate-900 flex flex-col items-center py-6 gap-2">
+        <div className="hidden md:flex w-20 bg-slate-900 flex-col items-center py-6 gap-2">
           {[1, 2, 3, 4].map(i => (
             <Skeleton key={i} className="w-12 h-12 rounded-xl bg-slate-700" />
           ))}
         </div>
         {/* Skeleton Content */}
-        <div className="flex-1 p-6 space-y-4">
-          <div className="flex items-center gap-4 mb-6">
-            <Skeleton className="h-12 w-48 rounded-xl" />
+        <div className="flex-1 p-4 md:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mb-6 gap-3">
+            <Skeleton className="h-12 w-full sm:w-48 rounded-xl" />
             <Skeleton className="h-12 w-32 rounded-xl" />
           </div>
           <Skeleton className="h-32 w-full rounded-2xl" />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Skeleton className="h-24 rounded-xl" />
             <Skeleton className="h-24 rounded-xl" />
           </div>
@@ -1035,9 +1035,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden">
       {/* Vertical Tabs Sidebar - Refined glassmorphism */}
-      <div className="w-20 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center py-6 gap-3 shadow-xl">
+      <div className="hidden md:flex w-20 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex-col items-center py-6 gap-3 shadow-xl">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1070,10 +1070,35 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Mobile Tab Pills */}
+        <div className="md:hidden bg-white/90 backdrop-blur-lg border-b border-slate-200/70 px-4 pt-4 pb-3 shadow-sm">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-full whitespace-nowrap text-sm transition-all border",
+                    isActive
+                      ? "bg-indigo-600 text-white border-indigo-500 shadow-sm"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:text-indigo-700"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Header with Patient Dropdown - Glassmorphism */}
-        <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-6 py-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-4 md:px-6 py-3 md:py-4 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               {/* Patient Dropdown Selector */}
               <DropdownMenu open={patientDropdownOpen} onOpenChange={setPatientDropdownOpen}>
                 <DropdownMenuTrigger asChild>
@@ -1253,7 +1278,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               )}
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               {patientFlags[selectedPatient?.id || '']?.outstandingCents ? (
                 <div className="text-right">
                   <p className="text-xs text-slate-500">BALANCE</p>
@@ -1296,9 +1321,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           </div>
 
           {/* Global Search Bar */}
-          <div className="px-6 py-3 border-t border-slate-100">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 max-w-md">
+          <div className="px-4 md:px-6 py-3 border-t border-slate-100">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+              <div className="relative flex-1 w-full md:max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search notes, appointments, treatments..."
@@ -1438,7 +1463,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-8 space-y-6 max-w-4xl mx-auto"
+                      className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto w-full"
                     >
                       {/* Patient Info Card - Enhanced */}
                       <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
@@ -1446,8 +1471,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-500 h-24 relative">
                             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
                           </div>
-                          <div className="px-8 pb-8 -mt-12">
-                            <div className="flex items-end gap-6">
+                          <div className="px-4 sm:px-6 md:px-8 pb-8 -mt-12">
+                            <div className="flex flex-col sm:flex-row sm:items-end gap-6">
                               <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
                                 <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
                                 <AvatarFallback className={cn("text-white text-3xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
@@ -1474,7 +1499,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   </Button>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                                   {selectedPatient.email && (
                                     <div className="flex items-center gap-2 text-sm text-slate-600">
                                       <Mail className="h-4 w-4 text-slate-400" />
@@ -1502,7 +1527,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
 
                       {/* Stats Grid - Modern visual cards */}
-                      <div className="grid grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         <motion.div
                           whileHover={{ y: -2 }}
                           className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
@@ -1748,7 +1773,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
                                 className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
                               />
-                              <div className="grid grid-cols-2 gap-2">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <select
                                   value={newTreatmentPlan.status}
                                   onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
@@ -1768,7 +1793,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   <option value="urgent">Urgent</option>
                                 </select>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <Input
                                   type="number"
                                   placeholder="Est. Cost €"
@@ -2012,7 +2037,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     <X className="h-4 w-4 mr-1" /> Close
                                   </Button>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   {/* Left Image Slot */}
                                   <div className="border-2 border-dashed border-slate-200 rounded-xl aspect-square flex items-center justify-center bg-slate-50">
                                     {compareImages.left ? (
@@ -2039,7 +2064,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 {/* Image Selection */}
                                 <div className="bg-slate-50 rounded-xl p-4">
                                   <p className="text-sm font-medium text-slate-700 mb-3">Select images to compare:</p>
-                                  <div className="grid grid-cols-4 gap-2">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                                     {appointmentImages.files.map((file) => (
                                       <button
                                         key={file.id}
@@ -2095,7 +2120,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 </div>
 
                                 {/* Content Cards */}
-                                <div className="grid grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                   {/* Notes */}
                                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                                     <h3 className="text-sm font-semibold text-slate-700 mb-3">Notes</h3>
@@ -2122,7 +2147,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                       </Button>
                                     </div>
                                     {appointmentImages.files.length > 0 ? (
-                                      <div className="grid grid-cols-2 gap-2">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {appointmentImages.files.slice(0, 4).map((file) => (
                                           <div
                                             key={file.id}
@@ -2159,7 +2184,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 </div>
 
                                 {/* Bottom Row */}
-                                <div className="grid grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                   {/* Treatment Plan */}
                                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                                     <h3 className="text-sm font-semibold text-slate-700 mb-3">Treatment Plan</h3>
@@ -2255,7 +2280,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             </div>
 
                             {/* Treatment Info Cards */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <Card className="border-slate-200">
                                 <CardContent className="p-4">
                                   <p className="text-xs text-slate-500 mb-1">Created</p>
@@ -2555,7 +2580,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           </DialogHeader>
           {selectedAppointment && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-slate-500 mb-1">Date & Time</p>
                   <p className="font-medium">
@@ -2687,7 +2712,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
             <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-semibold text-slate-800 mb-4">Edit Patient</h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium text-slate-600 mb-1 block">First Name</label>
                     <Input
@@ -2703,7 +2728,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium text-slate-600 mb-1 block">Phone</label>
                     <Input
