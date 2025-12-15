@@ -558,11 +558,6 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     });
   };
 
-  const openAppointmentDetail = (appt: Appointment) => {
-    setSelectedAppointment(appt);
-    setSelectedTreatmentPlan(null); // Clear treatment selection to show appointment
-  };
-
   const createTreatmentPlan = async () => {
     if (!selectedPatient || !newTreatmentPlan.title.trim()) {
       toast({ title: 'Error', description: 'Please enter a title', variant: 'destructive' });
