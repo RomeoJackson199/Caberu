@@ -518,10 +518,40 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     }
   }, [selectedAppointment]);
 
+  const normalizedPatientSearch = patientSearchTerm.trim().toLowerCase();
+
+  const highlightMatch = (value?: string | null) => {
+    const text = value || '';
+    if (!normalizedPatientSearch) return text;
+
+    const index = text.toLowerCase().indexOf(normalizedPatientSearch);
+    if (index === -1) return text;
+
+    const before = text.slice(0, index);
+    const match = text.slice(index, index + normalizedPatientSearch.length);
+    const after = text.slice(index + normalizedPatientSearch.length);
+
+    return (
+      <>
+        {before}
+        <span className="rounded-sm bg-amber-100 px-0.5 text-amber-800">{match}</span>
+        {after}
+      </>
+    );
+  };
+
   const filteredPatients = patients.filter(patient => {
+    if (!normalizedPatientSearch) return true;
+
     const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
-    const search = patientSearchTerm.toLowerCase();
-    return fullName.includes(search) || patient.email.toLowerCase().includes(search);
+    const fieldsToSearch = [
+      fullName,
+      patient.email?.toLowerCase() || '',
+      patient.phone?.toLowerCase() || '',
+      patient.id.toLowerCase()
+    ];
+
+    return fieldsToSearch.some(field => field.includes(normalizedPatientSearch));
   });
 
   const getAge = (dob?: string) => {
@@ -1071,49 +1101,126 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     )}
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-72 p-0">
-                  <div className="p-3 border-b">
-                    <div className="relative">
+                <DropdownMenuContent align="start" className="w-80 p-0 overflow-hidden">
+                  <div className="p-3 border-b bg-gradient-to-r from-indigo-50 to-white">
+                    <div className="relative rounded-lg shadow-inner">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
-                        placeholder="Find patient..."
+                        placeholder="Find patient by name, phone, email, or ID"
                         value={patientSearchTerm}
                         onChange={(e) => setPatientSearchTerm(e.target.value)}
-                        className="pl-9 h-9 bg-slate-50"
+                        className="pl-9 pr-10 h-10 bg-white/80"
                       />
+                      {patientSearchTerm && (
+                        <button
+                          onClick={() => setPatientSearchTerm("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          aria-label="Clear search"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                      <span>{filteredPatients.length} match{filteredPatients.length === 1 ? '' : 'es'}</span>
+                      {normalizedPatientSearch && <span className="flex items-center gap-1 text-emerald-600"><Check className="h-3 w-3" />Enhanced search</span>}
                     </div>
                   </div>
-                  <div className="max-h-64 overflow-y-auto p-2">
-                    {filteredPatients.map((patient, idx) => {
-                      const isSelected = selectedPatient?.id === patient.id;
-                      return (
-                        <button
-                          key={patient.id}
-                          onClick={() => {
-                            setSelectedPatient(patient);
-                            setPatientDropdownOpen(false);
-                            setActiveTab('overview');
-                          }}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors"
-                        >
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={patient.profile_picture_url || undefined} />
-                            <AvatarFallback className={cn("bg-gradient-to-br text-white text-sm font-medium", generateGradient(`${patient.first_name}${patient.last_name}`))}>
-                              {`${patient.first_name[0]}${patient.last_name[0]}`.toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 text-left">
-                            <p className="font-medium text-sm text-slate-800">
-                              {patient.first_name} {patient.last_name}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {getAge(patient.date_of_birth)} years old
-                            </p>
-                          </div>
-                          {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
-                        </button>
-                      );
-                    })}
+                  <div className="max-h-72 overflow-y-auto p-3 space-y-2 bg-slate-50/60">
+                    {filteredPatients.length === 0 ? (
+                      <div className="text-center py-6 px-3 text-slate-500 border border-dashed border-slate-200 rounded-lg bg-white/70">
+                        <p className="text-sm font-medium mb-2">No patients match that search</p>
+                        <p className="text-xs text-slate-400 mb-3">Try adjusting the spelling or add them directly.</p>
+                        <div className="flex flex-col gap-2">
+                          {patientSearchTerm && (
+                            <Button variant="outline" size="sm" onClick={() => setPatientSearchTerm("")}>
+                              Clear search
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                            onClick={() => {
+                              setNewPatientDialogOpen(true);
+                              setPatientDropdownOpen(false);
+                            }}
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Add new patient
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      filteredPatients.map((patient) => {
+                        const isSelected = selectedPatient?.id === patient.id;
+                        const age = getAge(patient.date_of_birth);
+                        return (
+                          <button
+                            key={patient.id}
+                            onClick={() => {
+                              setSelectedPatient(patient);
+                              setPatientDropdownOpen(false);
+                              setActiveTab('overview');
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-3 rounded-xl transition-all bg-white/90 border shadow-sm",
+                              isSelected
+                                ? "border-indigo-200 ring-1 ring-indigo-200 shadow-md"
+                                : "border-slate-100 hover:border-indigo-100 hover:shadow-md"
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
+                                <AvatarImage src={patient.profile_picture_url || undefined} />
+                                <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-slate-100 text-indigo-700 font-semibold">
+                                  {`${patient.first_name[0]}${patient.last_name[0]}`.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 space-y-1">
+                                <p className="font-semibold text-slate-800 flex items-center gap-2">
+                                  {highlightMatch(`${patient.first_name} ${patient.last_name}`)}
+                                  {age ? (
+                                    <span className="text-[11px] font-medium text-slate-500 px-2 py-0.5 rounded-full bg-slate-100">
+                                      {age} yrs
+                                    </span>
+                                  ) : null}
+                                </p>
+                                <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100">
+                                    <Mail className="h-3 w-3" />
+                                    {highlightMatch(patient.email) || 'No email'}
+                                  </span>
+                                  {patient.phone ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100">
+                                      <Phone className="h-3 w-3" />
+                                      {highlightMatch(patient.phone)}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-700">
+                                      <AlertTriangle className="h-3 w-3" />
+                                      No phone
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2 min-w-[90px]">
+                                <span className="text-[10px] uppercase tracking-wide text-slate-400">ID</span>
+                                <span className="text-xs font-mono text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                                  {highlightMatch(patient.id)}
+                                </span>
+                                {isSelected && (
+                                  <span className="inline-flex items-center gap-1 text-emerald-600 text-xs font-medium">
+                                    <Check className="h-4 w-4" />
+                                    Active
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                   <div className="p-2 border-t">
                     <Button
@@ -1231,10 +1338,40 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto">
           {!selectedPatient ? (
-            <div className="flex-1 flex items-center justify-center text-slate-400 h-full">
-              <div className="text-center">
-                <User className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium">No patients yet</p>
+            <div className="flex-1 flex items-center justify-center h-full px-6">
+              <div className="max-w-xl w-full bg-white/80 backdrop-blur rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-indigo-500/10 via-indigo-100 to-white px-6 py-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-inner text-indigo-600">
+                    <User className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">Patient workspace ready</p>
+                    <p className="text-xs text-slate-500">Select an existing patient or create a new profile to get started.</p>
+                  </div>
+                </div>
+                <div className="p-6 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-slate-700 font-medium">
+                      <Search className="h-4 w-4 text-indigo-500" />
+                      Browse current patients
+                    </div>
+                    <p className="text-xs text-slate-500">Use the patient switcher above to quickly find someone by name, phone, or email.</p>
+                    <Button variant="outline" className="justify-start" onClick={() => setPatientDropdownOpen(true)}>
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                      Open patient picker
+                    </Button>
+                  </div>
+                  <div className="rounded-xl border border-dashed border-indigo-200 bg-indigo-50/70 p-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-indigo-700 font-medium">
+                      <UserPlus className="h-4 w-4" />
+                      Create someone new
+                    </div>
+                    <p className="text-xs text-indigo-600">Capture contact info and start charting immediately with the new patient flow.</p>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={() => setNewPatientDialogOpen(true)}>
+                      Add patient
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
