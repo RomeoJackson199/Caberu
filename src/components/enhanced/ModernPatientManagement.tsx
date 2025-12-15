@@ -1365,8 +1365,163 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         </CardContent>
                       </Card>
 
+                      {/* Patient Health Score & Treatment Progress Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Patient Engagement Score */}
+                        <Card className="border border-slate-200/60 shadow-sm bg-gradient-to-br from-white to-slate-50/30">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                                  <Zap className="h-4 w-4 text-white" />
+                                </div>
+                                <span className="font-medium text-slate-700 text-sm">Patient Score</span>
+                              </div>
+                              <div className="text-2xl font-bold text-emerald-600">
+                                {(() => {
+                                  // Calculate score based on engagement factors
+                                  const completedAppts = appointments.filter(a => a.status === 'completed').length;
+                                  const totalAppts = appointments.length;
+                                  const hasRecentVisit = appointments.some(a => {
+                                    const aptDate = new Date(a.appointment_date);
+                                    const sixMonthsAgo = new Date();
+                                    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+                                    return aptDate > sixMonthsAgo && a.status === 'completed';
+                                  });
+                                  const hasNoBalance = (patientFlags[selectedPatient.id]?.outstandingCents || 0) === 0;
+                                  const hasTreatmentPlan = treatmentPlans.length > 0;
 
-                      {/* Stats Grid - Enhanced with progress bars and trends */}
+                                  let score = 50; // Base score
+                                  if (totalAppts > 0) score += Math.min(20, completedAppts * 5);
+                                  if (hasRecentVisit) score += 15;
+                                  if (hasNoBalance) score += 10;
+                                  if (hasTreatmentPlan) score += 5;
+
+                                  return Math.min(100, score);
+                                })()}
+                              </div>
+                            </div>
+                            {/* Score breakdown */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-500">Appointment Attendance</span>
+                                <span className="text-slate-700 font-medium">
+                                  {appointments.filter(a => a.status === 'completed').length}/{appointments.length}
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
+                                  style={{
+                                    width: `${appointments.length > 0
+                                      ? (appointments.filter(a => a.status === 'completed').length / appointments.length) * 100
+                                      : 0}%`
+                                  }}
+                                />
+                              </div>
+                              <div className="flex gap-2 mt-2">
+                                {(patientFlags[selectedPatient.id]?.outstandingCents || 0) === 0 ? (
+                                  <Badge className="bg-emerald-50 text-emerald-600 text-[10px]">
+                                    <Check className="h-2.5 w-2.5 mr-1" /> No Balance
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-amber-50 text-amber-600 text-[10px]">
+                                    Outstanding Balance
+                                  </Badge>
+                                )}
+                                {appointments.some(a => {
+                                  const aptDate = new Date(a.appointment_date);
+                                  const sixMonthsAgo = new Date();
+                                  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+                                  return aptDate > sixMonthsAgo && a.status === 'completed';
+                                }) ? (
+                                  <Badge className="bg-blue-50 text-blue-600 text-[10px]">
+                                    <Check className="h-2.5 w-2.5 mr-1" /> Active
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-slate-100 text-slate-500 text-[10px]">
+                                    Needs Followup
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Treatment Progress */}
+                        <Card className="border border-slate-200/60 shadow-sm bg-gradient-to-br from-white to-slate-50/30">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
+                                  <ClipboardList className="h-4 w-4 text-white" />
+                                </div>
+                                <span className="font-medium text-slate-700 text-sm">Treatment Progress</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-violet-600"
+                                onClick={() => setActiveTab('clinical')}
+                              >
+                                View All →
+                              </Button>
+                            </div>
+                            {treatmentPlans.length > 0 ? (
+                              <div className="space-y-3">
+                                {treatmentPlans.slice(0, 2).map((plan) => {
+                                  // Calculate completion based on associated appointments
+                                  const planAppts = treatmentAppointments[plan.id] || [];
+                                  const completed = planAppts.filter(a => a.status === 'completed').length;
+                                  const total = planAppts.length || 1;
+                                  const percentage = Math.round((completed / total) * 100);
+
+                                  return (
+                                    <div key={plan.id} className="space-y-1.5">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-xs font-medium text-slate-700 truncate max-w-[150px]">
+                                          {plan.title}
+                                        </span>
+                                        <span className="text-xs text-slate-500">{percentage}%</span>
+                                      </div>
+                                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                        <motion.div
+                                          initial={{ width: 0 }}
+                                          animate={{ width: `${percentage}%` }}
+                                          transition={{ duration: 0.8, ease: "easeOut" }}
+                                          className={cn(
+                                            "h-full rounded-full",
+                                            percentage === 100
+                                              ? "bg-gradient-to-r from-emerald-400 to-green-500"
+                                              : percentage > 50
+                                                ? "bg-gradient-to-r from-blue-400 to-indigo-500"
+                                                : "bg-gradient-to-r from-violet-400 to-purple-500"
+                                          )}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-center py-4">
+                                <ClipboardList className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                                <p className="text-xs text-slate-400">No active treatment plans</p>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="mt-2 h-7 text-xs text-violet-600"
+                                  onClick={() => setNewTreatmentPlanOpen(true)}
+                                >
+                                  <Plus className="h-3 w-3 mr-1" /> Create Plan
+                                </Button>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+
+
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                         {/* Total Visits - with progress bar */}
                         <motion.div
