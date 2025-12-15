@@ -2606,167 +2606,265 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-8 max-w-4xl mx-auto"
+                      className="p-6 md:p-8"
                     >
-                      <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200">
-                          <Calendar className="h-6 w-6 text-white" />
+                      {/* Schedule Header with Stats */}
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-200">
+                            <Calendar className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl font-bold text-slate-800">Appointments</h2>
+                            <p className="text-sm text-slate-500">{appointments.length} total appointments</p>
+                          </div>
                         </div>
+                        <Button
+                          className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg"
+                          onClick={() => setBookingDialogOpen(true)}
+                        >
+                          <Plus className="h-4 w-4 mr-2" /> New Appointment
+                        </Button>
+                      </div>
+
+                      {/* Stats Summary Cards */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-white rounded-xl p-4 border border-slate-200/60 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                              <Calendar className="h-5 w-5 text-emerald-600" />
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold text-slate-800">{upcomingAppts.length}</p>
+                              <p className="text-xs text-slate-500">Upcoming</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 border border-slate-200/60 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                              <Clock className="h-5 w-5 text-amber-600" />
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold text-slate-800">{appointments.filter(a => a.status === 'pending').length}</p>
+                              <p className="text-xs text-slate-500">Pending</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 border border-slate-200/60 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                              <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold text-slate-800">{appointments.filter(a => a.status === 'completed').length}</p>
+                              <p className="text-xs text-slate-500">Completed</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl p-4 border border-slate-200/60 shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                              <X className="h-5 w-5 text-rose-600" />
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold text-slate-800">{appointments.filter(a => a.status === 'cancelled').length}</p>
+                              <p className="text-xs text-slate-500">Cancelled</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Appointments List */}
+                      <div className="space-y-8">
+                        {/* Upcoming Appointments */}
                         <div>
-                          <h2 className="text-xl font-semibold text-slate-800">Appointments</h2>
-                          <p className="text-sm text-slate-500">{appointments.length} total · {upcomingAppts.length} upcoming</p>
-                        </div>
-                      </div>
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Upcoming</h3>
+                            </div>
+                            <div className="flex-1 h-px bg-gradient-to-r from-emerald-200 to-transparent" />
+                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{upcomingAppts.length}</span>
+                          </div>
 
-                      {/* Upcoming */}
-                      <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Upcoming</span>
-                        </div>
-                        {upcomingAppts.length === 0 ? (
-                          <p className="text-slate-400 text-sm ml-4">No upcoming appointments</p>
-                        ) : (
-                          <div className="space-y-3">
-                            {upcomingAppts.map((appt, idx) => (
-                              <motion.div
-                                key={appt.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: idx * 0.05 }}
+                          {upcomingAppts.length === 0 ? (
+                            <div className="bg-slate-50 rounded-xl p-6 text-center">
+                              <Calendar className="h-10 w-10 mx-auto text-slate-300 mb-2" />
+                              <p className="text-slate-500 text-sm">No upcoming appointments</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="mt-2 text-emerald-600"
+                                onClick={() => setBookingDialogOpen(true)}
                               >
-                                <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white/80 backdrop-blur-sm overflow-hidden">
-                                  <CardContent className="p-0">
-                                    <div className="flex items-stretch">
-                                      {/* Date Column */}
-                                      <div className="w-20 bg-gradient-to-br from-emerald-500 to-teal-500 flex flex-col items-center justify-center py-4 text-white">
-                                        <p className="text-xs font-medium uppercase opacity-80">{format(new Date(appt.appointment_date), 'MMM')}</p>
-                                        <p className="text-2xl font-bold">{format(new Date(appt.appointment_date), 'd')}</p>
-                                        <p className="text-xs opacity-80">{format(new Date(appt.appointment_date), 'EEE')}</p>
-                                      </div>
-                                      {/* Content */}
-                                      <div className="flex-1 p-4 flex items-center justify-between cursor-pointer group-hover:bg-slate-50/50" onClick={() => openAppointmentDetail(appt)}>
-                                        <div>
-                                          <p className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">{appt.reason || 'Appointment'}</p>
-                                          <div className="flex items-center gap-3 mt-1">
-                                            <span className="text-sm text-slate-500 flex items-center gap-1">
-                                              <Clock className="h-3.5 w-3.5" />
-                                              {format(new Date(appt.appointment_date), 'h:mm a')}
-                                            </span>
-                                            {appt.duration_minutes && (
-                                              <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                                                {appt.duration_minutes} min
-                                              </span>
-                                            )}
-                                          </div>
+                                <Plus className="h-3 w-3 mr-1" /> Schedule now
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="grid gap-3">
+                              {upcomingAppts.map((appt, idx) => (
+                                <motion.div
+                                  key={appt.id}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: idx * 0.05 }}
+                                >
+                                  <Card
+                                    className="border-0 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer group overflow-hidden bg-white"
+                                    onClick={() => openAppointmentDetail(appt)}
+                                  >
+                                    <CardContent className="p-0">
+                                      <div className="flex">
+                                        {/* Date Column */}
+                                        <div className={cn(
+                                          "w-24 flex flex-col items-center justify-center py-4 text-white",
+                                          appt.status === 'pending'
+                                            ? "bg-gradient-to-br from-amber-400 to-orange-500"
+                                            : "bg-gradient-to-br from-emerald-500 to-teal-500"
+                                        )}>
+                                          <p className="text-[10px] font-bold uppercase opacity-80">{format(new Date(appt.appointment_date), 'MMM')}</p>
+                                          <p className="text-3xl font-bold">{format(new Date(appt.appointment_date), 'd')}</p>
+                                          <p className="text-xs font-medium opacity-80">{format(new Date(appt.appointment_date), 'EEE')}</p>
                                         </div>
-                                        <Badge className={cn("text-xs", statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
-                                          {appt.status}
-                                        </Badge>
-                                        {/* Pending: Approve/Reject */}
-                                        {appt.status === 'pending' && (
-                                          <div className="flex gap-1 ml-2">
-                                            <button
-                                              onClick={(e) => handleConfirmAppointment(appt.id, e)}
-                                              className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
-                                              title="Approve"
-                                            >
-                                              <Check className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                              onClick={(e) => handleQuickCancel(appt.id, e)}
-                                              className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                              title="Reject"
-                                            >
-                                              <X className="h-4 w-4" />
-                                            </button>
-                                          </div>
-                                        )}
-                                        {/* Confirmed: Complete/Cancel */}
-                                        {appt.status === 'confirmed' && (
-                                          <div className="flex gap-1 ml-2">
-                                            <button
-                                              onClick={(e) => handleQuickComplete(appt, e)}
-                                              className="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition-colors"
-                                              title="Complete"
-                                            >
-                                              <CheckCircle2 className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                              onClick={(e) => handleQuickCancel(appt.id, e)}
-                                              className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
-                                              title="Cancel"
-                                            >
-                                              <X className="h-4 w-4" />
-                                            </button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </motion.div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
 
-                      {/* History */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="w-2 h-2 rounded-full bg-slate-400" />
-                          <span className="text-sm font-semibold text-slate-600 uppercase tracking-wide">History</span>
+                                        {/* Content */}
+                                        <div className="flex-1 p-4">
+                                          <div className="flex items-start justify-between mb-2">
+                                            <div>
+                                              <h4 className="font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                                                {appt.reason || 'Appointment'}
+                                              </h4>
+                                              <div className="flex items-center gap-3 mt-1">
+                                                <span className="text-sm text-slate-500 flex items-center gap-1">
+                                                  <Clock className="h-3.5 w-3.5" />
+                                                  {format(new Date(appt.appointment_date), 'h:mm a')}
+                                                </span>
+                                                {appt.duration_minutes && (
+                                                  <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                                    {appt.duration_minutes} min
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <Badge className={cn("text-xs", statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                                              {appt.status}
+                                            </Badge>
+                                          </div>
+
+                                          {/* Action Buttons for Pending */}
+                                          {appt.status === 'pending' && (
+                                            <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                                              <Button
+                                                size="sm"
+                                                className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white text-xs"
+                                                onClick={(e) => handleConfirmAppointment(appt.id, e)}
+                                              >
+                                                <Check className="h-3 w-3 mr-1" /> Confirm
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-8 border-rose-200 text-rose-600 hover:bg-rose-50 text-xs"
+                                                onClick={(e) => handleQuickCancel(appt.id, e)}
+                                              >
+                                                <X className="h-3 w-3 mr-1" /> Decline
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                </motion.div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {pastAppts.length === 0 ? (
-                          <p className="text-slate-400 text-sm ml-4">No past appointments</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {pastAppts.map((appt) => (
-                              <div
-                                key={appt.id}
-                                onClick={() => openAppointmentDetail(appt)}
-                                className="flex items-center gap-4 py-3 px-4 rounded-lg hover:bg-white hover:shadow-sm cursor-pointer transition-all"
-                              >
-                                <p className="text-sm text-slate-500 w-24">{format(new Date(appt.appointment_date), 'MMM d, yyyy')}</p>
-                                <p className="flex-1 font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
-                                <Badge className="bg-indigo-50 text-indigo-700 text-xs">Attended</Badge>
-                              </div>
-                            ))}
+
+                        {/* Past Appointments */}
+                        <div>
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-slate-400" />
+                              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">History</h3>
+                            </div>
+                            <div className="flex-1 h-px bg-gradient-to-r from-slate-200 to-transparent" />
+                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{pastAppts.length}</span>
                           </div>
-                        )}
+
+                          {pastAppts.length === 0 ? (
+                            <div className="bg-slate-50 rounded-xl p-6 text-center">
+                              <Clock className="h-10 w-10 mx-auto text-slate-300 mb-2" />
+                              <p className="text-slate-500 text-sm">No past appointments</p>
+                            </div>
+                          ) : (
+                            <div className="bg-white rounded-xl border border-slate-200/60 divide-y divide-slate-100 overflow-hidden">
+                              {pastAppts.slice(0, 10).map((appt) => (
+                                <div
+                                  key={appt.id}
+                                  onClick={() => openAppointmentDetail(appt)}
+                                  className="flex items-center gap-4 p-4 hover:bg-slate-50 cursor-pointer transition-colors group"
+                                >
+                                  <div className="w-12 h-12 rounded-lg bg-slate-100 flex flex-col items-center justify-center">
+                                    <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'MMM')}</p>
+                                    <p className="text-lg font-bold text-slate-600">{format(new Date(appt.appointment_date), 'd')}</p>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-slate-700 group-hover:text-indigo-600 transition-colors truncate">
+                                      {appt.reason || 'Appointment'}
+                                    </p>
+                                    <p className="text-xs text-slate-400">{format(new Date(appt.appointment_date), 'h:mm a')}</p>
+                                  </div>
+                                  <Badge className={cn("text-xs", statusConfig[appt.status]?.bg, statusConfig[appt.status]?.text)}>
+                                    {appt.status}
+                                  </Badge>
+                                  <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+                                </div>
+                              ))}
+                              {pastAppts.length > 10 && (
+                                <div className="p-3 text-center bg-slate-50">
+                                  <span className="text-xs text-slate-500">+ {pastAppts.length - 10} more appointments</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   )}
 
                   {/* FINANCIAL TAB */}
-                  {activeTab === 'financial' && (
-                    <div className="p-8 space-y-6 max-w-5xl mx-auto">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-slate-800">Financial Ledger</h2>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-slate-500">Balance:</span>
-                          <span className={cn(
-                            "text-xl font-bold",
-                            (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-800"
-                          )}>
-                            €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}
-                          </span>
+                  {
+                    activeTab === 'financial' && (
+                      <div className="p-8 space-y-6 max-w-5xl mx-auto">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-lg font-semibold text-slate-800">Financial Ledger</h2>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm text-slate-500">Balance:</span>
+                            <span className={cn(
+                              "text-xl font-bold",
+                              (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-800"
+                            )}>
+                              €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      <PaymentRequestManager
-                        patientId={selectedPatient.id}
-                        dentistId={dentistId}
-                        onPaymentCreated={() => fetchPatientFlags(selectedPatient.id)}
-                      />
-                    </div>
-                  )}
+                        <PaymentRequestManager
+                          patientId={selectedPatient.id}
+                          dentistId={dentistId}
+                          onPaymentCreated={() => fetchPatientFlags(selectedPatient.id)}
+                        />
+                      </div>
+                    )
+                  }
                 </>
               )}
             </>
           )}
-        </div>
-      </div>
+        </div >
+      </div >
 
       {/* Quick Actions FAB */}
       {
@@ -3063,6 +3161,6 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 }
