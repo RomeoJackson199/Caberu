@@ -165,14 +165,14 @@ export default function DentistSettings() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
         <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-          <TabsList className="flex w-max sm:w-full min-w-full gap-1 p-1">
+          <TabsList className="inline-flex w-max gap-1 p-1">
             <TabsTrigger value="profile" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Profile</span>
+              Profile
             </TabsTrigger>
             <TabsTrigger value="services" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Services</span>
+              Services
             </TabsTrigger>
             <TabsTrigger value="schedule" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -186,19 +186,19 @@ export default function DentistSettings() {
             </TabsTrigger>
             <TabsTrigger value="staff" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <UserCog className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span>Team</span>
+              Team
             </TabsTrigger>
             <TabsTrigger value="branding" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Branding</span>
+              Brand
             </TabsTrigger>
             <TabsTrigger value="billing" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Billing</span>
+              Billing
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Security</span>
+              Security
             </TabsTrigger>
           </TabsList>
         </div>
