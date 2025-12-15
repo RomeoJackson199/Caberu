@@ -1364,30 +1364,42 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                       </Card>
 
 
-                      {/* Stats Grid - Modern visual cards */}
+                      {/* Stats Grid - Enhanced with progress bars and trends */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                        {/* Total Visits - with progress bar */}
                         <motion.div
                           whileHover={{ y: -2 }}
-                          className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                          className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => setActiveTab('schedule')}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                              <Calendar className="h-5 w-5 text-indigo-600" />
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center">
+                              <Calendar className="h-4 w-4 text-indigo-600" />
                             </div>
                             <span className="text-2xl font-bold text-slate-800">
                               {patientFlags[selectedPatient.id]?.totalAppointments || 0}
                             </span>
                           </div>
-                          <p className="text-sm text-slate-500">Total Visits</p>
+                          <p className="text-xs font-medium text-slate-500 mb-2">Total Visits</p>
+                          {/* Mini bar showing visit distribution */}
+                          <div className="flex gap-0.5">
+                            {[...Array(Math.min(patientFlags[selectedPatient.id]?.totalAppointments || 0, 10))].map((_, i) => (
+                              <div key={i} className="h-1.5 flex-1 rounded-full bg-indigo-500" />
+                            ))}
+                            {[...Array(Math.max(0, 10 - (patientFlags[selectedPatient.id]?.totalAppointments || 0)))].map((_, i) => (
+                              <div key={i} className="h-1.5 flex-1 rounded-full bg-slate-100" />
+                            ))}
+                          </div>
                         </motion.div>
 
+                        {/* Completion Rate - with circular progress indicator */}
                         <motion.div
                           whileHover={{ y: -2 }}
-                          className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                          className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                             </div>
                             <span className="text-2xl font-bold text-emerald-600">
                               {patientFlags[selectedPatient.id]?.totalAppointments
@@ -1395,42 +1407,61 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 : 0}%
                             </span>
                           </div>
-                          <p className="text-sm text-slate-500">Completion Rate</p>
+                          <p className="text-xs font-medium text-slate-500 mb-2">Completion Rate</p>
+                          {/* Progress bar */}
+                          <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-500"
+                              style={{ width: `${patientFlags[selectedPatient.id]?.totalAppointments ? Math.round((patientFlags[selectedPatient.id]?.completedAppointments || 0) / patientFlags[selectedPatient.id]?.totalAppointments * 100) : 0}%` }}
+                            />
+                          </div>
                         </motion.div>
 
+                        {/* Last Visit - with relative time */}
                         <motion.div
                           whileHover={{ y: -2 }}
-                          className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                          className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                              <Clock className="h-5 w-5 text-violet-600" />
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center">
+                              <Clock className="h-4 w-4 text-violet-600" />
                             </div>
-                            <span className="text-sm font-semibold text-slate-700">
-                              {patientFlags[selectedPatient.id]?.lastVisitDate
-                                ? format(new Date(patientFlags[selectedPatient.id].lastVisitDate!), 'MMM d')
-                                : 'Never'}
-                            </span>
+                            <div className="text-right">
+                              <span className="text-sm font-bold text-slate-700 block">
+                                {patientFlags[selectedPatient.id]?.lastVisitDate
+                                  ? format(new Date(patientFlags[selectedPatient.id].lastVisitDate!), 'MMM d')
+                                  : 'Never'}
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-sm text-slate-500">Last Visit</p>
+                          <p className="text-xs font-medium text-slate-500 mb-1">Last Visit</p>
+                          {patientFlags[selectedPatient.id]?.lastVisitDate && (
+                            <p className="text-[10px] text-slate-400">
+                              {Math.floor((Date.now() - new Date(patientFlags[selectedPatient.id].lastVisitDate!).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                            </p>
+                          )}
                         </motion.div>
 
+                        {/* Balance - with quick pay action */}
                         <motion.div
                           whileHover={{ y: -2 }}
                           className={cn(
-                            "rounded-2xl p-5 shadow-sm border transition-shadow hover:shadow-md",
+                            "rounded-2xl p-4 shadow-sm border transition-shadow hover:shadow-md cursor-pointer",
                             (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0
-                              ? "bg-rose-50 border-rose-100"
+                              ? "bg-gradient-to-br from-rose-50 to-orange-50 border-rose-100"
                               : "bg-white border-slate-100"
                           )}
+                          onClick={() => (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 && setActiveTab('financial')}
                         >
-                          <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center justify-between mb-2">
                             <div className={cn(
-                              "w-10 h-10 rounded-xl flex items-center justify-center",
-                              (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "bg-rose-100" : "bg-slate-100"
+                              "w-9 h-9 rounded-xl flex items-center justify-center",
+                              (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0
+                                ? "bg-gradient-to-br from-rose-100 to-rose-200"
+                                : "bg-gradient-to-br from-slate-100 to-slate-200"
                             )}>
                               <CreditCard className={cn(
-                                "h-5 w-5",
+                                "h-4 w-4",
                                 (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-600"
                               )} />
                             </div>
@@ -1441,8 +1472,67 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(0)}
                             </span>
                           </div>
-                          <p className="text-sm text-slate-500">Balance Due</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-medium text-slate-500">Balance Due</p>
+                            {(patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 && (
+                              <span className="text-[10px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-full font-medium">
+                                Pay Now →
+                              </span>
+                            )}
+                          </div>
                         </motion.div>
+                      </div>
+
+                      {/* Quick Actions Bar - Streamlined one-click actions */}
+                      <div className="bg-gradient-to-r from-slate-50 to-white rounded-2xl p-4 border border-slate-100">
+                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Quick Actions</p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-white hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200"
+                            onClick={() => setBookingDialogOpen(true)}
+                          >
+                            <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                            Book Appointment
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-white hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200"
+                            onClick={() => document.getElementById('quick-note-input')?.focus()}
+                          >
+                            <Edit2 className="h-3.5 w-3.5 mr-1.5" />
+                            Add Note
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-white hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200"
+                            onClick={() => setActiveTab('clinical')}
+                          >
+                            <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
+                            Treatment Plan
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-white hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200"
+                            onClick={() => setActiveTab('financial')}
+                          >
+                            <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                            Create Payment
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-xs bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                            onClick={exportPatientPDF}
+                          >
+                            <Download className="h-3.5 w-3.5 mr-1.5" />
+                            Export PDF
+                          </Button>
+                        </div>
                       </div>
 
                       {/* Alerts & Medical Info */}
@@ -1464,90 +1554,146 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         </motion.div>
                       )}
 
-                      {/* Quick Notes */}
-                      <Card className="col-span-2 border-0 bg-white/70 backdrop-blur-sm shadow-sm">
-                        <CardContent className="p-5">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-semibold text-slate-800 flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                                <FileText className="h-4 w-4 text-indigo-600" />
-                              </div>
-                              Quick Notes
-                            </h4>
-                            {/* Category Filter Pills */}
-                            <div className="flex gap-1">
-                              {['all', 'general', 'clinical', 'billing', 'follow_up'].map((cat) => (
-                                <button
-                                  key={cat}
-                                  onClick={() => setSelectedNoteCategory(cat)}
-                                  className={cn(
-                                    "px-3 py-1 text-xs font-medium rounded-full transition-all",
-                                    selectedNoteCategory === cat
-                                      ? "bg-indigo-600 text-white shadow-sm"
-                                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  )}
-                                >
-                                  {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', ' ')}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex gap-2 mb-3">
-                            <Input
-                              id="quick-note-input"
-                              placeholder="Add a quick note..."
-                              value={quickNote}
-                              onChange={(e) => setQuickNote(e.target.value)}
-                              className="flex-1"
-                              onKeyDown={(e) => e.key === 'Enter' && addQuickNote()}
-                            />
-                            <Select value={noteCategory} onValueChange={setNoteCategory}>
-                              <SelectTrigger className="w-24">
-                                <SelectValue placeholder="Type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="general">General</SelectItem>
-                                <SelectItem value="clinical">Clinical</SelectItem>
-                                <SelectItem value="billing">Billing</SelectItem>
-                                <SelectItem value="follow_up">Follow-up</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button onClick={addQuickNote} className="bg-indigo-600 hover:bg-indigo-700" disabled={!quickNote.trim()}>
-                              Add
-                            </Button>
-                          </div>
-                          {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).length > 0 && (
-                            <div className="space-y-2 max-h-40 overflow-y-auto">
-                              {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).map((note) => (
-                                <div key={note.id} className="bg-slate-50 rounded-lg p-2 text-sm flex justify-between items-start group">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className={cn(
-                                        "text-xs px-1.5 py-0.5 rounded-full",
-                                        note.note_type === 'clinical' && "bg-blue-100 text-blue-700",
-                                        note.note_type === 'billing' && "bg-green-100 text-green-700",
-                                        note.note_type === 'follow_up' && "bg-orange-100 text-orange-700",
-                                        (!note.note_type || note.note_type === 'general') && "bg-slate-100 text-slate-600"
-                                      )}>
-                                        {(note.note_type || 'general').replace('_', ' ')}
-                                      </span>
-                                    </div>
-                                    <p className="text-slate-700 mt-1">{note.content}</p>
-                                    <p className="text-xs text-slate-400 mt-1">
-                                      {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
-                                    </p>
-                                  </div>
-                                  <button
-                                    onClick={() => deleteNote(note.id)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-opacity"
-                                    title="Delete note"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                                  </button>
+                      {/* Enhanced Notes Timeline */}
+                      <Card className="col-span-2 border-0 bg-white/70 backdrop-blur-sm shadow-sm overflow-hidden">
+                        <CardContent className="p-0">
+                          {/* Header with stats */}
+                          <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-md shadow-indigo-200">
+                                  <FileText className="h-4 w-4 text-white" />
                                 </div>
-                              ))}
+                                <div>
+                                  <h4 className="font-semibold text-slate-800">Patient Notes</h4>
+                                  <p className="text-xs text-slate-500">{patientNotes.length} total notes</p>
+                                </div>
+                              </div>
+                              {/* Category Filter Pills with counts */}
+                              <div className="flex gap-1">
+                                {['all', 'clinical', 'billing', 'follow_up'].map((cat) => {
+                                  const count = cat === 'all'
+                                    ? patientNotes.length
+                                    : patientNotes.filter(n => n.note_type === cat).length;
+                                  return (
+                                    <button
+                                      key={cat}
+                                      onClick={() => setSelectedNoteCategory(cat)}
+                                      className={cn(
+                                        "px-2.5 py-1 text-xs font-medium rounded-full transition-all flex items-center gap-1",
+                                        selectedNoteCategory === cat
+                                          ? "bg-indigo-600 text-white shadow-sm"
+                                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                      )}
+                                    >
+                                      {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1).replace('_', '-')}
+                                      {count > 0 && (
+                                        <span className={cn(
+                                          "text-[10px] px-1.5 rounded-full",
+                                          selectedNoteCategory === cat ? "bg-white/20" : "bg-slate-200"
+                                        )}>
+                                          {count}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          )}
+
+                            {/* Quick Add Note - Enhanced */}
+                            <div className="flex gap-2">
+                              <div className="flex-1 relative">
+                                <Input
+                                  id="quick-note-input"
+                                  placeholder="Add a note about this patient..."
+                                  value={quickNote}
+                                  onChange={(e) => setQuickNote(e.target.value)}
+                                  className="pr-20 h-10 bg-white border-slate-200"
+                                  onKeyDown={(e) => e.key === 'Enter' && addQuickNote()}
+                                />
+                                <Select value={noteCategory} onValueChange={setNoteCategory}>
+                                  <SelectTrigger className="absolute right-1 top-1 h-8 w-20 text-xs border-0 bg-slate-100">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="general">General</SelectItem>
+                                    <SelectItem value="clinical">Clinical</SelectItem>
+                                    <SelectItem value="billing">Billing</SelectItem>
+                                    <SelectItem value="follow_up">Follow-up</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button
+                                onClick={addQuickNote}
+                                className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4"
+                                disabled={!quickNote.trim()}
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Notes Timeline */}
+                          <div className="p-4 max-h-60 overflow-y-auto">
+                            {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).length > 0 ? (
+                              <div className="relative">
+                                {/* Timeline line */}
+                                <div className="absolute left-4 top-2 bottom-2 w-px bg-slate-200" />
+
+                                <div className="space-y-3">
+                                  {patientNotes.filter(n => selectedNoteCategory === 'all' || n.note_type === selectedNoteCategory).map((note, idx) => (
+                                    <motion.div
+                                      key={note.id}
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: idx * 0.05 }}
+                                      className="flex gap-3 group"
+                                    >
+                                      {/* Timeline dot */}
+                                      <div className={cn(
+                                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm",
+                                        note.note_type === 'clinical' && "bg-blue-100",
+                                        note.note_type === 'billing' && "bg-green-100",
+                                        note.note_type === 'follow_up' && "bg-orange-100",
+                                        (!note.note_type || note.note_type === 'general') && "bg-slate-100"
+                                      )}>
+                                        {note.note_type === 'clinical' && <ClipboardList className="h-3.5 w-3.5 text-blue-600" />}
+                                        {note.note_type === 'billing' && <CreditCard className="h-3.5 w-3.5 text-green-600" />}
+                                        {note.note_type === 'follow_up' && <Bell className="h-3.5 w-3.5 text-orange-600" />}
+                                        {(!note.note_type || note.note_type === 'general') && <FileText className="h-3.5 w-3.5 text-slate-500" />}
+                                      </div>
+
+                                      {/* Note content */}
+                                      <div className="flex-1 bg-slate-50 rounded-lg p-3 hover:bg-slate-100 transition-colors">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <p className="text-sm text-slate-700 flex-1">{note.content}</p>
+                                          <button
+                                            onClick={() => deleteNote(note.id)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-100 rounded transition-all"
+                                            title="Delete note"
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                                          </button>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
+                                          <Clock className="h-2.5 w-2.5" />
+                                          {format(new Date(note.created_at), 'MMM d, yyyy • h:mm a')}
+                                        </p>
+                                      </div>
+                                    </motion.div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-center py-8 text-slate-400">
+                                <FileText className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                                <p className="text-sm">No notes yet</p>
+                                <p className="text-xs">Add a note above to get started</p>
+                              </div>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     </motion.div>
