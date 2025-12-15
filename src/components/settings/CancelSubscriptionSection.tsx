@@ -391,7 +391,7 @@ export function CancelSubscriptionSection() {
                         </h4>
                         <p className="text-sm text-yellow-700 dark:text-yellow-300">
                             Your plan will change to <strong>{pendingChange.planName}</strong> on{' '}
-                            <strong>{new Date(pendingChange.changeDate).toLocaleDateString()}</strong>
+                            <strong>{pendingChange.changeDate ? new Date(pendingChange.changeDate).toLocaleDateString() : 'TBD'}</strong>
                         </p>
                     </div>
                 )}
@@ -494,7 +494,7 @@ export function CancelSubscriptionSection() {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Your subscription will remain active until {periodEndDate.toLocaleDateString()}.
+                                        Your subscription will remain active until {periodEndDate?.toLocaleDateString() || 'the end of your billing period'}.
                                         After that, you'll lose access to premium features.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
