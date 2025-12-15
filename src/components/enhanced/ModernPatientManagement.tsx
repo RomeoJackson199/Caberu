@@ -1303,61 +1303,63 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                       animate={{ opacity: 1, y: 0 }}
                       className="p-8 space-y-6 max-w-4xl mx-auto"
                     >
-                      {/* Patient Info Card - Enhanced */}
-                      <Card className="overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-slate-50/50">
+                      {/* Patient Info Card - Clean & Compact */}
+                      <Card className="overflow-hidden border border-slate-200/60 shadow-sm bg-white">
                         <CardContent className="p-0">
-                          <div className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-500 h-24 relative">
-                            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+                          {/* Slim gradient header */}
+                          <div className="bg-gradient-to-r from-indigo-500 to-violet-500 h-16 relative">
+                            <div className="absolute inset-0 bg-white/5" />
                           </div>
-                          <div className="px-8 pb-8 -mt-12">
-                            <div className="flex items-end gap-6">
-                              <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
+                          <div className="px-6 pb-5 -mt-8">
+                            <div className="flex items-end gap-4">
+                              <Avatar className="h-20 w-20 border-[3px] border-white shadow-lg ring-2 ring-slate-100">
                                 <AvatarImage src={selectedPatient.profile_picture_url || undefined} />
-                                <AvatarFallback className={cn("text-white text-3xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
+                                <AvatarFallback className={cn("text-white text-xl font-bold bg-gradient-to-br", generateGradient(`${selectedPatient.first_name}${selectedPatient.last_name}`))}>
                                   {`${selectedPatient.first_name[0]}${selectedPatient.last_name[0]}`.toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="flex-1">
-                                <div className="flex items-start justify-between">
+                              <div className="flex-1 pb-1">
+                                <div className="flex items-center justify-between">
                                   <div>
-                                    <h2 className="text-2xl font-bold text-slate-800">
+                                    <h2 className="text-xl font-semibold text-slate-800">
                                       {selectedPatient.first_name} {selectedPatient.last_name}
                                     </h2>
-                                    <p className="text-slate-500 mt-1 flex items-center gap-2">
-                                      <Calendar className="h-4 w-4" />
-                                      {selectedPatient.date_of_birth
-                                        ? `${format(new Date(selectedPatient.date_of_birth), 'yyyy-MM-dd')} (${getAge(selectedPatient.date_of_birth)}y)`
-                                        : 'No DOB'
-                                      }
+                                    <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                      {selectedPatient.date_of_birth && (
+                                        <>
+                                          <span>{getAge(selectedPatient.date_of_birth)} years old</span>
+                                          <span className="text-slate-300">•</span>
+                                        </>
+                                      )}
+                                      <span>ID: {selectedPatient.id.slice(0, 8)}</span>
                                     </p>
                                   </div>
-                                  <Button variant="outline" size="sm" onClick={openEditPatient}>
-                                    <Edit2 className="h-4 w-4 mr-2" />
-                                    Edit Profile
+                                  <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700" onClick={openEditPatient}>
+                                    <Edit2 className="h-4 w-4" />
                                   </Button>
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                  {selectedPatient.email && (
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <Mail className="h-4 w-4 text-slate-400" />
-                                      {selectedPatient.email}
-                                    </div>
-                                  )}
-                                  {selectedPatient.phone && (
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <Phone className="h-4 w-4 text-slate-400" />
-                                      {selectedPatient.phone}
-                                    </div>
-                                  )}
-                                  {selectedPatient.address && (
-                                    <div className="flex items-center gap-2 text-sm text-slate-600 col-span-2">
-                                      <MapPin className="h-4 w-4 text-slate-400" />
-                                      {selectedPatient.address}
-                                    </div>
-                                  )}
-                                </div>
                               </div>
+                            </div>
+                            {/* Contact chips - inline */}
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {selectedPatient.email && (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-full text-xs text-slate-600">
+                                  <Mail className="h-3 w-3 text-slate-400" />
+                                  {selectedPatient.email}
+                                </div>
+                              )}
+                              {selectedPatient.phone && (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-full text-xs text-slate-600">
+                                  <Phone className="h-3 w-3 text-slate-400" />
+                                  {selectedPatient.phone}
+                                </div>
+                              )}
+                              {selectedPatient.address && (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 rounded-full text-xs text-slate-600">
+                                  <MapPin className="h-3 w-3 text-slate-400" />
+                                  {selectedPatient.address}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </CardContent>
