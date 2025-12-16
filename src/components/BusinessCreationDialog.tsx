@@ -93,7 +93,7 @@ export function BusinessCreationDialog({ open, onOpenChange, onSuccess }: Busine
           <div className="space-y-6">
             <BusinessTemplateSelector
               selectedTemplate={selectedTemplate}
-              onSelect={handleTemplateSelect}
+              onSelectTemplate={handleTemplateSelect}
             />
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => onOpenChange(false)}>

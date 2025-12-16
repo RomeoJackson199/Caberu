@@ -582,7 +582,7 @@ export default function DataImportManager() {
                   </div>
                 </div>
 
-                {(importSession.error_details || importSession.errors) && (importSession.error_details?.length > 0 || importSession.errors?.length > 0) && (
+                {(importSession.error_details || importSession.errors) && ((importSession.error_details?.length ?? 0) > 0 || (importSession.errors?.length ?? 0) > 0) && (
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>

@@ -150,8 +150,8 @@ export const HealthData = ({
         }
         setConsentRequired(false);
 
-        // Log access for GDPR audit
-        await supabase.from('audit_logs').insert({
+        // Log access for GDPR audit - fire and forget
+        void supabase.from('audit_logs').insert({
           user_id: user.id,
           action: 'VIEW_MEDICAL_RECORDS',
           target_user_id: targetUserId,
@@ -161,7 +161,7 @@ export const HealthData = ({
             consent_verified: true
           },
           created_at: new Date().toISOString()
-        }).catch(() => { }); // Don't fail if audit fails
+        });
       }
 
       if (mode === 'patient') {
@@ -249,7 +249,13 @@ export const HealthData = ({
         setTreatmentPlans(plans);
       }
       if (appointmentsResult.status === 'fulfilled') {
-        setAppointments(appointmentsResult.value);
+        // Transform appointments - handle dentist being array from Supabase join
+        const transformedAppointments = (appointmentsResult.value || []).map((apt: any) => {
+          const dentist = Array.isArray(apt.dentist) ? apt.dentist[0] : apt.dentist;
+          const profile = dentist?.profile ? (Array.isArray(dentist.profile) ? dentist.profile[0] : dentist.profile) : { first_name: '', last_name: '' };
+          return { ...apt, dentist: { ...dentist, profile } };
+        });
+        setAppointments(transformedAppointments as any);
       }
 
     } catch (error) {

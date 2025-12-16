@@ -102,7 +102,13 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
           return;
         }
 
-        setNextAppointment(data || null);
+        // Transform data - handle profiles being an array from Supabase join
+        if (data) {
+          const profiles = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
+          setNextAppointment({ ...data, profiles } as any);
+        } else {
+          setNextAppointment(null);
+        }
       } catch (error) {
         const err: any = error;
         console.error('❌ Caught error fetching next appointment:', { message: err?.message, stack: err?.stack });

@@ -165,19 +165,7 @@ const queryClient = new QueryClient({
         }
         return failureCount < 2; // Only 2 retries (faster failure)
       },
-      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 5000), // Faster retries
-      onError: (error) => {
-        const description = getUserFriendlyErrorMessage(
-          error,
-          "We couldn't load that dashboard data. Please try again."
-        );
-
-        toast({
-          title: "Dashboard data error",
-          description,
-          variant: "destructive",
-        });
-      },
+      retryDelay: (attemptIndex: number) => Math.min(500 * 2 ** attemptIndex, 5000), // Faster retries
     },
     mutations: {
       // Optimistic updates - UI updates immediately
