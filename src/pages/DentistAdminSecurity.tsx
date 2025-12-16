@@ -61,7 +61,7 @@ export default function DentistAdminSecurity() {
         setUserEmail(user.email);
       }
     } catch (error) {
-      console.error('Error loading user email:', error);
+      logger.error('Error loading user email:', error);
     }
   };
 
@@ -74,7 +74,7 @@ export default function DentistAdminSecurity() {
         setTwoFactorEnabled(enabled);
       }
     } catch (error) {
-      console.error('Error checking 2FA status:', error);
+      logger.error('Error checking 2FA status:', error);
     }
   };
 
@@ -94,7 +94,7 @@ export default function DentistAdminSecurity() {
       if (error) throw error;
       setSessions(data || []);
     } catch (error) {
-      console.error('Error loading sessions:', error);
+      logger.error('Error loading sessions:', error);
     }
   };
 
@@ -153,7 +153,7 @@ export default function DentistAdminSecurity() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
-      console.error('Error updating password:', error);
+      logger.error('Error updating password:', error);
       toast({
         title: "❌ Error",
         description: error.message || "Failed to update password",
@@ -187,7 +187,7 @@ export default function DentistAdminSecurity() {
             });
           }
         } catch (logError) {
-          console.error('Failed to log 2FA disable:', logError);
+          logger.error('Failed to log 2FA disable:', logError);
         }
 
         setTwoFactorEnabled(false);
@@ -230,7 +230,7 @@ export default function DentistAdminSecurity() {
           });
         }
       } catch (logError) {
-        console.error('Failed to log 2FA enable:', logError);
+        logger.error('Failed to log 2FA enable:', logError);
       }
 
       setTwoFactorEnabled(true);
@@ -279,7 +279,7 @@ export default function DentistAdminSecurity() {
       });
 
     } catch (error: any) {
-      console.error('Export error:', error);
+      logger.error('Export error:', error);
       toast({
         title: "Export Failed",
         description: error.message || "Failed to start data export",
@@ -307,7 +307,7 @@ export default function DentistAdminSecurity() {
       window.location.href = '/';
 
     } catch (error: any) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
       toast({
         title: "Delete Failed",
         description: error.message || "Failed to delete account",
