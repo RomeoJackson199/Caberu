@@ -157,6 +157,42 @@ serve(async (req) => {
       ? (incoming as any).body
       : incoming;
     console.log('FINAL DATA:', body);
+
+    // Check phone minutes limit before processing
+    const businessIdForLimit = body?.business_id;
+    if (businessIdForLimit) {
+      const limitClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      
+      const { data: limitData, error: limitError } = await limitClient.rpc('check_phone_minutes_available', {
+        p_business_id: businessIdForLimit,
+      });
+      
+      if (!limitError && limitData?.[0]) {
+        const { remaining_seconds, daily_limit_seconds, used_seconds } = limitData[0];
+        console.log('Phone limit check:', { remaining_seconds, daily_limit_seconds, used_seconds });
+        
+        // Block if over limit (remaining is 0 or negative)
+        if (remaining_seconds <= 0) {
+          console.log('Phone minutes limit exceeded - blocking call');
+          return new Response(
+            JSON.stringify({ 
+              error: 'Phone minutes limit exceeded',
+              message: 'Your daily phone minutes have been exhausted. Please upgrade your plan or try again tomorrow.',
+              limit_exceeded: true,
+              used_minutes: Math.floor(used_seconds / 60),
+              limit_minutes: Math.floor(daily_limit_seconds / 60)
+            }),
+            { 
+              status: 429, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+      }
+    }
     
     // Check if this is a direct appointment creation call (from voice AI tool)
     if (body?.name && body?.appointment_date) {
