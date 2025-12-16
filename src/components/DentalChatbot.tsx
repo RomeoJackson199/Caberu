@@ -838,7 +838,7 @@ Type your request...`;
                         {message.message}
                       </p>
                     )}
-                    {message.metadata?.ai_generated && (
+                    {(message.metadata as any)?.ai_generated && (
                       <div className="mt-2 text-xs opacity-70">
                         AI Assistant
                       </div>

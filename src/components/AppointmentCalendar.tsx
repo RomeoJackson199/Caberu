@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { addBusinessContext } from "@/lib/businessScopedSupabase";
@@ -14,7 +15,6 @@ import { PatientSelection } from "@/components/PatientSelection";
 import { CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { clinicTimeToUtc, createAppointmentDateTimeFromStrings } from "@/lib/timezone";
-
 interface AppointmentCalendarProps {
   user: User;
   onComplete: (appointmentData?: any) => void;
@@ -152,7 +152,7 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
       case 'dentist':
         return (
           <DentistSelection
-            onSelectDentist={(dentist) => {
+            onSelectDentist={(dentist: any) => {
               setSelectedDentist(dentist);
               setStep('datetime');
             }}

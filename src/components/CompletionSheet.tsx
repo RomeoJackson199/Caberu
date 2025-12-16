@@ -321,10 +321,10 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 								vat_amount_cents: 0,
 								status: 'draft',
 								claim_status: 'to_be_submitted'
-							}).select('*').single().then(res => {
+							}).select('*').single().then((res: any) => {
 								if (res.error) throw res.error;
 								return res.data;
-							}).catch(err => {
+							}).catch((err: any) => {
 								console.error('Error creating invoice:', err);
 								throw err;
 							}), sb) as { id: string };
@@ -358,10 +358,10 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						vat_amount_cents: 0,
 						status: 'draft',
 						claim_status: 'to_be_submitted'
-					}).select('*').single().then(res => {
+					}).select('*').single().then((res: any) => {
 						if (res.error) throw res.error;
 						return res.data;
-					}).catch(err => {
+					}).catch((err: any) => {
 						console.error('Error creating invoice:', err);
 						throw err;
 					}), sb) as { id: string };

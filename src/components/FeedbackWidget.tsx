@@ -100,7 +100,7 @@ export function FeedbackWidget({
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.email) {
         setUserEmail(user.email);
-        setFormData(prev => ({ ...prev, email: user.email }));
+        setFormData(prev => ({ ...prev, email: user.email || '' }));
       }
     };
     loadUser();

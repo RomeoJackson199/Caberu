@@ -8,7 +8,7 @@ export function useBusinessTemplate() {
         template: 'healthcare',
         templateConfig: null,
         loading: false,
-        hasFeature: () => true, // All features enabled
+        hasFeature: (_feature?: string) => true, // All features enabled
         t: (key: string) => key, // Simple passthrough for translations
         featureLabels: {} as Record<string, string>,
     };

@@ -91,10 +91,13 @@ export const DentistRecommendations = ({
       if (error) throw error;
 
       // Calculate recommendation scores with enhanced triage data
-      const scoredDentists = (dentists || []).map(dentist => {
-        const recommendation = calculateRecommendationScore(dentist, urgencyLevel, symptoms, triageData);
+      const scoredDentists = (dentists || []).map((dentist: any) => {
+        // Transform profiles from array to single object if needed
+        const profile = Array.isArray(dentist.profiles) ? dentist.profiles[0] : dentist.profiles;
+        const transformedDentist = { ...dentist, profiles: profile };
+        const recommendation = calculateRecommendationScore(transformedDentist, urgencyLevel, symptoms, triageData);
         return {
-          ...dentist,
+          ...transformedDentist,
           recommendation_score: recommendation.score,
           recommendation_reason: recommendation.reason
         } as DentistRecommendation;
@@ -156,7 +159,7 @@ export const DentistRecommendations = ({
     // Allergy compatibility (critical factor)
     if (triageData?.allergies?.length) {
       const allergyCompatibilityScore = getAllergyCompatibilityScore(
-        dentist.specialty,
+        dentist.specialty || dentist.specialization || '',
         triageData.allergies
       );
       score += allergyCompatibilityScore.score;
@@ -168,7 +171,7 @@ export const DentistRecommendations = ({
     // Problem type specialty bonus
     if (triageData?.problemType) {
       const problemScore = getProblemTypeScore(
-        dentist.specialty,
+        dentist.specialty || dentist.specialization || '',
         triageData.problemType,
         urgency
       );
@@ -181,7 +184,7 @@ export const DentistRecommendations = ({
     // Emergency indicators penalty for non-specialists
     if (triageData?.urgencyIndicators?.length && urgency >= 4) {
       const emergencyScore = getEmergencySpecialistScore(
-        dentist.specialty,
+        dentist.specialty || dentist.specialization || '',
         triageData.urgencyIndicators
       );
       score += emergencyScore.score;

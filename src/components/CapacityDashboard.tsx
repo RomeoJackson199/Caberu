@@ -61,12 +61,17 @@ export const CapacityDashboard = () => {
         return {
           dentist_id: dentist.id,
           dentist_name: `Dr. ${profile?.first_name} ${profile?.last_name}`,
-          ...capacity
+          total_slots: capacity?.total_slots ?? 0,
+          booked_slots: capacity?.booked_slots ?? 0,
+          available_slots: capacity?.available_slots ?? 0,
+          capacity_percentage: capacity?.capacity_percentage ?? 0,
+          is_near_capacity: capacity?.is_near_capacity ?? false,
+          is_overbooked: capacity?.is_overbooked ?? false,
         };
       });
 
       const capacityData = await Promise.all(capacityPromises);
-      setCapacities(capacityData.filter(c => c.total_slots !== undefined));
+      setCapacities(capacityData.filter(c => c.total_slots > 0));
     } catch (error) {
       console.error('Error fetching capacities:', error);
     } finally {
