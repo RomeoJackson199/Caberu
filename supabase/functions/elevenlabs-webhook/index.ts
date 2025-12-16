@@ -19,6 +19,18 @@ interface ElevenLabsWebhookPayload {
         call_id?: string;
         call_duration_secs?: number;
         call_successful?: boolean;
+        // Phone number can be in multiple locations
+        phone_number?: string;
+        caller_phone_number?: string;
+        from_phone_number?: string;
+        call?: {
+            caller_phone_number?: string;
+            phone_number?: string;
+            from?: string;
+            duration_secs?: number;
+            start_time_unix_secs?: number;
+            end_time_unix_secs?: number;
+        };
         transcript?: Array<{
             role: string;
             message: string;
@@ -32,6 +44,7 @@ interface ElevenLabsWebhookPayload {
             start_time_unix_secs?: number;
             end_time_unix_secs?: number;
             caller_phone?: string;
+            phone_number?: string;
             business_id?: string;
         };
     };
@@ -74,7 +87,7 @@ serve(async (req) => {
         const webhookSecret = Deno.env.get('ELEVENLABS_WEBHOOK_SECRET');
 
         const rawBody = await req.text();
-        console.log('ElevenLabs webhook received:', rawBody.substring(0, 500));
+        console.log('ElevenLabs webhook received (full):', rawBody);
 
         // TODO: Re-enable signature verification once format is confirmed
         // For now, skip signature verification to allow webhook to function
@@ -95,8 +108,35 @@ serve(async (req) => {
 
         const data = payload.data;
         const callId = data.call_id || data.conversation_id;
-        const durationSeconds = data.call_duration_secs || 0;
-        const callerPhone = data.metadata?.caller_phone || null;
+        
+        // Extract duration from multiple possible locations
+        const durationSeconds = data.call_duration_secs || data.call?.duration_secs || 0;
+        
+        // Extract phone number from multiple possible locations
+        const callerPhone = data.metadata?.caller_phone 
+            || data.metadata?.phone_number
+            || data.phone_number 
+            || data.caller_phone_number
+            || data.from_phone_number
+            || data.call?.caller_phone_number
+            || data.call?.phone_number
+            || data.call?.from
+            || null;
+        
+        // Extract call times from multiple locations
+        const startTime = data.metadata?.start_time_unix_secs || data.call?.start_time_unix_secs;
+        const endTime = data.metadata?.end_time_unix_secs || data.call?.end_time_unix_secs;
+        
+        console.log('Extracted call data:', {
+            callId,
+            durationSeconds,
+            callerPhone,
+            startTime,
+            endTime,
+            rawMetadata: data.metadata,
+            rawCall: data.call
+        });
+        
         let businessId = data.metadata?.business_id || null;
 
         // If no business_id in metadata, try to infer from agent configuration
@@ -157,11 +197,11 @@ serve(async (req) => {
                 business_id: businessId,
                 call_id: callId,
                 agent_id: data.agent_id,
-                call_started_at: data.metadata?.start_time_unix_secs
-                    ? new Date(data.metadata.start_time_unix_secs * 1000).toISOString()
+                call_started_at: startTime
+                    ? new Date(startTime * 1000).toISOString()
                     : null,
-                call_ended_at: data.metadata?.end_time_unix_secs
-                    ? new Date(data.metadata.end_time_unix_secs * 1000).toISOString()
+                call_ended_at: endTime
+                    ? new Date(endTime * 1000).toISOString()
                     : new Date().toISOString(),
                 duration_seconds: durationSeconds,
                 caller_phone: callerPhone,
@@ -173,7 +213,8 @@ serve(async (req) => {
                 metadata: {
                     analysis: data.analysis,
                     overage_seconds: overageSeconds,
-                    included_seconds: includedSeconds
+                    included_seconds: includedSeconds,
+                    raw_data_keys: Object.keys(data)
                 }
             })
             .select()
