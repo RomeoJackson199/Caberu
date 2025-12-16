@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -105,7 +105,7 @@ export function ImagingTimeline({
         });
     };
 
-    const startCompare = async () => {
+    const startCompare = useCallback(async () => {
         if (selectedForCompare.length !== 2) return;
 
         const images: Array<{ url: string; date: string; filename: string }> = [];
@@ -123,7 +123,7 @@ export function ImagingTimeline({
             }
         }
         setCompareImages(images);
-    };
+    }, [selectedForCompare, allImages, thumbnails, getSignedUrl]);
 
     useEffect(() => {
         if (selectedForCompare.length === 2) {
@@ -131,7 +131,7 @@ export function ImagingTimeline({
         } else {
             setCompareImages([]);
         }
-    }, [selectedForCompare]);
+    }, [selectedForCompare, startCompare]);
 
     if (isLoading && imagingSets.length === 0) {
         return <div className="animate-pulse h-32 bg-muted rounded-lg" />;
