@@ -123,7 +123,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(plan =>
-        plan.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (plan.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         plan.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         plan.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -140,7 +140,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
 
       switch (sortBy) {
         case 'name':
-          comparison = a.title.localeCompare(b.title);
+          comparison = (a.title || '').localeCompare(b.title || '');
           break;
         case 'date':
           comparison = new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
@@ -149,8 +149,8 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
           comparison = a.status.localeCompare(b.status);
           break;
         case 'priority': {
-          const priorityOrder = { 'low': 0, 'normal': 1, 'high': 2, 'urgent': 3 };
-          comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+          const priorityOrder: Record<string, number> = { 'low': 0, 'normal': 1, 'high': 2, 'urgent': 3 };
+          comparison = (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1);
           break;
         }
       }
@@ -321,11 +321,11 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
   const handleEdit = (treatmentPlan: TreatmentPlan) => {
     setSelectedTreatmentPlan(treatmentPlan);
     setFormData({
-      title: treatmentPlan.title,
+      title: treatmentPlan.title || '',
       description: treatmentPlan.description || '',
       diagnosis: treatmentPlan.diagnosis || '',
-      treatment_goals: treatmentPlan.treatment_goals,
-      procedures: treatmentPlan.procedures,
+      treatment_goals: treatmentPlan.treatment_goals || [],
+      procedures: treatmentPlan.procedures || [],
       estimated_cost: treatmentPlan.estimated_cost,
       estimated_duration: treatmentPlan.estimated_duration || '',
       priority: (['low', 'normal', 'high', 'urgent'] as const).includes(treatmentPlan.priority as any)
@@ -744,11 +744,11 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
                   <p className="text-sm">{selectedTreatmentPlan.diagnosis}</p>
                 </div>
               )}
-              {selectedTreatmentPlan.treatment_goals.length > 0 && (
+              {(selectedTreatmentPlan.treatment_goals?.length ?? 0) > 0 && (
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Treatment Goals</Label>
                   <div className="space-y-1">
-                    {selectedTreatmentPlan.treatment_goals.map((goal, index) => (
+                    {selectedTreatmentPlan.treatment_goals?.map((goal, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <Target className="h-3 w-3 text-blue-600" />
                         <span className="text-sm">{goal}</span>
@@ -757,11 +757,11 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
                   </div>
                 </div>
               )}
-              {selectedTreatmentPlan.procedures.length > 0 && (
+              {(selectedTreatmentPlan.procedures?.length ?? 0) > 0 && (
                 <div>
                   <Label className="text-sm font-medium text-gray-600">Procedures</Label>
                   <div className="space-y-1">
-                    {selectedTreatmentPlan.procedures.map((procedure, index) => (
+                    {selectedTreatmentPlan.procedures?.map((procedure, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <ClipboardListIcon className="h-3 w-3 text-orange-600" />
                         <span className="text-sm">{procedure}</span>

@@ -259,11 +259,14 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
         throw appointmentError;
       }
 
-      // Extract unique patients
+      // Extract unique patients - profiles might be an array from Supabase join
       const uniquePatients = appointmentData
-        .map(apt => apt.profiles)
+        .map(apt => {
+          const profile = Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles;
+          return profile;
+        })
         .filter((patient, index, self) =>
-          patient && self.findIndex(p => p?.id === patient.id) === index
+          patient && self.findIndex(p => p?.id === patient?.id) === index
         )
         .filter(Boolean) as Patient[];
 
@@ -348,7 +351,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
           try { return new Date(a.appointment_date) > now && a.status !== 'cancelled'; } catch { return false; }
         })
         .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime())[0];
-      const hasActiveTreatmentPlan = (treatmentData || []).some(t => t.status === 'active');
+      const hasActiveTreatmentPlan = treatmentPlans.some((t: TreatmentPlan) => t.status === 'active');
 
 
 

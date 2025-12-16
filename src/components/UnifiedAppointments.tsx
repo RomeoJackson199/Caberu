@@ -723,7 +723,18 @@ export function UnifiedAppointments({
         <AppointmentCompletionDialog
           open={showCompletion}
           onOpenChange={setShowCompletion}
-          appointment={selectedAppointment}
+          appointment={{
+            id: selectedAppointment.id,
+            patient_id: selectedAppointment.patient_id,
+            dentist_id: selectedAppointment.dentist_id,
+            appointment_date: selectedAppointment.appointment_date,
+            reason: selectedAppointment.reason ?? undefined,
+            patient: selectedAppointment.patient ? {
+              first_name: selectedAppointment.patient.first_name,
+              last_name: selectedAppointment.patient.last_name,
+              email: selectedAppointment.patient.email
+            } : undefined
+          }}
           onCompleted={() => {
             setShowCompletion(false);
             setSelectedAppointment(null);

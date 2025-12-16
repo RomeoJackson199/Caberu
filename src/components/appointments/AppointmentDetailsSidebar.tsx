@@ -37,6 +37,7 @@ export function AppointmentDetailsSidebar({
   const navigate = useNavigate();
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [summaries, setSummaries] = useState<{ short: string; long: string } | null>(null);
   const [loadingSummaries, setLoadingSummaries] = useState(false);
   const [nextAppointment, setNextAppointment] = useState<any>(null);
