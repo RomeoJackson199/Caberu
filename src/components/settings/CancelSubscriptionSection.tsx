@@ -114,15 +114,14 @@ export function CancelSubscriptionSection() {
 
                     if (plan) {
                         setPlanLimits({
-                            customer_limit: plan.customer_limit || 100,
-                            email_limit_monthly: plan.email_limit_monthly || 500,
+                            customer_limit: plan.customer_limit || -1, // -1 = unlimited
+                            email_limit_monthly: plan.email_limit_monthly || -1, // -1 = unlimited
                             features: plan.features || ['Basic features'],
                         });
-                    } else {
-                        // Default limits for promo/free plans
+                        // Default limits for promo/free plans (unlimited)
                         setPlanLimits({
-                            customer_limit: 500,
-                            email_limit_monthly: 1000,
+                            customer_limit: -1, // Unlimited
+                            email_limit_monthly: -1, // Unlimited
                             features: ['All features included for promotion period'],
                         });
                     }
@@ -140,9 +139,9 @@ export function CancelSubscriptionSection() {
                     },
                 });
                 setPlanLimits({
-                    customer_limit: 100,
-                    email_limit_monthly: 500,
-                    features: ['Basic features'],
+                    customer_limit: -1, // Unlimited
+                    email_limit_monthly: -1, // Unlimited
+                    features: ['Unlimited appointments', 'Unlimited emails'],
                 });
             } else {
                 setSubscription(null);
@@ -420,20 +419,23 @@ export function CancelSubscriptionSection() {
                                 <div className="flex items-center justify-between mb-1">
                                     <span className="text-xs text-muted-foreground">Emails Sent</span>
                                     <span className="text-xs font-medium">
-                                        {usageStats?.emailsSent || 0} / {planLimits.email_limit_monthly?.toLocaleString() || '∞'}
+                                        {usageStats?.emailsSent || 0} / {planLimits.email_limit_monthly === -1 ? '∞' : planLimits.email_limit_monthly?.toLocaleString() || '∞'}
                                     </span>
                                 </div>
-                                <div className="w-full bg-muted rounded-full h-2 mb-1">
-                                    <div
-                                        className={`h-2 rounded-full transition-all ${(usageStats?.emailsSent || 0) >= (planLimits.email_limit_monthly || 10000)
-                                            ? 'bg-red-500'
-                                            : (usageStats?.emailsSent || 0) >= (planLimits.email_limit_monthly || 10000) * 0.8
-                                                ? 'bg-yellow-500'
-                                                : 'bg-green-500'
-                                            }`}
-                                        style={{ width: `${Math.min(100, ((usageStats?.emailsSent || 0) / (planLimits.email_limit_monthly || 10000)) * 100)}%` }}
-                                    />
-                                </div>
+                                {/* Only show progress bar if not unlimited */}
+                                {planLimits.email_limit_monthly !== -1 && (
+                                    <div className="w-full bg-muted rounded-full h-2 mb-1">
+                                        <div
+                                            className={`h-2 rounded-full transition-all ${(usageStats?.emailsSent || 0) >= (planLimits.email_limit_monthly || 10000)
+                                                ? 'bg-red-500'
+                                                : (usageStats?.emailsSent || 0) >= (planLimits.email_limit_monthly || 10000) * 0.8
+                                                    ? 'bg-yellow-500'
+                                                    : 'bg-green-500'
+                                                }`}
+                                            style={{ width: `${Math.min(100, ((usageStats?.emailsSent || 0) / (planLimits.email_limit_monthly || 10000)) * 100)}%` }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
