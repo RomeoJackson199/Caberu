@@ -19,18 +19,6 @@ interface ElevenLabsWebhookPayload {
         call_id?: string;
         call_duration_secs?: number;
         call_successful?: boolean;
-        // Phone number can be in multiple locations
-        phone_number?: string;
-        caller_phone_number?: string;
-        from_phone_number?: string;
-        call?: {
-            caller_phone_number?: string;
-            phone_number?: string;
-            from?: string;
-            duration_secs?: number;
-            start_time_unix_secs?: number;
-            end_time_unix_secs?: number;
-        };
         transcript?: Array<{
             role: string;
             message: string;
@@ -43,9 +31,19 @@ interface ElevenLabsWebhookPayload {
         metadata?: {
             start_time_unix_secs?: number;
             end_time_unix_secs?: number;
+            accepted_time_unix_secs?: number;
+            call_duration_secs?: number;
             caller_phone?: string;
             phone_number?: string;
             business_id?: string;
+            phone_call?: {
+                direction?: string;
+                phone_number_id?: string;
+                agent_number?: string;
+                external_number?: string;
+                type?: string;
+                call_sid?: string;
+            };
         };
     };
 }
@@ -109,23 +107,18 @@ serve(async (req) => {
         const data = payload.data;
         const callId = data.call_id || data.conversation_id;
         
-        // Extract duration from multiple possible locations
-        const durationSeconds = data.call_duration_secs || data.call?.duration_secs || 0;
+        // Extract duration - ElevenLabs puts it in metadata.call_duration_secs
+        const durationSeconds = data.metadata?.call_duration_secs || data.call_duration_secs || 0;
         
-        // Extract phone number from multiple possible locations
-        const callerPhone = data.metadata?.caller_phone 
+        // Extract phone number - ElevenLabs puts it in metadata.phone_call.external_number
+        const callerPhone = data.metadata?.phone_call?.external_number 
+            || data.metadata?.caller_phone 
             || data.metadata?.phone_number
-            || data.phone_number 
-            || data.caller_phone_number
-            || data.from_phone_number
-            || data.call?.caller_phone_number
-            || data.call?.phone_number
-            || data.call?.from
             || null;
         
-        // Extract call times from multiple locations
-        const startTime = data.metadata?.start_time_unix_secs || data.call?.start_time_unix_secs;
-        const endTime = data.metadata?.end_time_unix_secs || data.call?.end_time_unix_secs;
+        // Extract call times
+        const startTime = data.metadata?.start_time_unix_secs || data.metadata?.accepted_time_unix_secs;
+        const endTime = data.metadata?.end_time_unix_secs;
         
         console.log('Extracted call data:', {
             callId,
