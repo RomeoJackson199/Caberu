@@ -698,7 +698,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const openAppointmentDetail = (appointment: any) => {
     setSelectedAppointment(appointment);
-    setSelectedTreatmentPlan(null); // Clear treatment selection to show appointment details inline
+    setAppointmentDetailOpen(true);
   };
 
   const restoreAppointment = async (appt: any) => {
@@ -1719,7 +1719,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: idx * 0.1 }}
                                     className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 transition-colors cursor-pointer group"
-                                    onClick={() => openAppointmentDetail(apt)}
+                                    onClick={() => { setSelectedAppointment(apt); setAppointmentDetailOpen(true); }}
                                   >
                                     <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex flex-col items-center justify-center text-white shrink-0">
                                       <span className="text-xs font-medium">{format(new Date(apt.appointment_date), 'MMM')}</span>

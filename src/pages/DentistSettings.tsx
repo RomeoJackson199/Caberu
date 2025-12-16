@@ -164,44 +164,40 @@ export default function DentistSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
-        <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-          <TabsList className="inline-flex w-max gap-1 p-1">
-            <TabsTrigger value="profile" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="services" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Services
-            </TabsTrigger>
-            <TabsTrigger value="schedule" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Availability</span>
-              <span className="sm:hidden">Hours</span>
-            </TabsTrigger>
-            <TabsTrigger value="appointments" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Appointments</span>
-              <span className="sm:hidden">Appts</span>
-            </TabsTrigger>
-            <TabsTrigger value="staff" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <UserCog className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Team
-            </TabsTrigger>
-            <TabsTrigger value="branding" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Brand
-            </TabsTrigger>
-            <TabsTrigger value="billing" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Billing
-            </TabsTrigger>
-            <TabsTrigger value="security" className="gap-1.5 sm:gap-2 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Security
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="flex flex-wrap w-full gap-1">
+          <TabsTrigger value="profile" className="gap-2">
+            <User className="h-4 w-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="services" className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            Services
+          </TabsTrigger>
+          <TabsTrigger value="schedule" className="gap-2">
+            <Calendar className="h-4 w-4" />
+            Availability
+          </TabsTrigger>
+          <TabsTrigger value="appointments" className="gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            Appointments
+          </TabsTrigger>
+          <TabsTrigger value="staff" className="gap-2">
+            <UserCog className="h-4 w-4" />
+            Team
+          </TabsTrigger>
+          <TabsTrigger value="branding" className="gap-2">
+            <Palette className="h-4 w-4" />
+            Branding
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            Billing
+          </TabsTrigger>
+          <TabsTrigger value="security" className="gap-2">
+            <Shield className="h-4 w-4" />
+            Security
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
           <DentistAdminProfile />
