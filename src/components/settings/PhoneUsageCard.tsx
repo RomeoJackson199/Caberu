@@ -2,10 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Clock, AlertTriangle, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Phone, Clock, AlertTriangle, TrendingUp, PhoneCall, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+
+// AI Voice Agent Configuration
+const AI_AGENT_PHONE = "+1 360 967 0625";
+const AI_AGENT_ID = "agent_0601kabr6jxseqr9deax9c7ft5rq";
 
 interface PhoneUsageData {
   minutes_used: number;
@@ -28,9 +34,11 @@ interface CallRecord {
 
 export function PhoneUsageCard() {
   const { businessId } = useBusinessContext();
+  const { toast } = useToast();
   const [usage, setUsage] = useState<PhoneUsageData | null>(null);
   const [calls, setCalls] = useState<CallRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!businessId) return;
@@ -68,6 +76,13 @@ export function PhoneUsageCard() {
     fetchUsage();
   }, [businessId]);
 
+  const copyPhoneNumber = async () => {
+    await navigator.clipboard.writeText(AI_AGENT_PHONE.replace(/\s/g, ''));
+    setCopied(true);
+    toast({ title: "Copied!", description: "Phone number copied to clipboard" });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -91,7 +106,7 @@ export function PhoneUsageCard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Phone className="h-5 w-5" />
-            Phone Usage
+            AI Voice Agent
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -110,13 +125,47 @@ export function PhoneUsageCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Phone className="h-5 w-5" />
-          Phone Usage
+          AI Voice Agent
         </CardTitle>
         <CardDescription>
-          AI voice call minutes for this billing period
+          Your AI receptionist for appointment booking
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Agent Phone Number */}
+        <div className="rounded-lg border bg-gradient-to-r from-primary/5 to-primary/10 p-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">Call Your AI Agent</p>
+              <p className="text-2xl font-bold tracking-wide">{AI_AGENT_PHONE}</p>
+              <p className="text-xs text-muted-foreground">
+                Agent ID: {AI_AGENT_ID.slice(0, 20)}...
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={copyPhoneNumber}
+                className="gap-2"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+              <Button
+                size="sm"
+                asChild
+                className="gap-2"
+              >
+                <a href={`tel:${AI_AGENT_PHONE.replace(/\s/g, '')}`}>
+                  <PhoneCall className="h-4 w-4" />
+                  Call Now
+                </a>
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Usage Meter */}
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
