@@ -698,7 +698,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const openAppointmentDetail = (appointment: any) => {
     setSelectedAppointment(appointment);
-    setAppointmentDetailOpen(true);
+    setSelectedTreatmentPlan(null); // Show appointment details inline
   };
 
   const restoreAppointment = async (appt: any) => {
