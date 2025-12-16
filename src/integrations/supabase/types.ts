@@ -56,51 +56,69 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_knowledge_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       appointment_slots: {
         Row: {
           appointment_id: string | null
           business_id: string
-          created_at: string
+          created_at: string | null
           dentist_id: string
-          emergency_only: boolean
           id: string
-          is_available: boolean
+          is_available: boolean | null
           slot_date: string
           slot_time: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           appointment_id?: string | null
           business_id: string
-          created_at?: string
+          created_at?: string | null
           dentist_id: string
-          emergency_only?: boolean
           id?: string
-          is_available?: boolean
+          is_available?: boolean | null
           slot_date: string
           slot_time: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           appointment_id?: string | null
           business_id?: string
-          created_at?: string
+          created_at?: string | null
           dentist_id?: string
-          emergency_only?: boolean
           id?: string
-          is_available?: boolean
+          is_available?: boolean | null
           slot_date?: string
           slot_time?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "appointment_slots_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "appointment_slots_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_slots_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
@@ -170,6 +188,13 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "appointment_types_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       appointments: {
@@ -195,6 +220,7 @@ export type Database = {
           reason: string
           service_id: string | null
           status: string
+          treatment_plan_id: string | null
           updated_at: string
           urgency: string
         }
@@ -220,6 +246,7 @@ export type Database = {
           reason?: string
           service_id?: string | null
           status?: string
+          treatment_plan_id?: string | null
           updated_at?: string
           urgency?: string
         }
@@ -245,6 +272,7 @@ export type Database = {
           reason?: string
           service_id?: string | null
           status?: string
+          treatment_plan_id?: string | null
           updated_at?: string
           urgency?: string
         }
@@ -261,6 +289,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
@@ -292,10 +327,108 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "secure_treatment_plans_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_appointments_patient"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          record_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      business_email_templates: {
+        Row: {
+          body_html: string
+          business_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          subject: string
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_html: string
+          business_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          subject: string
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_html?: string
+          business_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          subject?: string
+          template_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_email_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_email_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
@@ -334,6 +467,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "business_members_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "business_members_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -353,11 +493,9 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
-          is_retail: boolean | null
           name: string
           price_cents: number
           requires_upfront_payment: boolean
-          stock_quantity: number | null
           stripe_price_id: string | null
           updated_at: string
         }
@@ -371,11 +509,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          is_retail?: boolean | null
           name: string
           price_cents?: number
           requires_upfront_payment?: boolean
-          stock_quantity?: number | null
           stripe_price_id?: string | null
           updated_at?: string
         }
@@ -389,11 +525,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
-          is_retail?: boolean | null
           name?: string
           price_cents?: number
           requires_upfront_payment?: boolean
-          stock_quantity?: number | null
           stripe_price_id?: string | null
           updated_at?: string
         }
@@ -401,13 +535,13 @@ export type Database = {
       }
       businesses: {
         Row: {
+          address: string | null
           ai_greeting: string | null
           ai_instructions: string | null
           ai_personality_traits: Json | null
           ai_response_length: string
           ai_system_behavior: string | null
           ai_tone: string
-          appointment_keywords: string[]
           bio: string | null
           business_hours: Json
           created_at: string
@@ -415,33 +549,43 @@ export type Database = {
           custom_config: Json | null
           custom_features: Json | null
           custom_terminology: Json | null
-          daily_revenue_goal_cents: number | null
-          emergency_keywords: string[]
+          customer_count: number | null
+          emails_sent_count: number | null
           id: string
           logo_url: string | null
-          manual_tier_override: boolean | null
           name: string
           owner_profile_id: string
-          primary_color: string
-          salon_tier: string | null
-          secondary_color: string
+          pending_plan_change: string | null
+          pending_plan_change_date: string | null
+          phone: string | null
+          platform_fee_percentage: number | null
+          promo_code_used: string | null
           show_branding_in_emails: boolean
           show_logo_in_chat: boolean
           slug: string
           specialty_type: string
+          stripe_account_id: string | null
+          stripe_account_status: string | null
+          stripe_charges_enabled: boolean | null
+          stripe_onboarding_completed: boolean | null
+          stripe_payouts_enabled: boolean | null
+          subscription_ends_at: string | null
+          subscription_plan: string | null
+          subscription_started_at: string | null
+          subscription_status: string | null
           tagline: string | null
           template_type: string
           updated_at: string
           welcome_message: string | null
         }
         Insert: {
+          address?: string | null
           ai_greeting?: string | null
           ai_instructions?: string | null
           ai_personality_traits?: Json | null
           ai_response_length?: string
           ai_system_behavior?: string | null
           ai_tone?: string
-          appointment_keywords?: string[]
           bio?: string | null
           business_hours?: Json
           created_at?: string
@@ -449,33 +593,43 @@ export type Database = {
           custom_config?: Json | null
           custom_features?: Json | null
           custom_terminology?: Json | null
-          daily_revenue_goal_cents?: number | null
-          emergency_keywords?: string[]
+          customer_count?: number | null
+          emails_sent_count?: number | null
           id?: string
           logo_url?: string | null
-          manual_tier_override?: boolean | null
           name: string
           owner_profile_id: string
-          primary_color?: string
-          salon_tier?: string | null
-          secondary_color?: string
+          pending_plan_change?: string | null
+          pending_plan_change_date?: string | null
+          phone?: string | null
+          platform_fee_percentage?: number | null
+          promo_code_used?: string | null
           show_branding_in_emails?: boolean
           show_logo_in_chat?: boolean
           slug: string
           specialty_type?: string
+          stripe_account_id?: string | null
+          stripe_account_status?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_completed?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          subscription_ends_at?: string | null
+          subscription_plan?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
           tagline?: string | null
           template_type?: string
           updated_at?: string
           welcome_message?: string | null
         }
         Update: {
+          address?: string | null
           ai_greeting?: string | null
           ai_instructions?: string | null
           ai_personality_traits?: Json | null
           ai_response_length?: string
           ai_system_behavior?: string | null
           ai_tone?: string
-          appointment_keywords?: string[]
           bio?: string | null
           business_hours?: Json
           created_at?: string
@@ -483,20 +637,30 @@ export type Database = {
           custom_config?: Json | null
           custom_features?: Json | null
           custom_terminology?: Json | null
-          daily_revenue_goal_cents?: number | null
-          emergency_keywords?: string[]
+          customer_count?: number | null
+          emails_sent_count?: number | null
           id?: string
           logo_url?: string | null
-          manual_tier_override?: boolean | null
           name?: string
           owner_profile_id?: string
-          primary_color?: string
-          salon_tier?: string | null
-          secondary_color?: string
+          pending_plan_change?: string | null
+          pending_plan_change_date?: string | null
+          phone?: string | null
+          platform_fee_percentage?: number | null
+          promo_code_used?: string | null
           show_branding_in_emails?: boolean
           show_logo_in_chat?: boolean
           slug?: string
           specialty_type?: string
+          stripe_account_id?: string | null
+          stripe_account_status?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_completed?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          subscription_ends_at?: string | null
+          subscription_plan?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
           tagline?: string | null
           template_type?: string
           updated_at?: string
@@ -559,53 +723,6 @@ export type Database = {
           },
         ]
       }
-      clinic_settings: {
-        Row: {
-          address: string | null
-          clinic_name: string | null
-          created_at: string
-          dentist_id: string
-          id: string
-          logo_url: string | null
-          primary_color: string
-          secondary_color: string
-          tagline: string | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          clinic_name?: string | null
-          created_at?: string
-          dentist_id: string
-          id?: string
-          logo_url?: string | null
-          primary_color?: string
-          secondary_color?: string
-          tagline?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          clinic_name?: string | null
-          created_at?: string
-          dentist_id?: string
-          id?: string
-          logo_url?: string | null
-          primary_color?: string
-          secondary_color?: string
-          tagline?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clinic_settings_dentist_id_fkey"
-            columns: ["dentist_id"]
-            isOneToOne: true
-            referencedRelation: "providers_backup"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       dentist_availability: {
         Row: {
           break_end_time: string | null
@@ -652,6 +769,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_availability_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
@@ -731,6 +855,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dentist_capacity_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dentist_capacity_settings_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -795,6 +926,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dentist_invitations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dentist_invitations_invitee_profile_id_fkey"
             columns: ["invitee_profile_id"]
             isOneToOne: false
@@ -856,6 +994,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dentist_vacation_days_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dentist_vacation_days_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -889,6 +1034,7 @@ export type Database = {
           license_number: string | null
           profile_id: string
           profile_picture_url: string | null
+          require_appointment_approval: boolean | null
           specialization: string | null
           total_ratings: number
           updated_at: string
@@ -911,6 +1057,7 @@ export type Database = {
           license_number?: string | null
           profile_id: string
           profile_picture_url?: string | null
+          require_appointment_approval?: boolean | null
           specialization?: string | null
           total_ratings?: number
           updated_at?: string
@@ -933,6 +1080,7 @@ export type Database = {
           license_number?: string | null
           profile_id?: string
           profile_picture_url?: string | null
+          require_appointment_approval?: boolean | null
           specialization?: string | null
           total_ratings?: number
           updated_at?: string
@@ -948,67 +1096,329 @@ export type Database = {
           },
         ]
       }
-      homepage_settings: {
+      elevenlabs_agents: {
         Row: {
-          about_content: string | null
-          about_title: string | null
+          agent_id: string
+          agent_name: string | null
           business_id: string
           created_at: string | null
-          cta_link: string | null
-          cta_text: string | null
-          custom_sections: Json | null
-          hero_image_url: string | null
-          hero_subtitle: string | null
-          hero_title: string | null
           id: string
           is_active: boolean | null
-          show_about: boolean | null
-          show_services: boolean | null
-          theme_config: Json | null
+          settings: Json | null
           updated_at: string | null
+          voice_id: string | null
         }
         Insert: {
-          about_content?: string | null
-          about_title?: string | null
+          agent_id: string
+          agent_name?: string | null
           business_id: string
           created_at?: string | null
-          cta_link?: string | null
-          cta_text?: string | null
-          custom_sections?: Json | null
-          hero_image_url?: string | null
-          hero_subtitle?: string | null
-          hero_title?: string | null
           id?: string
           is_active?: boolean | null
-          show_about?: boolean | null
-          show_services?: boolean | null
-          theme_config?: Json | null
+          settings?: Json | null
           updated_at?: string | null
+          voice_id?: string | null
         }
         Update: {
-          about_content?: string | null
-          about_title?: string | null
+          agent_id?: string
+          agent_name?: string | null
           business_id?: string
           created_at?: string | null
-          cta_link?: string | null
-          cta_text?: string | null
-          custom_sections?: Json | null
-          hero_image_url?: string | null
-          hero_subtitle?: string | null
-          hero_title?: string | null
           id?: string
           is_active?: boolean | null
-          show_about?: boolean | null
-          show_services?: boolean | null
-          theme_config?: Json | null
+          settings?: Json | null
           updated_at?: string | null
+          voice_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "homepage_settings_business_id_fkey"
+            foreignKeyName: "elevenlabs_agents_business_id_fkey"
             columns: ["business_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "elevenlabs_agents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_logs: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          email_type: string
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          sent_at: string | null
+          status: string | null
+          subject: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          email_type: string
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          email_type?: string
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gdpr_export_bundles: {
+        Row: {
+          created_at: string | null
+          downloaded_at: string | null
+          expires_at: string | null
+          file_path: string | null
+          file_size_bytes: number | null
+          format: string | null
+          id: string
+          request_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          downloaded_at?: string | null
+          expires_at?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          format?: string | null
+          id?: string
+          request_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          downloaded_at?: string | null
+          expires_at?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          format?: string | null
+          id?: string
+          request_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gdpr_export_bundles_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "gdpr_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gdpr_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          processed_by: string | null
+          request_type: string
+          requested_at: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          processed_by?: string | null
+          request_type: string
+          requested_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requested_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      imaging_files: {
+        Row: {
+          created_at: string | null
+          filename: string
+          height: number | null
+          id: string
+          imaging_set_id: string
+          metadata: Json | null
+          mime_type: string
+          original_filename: string | null
+          size_bytes: number
+          storage_path: string
+          thumbnail_path: string | null
+          width: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          filename: string
+          height?: number | null
+          id?: string
+          imaging_set_id: string
+          metadata?: Json | null
+          mime_type: string
+          original_filename?: string | null
+          size_bytes: number
+          storage_path: string
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          filename?: string
+          height?: number | null
+          id?: string
+          imaging_set_id?: string
+          metadata?: Json | null
+          mime_type?: string
+          original_filename?: string | null
+          size_bytes?: number
+          storage_path?: string
+          thumbnail_path?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imaging_files_imaging_set_id_fkey"
+            columns: ["imaging_set_id"]
+            isOneToOne: false
+            referencedRelation: "imaging_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      imaging_sets: {
+        Row: {
+          appointment_id: string | null
+          business_id: string
+          created_at: string | null
+          id: string
+          imaging_type: Database["public"]["Enums"]["imaging_type"] | null
+          notes: string | null
+          patient_id: string
+          treatment_plan_id: string | null
+          updated_at: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          business_id: string
+          created_at?: string | null
+          id?: string
+          imaging_type?: Database["public"]["Enums"]["imaging_type"] | null
+          notes?: string | null
+          patient_id: string
+          treatment_plan_id?: string | null
+          updated_at?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          appointment_id?: string | null
+          business_id?: string
+          created_at?: string | null
+          id?: string
+          imaging_type?: Database["public"]["Enums"]["imaging_type"] | null
+          notes?: string | null
+          patient_id?: string
+          treatment_plan_id?: string | null
+          updated_at?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "imaging_sets_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "secure_treatment_plans_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1020,6 +1430,7 @@ export type Database = {
           dentist_id: string
           description: string | null
           findings: string | null
+          findings_encrypted: string | null
           id: string
           patient_id: string
           record_date: string
@@ -1034,6 +1445,7 @@ export type Database = {
           dentist_id: string
           description?: string | null
           findings?: string | null
+          findings_encrypted?: string | null
           id?: string
           patient_id: string
           record_date?: string
@@ -1048,6 +1460,7 @@ export type Database = {
           dentist_id?: string
           description?: string | null
           findings?: string | null
+          findings_encrypted?: string | null
           id?: string
           patient_id?: string
           record_date?: string
@@ -1062,6 +1475,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
@@ -1127,6 +1547,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_recipient_profile_id_fkey"
             columns: ["recipient_profile_id"]
             isOneToOne: false
@@ -1136,6 +1563,91 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          appointment_id: string | null
+          content: string
+          created_at: string | null
+          created_by: string | null
+          dentist_id: string | null
+          id: string
+          is_private: boolean | null
+          note_type: string | null
+          patient_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          dentist_id?: string | null
+          id?: string
+          is_private?: boolean | null
+          note_type?: string | null
+          patient_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          dentist_id?: string | null
+          id?: string
+          is_private?: boolean | null
+          note_type?: string | null
+          patient_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1241,59 +1753,116 @@ export type Database = {
         }
         Relationships: []
       }
-      order_items: {
+      patient_consents: {
         Row: {
-          created_at: string
+          consent_date: string
+          consent_version: string | null
+          created_at: string | null
+          data_processing_consent: boolean
+          health_data_consent: boolean
           id: string
-          item_status: string
-          order_id: string
-          prepared_at: string | null
-          quantity: number
-          served_at: string | null
-          service_id: string
-          special_instructions: string | null
-          unit_price_cents: number
-          updated_at: string
+          ip_address: string | null
+          patient_id: string
+          practice_id: string
+          understand_rights: boolean
+          user_agent: string | null
+          withdrawal_reason: string | null
+          withdrawn_at: string | null
         }
         Insert: {
-          created_at?: string
+          consent_date: string
+          consent_version?: string | null
+          created_at?: string | null
+          data_processing_consent: boolean
+          health_data_consent: boolean
           id?: string
-          item_status?: string
-          order_id: string
-          prepared_at?: string | null
-          quantity?: number
-          served_at?: string | null
-          service_id: string
-          special_instructions?: string | null
-          unit_price_cents: number
-          updated_at?: string
+          ip_address?: string | null
+          patient_id: string
+          practice_id: string
+          understand_rights: boolean
+          user_agent?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
         }
         Update: {
-          created_at?: string
+          consent_date?: string
+          consent_version?: string | null
+          created_at?: string | null
+          data_processing_consent?: boolean
+          health_data_consent?: boolean
           id?: string
-          item_status?: string
-          order_id?: string
-          prepared_at?: string | null
-          quantity?: number
-          served_at?: string | null
-          service_id?: string
-          special_instructions?: string | null
-          unit_price_cents?: number
-          updated_at?: string
+          ip_address?: string | null
+          patient_id?: string
+          practice_id?: string
+          understand_rights?: boolean
+          user_agent?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "order_items_order_id_fkey"
-            columns: ["order_id"]
+            foreignKeyName: "patient_consents_patient_id_fkey"
+            columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "restaurant_orders"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_notes: {
+        Row: {
+          content: string
+          created_at: string | null
+          dentist_id: string
+          id: string
+          is_private: boolean | null
+          note_type: string | null
+          patient_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          dentist_id: string
+          id?: string
+          is_private?: boolean | null
+          note_type?: string | null
+          patient_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          dentist_id?: string
+          id?: string
+          is_private?: boolean | null
+          note_type?: string | null
+          patient_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_notes_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "order_items_service_id_fkey"
-            columns: ["service_id"]
+            foreignKeyName: "patient_notes_dentist_id_fkey"
+            columns: ["dentist_id"]
             isOneToOne: false
-            referencedRelation: "business_services"
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1362,6 +1931,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_preferences_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
@@ -1549,6 +2125,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payment_requests_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -1578,83 +2161,121 @@ export type Database = {
           },
         ]
       }
-      product_sales: {
+      phone_usage: {
         Row: {
-          appointment_id: string
+          agent_id: string | null
           business_id: string
-          created_at: string
+          call_ended_at: string | null
+          call_id: string | null
+          call_started_at: string | null
+          call_type: string | null
+          caller_phone: string | null
+          cost_cents: number | null
+          created_at: string | null
+          duration_seconds: number
           id: string
-          price_cents: number
-          product_id: string
-          quantity: number
-          sold_by_stylist_id: string | null
-          updated_at: string
+          included_in_plan: boolean | null
+          is_billable: boolean | null
+          metadata: Json | null
+          transcript: Json | null
         }
         Insert: {
-          appointment_id: string
+          agent_id?: string | null
           business_id: string
-          created_at?: string
+          call_ended_at?: string | null
+          call_id?: string | null
+          call_started_at?: string | null
+          call_type?: string | null
+          caller_phone?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          duration_seconds?: number
           id?: string
-          price_cents: number
-          product_id: string
-          quantity?: number
-          sold_by_stylist_id?: string | null
-          updated_at?: string
+          included_in_plan?: boolean | null
+          is_billable?: boolean | null
+          metadata?: Json | null
+          transcript?: Json | null
         }
         Update: {
-          appointment_id?: string
+          agent_id?: string | null
           business_id?: string
-          created_at?: string
+          call_ended_at?: string | null
+          call_id?: string | null
+          call_started_at?: string | null
+          call_type?: string | null
+          caller_phone?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          duration_seconds?: number
           id?: string
-          price_cents?: number
-          product_id?: string
-          quantity?: number
-          sold_by_stylist_id?: string | null
-          updated_at?: string
+          included_in_plan?: boolean | null
+          is_billable?: boolean | null
+          metadata?: Json | null
+          transcript?: Json | null
         }
         Relationships: [
           {
-            foreignKeyName: "product_sales_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: false
-            referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_sales_business_id_fkey"
+            foreignKeyName: "phone_usage_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "product_sales_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "phone_usage_business_id_fkey"
+            columns: ["business_id"]
             isOneToOne: false
-            referencedRelation: "business_services"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_sales_sold_by_stylist_id_fkey"
-            columns: ["sold_by_stylist_id"]
-            isOneToOne: false
-            referencedRelation: "dentists"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_sales_sold_by_stylist_id_fkey"
-            columns: ["sold_by_stylist_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
+      }
+      practice_consents: {
+        Row: {
+          consent_date: string
+          consent_version: string | null
+          created_at: string | null
+          data_processing_consent: boolean
+          general_consent: boolean
+          id: string
+          ip_address: string | null
+          practice_id: string
+          terms_accepted: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          consent_date: string
+          consent_version?: string | null
+          created_at?: string | null
+          data_processing_consent: boolean
+          general_consent: boolean
+          id?: string
+          ip_address?: string | null
+          practice_id: string
+          terms_accepted: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          consent_date?: string
+          consent_version?: string | null
+          created_at?: string | null
+          data_processing_consent?: boolean
+          general_consent?: boolean
+          id?: string
+          ip_address?: string | null
+          practice_id?: string
+          terms_accepted?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
           address: string | null
           ai_opt_out: boolean
+          avatar_url: string | null
           bio: string | null
+          business_id: string | null
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -1677,7 +2298,9 @@ export type Database = {
         Insert: {
           address?: string | null
           ai_opt_out?: boolean
+          avatar_url?: string | null
           bio?: string | null
+          business_id?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -1700,7 +2323,9 @@ export type Database = {
         Update: {
           address?: string | null
           ai_opt_out?: boolean
+          avatar_url?: string | null
           bio?: string | null
+          business_id?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -1720,7 +2345,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promo_codes: {
         Row: {
@@ -1760,45 +2400,6 @@ export type Database = {
           uses_count?: number | null
         }
         Relationships: []
-      }
-      provider_business_map: {
-        Row: {
-          business_id: string
-          created_at: string
-          id: string
-          provider_id: string
-          role: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          id?: string
-          provider_id: string
-          role: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          id?: string
-          provider_id?: string
-          role?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "provider_business_map_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "provider_business_map_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       providers_backup: {
         Row: {
@@ -1896,308 +2497,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reschedule_suggestions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reschedule_suggestions_original_appointment_id_fkey"
             columns: ["original_appointment_id"]
             isOneToOne: false
             referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      restaurant_orders: {
-        Row: {
-          business_id: string
-          created_at: string
-          id: string
-          notes: string | null
-          order_status: string
-          payment_status: string
-          reservation_id: string | null
-          subtotal_cents: number
-          table_id: string | null
-          tax_cents: number
-          total_cents: number
-          updated_at: string
-          waiter_id: string | null
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_status?: string
-          payment_status?: string
-          reservation_id?: string | null
-          subtotal_cents?: number
-          table_id?: string | null
-          tax_cents?: number
-          total_cents?: number
-          updated_at?: string
-          waiter_id?: string | null
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_status?: string
-          payment_status?: string
-          reservation_id?: string | null
-          subtotal_cents?: number
-          table_id?: string | null
-          tax_cents?: number
-          total_cents?: number
-          updated_at?: string
-          waiter_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "restaurant_orders_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "restaurant_orders_reservation_id_fkey"
-            columns: ["reservation_id"]
-            isOneToOne: false
-            referencedRelation: "table_reservations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "restaurant_orders_table_id_fkey"
-            columns: ["table_id"]
-            isOneToOne: false
-            referencedRelation: "restaurant_tables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "restaurant_orders_waiter_id_fkey"
-            columns: ["waiter_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      restaurant_staff_codes: {
-        Row: {
-          business_id: string
-          code: string
-          created_at: string
-          created_by_profile_id: string
-          id: string
-          is_active: boolean
-          role: string
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          code: string
-          created_at?: string
-          created_by_profile_id: string
-          id?: string
-          is_active?: boolean
-          role: string
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          code?: string
-          created_at?: string
-          created_by_profile_id?: string
-          id?: string
-          is_active?: boolean
-          role?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "restaurant_staff_codes_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "restaurant_staff_codes_created_by_profile_id_fkey"
-            columns: ["created_by_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      restaurant_staff_roles: {
-        Row: {
-          business_id: string
-          created_at: string
-          expires_at: string | null
-          id: string
-          invitation_email: string | null
-          invitation_status: string | null
-          invitation_token: string | null
-          invited_at: string | null
-          invited_by_profile_id: string | null
-          is_active: boolean
-          profile_id: string | null
-          role: string
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          invitation_email?: string | null
-          invitation_status?: string | null
-          invitation_token?: string | null
-          invited_at?: string | null
-          invited_by_profile_id?: string | null
-          is_active?: boolean
-          profile_id?: string | null
-          role: string
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          invitation_email?: string | null
-          invitation_status?: string | null
-          invitation_token?: string | null
-          invited_at?: string | null
-          invited_by_profile_id?: string | null
-          is_active?: boolean
-          profile_id?: string | null
-          role?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "restaurant_staff_roles_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "restaurant_staff_roles_invited_by_profile_id_fkey"
-            columns: ["invited_by_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "restaurant_staff_roles_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      restaurant_tables: {
-        Row: {
-          business_id: string
-          capacity: number
-          created_at: string
-          id: string
-          is_available: boolean
-          location_notes: string | null
-          table_number: string
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          capacity: number
-          created_at?: string
-          id?: string
-          is_available?: boolean
-          location_notes?: string | null
-          table_number: string
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          capacity?: number
-          created_at?: string
-          id?: string
-          is_available?: boolean
-          location_notes?: string | null
-          table_number?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "restaurant_tables_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      service_tips: {
-        Row: {
-          amount_cents: number
-          appointment_id: string
-          business_id: string
-          created_at: string
-          id: string
-          payment_method: string
-          stylist_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount_cents?: number
-          appointment_id: string
-          business_id: string
-          created_at?: string
-          id?: string
-          payment_method: string
-          stylist_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount_cents?: number
-          appointment_id?: string
-          business_id?: string
-          created_at?: string
-          id?: string
-          payment_method?: string
-          stylist_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "service_tips_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: false
-            referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_tips_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_tips_stylist_id_fkey"
-            columns: ["stylist_id"]
-            isOneToOne: false
-            referencedRelation: "dentists"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "service_tips_stylist_id_fkey"
-            columns: ["stylist_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
@@ -2224,6 +2534,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_business_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
@@ -2278,6 +2595,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "slot_recommendations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "slot_recommendations_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -2309,6 +2633,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          phone_minutes_daily: number | null
           price_monthly: number
           price_yearly: number
           slug: string | null
@@ -2325,6 +2650,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          phone_minutes_daily?: number | null
           price_monthly: number
           price_yearly: number
           slug?: string | null
@@ -2341,6 +2667,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          phone_minutes_daily?: number | null
           price_monthly?: number
           price_yearly?: number
           slug?: string | null
@@ -2508,68 +2835,11 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      table_reservations: {
-        Row: {
-          appointment_id: string
-          business_id: string
-          completed_at: string | null
-          created_at: string
-          id: string
-          party_size: number
-          reservation_status: string
-          seated_at: string | null
-          special_requests: string | null
-          table_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          appointment_id: string
-          business_id: string
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          party_size: number
-          reservation_status?: string
-          seated_at?: string | null
-          special_requests?: string | null
-          table_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          appointment_id?: string
-          business_id?: string
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          party_size?: number
-          reservation_status?: string
-          seated_at?: string | null
-          special_requests?: string | null
-          table_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "table_reservations_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: true
-            referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "table_reservations_business_id_fkey"
+            foreignKeyName: "system_errors_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "table_reservations_table_id_fkey"
-            columns: ["table_id"]
-            isOneToOne: false
-            referencedRelation: "restaurant_tables"
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
@@ -2604,6 +2874,13 @@ export type Database = {
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "template_change_history_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       treatment_plans: {
@@ -2612,17 +2889,23 @@ export type Database = {
           created_at: string
           dentist_id: string
           description: string | null
+          description_encrypted: string | null
           diagnosis: string | null
+          diagnosis_encrypted: string | null
           end_date: string | null
           estimated_cost: number | null
+          estimated_duration: string | null
           estimated_duration_weeks: number | null
           id: string
           notes: string | null
           patient_id: string
           priority: string
+          procedures: string[] | null
           start_date: string | null
           status: string
+          target_completion_date: string | null
           title: string
+          treatment_goals: string[] | null
           updated_at: string
         }
         Insert: {
@@ -2630,17 +2913,23 @@ export type Database = {
           created_at?: string
           dentist_id: string
           description?: string | null
+          description_encrypted?: string | null
           diagnosis?: string | null
+          diagnosis_encrypted?: string | null
           end_date?: string | null
           estimated_cost?: number | null
+          estimated_duration?: string | null
           estimated_duration_weeks?: number | null
           id?: string
           notes?: string | null
           patient_id: string
           priority?: string
+          procedures?: string[] | null
           start_date?: string | null
           status?: string
+          target_completion_date?: string | null
           title: string
+          treatment_goals?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -2648,17 +2937,23 @@ export type Database = {
           created_at?: string
           dentist_id?: string
           description?: string | null
+          description_encrypted?: string | null
           diagnosis?: string | null
+          diagnosis_encrypted?: string | null
           end_date?: string | null
           estimated_cost?: number | null
+          estimated_duration?: string | null
           estimated_duration_weeks?: number | null
           id?: string
           notes?: string | null
           patient_id?: string
           priority?: string
+          procedures?: string[] | null
           start_date?: string | null
           status?: string
+          target_completion_date?: string | null
           title?: string
+          treatment_goals?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -2667,6 +2962,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
@@ -2728,6 +3030,45 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_codes: {
+        Row: {
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          failed_attempts: number | null
+          id: string
+          lockout_until: string | null
+          type: string | null
+          used: boolean
+          user_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          email: string
+          expires_at: string
+          failed_attempts?: number | null
+          id?: string
+          lockout_until?: string | null
+          type?: string | null
+          used?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          failed_attempts?: number | null
+          id?: string
+          lockout_until?: string | null
+          type?: string | null
+          used?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       providers: {
@@ -2780,37 +3121,164 @@ export type Database = {
           },
         ]
       }
+      public_businesses_view: {
+        Row: {
+          custom_config: Json | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+          tagline: string | null
+          template_type: string | null
+        }
+        Insert: {
+          custom_config?: Json | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          tagline?: string | null
+          template_type?: string | null
+        }
+        Update: {
+          custom_config?: Json | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          tagline?: string | null
+          template_type?: string | null
+        }
+        Relationships: []
+      }
+      secure_treatment_plans_view: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          dentist_id: string | null
+          description: string | null
+          diagnosis: string | null
+          estimated_cost: number | null
+          estimated_duration: string | null
+          id: string | null
+          notes: string | null
+          patient_id: string | null
+          priority: string | null
+          procedures: string[] | null
+          start_date: string | null
+          status: string | null
+          target_completion_date: string | null
+          title: string | null
+          treatment_goals: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          dentist_id?: string | null
+          description?: never
+          diagnosis?: never
+          estimated_cost?: number | null
+          estimated_duration?: string | null
+          id?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          priority?: string | null
+          procedures?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          title?: string | null
+          treatment_goals?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          dentist_id?: string | null
+          description?: never
+          diagnosis?: never
+          estimated_cost?: number | null
+          estimated_duration?: string | null
+          id?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          priority?: string | null
+          procedures?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          title?: string | null
+          treatment_goals?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plans_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_dentist_invitation: {
         Args: { p_business_id: string; p_invitation_id: string }
         Returns: Json
       }
-      accept_restaurant_staff_invitation: {
-        Args: { p_invitation_id: string }
-        Returns: Json
-      }
       assign_provider_role: { Args: never; Returns: undefined }
-      book_appointment_slot: {
-        Args: {
-          p_appointment_id: string
-          p_dentist_id: string
-          p_slot_date: string
-          p_slot_time: string
-        }
-        Returns: boolean
-      }
+      book_appointment_slot:
+        | {
+            Args: {
+              p_appointment_id: string
+              p_dentist_id: string
+              p_slot_date: string
+              p_slot_time: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_appointment_id: string
+              p_dentist_id: string
+              p_slot_date: string
+              p_slot_time: string
+            }
+            Returns: boolean
+          }
       calculate_patient_preferences: {
         Args: { p_business_id: string; p_patient_id: string }
         Returns: undefined
-      }
-      calculate_salon_tier: {
-        Args: { business_id_param: string }
-        Returns: string
-      }
-      can_manage_restaurant_staff: {
-        Args: { p_business_id: string }
-        Returns: boolean
       }
       can_view_profile_in_user_business: {
         Args: { _target_profile_id: string; _viewer_user_id: string }
@@ -2824,20 +3292,34 @@ export type Database = {
         Args: { business_slug: string }
         Returns: Json
       }
-      create_restaurant_staff_invitation: {
-        Args: { p_business_id: string; p_email: string; p_role: string }
-        Returns: string
+      check_imaging_workflow_flags: {
+        Args: { p_appointment_id: string }
+        Returns: Json
       }
-      decrement_product_stock: {
-        Args: { product_id: string; quantity: number }
-        Returns: undefined
+      check_phone_minutes_available: {
+        Args: { p_business_id: string }
+        Returns: {
+          can_make_call: boolean
+          daily_limit_seconds: number
+          plan_tier: string
+          remaining_seconds: number
+          used_seconds: number
+        }[]
       }
       ensure_daily_slots: {
         Args: { p_date: string; p_dentist_id: string }
         Returns: undefined
       }
+      fn_can_view_profile: {
+        Args: { target_profile_id: string }
+        Returns: boolean
+      }
+      generate_appointment_slots_safe: {
+        Args: { p_business_id?: string; p_date: string; p_dentist_id: string }
+        Returns: undefined
+      }
       generate_daily_slots: {
-        Args: { p_date: string; p_dentist_id: string }
+        Args: { p_business_id: string; p_date: string; p_dentist_id: string }
         Returns: undefined
       }
       get_all_businesses_admin: {
@@ -2864,15 +3346,26 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_appointment_imaging_status: {
+        Args: { p_appointment_id: string }
+        Returns: Json
+      }
       get_current_business_id: { Args: never; Returns: string }
-      get_daily_revenue: {
-        Args: { business_id_param: string; date_param: string }
+      get_daily_phone_usage: {
+        Args: { p_business_id: string; p_date?: string }
         Returns: {
-          clients_served: number
-          product_revenue_cents: number
-          service_revenue_cents: number
-          tips_cents: number
-          total_revenue_cents: number
+          included_seconds: number
+          overage_cost_cents: number
+          overage_seconds: number
+          total_calls: number
+          total_seconds: number
+        }[]
+      }
+      get_dentist_available_slots: {
+        Args: { p_business_id: string; p_date: string; p_dentist_id: string }
+        Returns: {
+          is_available: boolean
+          slot_time: string
         }[]
       }
       get_dentist_capacity_usage: {
@@ -2886,6 +3379,27 @@ export type Database = {
           total_slots: number
         }[]
       }
+      get_dentist_patients: {
+        Args: {
+          p_business_id?: string
+          p_cursor?: string
+          p_dentist_id: string
+          p_limit?: number
+          p_search?: string
+        }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          date_of_birth: string
+          email: string
+          first_name: string
+          has_more: boolean
+          id: string
+          last_name: string
+          medical_history: string
+          phone: string
+        }[]
+      }
       get_system_stats: {
         Args: never
         Returns: {
@@ -2897,9 +3411,9 @@ export type Database = {
           unresolved_errors: number
         }[]
       }
-      has_restaurant_role: {
-        Args: { _business_id: string; _profile_id: string; _role: string }
-        Returns: boolean
+      get_treatment_plan_details: {
+        Args: { p_treatment_plan_id: string }
+        Returns: Json
       }
       has_role: {
         Args: {
@@ -2907,6 +3421,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_email_count: {
+        Args: { business_uuid: string }
+        Returns: undefined
       }
       increment_promo_usage: { Args: { promo_id: string }; Returns: undefined }
       is_active_dentist_profile: {
@@ -2933,19 +3451,11 @@ export type Database = {
         Args: { patient_profile_id: string }
         Returns: boolean
       }
-      is_restaurant_manager: {
-        Args: { p_business_id: string; p_user_id?: string }
-        Returns: boolean
-      }
       is_super_admin: { Args: never; Returns: boolean }
       is_user_business_member: { Args: { _user_id: string }; Returns: boolean }
       is_user_member_of_business: {
         Args: { _business_id: string; _user_id: string }
         Returns: boolean
-      }
-      join_restaurant_staff_with_code: {
-        Args: { p_code: string }
-        Returns: Json
       }
       leave_clinic: { Args: { p_business_id?: string }; Returns: Json }
       log_super_admin_action: {
@@ -2957,13 +3467,10 @@ export type Database = {
         }
         Returns: undefined
       }
-      reject_restaurant_staff_invitation: {
-        Args: { p_invitation_id: string }
-        Returns: Json
-      }
+      process_gdpr_deletion: { Args: { target_user_id: string }; Returns: Json }
       release_appointment_slot: {
         Args: { p_appointment_id: string }
-        Returns: undefined
+        Returns: boolean
       }
       reschedule_appointment: {
         Args: {
@@ -2973,14 +3480,6 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
-      }
-      reset_to_auto_tier: {
-        Args: { business_id_param: string }
-        Returns: undefined
-      }
-      upgrade_to_enterprise: {
-        Args: { business_id_param: string }
-        Returns: undefined
       }
       viewer_profile_id: { Args: { _viewer_user_id: string }; Returns: string }
     }
@@ -3008,6 +3507,7 @@ export type Database = {
         | "emergency"
         | "consultation"
         | "other"
+      imaging_type: "xray" | "photo" | "scan" | "unknown"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3160,6 +3660,7 @@ export const Constants = {
         "consultation",
         "other",
       ],
+      imaging_type: ["xray", "photo", "scan", "unknown"],
     },
   },
 } as const

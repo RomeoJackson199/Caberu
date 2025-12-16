@@ -69,43 +69,43 @@ serve(async (req) => {
 
             // Notes
             try { await supabaseAdmin.from('notes').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('notes cleanup skipped:', e.message); }
+            catch (e) { console.log('notes cleanup skipped:', (e as Error).message); }
 
             // Prescriptions
             try { await supabaseAdmin.from('prescriptions').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('prescriptions cleanup skipped:', e.message); }
+            catch (e) { console.log('prescriptions cleanup skipped:', (e as Error).message); }
 
             // Appointments
             try { await supabaseAdmin.from('appointments').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('appointments cleanup skipped:', e.message); }
+            catch (e) { console.log('appointments cleanup skipped:', (e as Error).message); }
 
             // Treatment plans
             try { await supabaseAdmin.from('treatment_plans').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('treatment_plans cleanup skipped:', e.message); }
+            catch (e) { console.log('treatment_plans cleanup skipped:', (e as Error).message); }
 
             // Invoices  
             try { await supabaseAdmin.from('invoices').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('invoices cleanup skipped:', e.message); }
+            catch (e) { console.log('invoices cleanup skipped:', (e as Error).message); }
 
             // Payment requests
             try { await supabaseAdmin.from('payment_requests').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('payment_requests cleanup skipped:', e.message); }
+            catch (e) { console.log('payment_requests cleanup skipped:', (e as Error).message); }
 
             // Medical records
             try { await supabaseAdmin.from('medical_records').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('medical_records cleanup skipped:', e.message); }
+            catch (e) { console.log('medical_records cleanup skipped:', (e as Error).message); }
 
             // Business members
             try { await supabaseAdmin.from('business_members').delete().eq('profile_id', profileId); }
-            catch (e) { console.log('business_members cleanup skipped:', e.message); }
+            catch (e) { console.log('business_members cleanup skipped:', (e as Error).message); }
 
             // Session business
             try { await supabaseAdmin.from('session_business').delete().eq('profile_id', profileId); }
-            catch (e) { console.log('session_business cleanup skipped:', e.message); }
+            catch (e) { console.log('session_business cleanup skipped:', (e as Error).message); }
 
             // Dentist record (if they were a dentist)
             try { await supabaseAdmin.from('dentists').delete().eq('profile_id', profileId); }
-            catch (e) { console.log('dentists cleanup skipped:', e.message); }
+            catch (e) { console.log('dentists cleanup skipped:', (e as Error).message); }
         }
 
         // === Tables that reference user_id directly ===
@@ -113,27 +113,27 @@ serve(async (req) => {
 
         // Messages
         try { await supabaseAdmin.from('messages').delete().eq('user_id', user.id); }
-        catch (e) { console.log('messages cleanup skipped:', e.message); }
+        catch (e) { console.log('messages cleanup skipped:', (e as Error).message); }
 
         // User roles
         try { await supabaseAdmin.from('user_roles').delete().eq('user_id', user.id); }
-        catch (e) { console.log('user_roles cleanup skipped:', e.message); }
+        catch (e) { console.log('user_roles cleanup skipped:', (e as Error).message); }
 
         // Session business (also has user_id column)
         try { await supabaseAdmin.from('session_business').delete().eq('user_id', user.id); }
-        catch (e) { console.log('session_business user cleanup skipped:', e.message); }
+        catch (e) { console.log('session_business user cleanup skipped:', (e as Error).message); }
 
         // Verification codes (by email)
         try { await supabaseAdmin.from('verification_codes').delete().eq('email', user.email); }
-        catch (e) { console.log('verification_codes cleanup skipped:', e.message); }
+        catch (e) { console.log('verification_codes cleanup skipped:', (e as Error).message); }
 
         // Invitation tokens (by email)
         try { await supabaseAdmin.from('invitation_tokens').delete().eq('email', user.email); }
-        catch (e) { console.log('invitation_tokens cleanup skipped:', e.message); }
+        catch (e) { console.log('invitation_tokens cleanup skipped:', (e as Error).message); }
 
         // Staff members
         try { await supabaseAdmin.from('staff_members').delete().eq('user_id', user.id); }
-        catch (e) { console.log('staff_members cleanup skipped:', e.message); }
+        catch (e) { console.log('staff_members cleanup skipped:', (e as Error).message); }
 
         // === Finally delete the profile ===
         if (profileId) {
@@ -141,7 +141,7 @@ serve(async (req) => {
             try {
                 await supabaseAdmin.from('profiles').delete().eq('id', profileId);
             } catch (e) {
-                console.log('profile deletion skipped:', e.message);
+                console.log('profile deletion skipped:', (e as Error).message);
             }
         }
 
@@ -166,7 +166,7 @@ serve(async (req) => {
     } catch (error) {
         console.error('Error in delete-user-account:', error);
         return new Response(
-            JSON.stringify({ error: error.message || 'Failed to delete account' }),
+            JSON.stringify({ error: (error as Error).message || 'Failed to delete account' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }
