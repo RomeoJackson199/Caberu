@@ -27,8 +27,8 @@ ON phone_usage(business_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_phone_usage_call_id 
 ON phone_usage(call_id);
 
-CREATE INDEX IF NOT EXISTS idx_phone_usage_daily 
-ON phone_usage(business_id, (created_at::date));
+-- Note: For daily queries, use created_at range instead of ::date cast
+-- Example: WHERE created_at >= date_trunc('day', now()) AND created_at < date_trunc('day', now()) + interval '1 day'
 
 -- RLS policies
 ALTER TABLE phone_usage ENABLE ROW LEVEL SECURITY;
