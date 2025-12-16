@@ -37,6 +37,30 @@ export const useUsageLimits = () => {
     enabled: !!businessId,
   });
 
+  const { data: phoneLimit, refetch: refetchPhoneLimit } = useQuery({
+    queryKey: ['usage-limit', 'phone', businessId],
+    queryFn: async () => {
+      if (!businessId) return null;
+      
+      const { data, error } = await supabase.rpc('check_phone_minutes_available', {
+        p_business_id: businessId,
+      });
+
+      if (error) throw error;
+      const result = data?.[0];
+      if (!result) return null;
+      
+      return {
+        allowed: result.can_make_call,
+        current: Math.floor(result.used_seconds / 60),
+        limit: Math.floor(result.daily_limit_seconds / 60),
+        remaining: Math.floor(result.remaining_seconds / 60),
+        planTier: result.plan_tier,
+      };
+    },
+    enabled: !!businessId,
+  });
+
   const checkCustomerLimit = () => {
     if (!customerLimit) return { allowed: true };
     return customerLimit;
@@ -47,10 +71,17 @@ export const useUsageLimits = () => {
     return emailLimit;
   };
 
+  const checkPhoneLimit = () => {
+    if (!phoneLimit) return { allowed: true, current: 0, limit: 5, remaining: 5 };
+    return phoneLimit;
+  };
+
   return {
     customerLimit: checkCustomerLimit(),
     emailLimit: checkEmailLimit(),
+    phoneLimit: checkPhoneLimit(),
     refetchCustomerLimit,
     refetchEmailLimit,
+    refetchPhoneLimit,
   };
 };
