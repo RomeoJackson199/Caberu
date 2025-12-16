@@ -133,7 +133,7 @@ export default function DentistAdminBranding() {
         setHasChanges(false);
       }
     } catch (error: any) {
-      console.error('Error loading branding:', error);
+      logger.error('Error loading branding:', error);
       toast({
         title: "Error",
         description: `Failed to load branding settings${error?.code ? ` (${error.code})` : ''}${error?.hint ? ` - ${error.hint}` : ''}`,
@@ -189,7 +189,7 @@ export default function DentistAdminBranding() {
         description: "Your clinic logo has been uploaded successfully",
       });
     } catch (error: any) {
-      console.error('Error uploading logo:', error);
+      logger.error('Error uploading logo:', error);
       toast({
         title: "Upload Failed",
         description: error.message || "Failed to upload logo",
@@ -269,7 +269,7 @@ export default function DentistAdminBranding() {
           dailyRevenueGoal,
         });
       } catch (error: any) {
-        console.error('Error saving template:', error);
+        logger.error('Error saving template:', error);
         toast({
           title: "Save Failed",
           description: error.message || "Failed to save template change",
@@ -345,7 +345,7 @@ export default function DentistAdminBranding() {
         description: "The QR code for your business link has been downloaded",
       });
     } catch (error) {
-      console.error("Error downloading QR code", error);
+      logger.error("Error downloading QR code", error);
       toast({
         title: "Download Failed",
         description: "We couldn't download the QR code. Please try again.",
@@ -416,7 +416,7 @@ export default function DentistAdminBranding() {
       });
       setHasChanges(false);
     } catch (error: any) {
-      console.error('Error saving branding:', error);
+      logger.error('Error saving branding:', error);
       toast({
         title: "Error",
         description: `Failed to save branding settings${error?.code ? ` (${error.code})` : ''}${error?.hint ? ` - ${error.hint}` : ''}`,

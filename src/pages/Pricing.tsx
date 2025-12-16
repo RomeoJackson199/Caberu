@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/homepage/Header";
 import { Footer } from "@/components/homepage/Footer";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
+import { logger } from "@/lib/logger";
 
 interface SubscriptionPlan {
   id: string;
@@ -115,7 +116,7 @@ export default function Pricing() {
 
       // If user already has an active subscription and selecting a different plan, schedule the change
       if (currentPlan && currentPlan.status === 'active' && currentPlan.name.toLowerCase() !== planName.toLowerCase()) {
-        console.log('Scheduling plan change from', currentPlan.name, 'to', planName);
+        logger.info('Scheduling plan change from', currentPlan.name, 'to', planName);
         const { data, error } = await supabase.functions.invoke('schedule-plan-change', {
           body: {
             business_id: businessId,
@@ -137,7 +138,7 @@ export default function Pricing() {
 
       // If any promo code is validated, apply it via the edge function
       if (validPromo) {
-        console.log('Applying promo code:', validPromo);
+        logger.info('Applying promo code:', validPromo);
         const { data, error } = await supabase.functions.invoke('apply-promo-code', {
           body: {
             promo_code: promoCode.trim(),
@@ -174,7 +175,7 @@ export default function Pricing() {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.error('Subscription error:', error);
+      logger.error('Subscription error:', error);
       toast.error(error.message || "Failed to start checkout");
       setLoading(null);
     }
@@ -202,7 +203,7 @@ export default function Pricing() {
         setValidPromo(null);
       }
     } catch (error: any) {
-      console.error('Promo validation error:', error);
+      logger.error('Promo validation error:', error);
       toast.error(error.message || 'Failed to validate promo code');
       setValidPromo(null);
     } finally {
@@ -247,7 +248,7 @@ export default function Pricing() {
       // Redirect to dashboard
       navigate('/dentist');
     } catch (error: any) {
-      console.error('Apply promo error:', error);
+      logger.error('Apply promo error:', error);
       toast.error(error.message || 'Failed to apply promo code');
     } finally {
       setApplyingPromo(false);
