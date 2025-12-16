@@ -43,7 +43,7 @@ USING (
     )
     OR
     business_id IN (
-        SELECT id FROM businesses WHERE owner_id = auth.uid()
+        SELECT id FROM businesses WHERE owner_profile_id = (SELECT id FROM profiles WHERE user_id = auth.uid())
     )
 );
 
@@ -152,7 +152,7 @@ USING (
     )
     OR
     business_id IN (
-        SELECT id FROM businesses WHERE owner_id = auth.uid()
+        SELECT id FROM businesses WHERE owner_profile_id = (SELECT id FROM profiles WHERE user_id = auth.uid())
     )
 );
 
@@ -166,6 +166,6 @@ USING (
     )
     OR
     business_id IN (
-        SELECT id FROM businesses WHERE owner_id = auth.uid()
+        SELECT id FROM businesses WHERE owner_profile_id = (SELECT id FROM profiles WHERE user_id = auth.uid())
     )
 );
