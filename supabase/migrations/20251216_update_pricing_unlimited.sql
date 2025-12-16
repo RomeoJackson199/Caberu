@@ -4,15 +4,7 @@
 -- Update Starter tier
 UPDATE subscription_plans 
 SET 
-    features = ARRAY[
-        'Unlimited appointments',
-        'Unlimited emails', 
-        '5 min AI phone/day + pay-as-you-go',
-        'Patient management',
-        'Basic appointment scheduling',
-        'Email notifications',
-        'Basic reports'
-    ]::text[],
+    features = '["Unlimited appointments", "Unlimited emails", "5 min AI phone/day + pay-as-you-go", "Patient management", "Basic appointment scheduling", "Email notifications", "Basic reports"]'::jsonb,
     customer_limit = -1,
     email_limit_monthly = -1
 WHERE slug = 'starter';
@@ -20,16 +12,7 @@ WHERE slug = 'starter';
 -- Update Professional tier
 UPDATE subscription_plans 
 SET 
-    features = ARRAY[
-        'Unlimited appointments',
-        'Unlimited emails',
-        '10 min AI phone/day + pay-as-you-go',
-        'Everything in Starter',
-        'Advanced analytics',
-        'SMS notifications',
-        'Custom branding',
-        'Priority support'
-    ]::text[],
+    features = '["Unlimited appointments", "Unlimited emails", "10 min AI phone/day + pay-as-you-go", "Everything in Starter", "Advanced analytics", "SMS notifications", "Custom branding", "Priority support"]'::jsonb,
     customer_limit = -1,
     email_limit_monthly = -1
 WHERE slug = 'professional';
@@ -37,16 +20,7 @@ WHERE slug = 'professional';
 -- Update Enterprise tier
 UPDATE subscription_plans 
 SET 
-    features = ARRAY[
-        'Unlimited appointments',
-        'Unlimited emails',
-        '20 min AI phone/day + pay-as-you-go',
-        'Everything in Professional',
-        'Unlimited staff accounts',
-        'API access',
-        'Dedicated support',
-        'Custom integrations'
-    ]::text[],
+    features = '["Unlimited appointments", "Unlimited emails", "20 min AI phone/day + pay-as-you-go", "Everything in Professional", "Unlimited staff accounts", "API access", "Dedicated support", "Custom integrations"]'::jsonb,
     customer_limit = -1,
     email_limit_monthly = -1
 WHERE slug = 'enterprise';
@@ -67,3 +41,4 @@ END $$;
 UPDATE subscription_plans SET phone_minutes_daily = 5 WHERE slug = 'starter';
 UPDATE subscription_plans SET phone_minutes_daily = 10 WHERE slug = 'professional';
 UPDATE subscription_plans SET phone_minutes_daily = 20 WHERE slug = 'enterprise';
+
