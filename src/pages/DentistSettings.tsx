@@ -20,6 +20,7 @@ import { getCurrentBusinessId } from "@/lib/businessUtils";
 import { logger } from '@/lib/logger';
 import { Switch } from "@/components/ui/switch";
 import { CancelSubscriptionSection } from "@/components/settings/CancelSubscriptionSection";
+import { PhoneUsageCard } from "@/components/settings/PhoneUsageCard";
 
 export default function DentistSettings() {
   const { businessId } = useBusinessContext();
@@ -299,6 +300,7 @@ export default function DentistSettings() {
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-6">
+          <PhoneUsageCard />
           <CancelSubscriptionSection />
         </TabsContent>
 

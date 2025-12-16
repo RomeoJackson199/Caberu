@@ -20,6 +20,12 @@ interface TreatmentPlan {
   title: string;
   status: string;
   priority: string;
+  description?: string;
+  diagnosis?: string;
+  estimated_duration_weeks?: number;
+  estimated_cost?: number;
+  start_date?: string;
+  treatment_steps?: any;
 }
 
 interface PatientContext {

@@ -850,7 +850,7 @@ serve(async (req) => {
               tagline
             )
           `)
-          .eq('provider_id', dentist.profiles.id);
+          .eq('provider_id', dentist.id);
 
         // Get availability
         const { data: availability } = await supabase
