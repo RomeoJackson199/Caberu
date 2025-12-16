@@ -76,10 +76,10 @@ serve(async (req) => {
         const rawBody = await req.text();
         console.log('ElevenLabs webhook received:', rawBody.substring(0, 500));
 
-        // Verify signature if secret is configured
-        if (webhookSecret) {
-            const signature = req.headers.get('elevenlabs-signature') || '';
-            const isValid = await verifySignature(rawBody, signature, webhookSecret);
+        // Verify signature only if secret is configured AND signature header is provided
+        const signatureHeader = req.headers.get('elevenlabs-signature');
+        if (webhookSecret && signatureHeader) {
+            const isValid = await verifySignature(rawBody, signatureHeader, webhookSecret);
             if (!isValid) {
                 console.error('Invalid webhook signature');
                 return new Response(
@@ -87,6 +87,9 @@ serve(async (req) => {
                     { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
                 );
             }
+            console.log('Signature verified successfully');
+        } else if (!webhookSecret) {
+            console.log('Webhook secret not configured - skipping signature verification');
         }
 
         const payload: ElevenLabsWebhookPayload = JSON.parse(rawBody);
