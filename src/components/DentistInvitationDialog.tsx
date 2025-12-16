@@ -73,13 +73,13 @@ export const DentistInvitationDialog = () => {
         });
       }
     } catch (error) {
-      console.error("Error checking invitations:", error);
+      logger.error("Error checking invitations:", error);
     }
   };
 
   const handleAccept = async () => {
     if (!invitation) return;
-    
+
     setLoading(true);
     try {
       // Use the secure RPC function to handle everything atomically
@@ -96,7 +96,7 @@ export const DentistInvitationDialog = () => {
       });
 
       setInvitation(null);
-      
+
       // Redirect to dentist portal
       setTimeout(() => {
         navigate("/dentist");
@@ -104,7 +104,7 @@ export const DentistInvitationDialog = () => {
       }, 1000);
 
     } catch (error: any) {
-      console.error("Error accepting invitation:", error);
+      logger.error("Error accepting invitation:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to accept invitation",
@@ -117,7 +117,7 @@ export const DentistInvitationDialog = () => {
 
   const handleReject = async () => {
     if (!invitation) return;
-    
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -137,7 +137,7 @@ export const DentistInvitationDialog = () => {
 
       setInvitation(null);
     } catch (error: any) {
-      console.error("Error rejecting invitation:", error);
+      logger.error("Error rejecting invitation:", error);
       toast({
         title: "Error",
         description: "Failed to decline invitation",
