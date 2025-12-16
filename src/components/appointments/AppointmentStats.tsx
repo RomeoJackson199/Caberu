@@ -48,7 +48,7 @@ export const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments
       .filter(apt => apt.status === 'completed')
       .reduce((sum, apt) => {
         // Estimate revenue based on urgency
-        const rates = { high: 200, medium: 150, low: 100 };
+        const rates: Record<string, number> = { emergency: 300, high: 200, medium: 150, low: 100 };
         return sum + (rates[apt.urgency] || 100);
       }, 0),
   };

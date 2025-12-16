@@ -166,7 +166,15 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
       .limit(1)
       .maybeSingle();
 
-    setNextAppointment(data);
+    // Ensure profiles has a default value to match NextAppointment type
+    if (data) {
+      setNextAppointment({
+        ...data,
+        profiles: null
+      } as NextAppointment);
+    } else {
+      setNextAppointment(null);
+    }
     setShowCompleteDialog(false);
   };
 
@@ -327,8 +335,11 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
             open={showCompleteDialog}
             onOpenChange={setShowCompleteDialog}
             appointment={{
-              ...nextAppointment,
+              id: nextAppointment.id,
+              patient_id: nextAppointment.patient_id,
               dentist_id: dentistId,
+              appointment_date: nextAppointment.appointment_date,
+              reason: nextAppointment.reason ?? undefined,
               patient: nextAppointment.profiles ? {
                 first_name: nextAppointment.profiles.first_name,
                 last_name: nextAppointment.profiles.last_name,

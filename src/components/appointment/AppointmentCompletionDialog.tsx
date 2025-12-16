@@ -85,8 +85,12 @@ export function AppointmentCompletionDialog({
   // Template-driven behavior
   const { template, hasFeature } = useBusinessTemplate();
   const { businessId } = useBusinessContext();
+  
+  // Safely extract template data - template might be a string or object
+  const templateObj = typeof template === 'object' && template !== null ? template : null;
+  
   const steps = useMemo(() => {
-    const defs = template?.completionSteps?.filter(s => s.enabled) ?? [
+    const defs = (templateObj as any)?.completionSteps?.filter((s: any) => s.enabled) ?? [
       { id: 'overview', title: 'Overview' },
       { id: 'treatments', title: 'Treatments' },
       { id: 'notes', title: 'Notes' },
@@ -95,11 +99,11 @@ export function AppointmentCompletionDialog({
       { id: 'billing', title: 'Billing' },
       { id: 'complete', title: 'Complete' },
     ];
-    return defs.map(d => ({ id: d.id as any, title: (allStepMeta[d.id]?.title ?? d.title), icon: (allStepMeta[d.id]?.icon ?? FileText) }));
-  }, [template]);
-  const showToothInput = template?.id === 'healthcare' || !!template?.features?.medicalRecords;
-  const serviceLabel = template?.terminology?.service || 'Treatment';
-  const serviceLabelPlural = template?.terminology?.servicePlural || 'Treatments';
+    return defs.map((d: any) => ({ id: d.id as any, title: (allStepMeta[d.id]?.title ?? d.title), icon: (allStepMeta[d.id]?.icon ?? FileText) }));
+  }, [templateObj]);
+  const showToothInput = (templateObj as any)?.id === 'healthcare' || !!(templateObj as any)?.features?.medicalRecords;
+  const serviceLabel = (templateObj as any)?.terminology?.service || 'Treatment';
+  const serviceLabelPlural = (templateObj as any)?.terminology?.servicePlural || 'Treatments';
   // Form data
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [notes, setNotes] = useState('');
@@ -536,7 +540,7 @@ export function AppointmentCompletionDialog({
               <h3 style="color: #333; margin-top: 0;">Appointment Details</h3>
               <p><strong>Date:</strong> ${format(appointmentDateObj, 'PPP')}</p>
               <p><strong>Time:</strong> ${format(appointmentDateObj, 'p')}</p>
-              ${appointment.dentist?.first_name && appointment.dentist?.last_name ? `<p><strong>Dentist:</strong> ${appointment.dentist.first_name} ${appointment.dentist.last_name}</p>` : ''}
+              ${(appointment as any).dentist?.first_name && (appointment as any).dentist?.last_name ? `<p><strong>Dentist:</strong> ${(appointment as any).dentist.first_name} ${(appointment as any).dentist.last_name}</p>` : ''}
             </div>
 
             ${formData.treatments.length > 0 ? `

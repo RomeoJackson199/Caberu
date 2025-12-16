@@ -85,7 +85,13 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
 
       if (error) throw error;
       
-      setAppointments(data || []);
+      // Transform profiles from array to single object
+      const transformedData = (data || []).map(apt => ({
+        ...apt,
+        profiles: Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles
+      })) as Appointment[];
+      
+      setAppointments(transformedData);
       await emitAnalyticsEvent('appointments_fetched', dentistId, { count: data?.length || 0 });
     } catch (error) {
       console.error('Error fetching appointments:', error);
