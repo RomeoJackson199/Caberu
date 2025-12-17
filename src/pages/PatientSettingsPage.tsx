@@ -1,11 +1,16 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, User, Shield } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Bell, User, Shield, Globe } from 'lucide-react';
 import { ReminderPreferences } from '@/components/patient/ReminderPreferences';
 import { PatientSecuritySettings } from '@/components/patient/PatientSecuritySettings';
 import { AnimatedBackground, SectionHeader } from '@/components/ui/polished-components';
+import { LanguageSettings } from '@/components/LanguageSettings';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export default function PatientSettingsPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
@@ -15,8 +20,8 @@ export default function PatientSettingsPage() {
         <div className="relative z-10">
           <SectionHeader
             icon={User}
-            title="Settings"
-            description="Manage your account preferences and notification settings"
+            title={t.settings}
+            description={t.general}
             gradient="from-slate-600 to-gray-600"
           />
         </div>
@@ -24,18 +29,22 @@ export default function PatientSettingsPage() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="notifications" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notifications</span>
+            <span className="hidden sm:inline">{t.appointments}</span>
+          </TabsTrigger>
+          <TabsTrigger value="language" className="gap-2">
+            <Globe className="h-4 w-4" />
+            <span className="hidden sm:inline">{t.language}</span>
           </TabsTrigger>
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Profile</span>
+            <span className="hidden sm:inline">{t.myProfile}</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
             <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Security</span>
+            <span className="hidden sm:inline">{t.settings}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -43,9 +52,30 @@ export default function PatientSettingsPage() {
           <ReminderPreferences />
         </TabsContent>
 
+        <TabsContent value="language">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle>{t.language}</CardTitle>
+                  <CardDescription>
+                    {t.selectPreferredLanguage}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <LanguageSettings />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="profile">
           <div className="text-center py-12 text-muted-foreground">
-            Profile settings coming soon
+            {t.myProfile} - {t.loading}
           </div>
         </TabsContent>
 

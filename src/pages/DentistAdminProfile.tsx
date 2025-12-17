@@ -6,19 +6,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, User } from "lucide-react";
+import { Loader2, Save, User, Globe } from "lucide-react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
+import { LanguageSettings } from "@/components/LanguageSettings";
+import { useLanguage } from "@/hooks/useLanguage";
 
 
 export default function DentistAdminProfile() {
   const { businessId } = useBusinessContext();
   const { dentistId, profileId, loading: dentistLoading } = useCurrentDentist(businessId);
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -259,17 +262,37 @@ export default function DentistAdminProfile() {
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Saving...
+                    {t.saving}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Save Changes
+                    {t.save}
                   </>
                 )}
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Language Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Globe className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle>{t.language}</CardTitle>
+              <CardDescription>
+                {t.selectPreferredLanguage}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <LanguageSettings />
         </CardContent>
       </Card>
     </>
