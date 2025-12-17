@@ -142,13 +142,14 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     requireApproval: false,
   });
 
-  // Fetch existing profile data on mount
+  // Fetch existing profile and business data on mount
   useEffect(() => {
-    const fetchProfileData = async () => {
+    const fetchProfileAndBusinessData = async () => {
       try {
+        // First get profile with business_id
         const { data: profile, error } = await supabase
           .from("profiles")
-          .select("first_name, last_name, date_of_birth, phone, email, address")
+          .select("id, first_name, last_name, date_of_birth, phone, email, address, business_id")
           .eq("user_id", userId)
           .single();
 
@@ -157,49 +158,107 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           return;
         }
 
-        if (profile) {
-          // Parse address if it exists (format: "street, postalcode city")
-          let streetAddress = "";
-          let postalCode = "";
-          let city = "";
+        if (!profile) return;
 
-          if (profile.address) {
-            const parts = profile.address.split(", ");
-            if (parts.length >= 2) {
-              streetAddress = parts[0];
-              const cityParts = parts[1].split(" ");
-              postalCode = cityParts[0] || "";
-              city = cityParts.slice(1).join(" ") || "";
-            } else {
-              streetAddress = profile.address;
-            }
+        // Find the business - either from profile.business_id or from business_members where user is owner
+        let businessId = profile.business_id;
+        
+        if (!businessId) {
+          const { data: ownedBusiness } = await supabase
+            .from('business_members')
+            .select('business_id')
+            .eq('profile_id', profile.id)
+            .eq('role', 'owner')
+            .limit(1)
+            .maybeSingle();
+          
+          if (ownedBusiness?.business_id) {
+            businessId = ownedBusiness.business_id;
           }
-
-          setData(prev => ({
-            ...prev,
-            firstName: profile.first_name || "",
-            lastName: profile.last_name || "",
-            dateOfBirth: profile.date_of_birth || "",
-            practicePhone: profile.phone || "",
-            practiceEmail: profile.email || "",
-            practiceAddress: streetAddress,
-            practicePostalCode: postalCode,
-            practiceCity: city,
-            // Set practice name from dentist name if available
-            practiceName: profile.first_name && profile.last_name
-              ? `Dr. ${profile.first_name} ${profile.last_name}`
-              : "",
-          }));
         }
+
+        // Fetch business data if we have a business_id
+        let businessData: any = null;
+        if (businessId) {
+          const { data: business } = await supabase
+            .from('businesses')
+            .select('name, phone, address, business_hours, tagline, bio')
+            .eq('id', businessId)
+            .single();
+          
+          businessData = business;
+        }
+
+        // Parse business address if it exists
+        let streetAddress = "";
+        let postalCode = "";
+        let city = "";
+        const addressToParse = businessData?.address || profile.address;
+
+        if (addressToParse) {
+          const parts = addressToParse.split(", ");
+          if (parts.length >= 2) {
+            streetAddress = parts[0];
+            const cityParts = parts[1].split(" ");
+            postalCode = cityParts[0] || "";
+            city = cityParts.slice(1).join(" ") || "";
+          } else {
+            streetAddress = addressToParse;
+          }
+        }
+
+        // Parse business hours from business record
+        const businessHours = businessData?.business_hours as Record<string, { open: string; close: string; isOpen: boolean }> | null;
+
+        setData(prev => ({
+          ...prev,
+          // Personal info from profile
+          firstName: profile.first_name || "",
+          lastName: profile.last_name || "",
+          dateOfBirth: profile.date_of_birth || "",
+          
+          // Practice info - prefer business data, fallback to profile
+          practiceName: businessData?.name || (profile.first_name && profile.last_name ? `Dr. ${profile.first_name} ${profile.last_name}` : ""),
+          practicePhone: businessData?.phone || profile.phone || "",
+          practiceEmail: profile.email || "",
+          practiceAddress: streetAddress,
+          practicePostalCode: postalCode,
+          practiceCity: city,
+          
+          // Business hours from business record
+          ...(businessHours ? {
+            mondayOpen: businessHours.monday?.open || "09:00",
+            mondayClose: businessHours.monday?.close || "17:00",
+            mondayEnabled: businessHours.monday?.isOpen ?? true,
+            tuesdayOpen: businessHours.tuesday?.open || "09:00",
+            tuesdayClose: businessHours.tuesday?.close || "17:00",
+            tuesdayEnabled: businessHours.tuesday?.isOpen ?? true,
+            wednesdayOpen: businessHours.wednesday?.open || "09:00",
+            wednesdayClose: businessHours.wednesday?.close || "17:00",
+            wednesdayEnabled: businessHours.wednesday?.isOpen ?? true,
+            thursdayOpen: businessHours.thursday?.open || "09:00",
+            thursdayClose: businessHours.thursday?.close || "17:00",
+            thursdayEnabled: businessHours.thursday?.isOpen ?? true,
+            fridayOpen: businessHours.friday?.open || "09:00",
+            fridayClose: businessHours.friday?.close || "17:00",
+            fridayEnabled: businessHours.friday?.isOpen ?? true,
+            saturdayOpen: businessHours.saturday?.open || "09:00",
+            saturdayClose: businessHours.saturday?.close || "13:00",
+            saturdayEnabled: businessHours.saturday?.isOpen ?? false,
+            sundayOpen: businessHours.sunday?.open || "09:00",
+            sundayClose: businessHours.sunday?.close || "13:00",
+            sundayEnabled: businessHours.sunday?.isOpen ?? false,
+          } : {}),
+        }));
       } catch (error) {
-        console.error("Error in fetchProfileData:", error);
+        console.error("Error in fetchProfileAndBusinessData:", error);
       } finally {
         setInitialLoading(false);
       }
     };
 
     if (isOpen && userId) {
-      fetchProfileData();
+      fetchProfileAndBusinessData();
     }
   }, [isOpen, userId]);
 
@@ -274,12 +333,12 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
 
       if (updateError) throw updateError;
 
-      // Update or create business record
+      // Update existing business record (business should already exist from /create-business)
       // First check profile.business_id, then check if they OWN a business
       let businessId = profile.business_id;
       
       if (!businessId) {
-        // Check if user is already an OWNER of a business (not just a member)
+        // Check if user is already an OWNER of a business
         const { data: ownedBusiness } = await supabase
           .from('business_members')
           .select('business_id')
@@ -298,8 +357,8 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         }
       }
 
+      // Only update if business exists - we don't create businesses in onboarding
       if (businessId) {
-        // Update existing business
         const { error: businessError } = await supabase
           .from('businesses')
           .update({
@@ -314,56 +373,8 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           console.error('Business update error:', businessError);
         }
       } else {
-        // Create new business if no business_id exists
-        const slug = data.practiceName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '')
-          + '-' + Date.now().toString(36);
-
-        const { data: newBusiness, error: createError } = await supabase
-          .from('businesses')
-          .insert({
-            name: data.practiceName,
-            slug: slug,
-            phone: data.practicePhone,
-            address: fullAddress,
-            business_hours: businessHours,
-            owner_profile_id: profile.id,
-          })
-          .select('id')
-          .single();
-
-        if (createError) {
-          console.error('Business create error:', createError);
-        } else if (newBusiness) {
-          businessId = newBusiness.id;
-
-          // Link business to profile
-          await supabase
-            .from('profiles')
-            .update({ business_id: businessId })
-            .eq('id', profile.id);
-
-          // Add user as owner in business_members
-          await supabase.from('business_members').insert({
-            business_id: businessId,
-            profile_id: profile.id,
-            role: 'owner',
-          });
-
-          // Set session_business so the context knows which business to use
-          const { data: authUser } = await supabase.auth.getUser();
-          if (authUser?.user) {
-            await supabase
-              .from('session_business')
-              .upsert({
-                user_id: authUser.user.id,
-                business_id: businessId,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'user_id' });
-          }
-        }
+        // No business found - this shouldn't happen as user should have created one via /create-business
+        console.warn('No business found for user during onboarding. User should create a business first via /create-business.');
       }
 
 
