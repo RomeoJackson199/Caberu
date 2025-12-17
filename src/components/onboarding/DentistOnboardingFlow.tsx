@@ -65,20 +65,29 @@ interface OnboardingData {
   practiceEmail: string;
 
   // Step 4: Working Hours
-  mondayHours: string;
-  tuesdayHours: string;
-  wednesdayHours: string;
-  thursdayHours: string;
-  fridayHours: string;
-  saturdayHours: string;
-  sundayHours: string;
+  mondayOpen: string;
+  mondayClose: string;
+  mondayEnabled: boolean;
+  tuesdayOpen: string;
+  tuesdayClose: string;
+  tuesdayEnabled: boolean;
+  wednesdayOpen: string;
+  wednesdayClose: string;
+  wednesdayEnabled: boolean;
+  thursdayOpen: string;
+  thursdayClose: string;
+  thursdayEnabled: boolean;
+  fridayOpen: string;
+  fridayClose: string;
+  fridayEnabled: boolean;
+  saturdayOpen: string;
+  saturdayClose: string;
+  saturdayEnabled: boolean;
+  sundayOpen: string;
+  sundayClose: string;
+  sundayEnabled: boolean;
 
-  // Step 5: Team Size
-  numberOfDentists: string;
-  numberOfHygienists: string;
-  numberOfReceptionists: string;
-
-  // Step 6: Services & Goals
+  // Step 5: Services & Goals
   primaryServices: string[];
   mainGoals: string[];
 
@@ -106,16 +115,27 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     practicePostalCode: "",
     practicePhone: "",
     practiceEmail: "",
-    mondayHours: "9:00 AM - 5:00 PM",
-    tuesdayHours: "9:00 AM - 5:00 PM",
-    wednesdayHours: "9:00 AM - 5:00 PM",
-    thursdayHours: "9:00 AM - 5:00 PM",
-    fridayHours: "9:00 AM - 5:00 PM",
-    saturdayHours: "Closed",
-    sundayHours: "Closed",
-    numberOfDentists: "1",
-    numberOfHygienists: "1",
-    numberOfReceptionists: "1",
+    mondayOpen: "09:00",
+    mondayClose: "17:00",
+    mondayEnabled: true,
+    tuesdayOpen: "09:00",
+    tuesdayClose: "17:00",
+    tuesdayEnabled: true,
+    wednesdayOpen: "09:00",
+    wednesdayClose: "17:00",
+    wednesdayEnabled: true,
+    thursdayOpen: "09:00",
+    thursdayClose: "17:00",
+    thursdayEnabled: true,
+    fridayOpen: "09:00",
+    fridayClose: "17:00",
+    fridayEnabled: true,
+    saturdayOpen: "09:00",
+    saturdayClose: "13:00",
+    saturdayEnabled: false,
+    sundayOpen: "09:00",
+    sundayClose: "13:00",
+    sundayEnabled: false,
     primaryServices: [],
     mainGoals: [],
     enable2FA: false,
@@ -183,7 +203,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     }
   }, [isOpen, userId]);
 
-  const totalSteps = 8;
+  const totalSteps = 7;
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const updateData = (field: string, value: any) => {
@@ -216,14 +236,27 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
   const handleComplete = async () => {
     setLoading(true);
     try {
-      // Get current profile
+      // Get current profile with business_id
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, business_id')
         .eq('user_id', userId)
         .single();
 
       if (profileError) throw profileError;
+
+      // Build business hours object
+      const businessHours: Record<string, { open: string; close: string; isOpen: boolean }> = {
+        monday: { open: data.mondayOpen, close: data.mondayClose, isOpen: data.mondayEnabled },
+        tuesday: { open: data.tuesdayOpen, close: data.tuesdayClose, isOpen: data.tuesdayEnabled },
+        wednesday: { open: data.wednesdayOpen, close: data.wednesdayClose, isOpen: data.wednesdayEnabled },
+        thursday: { open: data.thursdayOpen, close: data.thursdayClose, isOpen: data.thursdayEnabled },
+        friday: { open: data.fridayOpen, close: data.fridayClose, isOpen: data.fridayEnabled },
+        saturday: { open: data.saturdayOpen, close: data.saturdayClose, isOpen: data.saturdayEnabled },
+        sunday: { open: data.sundayOpen, close: data.sundayClose, isOpen: data.sundayEnabled },
+      };
+
+      const fullAddress = `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`;
 
       // Update profile with onboarding data
       const { error: updateError } = await supabase
@@ -235,11 +268,28 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           last_name: data.lastName,
           date_of_birth: data.dateOfBirth,
           phone: data.practicePhone,
-          address: `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`,
+          address: fullAddress,
         })
         .eq('user_id', userId);
 
       if (updateError) throw updateError;
+
+      // Update business record if exists
+      if (profile.business_id) {
+        const { error: businessError } = await supabase
+          .from('businesses')
+          .update({
+            name: data.practiceName,
+            phone: data.practicePhone,
+            address: fullAddress,
+            business_hours: businessHours,
+          })
+          .eq('id', profile.business_id);
+
+        if (businessError) {
+          console.error('Business update error:', businessError);
+        }
+      }
 
       // Create or update dentist record
       const { data: existingDentist } = await supabase
@@ -254,7 +304,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         last_name: data.lastName,
         email: data.practiceEmail,
         specialization: data.specialty,
-        clinic_address: `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`,
+        clinic_address: fullAddress,
         is_active: true,
         require_appointment_approval: data.requireApproval,
       };
@@ -520,78 +570,50 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       icon: Clock,
       content: (
         <div className="space-y-3 py-4 max-h-[400px] overflow-y-auto">
-          {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-            <div key={day} className="flex items-center gap-3">
-              <Label className="w-28 text-sm">{day}</Label>
-              <Input
-                placeholder="9:00 AM - 5:00 PM or Closed"
-                value={data[`${day.toLowerCase()}Hours` as keyof OnboardingData] as string}
-                onChange={(e) => updateData(`${day.toLowerCase()}Hours`, e.target.value)}
-                className="flex-1"
+          {[
+            { day: "Monday", key: "monday" },
+            { day: "Tuesday", key: "tuesday" },
+            { day: "Wednesday", key: "wednesday" },
+            { day: "Thursday", key: "thursday" },
+            { day: "Friday", key: "friday" },
+            { day: "Saturday", key: "saturday" },
+            { day: "Sunday", key: "sunday" },
+          ].map(({ day, key }) => (
+            <div key={day} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+              <Switch
+                checked={data[`${key}Enabled` as keyof OnboardingData] as boolean}
+                onCheckedChange={(checked) => updateData(`${key}Enabled`, checked)}
               />
+              <Label className="w-24 text-sm font-medium">{day}</Label>
+              {data[`${key}Enabled` as keyof OnboardingData] ? (
+                <>
+                  <Input
+                    type="time"
+                    value={data[`${key}Open` as keyof OnboardingData] as string}
+                    onChange={(e) => updateData(`${key}Open`, e.target.value)}
+                    className="w-28"
+                  />
+                  <span className="text-gray-500">to</span>
+                  <Input
+                    type="time"
+                    value={data[`${key}Close` as keyof OnboardingData] as string}
+                    onChange={(e) => updateData(`${key}Close`, e.target.value)}
+                    className="w-28"
+                  />
+                </>
+              ) : (
+                <span className="text-gray-400 text-sm">Closed</span>
+              )}
             </div>
           ))}
           <p className="text-xs text-gray-500 mt-4">
-            💡 Tip: You can always update these hours later in settings
+            💡 Tip: Toggle the switch to mark days as open or closed
           </p>
         </div>
       ),
     },
 
-    // Step 4: Team Size
-    {
-      title: "Team Size",
-      description: "How many team members do you have?",
-      icon: Users,
-      content: (
-        <div className="space-y-4 py-4">
-          <div>
-            <Label htmlFor="numberOfDentists">Number of Dentists</Label>
-            <Input
-              id="numberOfDentists"
-              type="number"
-              min="1"
-              value={data.numberOfDentists}
-              onChange={(e) => updateData("numberOfDentists", e.target.value)}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="numberOfHygienists">Number of Hygienists</Label>
-            <Input
-              id="numberOfHygienists"
-              type="number"
-              min="0"
-              value={data.numberOfHygienists}
-              onChange={(e) => updateData("numberOfHygienists", e.target.value)}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="numberOfReceptionists">Number of Receptionists/Admin Staff</Label>
-            <Input
-              id="numberOfReceptionists"
-              type="number"
-              min="0"
-              value={data.numberOfReceptionists}
-              onChange={(e) => updateData("numberOfReceptionists", e.target.value)}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="bg-blue-50 p-4 rounded-lg mt-4">
-            <p className="text-sm text-blue-900">
-              <strong>Total Team Members: </strong>
-              {parseInt(data.numberOfDentists) + parseInt(data.numberOfHygienists) + parseInt(data.numberOfReceptionists)}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-
-    // Step 5: Services Offered
+    // Step 4: Services Offered
     {
       title: "Services Offered",
       description: "What services do you provide?",
@@ -633,7 +655,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       ),
     },
 
-    // Step 6: Goals
+    // Step 5: Goals
     {
       title: "Your Goals",
       description: "What do you want to achieve with Caberu?",
@@ -671,7 +693,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       ),
     },
 
-    // Step 7: Security & Completion
+    // Step 6: Security & Completion
     {
       title: "Security & Preferences",
       description: "Final settings before you get started",
