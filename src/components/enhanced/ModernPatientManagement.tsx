@@ -54,6 +54,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { sanitizeText } from '@/utils/sanitize';
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -235,6 +236,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const [timelineView, setTimelineView] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { businessId } = useBusinessContext();
   const { fetchImagingSets, getSignedUrl } = useImaging();
@@ -537,10 +539,10 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   };
 
   const tabs = [
-    { id: 'overview' as TabType, label: 'Overview', icon: LayoutGrid },
-    { id: 'clinical' as TabType, label: 'Clinical', icon: ClipboardList },
-    { id: 'schedule' as TabType, label: 'Schedule', icon: Calendar },
-    { id: 'financial' as TabType, label: 'Financial', icon: CreditCard },
+    { id: 'overview' as TabType, label: t.overview || 'Overview', icon: LayoutGrid },
+    { id: 'clinical' as TabType, label: t.clinical || 'Clinical', icon: ClipboardList },
+    { id: 'schedule' as TabType, label: t.schedule || 'Schedule', icon: Calendar },
+    { id: 'financial' as TabType, label: t.financial || 'Financial', icon: CreditCard },
   ];
 
   const upcomingAppts = appointments.filter(a => new Date(a.appointment_date) > new Date() && a.status !== 'cancelled');
@@ -1069,7 +1071,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         <ChevronDown className="h-4 w-4 text-slate-400 ml-2" />
                       </>
                     ) : (
-                      <span className="text-slate-500">Select Patient</span>
+                      <span className="text-slate-500">{t.selectPatient || "Select Patient"}</span>
                     )}
                   </button>
                 </DropdownMenuTrigger>
@@ -1078,7 +1080,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
-                        placeholder="Find patient..."
+                        placeholder={t.findPatient || "Find patient..."}
                         value={patientSearchTerm}
                         onChange={(e) => setPatientSearchTerm(e.target.value)}
                         className="pl-9 h-9 bg-slate-50"
@@ -1127,7 +1129,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                       }}
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Add New Patient
+                      {t.addNewPatient || "Add New Patient"}
                     </Button>
                   </div>
                 </DropdownMenuContent>
@@ -1137,7 +1139,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               {selectedPatient?.medical_history && (
                 <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  Medical Alert
+                  {t.medicalAlert || "Medical Alert"}
                 </Badge>
               )}
               {patientFlags[selectedPatient?.id || '']?.hasUnpaidBalance && (
@@ -1161,29 +1163,29 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 <DropdownMenuTrigger asChild>
                   <Button className="bg-indigo-600 hover:bg-indigo-700">
                     <Plus className="h-4 w-4 mr-2" />
-                    Quick Actions
+                    {t.quickActions || "Quick Actions"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => setBookingDialogOpen(true)}>
                     <Calendar className="h-4 w-4 mr-2" />
-                    Book Appointment
+                    {t.bookAppointment}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab('financial')}>
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Create Payment
+                    {t.createPayment || "Create Payment"}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab('clinical')}>
                     <FileText className="h-4 w-4 mr-2" />
-                    Add Treatment Plan
+                    {t.addTreatmentPlan || "Add Treatment Plan"}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => document.getElementById('quick-note-input')?.focus()}>
                     <Edit2 className="h-4 w-4 mr-2" />
-                    Add Quick Note
+                    {t.addQuickNote || "Add Quick Note"}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportPatientPDF}>
                     <Download className="h-4 w-4 mr-2" />
-                    Export PDF
+                    {t.exportPdf || "Export PDF"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
