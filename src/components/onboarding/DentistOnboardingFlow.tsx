@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -29,11 +28,9 @@ import {
   Sparkles,
   Clock,
   MapPin,
-  Phone,
-  Mail,
   Briefcase,
   Shield,
-  CalendarCheck,
+  Loader2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
@@ -47,6 +44,11 @@ interface DentistOnboardingFlowProps {
 }
 
 interface OnboardingData {
+  // Personal Info (prefilled)
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+
   // Step 1: Welcome & Role Confirmation
   role: "dentist" | "hygienist" | "admin" | "receptionist";
 
@@ -88,9 +90,13 @@ interface OnboardingData {
 export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboardingFlowProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const { toast } = useToast();
 
   const [data, setData] = useState<OnboardingData>({
+    firstName: "",
+    lastName: "",
+    dateOfBirth: "",
     role: "dentist",
     practiceName: "",
     practiceType: "solo",
@@ -115,6 +121,67 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     enable2FA: false,
     requireApproval: false,
   });
+
+  // Fetch existing profile data on mount
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("first_name, last_name, date_of_birth, phone, email, address")
+          .eq("user_id", userId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching profile:", error);
+          return;
+        }
+
+        if (profile) {
+          // Parse address if it exists (format: "street, postalcode city")
+          let streetAddress = "";
+          let postalCode = "";
+          let city = "";
+          
+          if (profile.address) {
+            const parts = profile.address.split(", ");
+            if (parts.length >= 2) {
+              streetAddress = parts[0];
+              const cityParts = parts[1].split(" ");
+              postalCode = cityParts[0] || "";
+              city = cityParts.slice(1).join(" ") || "";
+            } else {
+              streetAddress = profile.address;
+            }
+          }
+
+          setData(prev => ({
+            ...prev,
+            firstName: profile.first_name || "",
+            lastName: profile.last_name || "",
+            dateOfBirth: profile.date_of_birth || "",
+            practicePhone: profile.phone || "",
+            practiceEmail: profile.email || "",
+            practiceAddress: streetAddress,
+            practicePostalCode: postalCode,
+            practiceCity: city,
+            // Set practice name from dentist name if available
+            practiceName: profile.first_name && profile.last_name 
+              ? `Dr. ${profile.first_name} ${profile.last_name}` 
+              : "",
+          }));
+        }
+      } catch (error) {
+        console.error("Error in fetchProfileData:", error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    if (isOpen && userId) {
+      fetchProfileData();
+    }
+  }, [isOpen, userId]);
 
   const totalSteps = 8;
   const progress = ((currentStep + 1) / totalSteps) * 100;
@@ -158,12 +225,15 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
 
       if (profileError) throw profileError;
 
-      // Update profile with onboarding data and 2FA setting
+      // Update profile with onboarding data
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           onboarding_completed: true,
           role: 'dentist',
+          first_name: data.firstName,
+          last_name: data.lastName,
+          date_of_birth: data.dateOfBirth,
           phone: data.practicePhone,
           address: `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`,
         })
@@ -180,8 +250,8 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
 
       const dentistPayload = {
         profile_id: profile.id,
-        first_name: data.practiceName.split(' ')[0] || '',
-        last_name: data.practiceName.split(' ').slice(1).join(' ') || '',
+        first_name: data.firstName,
+        last_name: data.lastName,
         email: data.practiceEmail,
         specialization: data.specialty,
         clinic_address: `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`,
@@ -220,7 +290,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
   };
 
   const steps = [
-    // Step 0: Welcome
+    // Step 0: Welcome & Personal Info
     {
       title: "Welcome to Caberu!",
       description: "Let's set up your dental practice in just a few minutes",
@@ -240,7 +310,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-8">
+          <div className="grid grid-cols-2 gap-4 mt-6">
             <div className="p-4 bg-blue-50 rounded-lg">
               <Calendar className="h-6 w-6 text-blue-600 mb-2" />
               <h4 className="font-semibold text-sm mb-1">Smart Scheduling</h4>
@@ -263,7 +333,45 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             </div>
           </div>
 
-          <div className="space-y-3 mt-6">
+          {/* Personal Info Fields */}
+          <div className="space-y-4 mt-6 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium">Your Personal Information</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  placeholder="John"
+                  value={data.firstName}
+                  onChange={(e) => updateData("firstName", e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Doe"
+                  value={data.lastName}
+                  onChange={(e) => updateData("lastName", e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={data.dateOfBirth}
+                onChange={(e) => updateData("dateOfBirth", e.target.value)}
+                className="mt-1"
+                max={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
             <Label>What's your role?</Label>
             <Select value={data.role} onValueChange={(value: any) => updateData("role", value)}>
               <SelectTrigger>
@@ -498,87 +606,86 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
               "Fillings",
               "Root Canals",
               "Crowns & Bridges",
-              "Dentures",
-              "Implants",
+              "Dental Implants",
               "Teeth Whitening",
+              "Invisalign/Braces",
               "Veneers",
-              "Orthodontics/Braces",
-              "Wisdom Teeth Removal",
-              "Emergency Services",
+              "Emergency Care",
+              "Pediatric Dentistry",
+              "Oral Surgery",
             ].map((service) => (
-              <button
+              <Button
                 key={service}
                 type="button"
+                variant={data.primaryServices.includes(service) ? "default" : "outline"}
+                className={`justify-start h-auto py-3 ${
+                  data.primaryServices.includes(service)
+                    ? "bg-blue-600 text-white"
+                    : ""
+                }`}
                 onClick={() => toggleArrayItem("primaryServices", service)}
-                className={`p-3 rounded-lg border-2 text-sm transition-all ${data.primaryServices.includes(service)
-                  ? "border-blue-600 bg-blue-50 text-blue-900 font-semibold"
-                  : "border-gray-200 hover:border-gray-300"
-                  }`}
               >
                 {service}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
       ),
     },
 
-    // Step 6: Goals & Completion
+    // Step 6: Goals
     {
       title: "Your Goals",
       description: "What do you want to achieve with Caberu?",
-      icon: CheckCircle2,
+      icon: Settings,
       content: (
         <div className="space-y-4 py-4">
-          <Label>Select your main goals:</Label>
-          <div className="space-y-2">
+          <Label>Select your top priorities:</Label>
+          <div className="grid grid-cols-1 gap-3">
             {[
-              "Reduce no-shows and cancellations",
-              "Streamline appointment scheduling",
+              "Reduce no-shows",
+              "Automate appointment reminders",
+              "Streamline patient intake",
               "Improve patient communication",
-              "Better manage patient records",
-              "Increase practice revenue",
-              "Save time on administrative tasks",
-              "Get practice performance insights",
-              "Manage inventory more efficiently",
+              "Better revenue management",
+              "Grow patient base",
+              "Reduce administrative work",
+              "GDPR compliance",
             ].map((goal) => (
-              <button
+              <Button
                 key={goal}
                 type="button"
+                variant={data.mainGoals.includes(goal) ? "default" : "outline"}
+                className={`justify-start h-auto py-3 ${
+                  data.mainGoals.includes(goal)
+                    ? "bg-purple-600 text-white"
+                    : ""
+                }`}
                 onClick={() => toggleArrayItem("mainGoals", goal)}
-                className={`w-full p-3 rounded-lg border-2 text-left text-sm transition-all ${data.mainGoals.includes(goal)
-                  ? "border-blue-600 bg-blue-50 text-blue-900 font-semibold"
-                  : "border-gray-200 hover:border-gray-300"
-                  }`}
               >
-                <div className="flex items-center gap-2">
-                  {data.mainGoals.includes(goal) && (
-                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                  )}
-                  {goal}
-                </div>
-              </button>
+                {goal}
+              </Button>
             ))}
           </div>
         </div>
       ),
     },
 
-    // Step 7: Security Settings
+    // Step 7: Security & Completion
     {
-      title: "Security Settings",
-      description: "Configure your account security preferences",
+      title: "Security & Preferences",
+      description: "Final settings before you get started",
       icon: Shield,
       content: (
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-4">
           <div className="flex items-center justify-between p-4 rounded-lg border bg-blue-50">
-            <div className="space-y-1 flex-1">
+            <div className="space-y-0.5 flex-1">
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-blue-600" />
-                <p className="font-semibold">Two-Factor Authentication (2FA)</p>
+                <Shield className="h-4 w-4 text-blue-600" />
+                <Label className="font-medium cursor-pointer">Enable Two-Factor Authentication</Label>
               </div>
-              <p className="text-sm text-gray-600">
-                Add an extra layer of security by requiring a verification code when you sign in
+              <p className="text-xs text-gray-600">
+                Add extra security to your account (recommended)
               </p>
             </div>
             <Switch
@@ -587,14 +694,14 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg border bg-amber-50">
-            <div className="space-y-1 flex-1">
+          <div className="flex items-center justify-between p-4 rounded-lg border">
+            <div className="space-y-0.5 flex-1">
               <div className="flex items-center gap-2">
-                <CalendarCheck className="h-5 w-5 text-amber-600" />
-                <p className="font-semibold">Require Appointment Approval</p>
+                <Calendar className="h-4 w-4 text-gray-600" />
+                <Label className="font-medium cursor-pointer">Require Appointment Approval</Label>
               </div>
-              <p className="text-sm text-gray-600">
-                When enabled, patient appointments need your approval before they are confirmed
+              <p className="text-xs text-gray-600">
+                Review and approve appointment requests before confirming
               </p>
             </div>
             <Switch
@@ -626,7 +733,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
   const isStepValid = () => {
     switch (currentStep) {
       case 0:
-        return !!data.role;
+        return !!data.role && !!data.firstName && !!data.lastName && !!data.dateOfBirth;
       case 1:
         return data.practiceName && data.practiceType && data.specialty;
       case 2:
@@ -637,9 +744,25 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     }
   };
 
+  if (initialLoading) {
+    return (
+      <Dialog open={isOpen}>
+        <DialogContent className="max-w-2xl" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen}>
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden" 
+        onPointerDownOutside={(e) => e.preventDefault()} 
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
