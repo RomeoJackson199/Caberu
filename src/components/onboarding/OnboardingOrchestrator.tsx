@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { DentistOnboardingFlow } from "./DentistOnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface OnboardingOrchestratorProps {
   user: User | null;
@@ -10,8 +11,15 @@ interface OnboardingOrchestratorProps {
 
 export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) => {
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<{
+    onboarding_completed: boolean | null;
+    first_name: string | null;
+    last_name: string | null;
+    date_of_birth: string | null;
+    role: string | null;
+  } | null>(null);
   const location = useLocation();
+  const { isDentist, loading: rolesLoading } = useUserRole();
 
   useEffect(() => {
     if (!user) return;
@@ -30,30 +38,43 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
           return;
         }
 
-        // Check if onboarding has been completed AND all required fields are filled
-        const hasCompletedOnboarding = profile?.onboarding_completed === true;
-        const hasMissingFields = !profile?.first_name || !profile?.last_name || !profile?.date_of_birth;
-        const role = profile?.role;
-
-        setUserRole(role);
-
-        // Only show onboarding for dentists/practitioners who haven't completed it
-        // OR who have missing required fields
-        const isDentistRoute =
-          location.pathname.includes("/dentist") ||
-          location.pathname.includes("/portal");
-
-        if (isDentistRoute && role === "dentist" && (!hasCompletedOnboarding || hasMissingFields)) {
-          // Show onboarding flow
-          setShowOnboarding(true);
-        }
+        setProfileData(profile);
       } catch (error) {
         console.error("Error in onboarding orchestrator:", error);
       }
     };
 
     checkOnboardingStatus();
-  }, [user, location.pathname]);
+  }, [user]);
+
+  useEffect(() => {
+    // Wait for both profile data and roles to load
+    if (!profileData || rolesLoading) return;
+
+    const hasCompletedOnboarding = profileData.onboarding_completed === true;
+    const hasMissingFields = !profileData.first_name || !profileData.last_name || !profileData.date_of_birth;
+    const profileRole = profileData.role;
+
+    // Check if on a dentist/portal route
+    const isDentistRoute =
+      location.pathname.includes("/dentist") ||
+      location.pathname.includes("/portal");
+
+    // Show onboarding for:
+    // 1. Users with isDentist role (dentist, provider, owner, admin via business_members)
+    //    who haven't completed onboarding OR have missing required fields
+    // 2. Users with null role on dentist routes (new users who need to set up)
+    const shouldShowOnboarding = isDentistRoute && (
+      // Case 1: Known dentist/owner/admin with incomplete onboarding
+      (isDentist && (!hasCompletedOnboarding || hasMissingFields)) ||
+      // Case 2: Profile role is dentist with incomplete onboarding
+      (profileRole === "dentist" && (!hasCompletedOnboarding || hasMissingFields)) ||
+      // Case 3: New user with null role on dentist route
+      (profileRole === null && (!hasCompletedOnboarding || hasMissingFields))
+    );
+
+    setShowOnboarding(shouldShowOnboarding);
+  }, [profileData, isDentist, rolesLoading, location.pathname]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
@@ -65,7 +86,8 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
     location.pathname === "/signup" ||
     location.pathname === "/";
 
-  if (isAuthPage || !user || userRole !== "dentist") {
+  // Don't render if on auth page, no user, or still loading
+  if (isAuthPage || !user || rolesLoading) {
     return null;
   }
 
