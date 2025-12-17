@@ -18,10 +18,10 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
 
     const checkOnboardingStatus = async () => {
       try {
-        // Fetch user profile to check onboarding status
+        // Fetch user profile to check onboarding status and required fields
         const { data: profile, error } = await supabase
           .from("profiles")
-          .select("onboarding_completed, role")
+          .select("onboarding_completed, role, first_name, last_name, date_of_birth")
           .eq("user_id", user.id)
           .single();
 
@@ -30,18 +30,20 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
           return;
         }
 
-        // Check if onboarding has been completed
+        // Check if onboarding has been completed AND all required fields are filled
         const hasCompletedOnboarding = profile?.onboarding_completed === true;
+        const hasMissingFields = !profile?.first_name || !profile?.last_name || !profile?.date_of_birth;
         const role = profile?.role;
 
         setUserRole(role);
 
         // Only show onboarding for dentists/practitioners who haven't completed it
+        // OR who have missing required fields
         const isDentistRoute =
           location.pathname.includes("/dentist") ||
           location.pathname.includes("/portal");
 
-        if (!hasCompletedOnboarding && isDentistRoute && role === "dentist") {
+        if (isDentistRoute && role === "dentist" && (!hasCompletedOnboarding || hasMissingFields)) {
           // Show onboarding flow
           setShowOnboarding(true);
         }
