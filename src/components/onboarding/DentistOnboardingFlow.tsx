@@ -330,6 +330,18 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             profile_id: profile.id,
             role: 'owner',
           });
+
+          // Set session_business so the context knows which business to use
+          const { data: authUser } = await supabase.auth.getUser();
+          if (authUser?.user) {
+            await supabase
+              .from('session_business')
+              .upsert({
+                user_id: authUser.user.id,
+                business_id: businessId,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id' });
+          }
         }
       }
 
