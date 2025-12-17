@@ -24,7 +24,6 @@ import {
   Shield
 } from "lucide-react";
 import { AccountClaimFlow } from "@/components/AccountClaimFlow";
-import { ACCOUNT_CLAIM_FLOW_STEPS } from "@/components/AccountClaimFlow";
 import { analytics, ANALYTICS_EVENTS } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
@@ -154,7 +153,7 @@ export const EnhancedAuthForm: React.FC<EnhancedAuthFormProps> = ({
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/${showNextParam ? '?auth=success' : ''}`;
+      const redirectUrl = `${window.location.origin}/auth-redirect`;
 
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
@@ -300,7 +299,7 @@ export const EnhancedAuthForm: React.FC<EnhancedAuthFormProps> = ({
         }
       }
 
-      const redirectUrl = `${window.location.origin}/${showNextParam ? '?auth=success' : ''}`;
+      const redirectUrl = `${window.location.origin}/auth-redirect`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
