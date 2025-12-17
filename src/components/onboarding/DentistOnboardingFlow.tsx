@@ -294,12 +294,18 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         }
       } else {
         // Create new business if no business_id exists
+        const slug = data.practiceName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          + '-' + Date.now().toString(36);
+
         const { data: newBusiness, error: createError } = await supabase
           .from('businesses')
           .insert({
             name: data.practiceName,
+            slug: slug,
             phone: data.practicePhone,
-            email: data.practiceEmail,
             address: fullAddress,
             business_hours: businessHours,
             owner_profile_id: profile.id,
