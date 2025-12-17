@@ -108,12 +108,9 @@ export function WelcomeWizard({ open, onClose, userId }: WelcomeWizardProps) {
 
   const handleComplete = async () => {
     try {
-      // Save all the wizard data to the database
-      // This is a simplified version - you'd need to adapt this to your schema
-
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id")
+        .select("id, business_id")
         .eq("user_id", userId)
         .single();
 
@@ -121,16 +118,74 @@ export function WelcomeWizard({ open, onClose, userId }: WelcomeWizardProps) {
         throw new Error("Profile not found");
       }
 
-      // Update profile/dentist information
+      // Build business hours from working days
+      const businessHours: Record<string, { open: string; close: string; isOpen: boolean }> = {};
+      const dayMapping: Record<string, string> = {
+        Monday: "monday",
+        Tuesday: "tuesday", 
+        Wednesday: "wednesday",
+        Thursday: "thursday",
+        Friday: "friday",
+        Saturday: "saturday",
+        Sunday: "sunday",
+      };
+      
+      weekDays.forEach((day) => {
+        const key = dayMapping[day];
+        businessHours[key] = {
+          open: formData.startTime,
+          close: formData.endTime,
+          isOpen: formData.workingDays.includes(day),
+        };
+      });
+
+      // Update business with all wizard data
+      if (profile.business_id) {
+        const fullAddress = [formData.clinicAddress, formData.clinicCity, formData.clinicPostalCode]
+          .filter(Boolean)
+          .join(", ");
+
+        await supabase
+          .from("businesses")
+          .update({
+            name: formData.clinicName,
+            phone: formData.clinicPhone,
+            address: fullAddress || null,
+            bio: formData.clinicDescription || null,
+            business_hours: businessHours,
+            custom_config: {
+              primaryColor: formData.primaryColor,
+              appointmentDuration: formData.appointmentDuration,
+            },
+          })
+          .eq("id", profile.business_id);
+
+        // Create business services from selected services
+        if (formData.primaryServices.length > 0) {
+          const servicesToInsert = formData.primaryServices.map((serviceName) => ({
+            business_id: profile.business_id,
+            name: serviceName,
+            description: `${serviceName} service`,
+            duration_minutes: formData.appointmentDuration,
+            price_cents: 0,
+            is_active: true,
+          }));
+
+          await supabase
+            .from("business_services")
+            .upsert(servicesToInsert, { onConflict: "business_id,name", ignoreDuplicates: true });
+        }
+      }
+
+      // Update dentist specialization
       await supabase
         .from("dentists")
         .update({
-          specialty: formData.primaryServices[0] || "General Dentistry",
-          // Add other fields as needed
+          specialization: formData.primaryServices[0] || "General Dentistry",
         })
         .eq("profile_id", profile.id);
 
-      // Mark wizard as completed
+      // Mark onboarding as completed
       await supabase
         .from("profiles")
         .update({
