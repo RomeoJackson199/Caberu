@@ -102,6 +102,11 @@ export default function DentistAdminBranding() {
       if (business) {
         const template = getTemplateConfig((business.template_type as TemplateType) || "healthcare");
         const customConfig = (business.custom_config as Record<string, any>) || {};
+        const aiBehaviorDefaults = template?.aiBehaviorDefaults || {
+          systemBehavior: "",
+          greeting: "",
+          personalityTraits: []
+        };
         
         const state = {
           clinicName: business.name || "",
@@ -113,9 +118,9 @@ export default function DentistAdminBranding() {
           secondaryColor: customConfig.secondaryColor || "#10B981",
           logoUrl: business.logo_url || "",
           templateType: (business.template_type as TemplateType) || "healthcare",
-          aiSystemBehavior: business.ai_system_behavior || template.aiBehaviorDefaults.systemBehavior,
-          aiGreeting: business.ai_greeting || template.aiBehaviorDefaults.greeting,
-          aiPersonalityTraits: (business.ai_personality_traits as string[]) || template.aiBehaviorDefaults.personalityTraits,
+          aiSystemBehavior: business.ai_system_behavior || aiBehaviorDefaults.systemBehavior,
+          aiGreeting: business.ai_greeting || aiBehaviorDefaults.greeting,
+          aiPersonalityTraits: (business.ai_personality_traits as string[]) || aiBehaviorDefaults.personalityTraits,
         };
 
         setClinicName(state.clinicName);
