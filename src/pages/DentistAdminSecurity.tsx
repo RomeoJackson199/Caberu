@@ -3,6 +3,7 @@ import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import { logger } from '@/lib/logger';
 export default function DentistAdminSecurity() {
   const { businessId } = useBusinessContext();
   const { dentistId, loading: dentistLoading } = useCurrentDentist(businessId);
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -103,8 +105,8 @@ export default function DentistAdminSecurity() {
 
     if (newPassword !== confirmPassword) {
       toast({
-        title: "Passwords Don't Match",
-        description: "Please make sure your new passwords match",
+        title: t.passwordsDontMatch,
+        description: t.passwordsDontMatchDesc,
         variant: "destructive",
       });
       return;
@@ -112,8 +114,8 @@ export default function DentistAdminSecurity() {
 
     if (newPassword.length < 8) {
       toast({
-        title: "Password Too Short",
-        description: "Password must be at least 8 characters long",
+        title: t.passwordTooShort,
+        description: t.passwordMinLength,
         variant: "destructive",
       });
       return;
@@ -143,8 +145,8 @@ export default function DentistAdminSecurity() {
       }
 
       toast({
-        title: "✅ Password Updated",
-        description: "Your password has been changed successfully. A confirmation email has been sent to your inbox.",
+        title: `✅ ${t.passwordUpdated}`,
+        description: t.passwordUpdatedDesc,
         duration: 8000,
         className: "bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100",
       });
@@ -155,8 +157,8 @@ export default function DentistAdminSecurity() {
     } catch (error: any) {
       logger.error('Error updating password:', error);
       toast({
-        title: "❌ Error",
-        description: error.message || "Failed to update password",
+        title: `❌ ${t.error}`,
+        description: error.message || t.error,
         variant: "destructive",
       });
     } finally {
@@ -192,13 +194,13 @@ export default function DentistAdminSecurity() {
 
         setTwoFactorEnabled(false);
         toast({
-          title: "2FA Disabled",
-          description: "Two-factor authentication has been disabled",
+          title: t.twoFaDisabled,
+          description: t.twoFaDisabledDesc,
         });
       } catch (error: any) {
         toast({
-          title: "Error",
-          description: error.message || "Failed to disable 2FA",
+          title: t.error,
+          description: error.message || t.error,
           variant: "destructive",
         });
       } finally {
@@ -237,8 +239,8 @@ export default function DentistAdminSecurity() {
       checkTwoFactorStatus();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to enable 2FA",
+        title: t.error,
+        description: error.message || t.error,
         variant: "destructive",
       });
     }
@@ -274,15 +276,15 @@ export default function DentistAdminSecurity() {
       if (error) throw error;
 
       toast({
-        title: "Export Started",
-        description: "Your data export has been started. You will receive an email when it is ready.",
+        title: t.exportStarted,
+        description: t.exportStartedDesc,
       });
 
     } catch (error: any) {
       logger.error('Export error:', error);
       toast({
-        title: "Export Failed",
-        description: error.message || "Failed to start data export",
+        title: t.exportFailed,
+        description: error.message || t.exportFailed,
         variant: "destructive",
       });
     } finally {
@@ -298,8 +300,8 @@ export default function DentistAdminSecurity() {
       if (error) throw error;
 
       toast({
-        title: "Account Deleted",
-        description: "Your account has been permanently deleted.",
+        title: t.accountDeleted,
+        description: t.accountDeletedDesc,
       });
 
       // Sign out and redirect
@@ -309,8 +311,8 @@ export default function DentistAdminSecurity() {
     } catch (error: any) {
       logger.error('Delete error:', error);
       toast({
-        title: "Delete Failed",
-        description: error.message || "Failed to delete account",
+        title: t.deleteFailed,
+        description: error.message || t.deleteFailed,
         variant: "destructive",
       });
       setShowDeleteDialog(false);
@@ -345,12 +347,12 @@ export default function DentistAdminSecurity() {
   return (
     <div>
       <PageHeader
-        title="Security & Access"
-        subtitle="Manage security settings and team access"
+        title={t.securityAccess}
+        subtitle={t.securitySubtitle}
         breadcrumbs={[
-          { label: 'Home', href: '/dentist' },
-          { label: 'Admin' },
-          { label: 'Security' }
+          { label: t.navDashboard, href: '/dentist' },
+          { label: t.navAdmin },
+          { label: t.security }
         ]}
       />
 
@@ -360,47 +362,47 @@ export default function DentistAdminSecurity() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              Change Password
+              {t.changePassword}
             </CardTitle>
             <CardDescription>
-              Update your password regularly to keep your account secure
+              {t.changePasswordDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
+                <Label htmlFor="current-password">{t.currentPassword}</Label>
                 <Input
                   id="current-password"
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
+                  placeholder={t.enterCurrentPassword}
                   disabled={loading}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
+                <Label htmlFor="new-password">{t.newPassword}</Label>
                 <Input
                   id="new-password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password (min 8 characters)"
+                  placeholder={t.enterNewPasswordMin}
                   disabled={loading}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Label htmlFor="confirm-password">{t.confirmNewPassword}</Label>
                 <Input
                   id="confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
+                  placeholder={t.confirmPasswordPlaceholder}
                   disabled={loading}
                   required
                 />
@@ -410,10 +412,10 @@ export default function DentistAdminSecurity() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
+                    {t.updating}
                   </>
                 ) : (
-                  "Update Password"
+                  t.updatePassword
                 )}
               </Button>
             </form>
@@ -424,18 +426,18 @@ export default function DentistAdminSecurity() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Two-Factor Authentication
+              {t.twoFactorAuth}
             </CardTitle>
             <CardDescription>
-              Add an extra layer of security to your account
+              {t.twoFactorAuthDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="space-y-1">
-                <Label htmlFor="two-factor-auth" className="font-medium cursor-pointer">Enable 2FA</Label>
+                <Label htmlFor="two-factor-auth" className="font-medium cursor-pointer">{t.enable2fa}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Require a verification code in addition to your password
+                  {t.require2faCode}
                 </p>
               </div>
               <Switch
@@ -448,7 +450,7 @@ export default function DentistAdminSecurity() {
             {twoFactorEnabled && (
               <Alert>
                 <AlertDescription>
-                  Two-factor authentication is enabled. You will receive a verification code via email when logging in.
+                  {t.twoFaEnabled}
                 </AlertDescription>
               </Alert>
             )}
@@ -466,10 +468,10 @@ export default function DentistAdminSecurity() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Staff & Roles
+              {t.staffRoles}
             </CardTitle>
             <CardDescription>
-              Manage team members and their access levels
+              {t.staffRolesDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -477,7 +479,7 @@ export default function DentistAdminSecurity() {
               <div className="text-center py-8 border-2 border-dashed rounded-lg">
                 <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground mb-4">
-                  No staff members added yet
+                  {t.noStaffYet}
                 </p>
                 <StaffInviteDialog dentistId={dentistId} />
               </div>
@@ -516,15 +518,15 @@ export default function DentistAdminSecurity() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Recent Login Activity
+              {t.history}
             </CardTitle>
             <CardDescription>
-              Review your recent login history
+              {t.history}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {sessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No login history available</p>
+              <p className="text-sm text-muted-foreground">{t.noRecordsFound}</p>
             ) : (
               <div className="space-y-3">
                 {sessions.map((session) => (
@@ -554,9 +556,9 @@ export default function DentistAdminSecurity() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Data & Privacy</CardTitle>
+            <CardTitle>{t.dataPrivacy}</CardTitle>
             <CardDescription>
-              Manage your data and privacy settings
+              {t.dataPrivacyDesc}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -566,9 +568,9 @@ export default function DentistAdminSecurity() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Export Your Data</p>
+                <p className="font-medium">{t.exportYourData}</p>
                 <p className="text-sm text-muted-foreground">
-                  Download a copy of all your data
+                  {t.exportDataDesc}
                 </p>
               </div>
               <Button
@@ -579,10 +581,10 @@ export default function DentistAdminSecurity() {
                 {exportLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Exporting...
+                    {t.exporting}
                   </>
                 ) : (
-                  "Export Data"
+                  t.exportData
                 )}
               </Button>
             </div>
@@ -591,25 +593,24 @@ export default function DentistAdminSecurity() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-red-600">Delete Account</p>
+                <p className="font-medium text-red-600">{t.deleteYourAccount}</p>
                 <p className="text-sm text-muted-foreground">
-                  Permanently delete your account and all data
+                  {t.deleteAccountDesc}
                 </p>
               </div>
               <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive">Delete Account</Button>
+                  <Button variant="destructive">{t.deleteAccount}</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogTitle>{t.confirmDeleteAccount}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete your
-                      account and remove your data from our servers.
+                      {t.deleteAccountWarningDesc}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDeleteAccount}
                       className="bg-red-600 hover:bg-red-700"
@@ -618,10 +619,10 @@ export default function DentistAdminSecurity() {
                       {deleteLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Deleting...
+                          {t.deleting}
                         </>
                       ) : (
-                        "Delete Account"
+                        t.deleteAccount
                       )}
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -633,13 +634,13 @@ export default function DentistAdminSecurity() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Privacy Policy</p>
+                <p className="font-medium">{t.privacyPolicyLink}</p>
                 <p className="text-sm text-muted-foreground">
-                  Review our privacy policy and terms
+                  {t.dataHandlingInfo}
                 </p>
               </div>
               <Button variant="outline" onClick={() => window.open('/privacy', '_blank')}>
-                View Policy
+                {t.view}
               </Button>
             </div>
           </CardContent>
