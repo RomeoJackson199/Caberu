@@ -162,7 +162,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           let streetAddress = "";
           let postalCode = "";
           let city = "";
-          
+
           if (profile.address) {
             const parts = profile.address.split(", ");
             if (parts.length >= 2) {
@@ -186,8 +186,8 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             practicePostalCode: postalCode,
             practiceCity: city,
             // Set practice name from dentist name if available
-            practiceName: profile.first_name && profile.last_name 
-              ? `Dr. ${profile.first_name} ${profile.last_name}` 
+            practiceName: profile.first_name && profile.last_name
+              ? `Dr. ${profile.first_name} ${profile.last_name}`
               : "",
           }));
         }
@@ -274,8 +274,11 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
 
       if (updateError) throw updateError;
 
-      // Update business record if exists
-      if (profile.business_id) {
+      // Update or create business record
+      let businessId = profile.business_id;
+
+      if (businessId) {
+        // Update existing business
         const { error: businessError } = await supabase
           .from('businesses')
           .update({
@@ -284,12 +287,46 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             address: fullAddress,
             business_hours: businessHours,
           })
-          .eq('id', profile.business_id);
+          .eq('id', businessId);
 
         if (businessError) {
           console.error('Business update error:', businessError);
         }
+      } else {
+        // Create new business if no business_id exists
+        const { data: newBusiness, error: createError } = await supabase
+          .from('businesses')
+          .insert({
+            name: data.practiceName,
+            phone: data.practicePhone,
+            email: data.practiceEmail,
+            address: fullAddress,
+            business_hours: businessHours,
+            owner_profile_id: profile.id,
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('Business create error:', createError);
+        } else if (newBusiness) {
+          businessId = newBusiness.id;
+
+          // Link business to profile
+          await supabase
+            .from('profiles')
+            .update({ business_id: businessId })
+            .eq('id', profile.id);
+
+          // Add user as owner in business_members
+          await supabase.from('business_members').insert({
+            business_id: businessId,
+            profile_id: profile.id,
+            role: 'owner',
+          });
+        }
       }
+
 
       // Create or update dentist record
       const { data: existingDentist } = await supabase
@@ -640,11 +677,10 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
                 key={service}
                 type="button"
                 variant={data.primaryServices.includes(service) ? "default" : "outline"}
-                className={`justify-start h-auto py-3 ${
-                  data.primaryServices.includes(service)
+                className={`justify-start h-auto py-3 ${data.primaryServices.includes(service)
                     ? "bg-blue-600 text-white"
                     : ""
-                }`}
+                  }`}
                 onClick={() => toggleArrayItem("primaryServices", service)}
               >
                 {service}
@@ -678,11 +714,10 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
                 key={goal}
                 type="button"
                 variant={data.mainGoals.includes(goal) ? "default" : "outline"}
-                className={`justify-start h-auto py-3 ${
-                  data.mainGoals.includes(goal)
+                className={`justify-start h-auto py-3 ${data.mainGoals.includes(goal)
                     ? "bg-purple-600 text-white"
                     : ""
-                }`}
+                  }`}
                 onClick={() => toggleArrayItem("mainGoals", goal)}
               >
                 {goal}
@@ -780,9 +815,9 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent 
-        className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden" 
-        onPointerDownOutside={(e) => e.preventDefault()} 
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
