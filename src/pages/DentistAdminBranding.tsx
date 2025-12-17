@@ -93,7 +93,7 @@ export default function DentistAdminBranding() {
     try {
       const { data: business, error } = await supabase
         .from('businesses')
-        .select('name, slug, tagline, address, phone, logo_url, template_type, ai_system_behavior, ai_greeting, ai_personality_traits')
+        .select('name, slug, tagline, address, phone, logo_url, template_type, ai_system_behavior, ai_greeting, ai_personality_traits, custom_config')
         .eq('id', businessId)
         .single();
 
@@ -101,14 +101,16 @@ export default function DentistAdminBranding() {
 
       if (business) {
         const template = getTemplateConfig((business.template_type as TemplateType) || "healthcare");
+        const customConfig = (business.custom_config as Record<string, any>) || {};
+        
         const state = {
           clinicName: business.name || "",
           slug: business.slug || "",
           tagline: business.tagline || "",
           address: business.address || "",
           phone: business.phone || "",
-          primaryColor: "#2D5D7B",
-          secondaryColor: "#8B5CF6",
+          primaryColor: customConfig.primaryColor || "#0EA5E9",
+          secondaryColor: customConfig.secondaryColor || "#10B981",
           logoUrl: business.logo_url || "",
           templateType: (business.template_type as TemplateType) || "healthcare",
           aiSystemBehavior: business.ai_system_behavior || template.aiBehaviorDefaults.systemBehavior,
@@ -370,12 +372,26 @@ export default function DentistAdminBranding() {
     setLoading(true);
 
     try {
+      // Get existing custom_config to merge with new values
+      const { data: existingBusiness } = await supabase
+        .from('businesses')
+        .select('custom_config')
+        .eq('id', businessId)
+        .single();
+
+      const existingConfig = (existingBusiness?.custom_config as Record<string, any>) || {};
+
       const updateData: any = {
         name: clinicName,
         slug: slug,
         tagline: tagline,
         address: address,
         phone: phone,
+        custom_config: {
+          ...existingConfig,
+          primaryColor,
+          secondaryColor,
+        },
       };
 
       // Only add optional columns if they have values
