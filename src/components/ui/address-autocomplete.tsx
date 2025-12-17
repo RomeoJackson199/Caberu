@@ -13,20 +13,18 @@ interface AddressAutocompleteProps {
 }
 
 interface AddressSuggestion {
-    formatted: string
-    street?: string
-    housenumber?: string
-    city?: string
-    postcode?: string
-    country?: string
-    lat: number
-    lon: number
+    display_name: string
     place_id: string
+    address?: {
+        road?: string
+        house_number?: string
+        city?: string
+        town?: string
+        village?: string
+        postcode?: string
+        country?: string
+    }
 }
-
-// Free Geoapify API key (3000 requests/day limit)
-// You can get your own at https://myprojects.geoapify.com/
-const GEOAPIFY_API_KEY = "6dc7fb95a3b246cfa0f3bcef5ce9ed9a"
 
 export function AddressAutocomplete({
     value,
@@ -50,14 +48,54 @@ export function AddressAutocomplete({
         }
     }, [value])
 
-    // Close suggestions when clicking outside
+    // Debounced fetch using Nominatim (OpenStreetMap) - free, no API key required
     React.useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
+        const query = inputValue.trim()
+        if (query.length < 3) {
+            setSuggestions([])
+            return
+        }
+
+        const timeoutId = setTimeout(async () => {
+            setLoading(true)
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=6&countrycodes=be,nl,de,fr,lu`,
+                    {
+                        headers: {
+                            "Accept-Language": "en",
+                            "User-Agent": "Caberu Dental App"
+                        }
+                    }
+                )
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch address suggestions")
+                }
+
+                const data = await response.json()
+                setSuggestions(data || [])
+                setShowSuggestions(data.length > 0)
+            } catch (error) {
+                console.error("Address fetch error:", error)
+                toast.error("Failed to load address suggestions")
+                setSuggestions([])
+            } finally {
+                setLoading(false)
+            }
+        }, 300)
+
+        return () => clearTimeout(timeoutId)
+    }, [inputValue])
+
+    // Close suggestions on click outside
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
             if (
-                inputRef.current &&
-                !inputRef.current.contains(e.target as Node) &&
                 suggestionsRef.current &&
-                !suggestionsRef.current.contains(e.target as Node)
+                !suggestionsRef.current.contains(event.target as Node) &&
+                inputRef.current &&
+                !inputRef.current.contains(event.target as Node)
             ) {
                 setShowSuggestions(false)
             }
@@ -66,104 +104,53 @@ export function AddressAutocomplete({
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
 
-    const fetchSuggestions = async (query: string) => {
-        if (!query || query.length < 3) {
-            setSuggestions([])
-            return
+    const handleSelect = (suggestion: AddressSuggestion) => {
+        const addr = suggestion.address
+        const parts: string[] = []
+
+        // Build a clean address string
+        if (addr?.road) {
+            let street = addr.road
+            if (addr.house_number) street += ` ${addr.house_number}`
+            parts.push(street)
         }
+        if (addr?.postcode) parts.push(addr.postcode)
+        const city = addr?.city || addr?.town || addr?.village
+        if (city) parts.push(city)
 
-        setLoading(true)
-        try {
-            // Use Geoapify Autocomplete API - better coverage for Belgium/Europe
-            const response = await fetch(
-                `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
-                    query
-                )}&lang=en&limit=6&type=street,amenity,locality&filter=countrycode:be,nl,de,fr,lu&format=json&apiKey=${GEOAPIFY_API_KEY}`
-            )
+        const formattedAddress = parts.length > 0 ? parts.join(", ") : suggestion.display_name
 
-            if (!response.ok) {
-                throw new Error("Failed to fetch address suggestions")
-            }
-
-            const data = await response.json()
-
-            if (data.results) {
-                const formattedResults: AddressSuggestion[] = data.results.map((result: any) => ({
-                    formatted: result.formatted,
-                    street: result.street,
-                    housenumber: result.housenumber,
-                    city: result.city,
-                    postcode: result.postcode,
-                    country: result.country,
-                    lat: result.lat,
-                    lon: result.lon,
-                    place_id: result.place_id,
-                }))
-                setSuggestions(formattedResults)
-            } else {
-                setSuggestions([])
-            }
-        } catch (error) {
-            console.error("Address fetch error:", error)
-            toast.error("Failed to load address suggestions")
-            setSuggestions([])
-        } finally {
-            setLoading(false)
-        }
+        setInputValue(formattedAddress)
+        onChange(formattedAddress)
+        setShowSuggestions(false)
+        setHighlightedIndex(-1)
     }
-
-    // Debounce search
-    React.useEffect(() => {
-        const timer = setTimeout(() => {
-            if (inputValue && showSuggestions) {
-                fetchSuggestions(inputValue)
-            }
-        }, 300)
-
-        return () => clearTimeout(timer)
-    }, [inputValue, showSuggestions])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value
         setInputValue(newValue)
-        setShowSuggestions(true)
         setHighlightedIndex(-1)
-
-        // Also update parent if user is manually typing
-        if (!newValue) {
-            onChange("")
+        if (newValue.length < 3) {
+            setShowSuggestions(false)
         }
     }
 
-    const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
-        const selectedValue = suggestion.formatted
-        setInputValue(selectedValue)
-        onChange(selectedValue)
-        setShowSuggestions(false)
-        setSuggestions([])
-        setHighlightedIndex(-1)
-    }
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
         if (!showSuggestions || suggestions.length === 0) return
 
         switch (e.key) {
             case "ArrowDown":
                 e.preventDefault()
-                setHighlightedIndex((prev) =>
-                    prev < suggestions.length - 1 ? prev + 1 : 0
-                )
+                setHighlightedIndex(prev => Math.min(prev + 1, suggestions.length - 1))
                 break
             case "ArrowUp":
                 e.preventDefault()
-                setHighlightedIndex((prev) =>
-                    prev > 0 ? prev - 1 : suggestions.length - 1
-                )
+                setHighlightedIndex(prev => Math.max(prev - 1, 0))
                 break
             case "Enter":
                 e.preventDefault()
                 if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
-                    handleSelectSuggestion(suggestions[highlightedIndex])
+                    handleSelect(suggestions[highlightedIndex])
                 }
                 break
             case "Escape":
@@ -173,119 +160,92 @@ export function AddressAutocomplete({
         }
     }
 
-    const clearInput = () => {
+    const handleClear = () => {
         setInputValue("")
         onChange("")
         setSuggestions([])
+        setShowSuggestions(false)
         inputRef.current?.focus()
     }
 
-    // Format address parts for display
-    const formatAddressParts = (suggestion: AddressSuggestion) => {
-        const parts: string[] = []
+    const formatSuggestionDisplay = (suggestion: AddressSuggestion) => {
+        const addr = suggestion.address
+        if (!addr) return { main: suggestion.display_name, secondary: "" }
 
-        if (suggestion.street) {
-            let streetPart = suggestion.street
-            if (suggestion.housenumber) {
-                streetPart += ` ${suggestion.housenumber}`
-            }
-            parts.push(streetPart)
-        }
+        const street = addr.road
+            ? (addr.house_number ? `${addr.road} ${addr.house_number}` : addr.road)
+            : ""
+        const city = addr.city || addr.town || addr.village || ""
+        const postcode = addr.postcode || ""
+        const country = addr.country || ""
 
-        if (suggestion.postcode || suggestion.city) {
-            const cityPart = [suggestion.postcode, suggestion.city].filter(Boolean).join(" ")
-            parts.push(cityPart)
-        }
+        const main = street || suggestion.display_name.split(",")[0]
+        const secondaryParts = [postcode, city, country !== "Belgium" ? country : ""].filter(Boolean)
 
-        return parts
+        return { main, secondary: secondaryParts.join(" ") }
     }
 
     return (
-        <div className="relative w-full">
+        <div className={cn("relative w-full", className)}>
             <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                     ref={inputRef}
+                    type="text"
                     value={inputValue}
                     onChange={handleInputChange}
-                    onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleKeyDown}
+                    onFocus={() => {
+                        if (suggestions.length > 0) setShowSuggestions(true)
+                    }}
                     placeholder={placeholder}
                     disabled={disabled}
-                    className={cn(
-                        "pl-9 pr-8",
-                        className
-                    )}
+                    className="pl-9 pr-9"
                 />
-                {inputValue && !disabled && (
+                {loading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+                {!loading && inputValue && (
                     <button
                         type="button"
-                        onClick={clearInput}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={handleClear}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <X className="h-4 w-4" />
                     </button>
                 )}
             </div>
 
-            {/* Suggestions Dropdown */}
-            {showSuggestions && (inputValue.length >= 3 || loading) && (
+            {showSuggestions && suggestions.length > 0 && (
                 <div
                     ref={suggestionsRef}
-                    className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95"
+                    className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-64 overflow-y-auto"
                 >
-                    {loading ? (
-                        <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Searching addresses...
-                        </div>
-                    ) : suggestions.length > 0 ? (
-                        <ul className="max-h-[280px] overflow-y-auto">
-                            {suggestions.map((suggestion, index) => {
-                                const addressParts = formatAddressParts(suggestion)
-                                return (
-                                    <li
-                                        key={suggestion.place_id}
-                                        onClick={() => handleSelectSuggestion(suggestion)}
-                                        className={cn(
-                                            "flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors border-b border-border/50 last:border-0",
-                                            index === highlightedIndex
-                                                ? "bg-accent"
-                                                : "hover:bg-accent/50"
-                                        )}
-                                    >
-                                        <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            {addressParts.length > 0 ? (
-                                                <>
-                                                    <p className="text-sm font-medium truncate">
-                                                        {addressParts[0]}
-                                                    </p>
-                                                    {addressParts[1] && (
-                                                        <p className="text-xs text-muted-foreground truncate">
-                                                            {addressParts[1]}
-                                                            {suggestion.country && suggestion.country !== "Belgium" && (
-                                                                <>, {suggestion.country}</>
-                                                            )}
-                                                        </p>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <p className="text-sm truncate">{suggestion.formatted}</p>
-                                            )}
-                                        </div>
-                                        {value === suggestion.formatted && (
-                                            <Check className="h-4 w-4 text-primary shrink-0" />
-                                        )}
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    ) : inputValue.length >= 3 ? (
-                        <div className="p-4 text-sm text-center text-muted-foreground">
-                            No addresses found. Try a different search.
-                        </div>
-                    ) : null}
+                    {suggestions.map((suggestion, index) => {
+                        const { main, secondary } = formatSuggestionDisplay(suggestion)
+                        return (
+                            <button
+                                key={suggestion.place_id}
+                                type="button"
+                                onClick={() => handleSelect(suggestion)}
+                                className={cn(
+                                    "w-full px-3 py-2 text-left flex items-start gap-2 hover:bg-accent transition-colors",
+                                    highlightedIndex === index && "bg-accent"
+                                )}
+                            >
+                                <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{main}</p>
+                                    {secondary && (
+                                        <p className="text-xs text-muted-foreground truncate">{secondary}</p>
+                                    )}
+                                </div>
+                                {highlightedIndex === index && (
+                                    <Check className="h-4 w-4 text-primary shrink-0" />
+                                )}
+                            </button>
+                        )
+                    })}
                 </div>
             )}
         </div>
