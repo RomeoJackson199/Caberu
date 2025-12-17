@@ -21,6 +21,7 @@ import { logger } from '@/lib/logger';
 import { Switch } from "@/components/ui/switch";
 import { CancelSubscriptionSection } from "@/components/settings/CancelSubscriptionSection";
 import { PhoneUsageCard } from "@/components/settings/PhoneUsageCard";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function DentistSettings() {
   const { businessId } = useBusinessContext();
@@ -29,6 +30,7 @@ export default function DentistSettings() {
   const [activeTab, setActiveTab] = useState("appointments");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [requireApproval, setRequireApproval] = useState(false);
   const [appointmentLoading, setAppointmentLoading] = useState(true);
   const [savingAppointments, setSavingAppointments] = useState(false);
@@ -60,8 +62,8 @@ export default function DentistSettings() {
       } catch (error) {
         logger.error('Failed to load appointment settings', error);
         toast({
-          title: "Couldn't load appointment settings",
-          description: "Please refresh the page or try again in a moment.",
+          title: t.couldntLoadSettings || "Couldn't load appointment settings",
+          description: t.refreshOrTryAgain || "Please refresh the page or try again in a moment.",
           variant: "destructive",
         });
       } finally {
@@ -75,8 +77,8 @@ export default function DentistSettings() {
   const handleLeaveClinic = async () => {
     if (!leavePassword.trim()) {
       toast({
-        title: "Password required",
-        description: "Please enter your password to confirm leaving the clinic.",
+        title: t.passwordRequired || "Password required",
+        description: t.enterPasswordLeave || "Please enter your password to confirm leaving the clinic.",
         variant: "destructive",
       });
       return;
@@ -110,16 +112,16 @@ export default function DentistSettings() {
 
       if (businessDeleted) {
         toast({
-          title: "Business deleted",
-          description: "You were the last member. The business has been permanently deleted.",
+          title: t.businessDeleted || "Business deleted",
+          description: t.lastMemberDeletedDesc || "You were the last member. The business has been permanently deleted.",
           variant: "default",
         });
       } else {
         toast({
-          title: "Left clinic",
+          title: t.leftClinic || "Left clinic",
           description: remaining === 0
-            ? "You left the clinic and your provider role was removed."
-            : "You left the clinic. You still belong to other clinics.",
+            ? (t.leftRoleRemoved || "You left the clinic and your provider role was removed.")
+            : (t.stillBelongOther || "You left the clinic. You still belong to other clinics."),
         });
       }
 
@@ -143,7 +145,7 @@ export default function DentistSettings() {
       <div className="flex items-center justify-center min-h-screen">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground">Loading...</p>
+            <p className="text-muted-foreground">{t.loading}</p>
           </CardContent>
         </Card>
       </div>
@@ -161,7 +163,7 @@ export default function DentistSettings() {
         <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
           <SettingsIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t.settings}</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 sm:space-y-6">
@@ -169,35 +171,35 @@ export default function DentistSettings() {
           <TabsList className="inline-flex w-max gap-1 p-1">
             <TabsTrigger value="profile" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Profile
+              {t.profile || "Profile"}
             </TabsTrigger>
             <TabsTrigger value="services" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Services
+              {t.services || "Services"}
             </TabsTrigger>
             <TabsTrigger value="schedule" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Hours
+              {t.hours || "Hours"}
             </TabsTrigger>
             <TabsTrigger value="appointments" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Appts
+              {t.appts || "Appts"}
             </TabsTrigger>
             <TabsTrigger value="staff" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <UserCog className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Team
+              {t.team || "Team"}
             </TabsTrigger>
             <TabsTrigger value="branding" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Brand
+              {t.brand || "Brand"}
             </TabsTrigger>
             <TabsTrigger value="billing" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Billing
+              {t.billing || "Billing"}
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              Security
+              {t.security || "Security"}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -213,7 +215,7 @@ export default function DentistSettings() {
         <TabsContent value="schedule" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Schedule & Availability</CardTitle>
+              <CardTitle>{t.scheduleAvailability || "Schedule & Availability"}</CardTitle>
             </CardHeader>
             <CardContent>
               <EnhancedAvailabilitySettings dentistId={dentistId} />
@@ -224,14 +226,14 @@ export default function DentistSettings() {
         <TabsContent value="appointments" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Appointment preferences</CardTitle>
+              <CardTitle>{t.appointmentPreferences || "Appointment preferences"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border rounded-lg p-4">
                 <div className="space-y-1">
-                  <Label htmlFor="require-approval">Require approval before confirming</Label>
+                  <Label htmlFor="require-approval">{t.requireApprovalBefore || "Require approval before confirming"}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Approve new patient requests to prevent double booking or missing prep time.
+                    {t.approveNewPatientRequests || "Approve new patient requests to prevent double booking or missing prep time."}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -242,12 +244,12 @@ export default function DentistSettings() {
                     onCheckedChange={setRequireApproval}
                   />
                   <span className="text-sm text-muted-foreground">
-                    {requireApproval ? 'Manual review required' : 'Requests auto-confirmed'}
+                    {requireApproval ? (t.manualReviewRequired || 'Manual review required') : (t.requestsAutoConfirmed || 'Requests auto-confirmed')}
                   </span>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-sm text-muted-foreground">Save changes so patients see the right booking rules immediately.</p>
+                <p className="text-sm text-muted-foreground">{t.saveImmediately || "Save changes so patients see the right booking rules immediately."}</p>
                 <Button
                   onClick={async () => {
                     if (!dentistId) return;
@@ -259,14 +261,14 @@ export default function DentistSettings() {
 
                     if (error) {
                       toast({
-                        title: "Couldn't save appointment settings",
-                        description: error.message || "Try again in a moment.",
+                        title: t.couldntSaveSettings || "Couldn't save appointment settings",
+                        description: error.message || (t.refreshOrTryAgain || "Try again in a moment."),
                         variant: "destructive",
                       });
                     } else {
                       toast({
-                        title: "Appointment rules updated",
-                        description: "Patients will see the new approval rules immediately.",
+                        title: t.appointmentRulesUpdated || "Appointment rules updated",
+                        description: t.rulesUpdatedDesc || "Patients will see the new approval rules immediately.",
                       });
                     }
                     setSavingAppointments(false);
@@ -274,7 +276,7 @@ export default function DentistSettings() {
                   disabled={appointmentLoading || savingAppointments}
                   className="min-w-[140px]"
                 >
-                  {savingAppointments ? 'Saving...' : 'Save changes'}
+                  {savingAppointments ? (t.savingChanges || 'Saving...') : (t.saveChanges || 'Save changes')}
                 </Button>
               </div>
             </CardContent>
@@ -284,9 +286,9 @@ export default function DentistSettings() {
         <TabsContent value="staff" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Staff Management</CardTitle>
+              <CardTitle>{t.staffManagement || "Staff Management"}</CardTitle>
               <CardDescription>
-                Manage your team members and their access
+                {t.manageTeamMembers || "Manage your team members and their access"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -309,9 +311,9 @@ export default function DentistSettings() {
 
           <Card className="border-destructive/50">
             <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+              <CardTitle className="text-destructive">{t.dangerZone || "Danger Zone"}</CardTitle>
               <CardDescription>
-                Irreversible actions that affect your clinic membership
+                {t.irreversibleActions || "Irreversible actions that affect your clinic membership"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -321,12 +323,12 @@ export default function DentistSettings() {
                 className="gap-2"
               >
                 <LogOut className="h-4 w-4" />
-                Leave Clinic
+                {t.leaveClinic || "Leave Clinic"}
               </Button>
               <p className="text-sm text-muted-foreground mt-2">
-                You will lose access to all clinic data and appointments.
+                {t.loseAccessWarning || "You will lose access to all clinic data and appointments."}
                 <br />
-                <strong>Warning:</strong> If you are the last member, the entire business will be permanently deleted.
+                <strong>{t.lastMemberWarning || "Warning: If you are the last member, the entire business will be permanently deleted."}</strong>
               </p>
             </CardContent>
           </Card>
@@ -339,32 +341,32 @@ export default function DentistSettings() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
-              <CardTitle className="text-destructive">Leave Clinic</CardTitle>
+              <CardTitle className="text-destructive">{t.leaveClinic || "Leave Clinic"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                This action is <strong>irreversible</strong>. You will lose access to all clinic data, appointments, and patient records.
+                {t.leaveClinicConfirm || "This action is irreversible. You will lose access to all clinic data, appointments, and patient records."}
               </p>
               <p className="text-sm text-destructive font-medium">
-                ⚠️ If you are the last member, the entire business will be permanently deleted.
+                ⚠️ {t.lastMemberWarning || "If you are the last member, the entire business will be permanently deleted."}
               </p>
               <div>
-                <Label htmlFor="leave-password">Enter your password to confirm</Label>
+                <Label htmlFor="leave-password">{t.enterPasswordConfirm || "Enter your password to confirm"}</Label>
                 <Input
                   id="leave-password"
                   type="password"
                   value={leavePassword}
                   onChange={(e) => setLeavePassword(e.target.value)}
-                  placeholder="Your password"
+                  placeholder={t.yourPassword || "Your password"}
                   className="mt-1"
                 />
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => { setShowLeaveDialog(false); setLeavePassword(''); }}>
-                  Cancel
+                  {t.cancel}
                 </Button>
                 <Button variant="destructive" onClick={handleLeaveClinic} disabled={leavingClinic || !leavePassword.trim()}>
-                  {leavingClinic ? 'Leaving...' : 'Leave Clinic'}
+                  {leavingClinic ? (t.leaving || 'Leaving...') : (t.leaveClinic || 'Leave Clinic')}
                 </Button>
               </div>
             </CardContent>

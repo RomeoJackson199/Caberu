@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
 import { logger } from '@/lib/logger';
 import { useBusinessContext } from "@/hooks/useBusinessContext";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   Table,
   TableBody,
@@ -38,6 +39,7 @@ export default function DentistAdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const { businessId } = useBusinessContext();
+  const { t } = useLanguage();
 
   const fetchUsers = async () => {
     try {
@@ -131,7 +133,7 @@ export default function DentistAdminUsers() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <ModernLoadingSpinner message="Loading users..." />
+        <ModernLoadingSpinner message={t.loading} />
       </div>
     );
   }
@@ -141,9 +143,9 @@ export default function DentistAdminUsers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Team Members</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.teamMembers || "Team Members"}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage staff and patients for your clinic
+            {t.teamMembersDesc || "Manage staff and patients for your clinic"}
           </p>
         </div>
         <AddUserDialog onUserAdded={fetchUsers} />
@@ -153,7 +155,7 @@ export default function DentistAdminUsers() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.totalUsers || "Total Users"}</CardTitle>
             <UsersIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -162,7 +164,7 @@ export default function DentistAdminUsers() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.activeUsers || "Active Users"}</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -173,7 +175,7 @@ export default function DentistAdminUsers() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Invites</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.pendingInvites || "Pending Invites"}</CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -184,7 +186,7 @@ export default function DentistAdminUsers() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.admins || "Admins"}</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -198,9 +200,9 @@ export default function DentistAdminUsers() {
       {/* Search and Filter */}
       <Card>
         <CardHeader>
-          <CardTitle>User List</CardTitle>
+          <CardTitle>{t.userList || "User List"}</CardTitle>
           <CardDescription>
-            Search and manage all users in the system
+            {t.userListDesc || "Search and manage all users in the system"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -208,7 +210,7 @@ export default function DentistAdminUsers() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name, email, or role..."
+                placeholder={t.searchByNameEmailRole || "Search by name, email, or role..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -224,18 +226,18 @@ export default function DentistAdminUsers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead>{t.name || "Name"}</TableHead>
+                  <TableHead>{t.email}</TableHead>
+                  <TableHead>{t.roles || "Roles"}</TableHead>
+                  <TableHead>{t.status}</TableHead>
+                  <TableHead>{t.joined || "Joined"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      No users found
+                      {t.noUsersFound || "No users found"}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -259,17 +261,17 @@ export default function DentistAdminUsers() {
                               </Badge>
                             ))
                           ) : (
-                            <Badge variant="outline">No roles assigned</Badge>
+                            <Badge variant="outline">{t.noRolesAssigned || "No roles assigned"}</Badge>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         {user.invitation_status === 'pending' ? (
-                          <Badge variant="secondary">Invitation Pending</Badge>
+                          <Badge variant="secondary">{t.invitationPending || "Invitation Pending"}</Badge>
                         ) : user.user_id ? (
-                          <Badge variant="default" className="bg-green-600">Active</Badge>
+                          <Badge variant="default" className="bg-green-600">{t.active || "Active"}</Badge>
                         ) : (
-                          <Badge variant="outline">Inactive</Badge>
+                          <Badge variant="outline">{t.inactive || "Inactive"}</Badge>
                         )}
                       </TableCell>
                       <TableCell>
