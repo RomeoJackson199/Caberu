@@ -73,105 +73,130 @@ const Index = () => {
       <Header user={user} minimal />
 
       <main id="main-content" className="overflow-x-hidden">
-        {/* Hero Section - Full viewport height minus header */}
-        <section className="relative h-[calc(100vh-80px)] min-h-[600px] flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden">
-          {/* Background Effects */}
-          <div className="absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-blue-500/20 rounded-full blur-[120px] opacity-50 mix-blend-multiply animate-pulse-slow" />
-            <div className="absolute top-0 right-0 w-[800px] h-[600px] bg-purple-500/20 rounded-full blur-[100px] opacity-30 mix-blend-multiply" />
-            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+        {/* Hero Section */}
+        <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
+
+          <div className="container mx-auto px-8 md:px-16 xl:px-24 relative z-10 py-16 max-w-5xl">
+            <div className="space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white mb-4">
+                  Every dental appointment should end cleanly.
+                </h1>
+                <p className="text-3xl md:text-4xl lg:text-5xl font-semibold text-blue-400">
+                  Caberu makes sure it does.
+                </p>
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-xl md:text-2xl text-slate-300 leading-relaxed max-w-2xl"
+              >
+                Notes done. Payments sent. Follow-ups scheduled.
+                <br />
+                <span className="text-slate-400">Automatically — after each appointment.</span>
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="pt-4"
+              >
+                <Button 
+                  size="lg" 
+                  onClick={() => {
+                    sessionStorage.setItem('demo_business_name', 'Demo Practice');
+                    sessionStorage.setItem('demo_template', 'healthcare');
+                    navigate('/demo/dentist');
+                  }} 
+                  className="bg-blue-600 hover:bg-blue-500 text-white hover:scale-105 transition-all shadow-2xl border-0 h-14 px-8 text-lg font-semibold"
+                >
+                  See how it works
+                </Button>
+              </motion.div>
+            </div>
           </div>
+        </section>
 
-          <div className="max-w-6xl mx-auto relative z-10 text-center">
-            <motion.div initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.5
-          }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-primary/20 shadow-sm text-primary font-medium mb-8 hover:scale-105 transition-transform cursor-default">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              </span>
-              <span>The Future of Dental Practice Management</span>
-            </motion.div>
+        {/* Feature Cards Section */}
+        <section className="py-24 bg-slate-900">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Section Header */}
+            <div className="text-center max-w-4xl mx-auto mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
+                The Operating System That Closes Every Dental Appointment — Automatically
+              </h2>
+              <p className="text-xl text-slate-400">
+                Caberu handles the admin after every visit so nothing is forgotten, delayed, or lost.
+              </p>
+            </div>
 
-            <motion.h1 initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.5,
-            delay: 0.1
-          }} className="text-5xl sm:text-6xl font-extrabold tracking-tight leading-[1.1] mb-8 text-foreground lg:text-5xl">
-              Elevate Your <br />
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">
-                Patient Experience
-              </span>
-            </motion.h1>
+            {/* Feature Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Card 1 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-6">
+                  <Zap className="w-8 h-8 text-blue-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  Appointment Closure Automation
+                </h3>
+                <p className="text-slate-300 leading-relaxed">
+                  Every appointment ends cleanly — without extra work. Caberu completes notes, creates the treatment summary, sends payment requests, and schedules follow-ups automatically. Dentists finish their day with nothing left undone.
+                </p>
+              </motion.div>
 
-            <motion.p initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.5,
-            delay: 0.2
-          }} className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-12">Notes done. Payments sent. Follow-ups scheduled.
-Automatically — after each appointment.</motion.p>
+              {/* Card 2 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                viewport={{ once: true }}
+                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6">
+                  <Shield className="w-8 h-8 text-purple-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  Payments & Follow-Up Handled for You
+                </h3>
+                <p className="text-slate-300 leading-relaxed">
+                  No more missed invoices or forgotten reminders. Invoices go out instantly, follow-ups are scheduled by default, and outstanding items stay visible until resolved. Practices get paid faster with zero chasing.
+                </p>
+              </motion.div>
 
-            <motion.div initial={{
-            opacity: 0,
-            y: 20
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            duration: 0.5,
-            delay: 0.3
-          }} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 bg-primary text-primary-foreground" onClick={() => navigate('/signup')}>
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full backdrop-blur-sm bg-white/50 hover:bg-white/80 border-2" onClick={() => {
-              sessionStorage.setItem('demo_business_name', 'Demo Practice');
-              sessionStorage.setItem('demo_template', 'healthcare');
-              navigate('/demo/dentist');
-            }}>
-                <PlayCircle className="mr-2 h-5 w-5" />
-                Live Demo
-              </Button>
-            </motion.div>
-
-            <motion.div initial={{
-            opacity: 0
-          }} animate={{
-            opacity: 1
-          }} transition={{
-            duration: 1,
-            delay: 0.5
-          }} className="pt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground font-medium">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-green-500" />
-                <span>GDPR Ready</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-500" />
-                <span>Instant Setup</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-blue-500" />
-                <span>Multi-Language Support</span>
-              </div>
-            </motion.div>
+              {/* Card 3 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center mb-6">
+                  <Globe className="w-8 h-8 text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  Works With Your Existing Tools
+                </h3>
+                <p className="text-slate-300 leading-relaxed">
+                  Caberu adds automation — not complexity. Keep your current PMS, imaging system, and workflows. Caberu sits on top as the layer that ensures consistency, compliance, and end-to-end closure after every appointment.
+                </p>
+              </motion.div>
+            </div>
           </div>
         </section>
 
