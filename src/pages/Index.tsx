@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { AccessibleLoadingIndicator } from "@/components/ui/skip-to-content";
 import { DemoTourFlow } from "@/components/demo/DemoTourFlow";
 import { InteractiveBentoGrid } from "@/components/homepage/InteractiveBentoGrid";
-import { WhatCaberuDoesSection } from "@/components/homepage/WhatCaberuDoesSection";
+
 import { ResultsSection } from "@/components/homepage/ResultsSection";
 import { PricingSection } from "@/components/homepage/PricingSection";
 import { FloatingChatBubble } from "@/components/chat/FloatingChatBubble";
@@ -126,14 +126,14 @@ const Index = () => {
         </section>
 
         {/* Feature Cards Section */}
-        <section className="py-24 bg-slate-900">
+        <section className="py-24 bg-white">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             {/* Section Header */}
             <div className="text-center max-w-4xl mx-auto mb-16">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6">
                 The Operating System That Closes Every Dental Appointment — Automatically
               </h2>
-              <p className="text-xl text-slate-400">
+              <p className="text-xl text-slate-600">
                 Caberu handles the admin after every visit so nothing is forgotten, delayed, or lost.
               </p>
             </div>
@@ -146,15 +146,15 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50"
+                className="bg-slate-50 rounded-2xl p-8 border border-slate-200"
               >
-                <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-6">
-                  <Zap className="w-8 h-8 text-blue-400" />
+                <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mb-6">
+                  <Zap className="w-8 h-8 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">
                   Appointment Closure Automation
                 </h3>
-                <p className="text-slate-300 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed">
                   Every appointment ends cleanly — without extra work. Caberu completes notes, creates the treatment summary, sends payment requests, and schedules follow-ups automatically. Dentists finish their day with nothing left undone.
                 </p>
               </motion.div>
@@ -165,15 +165,15 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 viewport={{ once: true }}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50"
+                className="bg-slate-50 rounded-2xl p-8 border border-slate-200"
               >
-                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6">
-                  <Shield className="w-8 h-8 text-purple-400" />
+                <div className="w-16 h-16 rounded-2xl bg-purple-100 flex items-center justify-center mb-6">
+                  <Shield className="w-8 h-8 text-purple-600" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">
                   Payments & Follow-Up Handled for You
                 </h3>
-                <p className="text-slate-300 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed">
                   No more missed invoices or forgotten reminders. Invoices go out instantly, follow-ups are scheduled by default, and outstanding items stay visible until resolved. Practices get paid faster with zero chasing.
                 </p>
               </motion.div>
@@ -184,24 +184,21 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50"
+                className="bg-slate-50 rounded-2xl p-8 border border-slate-200"
               >
-                <div className="w-16 h-16 rounded-2xl bg-green-500/20 flex items-center justify-center mb-6">
-                  <Globe className="w-8 h-8 text-green-400" />
+                <div className="w-16 h-16 rounded-2xl bg-green-100 flex items-center justify-center mb-6">
+                  <Globe className="w-8 h-8 text-green-600" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">
                   Works With Your Existing Tools
                 </h3>
-                <p className="text-slate-300 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed">
                   Caberu adds automation — not complexity. Keep your current PMS, imaging system, and workflows. Caberu sits on top as the layer that ensures consistency, compliance, and end-to-end closure after every appointment.
                 </p>
               </motion.div>
             </div>
           </div>
         </section>
-
-
-        <WhatCaberuDoesSection />
 
         {/* Interactive Features Grid */}
         <InteractiveBentoGrid />
