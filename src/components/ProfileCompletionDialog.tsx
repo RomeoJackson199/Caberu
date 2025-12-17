@@ -44,8 +44,9 @@ const ProfileCompletionDialog = () => {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [completed, setCompleted] = useState(false);
 
-  // Don't show profile completion during business creation flow
+  // Don't show profile completion during business creation or onboarding flows
   const isBusinessCreationFlow = window.location.pathname === '/create-business';
+  const isOnboardingPage = window.location.pathname === '/onboarding';
 
   const checkProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -64,7 +65,7 @@ const ProfileCompletionDialog = () => {
     // Only show completion dialog if profile is marked as incomplete or if critical fields are missing
     const isImportedProfile = data.import_session_id !== null;
     const isIncomplete = data.profile_completion_status === 'incomplete';
-    
+
     const fields: MissingField[] = [];
     const criticalFields: MissingField[] = [
       { key: "first_name", question: "What's your first name?", type: "text", table: "profiles" },
@@ -129,8 +130,8 @@ const ProfileCompletionDialog = () => {
   };
 
   useEffect(() => {
-    // Skip profile completion check during business creation
-    if (isBusinessCreationFlow) return;
+    // Skip profile completion check during business creation or onboarding
+    if (isBusinessCreationFlow || isOnboardingPage) return;
 
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -142,7 +143,7 @@ const ProfileCompletionDialog = () => {
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && !isBusinessCreationFlow) {
+      if (session?.user && !isBusinessCreationFlow && !isOnboardingPage) {
         checkProfile(session.user.id);
       }
     });
@@ -150,7 +151,7 @@ const ProfileCompletionDialog = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [isBusinessCreationFlow]);
+  }, [isBusinessCreationFlow, isOnboardingPage]);
 
   const handleNext = async () => {
     const field = missingFields[currentIndex];
@@ -164,7 +165,7 @@ const ProfileCompletionDialog = () => {
       if (currentIndex === missingFields.length - 1) {
         updateData.profile_completion_status = 'complete';
       }
-      
+
       updateQuery = supabase
         .from("profiles")
         .update(updateData)
@@ -191,10 +192,10 @@ const ProfileCompletionDialog = () => {
           .update({ profile_completion_status: 'complete' })
           .eq("id", profileId);
       }
-      
+
       // Telemetry: profile completion finished
       await emitAnalyticsEvent('PROFILE_COMPLETION_FINISHED', 'unknown', { missing_fields_count: missingFields.length });
-      
+
       setCompleted(true);
       setTimeout(() => {
         setOpen(false);
@@ -235,13 +236,13 @@ const ProfileCompletionDialog = () => {
           <div className="py-8 text-center">
             <DialogHeader>
               <DialogTitle>
-                {missingFields.length > 3 
-                  ? "Welcome! Profile setup complete." 
+                {missingFields.length > 3
+                  ? "Welcome! Profile setup complete."
                   : "Profile updated successfully!"}
               </DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground mt-2">
-              {missingFields.length > 3 
+              {missingFields.length > 3
                 ? "Thank you for completing your profile. You now have full access to the platform."
                 : "Your profile information has been updated."}
             </p>

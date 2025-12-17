@@ -119,7 +119,10 @@ const Signup = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth-redirect`,
+          // Business owners should be redirected to create-business after email verification
+          emailRedirectTo: userType === "business"
+            ? `${window.location.origin}/create-business`
+            : `${window.location.origin}/auth-redirect`,
         },
       });
 
@@ -187,10 +190,15 @@ const Signup = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Determine redirect based on user type
+      const redirectTo = userType === "business"
+        ? `${window.location.origin}/create-business`
+        : `${window.location.origin}/auth-redirect`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo,
         },
       });
       if (error) throw error;

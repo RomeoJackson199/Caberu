@@ -11,7 +11,6 @@ import { BusinessPickerDialog } from "./components/BusinessPickerDialog";
 import { BusinessSelectionForPatients } from "./components/BusinessSelectionForPatients";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
-import ProfileCompletionDialog from "./components/ProfileCompletionDialog";
 import { ChangelogPopup } from "./components/ChangelogPopup";
 import { useState, useEffect, lazy, Suspense } from "react";
 import React from "react";
@@ -294,7 +293,6 @@ const App = () => {
                 <Toaster />
                 <GlobalDashboardErrorListener />
                 <PWAInstallPrompt />
-                <ProfileCompletionDialog />
                 <BrowserRouter>
                   <EmailLimitProvider>
                     <DentistInvitationDialog />
