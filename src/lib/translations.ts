@@ -569,6 +569,79 @@ export interface Translations {
     appointmentRescheduled: string;
     savedSuccessfully: string;
 
+    // Dashboard & Portal
+    todaysSchedule: string;
+    completedThisWeek: string;
+    noAppointmentsToday: string;
+    noAppointmentsTodayDesc: string;
+    viewAllAppointments: string;
+    scheduleNew: string;
+    unknownPatient: string;
+    urgent: string;
+    noReasonSpecified: string;
+
+    // Messages Page
+    signInToMessage: string;
+    needSignedInToMessage: string;
+    selectConversation: string;
+
+    // Patient Management
+    selectPatient: string;
+    findPatient: string;
+    addNewPatient: string;
+    overview: string;
+    clinical: string;
+    schedule: string;
+    financial: string;
+    years: string;
+    yearsOld: string;
+    medicalAlert: string;
+    unpaidBalance: string;
+    quickActions: string;
+    createPayment: string;
+    addTreatmentPlan: string;
+    addQuickNote: string;
+    exportPdf: string;
+    searchNotesAppointmentsTreatments: string;
+    patientTimeline: string;
+    noPatientsYet: string;
+    appointmentCompleted: string;
+    appointmentCancelledToast: string;
+    patientNotifiedByEmail: string;
+    appointmentConfirmedToast: string;
+    noteAdded: string;
+    treatmentPlanCreated: string;
+    treatmentPlanDeleted: string;
+    clickUndoToRestore: string;
+    appointmentDeleted: string;
+    noteDeleted: string;
+    treatmentPlanRestored: string;
+    appointmentRestored: string;
+    noteRestored: string;
+    appointmentLinked: string;
+    linkedTo: string;
+    noEmail: string;
+    patientHasNoEmail: string;
+    patientUpdated: string;
+    enterTitle: string;
+    failedToCreateTreatmentPlan: string;
+    failedToUpdatePatient: string;
+    failedToDeleteTreatmentPlan: string;
+    failedToDeleteAppointment: string;
+    failedToDeleteNote: string;
+    failedToRestoreTreatmentPlan: string;
+    failedToRestoreAppointment: string;
+    failedToRestoreNote: string;
+    failedToLinkAppointment: string;
+    failedToAddNote: string;
+    deleteTreatmentPlan: string;
+    deleteAppointment: string;
+    confirmDeleteTreatmentPlan: string;
+    confirmDeleteAppointment: string;
+    confirmDeleteSelected: string;
+    itemsDeleted: string;
+    undo: string;
+
     // Common
     'common.cancel': string;
     'common.next': string;
@@ -1149,6 +1222,79 @@ export const translations: Record<Language, TranslationEntry> = {
         noRecordsFound: "No treatment records found",
         appointmentRescheduled: "Appointment rescheduled",
         savedSuccessfully: "Saved successfully",
+
+        // Dashboard & Portal
+        todaysSchedule: "Today's Schedule",
+        completedThisWeek: "Completed This Week",
+        noAppointmentsToday: "No appointments today",
+        noAppointmentsTodayDesc: "You don't have any appointments scheduled for today. Take this time to catch up on other tasks or schedule new appointments.",
+        viewAllAppointments: "View All Appointments",
+        scheduleNew: "Schedule New",
+        unknownPatient: "Unknown Patient",
+        urgent: "Urgent",
+        noReasonSpecified: "No reason specified",
+
+        // Messages Page
+        signInToMessage: "Sign in to Message",
+        needSignedInToMessage: "You need to be signed in to send and receive messages",
+        selectConversation: "Select a conversation",
+
+        // Patient Management
+        selectPatient: "Select Patient",
+        findPatient: "Find patient...",
+        addNewPatient: "Add New Patient",
+        overview: "Overview",
+        clinical: "Clinical",
+        schedule: "Schedule",
+        financial: "Financial",
+        years: "years",
+        yearsOld: "years old",
+        medicalAlert: "Medical Alert",
+        unpaidBalance: "Unpaid Balance",
+        quickActions: "Quick Actions",
+        createPayment: "Create Payment",
+        addTreatmentPlan: "Add Treatment Plan",
+        addQuickNote: "Add Quick Note",
+        exportPdf: "Export PDF",
+        searchNotesAppointmentsTreatments: "Search notes, appointments, treatments...",
+        patientTimeline: "Patient Timeline",
+        noPatientsYet: "No patients yet",
+        appointmentCompleted: "Appointment completed",
+        appointmentCancelledToast: "Appointment cancelled",
+        patientNotifiedByEmail: "Patient has been notified by email",
+        appointmentConfirmedToast: "Appointment confirmed",
+        noteAdded: "Note added",
+        treatmentPlanCreated: "Treatment plan created",
+        treatmentPlanDeleted: "Treatment plan deleted",
+        clickUndoToRestore: "Click undo to restore",
+        appointmentDeleted: "Appointment deleted",
+        noteDeleted: "Note deleted",
+        treatmentPlanRestored: "Treatment plan restored",
+        appointmentRestored: "Appointment restored",
+        noteRestored: "Note restored",
+        appointmentLinked: "Appointment linked",
+        linkedTo: "Linked to",
+        noEmail: "No email",
+        patientHasNoEmail: "Patient has no email address",
+        patientUpdated: "Patient updated",
+        enterTitle: "Please enter a title",
+        failedToCreateTreatmentPlan: "Failed to create treatment plan",
+        failedToUpdatePatient: "Failed to update patient",
+        failedToDeleteTreatmentPlan: "Failed to delete treatment plan",
+        failedToDeleteAppointment: "Failed to delete appointment",
+        failedToDeleteNote: "Failed to delete note",
+        failedToRestoreTreatmentPlan: "Failed to restore treatment plan",
+        failedToRestoreAppointment: "Failed to restore appointment",
+        failedToRestoreNote: "Failed to restore note",
+        failedToLinkAppointment: "Failed to link appointment",
+        failedToAddNote: "Failed to add note",
+        deleteTreatmentPlan: "Delete Treatment Plan",
+        deleteAppointment: "Delete Appointment",
+        confirmDeleteTreatmentPlan: "Are you sure you want to delete this treatment plan?",
+        confirmDeleteAppointment: "Are you sure you want to permanently delete this appointment?",
+        confirmDeleteSelected: "Are you sure you want to delete the selected items?",
+        itemsDeleted: "items deleted",
+        undo: "Undo",
 
         // Dentist: Clinical appointment UI
         completeAppointment: "Complete Appointment",

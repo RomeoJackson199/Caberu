@@ -7,6 +7,7 @@ import { ConversationList } from '@/components/messaging/ConversationList';
 import { ChatWindow } from '@/components/messaging/ChatWindow';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export default function Messages() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -18,6 +19,7 @@ export default function Messages() {
   } | null>(null);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadUser();
@@ -47,13 +49,13 @@ export default function Messages() {
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-8 text-center">
           <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold mb-2">Sign in to Message</h2>
+          <h2 className="text-2xl font-bold mb-2">{t.signInToMessage || "Sign in to Message"}</h2>
           <p className="text-muted-foreground mb-6">
-            You need to be signed in to send and receive messages
+            {t.needSignedInToMessage || "You need to be signed in to send and receive messages"}
           </p>
           <Button onClick={() => navigate('/login')} size="lg">
             <LogIn className="h-4 w-4 mr-2" />
-            Sign In
+            {t.signIn}
           </Button>
         </Card>
       </div>
@@ -104,7 +106,7 @@ export default function Messages() {
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 mb-4 shadow-md">
                     <MessageSquare className="h-10 w-10 text-primary" />
                   </div>
-                  <p className="font-semibold text-foreground mb-1">Select a conversation</p>
+                  <p className="font-semibold text-foreground mb-1">{t.selectConversation || "Select a conversation"}</p>
                 </div>
               </div>
             )}
