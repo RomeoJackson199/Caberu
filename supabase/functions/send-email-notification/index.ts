@@ -156,14 +156,19 @@ serve(async (req) => {
               .ilike('name', `%${business.subscription_plan}%`)
               .maybeSingle();
 
-            const emailLimit = plan?.email_limit_monthly || 10000;
+            const emailLimit = plan?.email_limit_monthly;
             const emailsSent = business.emails_sent_count || 0;
 
-            console.log(`📊 Email limit check for business ${businessIdToCheck}: ${emailsSent}/${emailLimit}`);
+            // -1 or null means unlimited emails
+            if (emailLimit !== null && emailLimit !== undefined && emailLimit !== -1) {
+              console.log(`📊 Email limit check for business ${businessIdToCheck}: ${emailsSent}/${emailLimit}`);
 
-            if (emailsSent >= emailLimit) {
-              console.log('❌ Email limit exceeded!');
-              throw new Error(`Email limit exceeded. You have sent ${emailsSent}/${emailLimit} emails this month. Please upgrade your plan to send more emails.`);
+              if (emailsSent >= emailLimit) {
+                console.log('❌ Email limit exceeded!');
+                throw new Error(`Email limit exceeded. You have sent ${emailsSent}/${emailLimit} emails this month. Please upgrade your plan to send more emails.`);
+              }
+            } else {
+              console.log(`📊 Email limit check for business ${businessIdToCheck}: ${emailsSent}/unlimited`);
             }
           }
         } else {
