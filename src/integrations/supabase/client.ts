@@ -12,11 +12,10 @@ export { SUPABASE_URL };
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: sessionStorage,
-    persistSession: false,
+    storage: localStorage,
+    persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-    // Faster auth by using PKCE
+    detectSessionInUrl: true,
     flowType: 'pkce',
   },
   // Performance optimizations
