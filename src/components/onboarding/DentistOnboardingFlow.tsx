@@ -275,7 +275,27 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       if (updateError) throw updateError;
 
       // Update or create business record
+      // First check profile.business_id, then check business_members table
       let businessId = profile.business_id;
+      
+      if (!businessId) {
+        // Check if user is already a member of a business
+        const { data: existingMembership } = await supabase
+          .from('business_members')
+          .select('business_id')
+          .eq('profile_id', profile.id)
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingMembership?.business_id) {
+          businessId = existingMembership.business_id;
+          // Also update the profile to have this business_id
+          await supabase
+            .from('profiles')
+            .update({ business_id: businessId })
+            .eq('id', profile.id);
+        }
+      }
 
       if (businessId) {
         // Update existing business
