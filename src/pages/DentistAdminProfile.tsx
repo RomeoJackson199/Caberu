@@ -168,9 +168,9 @@ export default function DentistAdminProfile() {
               <User className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle>Profile Information</CardTitle>
+              <CardTitle>{t.profileInformation || "Profile Information"}</CardTitle>
               <CardDescription>
-                Update your personal and professional details
+                {t.profileInfoDesc || "Update your personal and professional details"}
               </CardDescription>
             </div>
           </div>
@@ -184,75 +184,75 @@ export default function DentistAdminProfile() {
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="first_name">First Name</Label>
+                <Label htmlFor="first_name">{t.firstName}</Label>
                 <Input
                   id="first_name"
                   value={formData.first_name}
                   onChange={(e) => handleInputChange('first_name', e.target.value)}
-                  placeholder="John"
+                  placeholder={t.enterFirstName}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="last_name">Last Name</Label>
+                <Label htmlFor="last_name">{t.lastName}</Label>
                 <Input
                   id="last_name"
                   value={formData.last_name}
                   onChange={(e) => handleInputChange('last_name', e.target.value)}
-                  placeholder="Smith"
+                  placeholder={t.enterLastName}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t.email}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
-                  placeholder="john@example.com"
+                  placeholder={t.enterEmail}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">{t.phone}</Label>
                 <PhoneNumberInput
                   value={formData.phone}
                   onChange={(val) => handleInputChange('phone', val || "")}
-                  placeholder="Enter phone number"
+                  placeholder={t.enterPhoneNumber}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="specialization">Specialization</Label>
+                <Label htmlFor="specialization">{t.specialization || "Specialization"}</Label>
                 <Input
                   id="specialization"
                   value={formData.specialization}
                   onChange={(e) => handleInputChange('specialization', e.target.value)}
-                  placeholder="General Dentistry, Orthodontics, etc."
+                  placeholder={t.specializationPlaceholder || "General Dentistry, Orthodontics, etc."}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="clinic_address">Clinic Address</Label>
+              <Label htmlFor="clinic_address">{t.clinicAddress || "Clinic Address"}</Label>
               <AddressAutocomplete
                 value={formData.clinic_address}
                 onChange={(val) => handleInputChange('clinic_address', val)}
-                placeholder="123 Main Street, City, State, ZIP"
+                placeholder={t.clinicAddressPlaceholder || "123 Main Street, City, State, ZIP"}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">Professional Bio</Label>
+              <Label htmlFor="bio">{t.professionalBio || "Professional Bio"}</Label>
               <Textarea
                 id="bio"
                 value={formData.bio}
                 onChange={(e) => handleInputChange('bio', e.target.value)}
-                placeholder="Tell patients about yourself, your experience, and specializations..."
+                placeholder={t.bioPlaceholder || "Tell patients about yourself, your experience, and specializations..."}
                 rows={4}
               />
             </div>

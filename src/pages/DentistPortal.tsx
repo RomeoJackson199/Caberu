@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { useBusinessSubscription } from "@/hooks/useBusinessSubscription";
 import { SubscriptionExpiredDialog } from "@/components/subscription/SubscriptionExpiredDialog";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
@@ -47,6 +48,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   const [user, setUser] = useState<User | null>(userProp || null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [badges, setBadges] = useState<Partial<Record<DentistSection, number>>>({});
   const location = useLocation();
   const [businessInfo, setBusinessInfo] = useState<{ id: string; name: string } | null>(null);
@@ -224,7 +226,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   };
 
   if (loading || templateLoading || subscriptionLoading) {
-    return <ModernLoadingSpinner variant="overlay" message="Loading portal..." />;
+    return <ModernLoadingSpinner variant="overlay" message={t.loadingPortal || "Loading portal..."} />;
   }
 
   if (!user) {
@@ -232,7 +234,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   }
 
   if (!dentistId) {
-    return <ModernLoadingSpinner variant="card" message="Access Denied" description="You are not registered as a dentist. Please contact support." />;
+    return <ModernLoadingSpinner variant="card" message={t.accessDenied || "Access Denied"} description={t.notRegisteredAsDentist} />;
   }
 
   const renderContent = () => {
@@ -258,7 +260,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     // If trying to access clinical section without medical features, redirect to dashboard
     if (activeSection === 'clinical' && !hasFeature('medicalRecords') && !hasFeature('prescriptions') && !hasFeature('treatmentPlans')) {
       setActiveSection('dashboard');
-      return <ModernLoadingSpinner variant="card" message="Loading..." />;
+      return <ModernLoadingSpinner variant="card" message={t.loading} />;
     }
 
     switch (activeSection) {
@@ -281,11 +283,11 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         if (hasFeature('medicalRecords') || hasFeature('prescriptions') || hasFeature('treatmentPlans')) {
           return <ClinicalToday dentistId={dentistId} user={user} onOpenPatientsTab={() => setActiveSection('patients')} onOpenAppointmentsTab={() => setActiveSection('appointments')} />;
         }
-        return <div className="p-4">Clinical features not available for this business type</div>;
+        return <div className="p-4">{t.clinicalNotAvailable || "Clinical features not available for this business type"}</div>;
       case 'schedule':
         return <EnhancedAvailabilitySettings dentistId={dentistId} />;
       case 'payments':
-        return hasFeature('paymentRequests') ? <PaymentRequestManager dentistId={dentistId} /> : <div className="p-4">Payment features not available</div>;
+        return hasFeature('paymentRequests') ? <PaymentRequestManager dentistId={dentistId} /> : <div className="p-4">{t.paymentNotAvailable || "Payment features not available"}</div>;
       case 'analytics':
         return (
           <Suspense fallback={<ModernLoadingSpinner />}>
@@ -298,7 +300,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
           </Suspense>
         );
       case 'reports':
-        return <div className="p-4">Reports (Coming Soon)</div>;
+        return <div className="p-4">{t.reportsComingSoon || "Reports (Coming Soon)"}</div>;
       case 'inventory':
         return <InventoryManager dentistId={dentistId} userId={user.id} />;
       case 'imports':
@@ -316,7 +318,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       case 'services':
         return <ServiceManager />;
       default:
-        return <div className="p-4">Section not found</div>;
+        return <div className="p-4">{t.sectionNotFound || "Section not found"}</div>;
     }
   };
 
@@ -338,7 +340,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
               className="gap-2"
             >
               <HelpCircle className="h-4 w-4" />
-              Start Tour
+              {t.startTour || "Start Tour"}
             </Button>
           </div>
         )}
