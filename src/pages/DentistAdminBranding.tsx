@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ import { CreditCard } from "lucide-react";
 export default function DentistAdminBranding() {
   const { businessId, loading: businessLoading } = useBusinessContext();
   const { updateTemplate: updateTemplateContext } = useTemplate();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [clinicName, setClinicName] = useState("");
@@ -142,8 +144,8 @@ export default function DentistAdminBranding() {
     } catch (error: any) {
       logger.error('Error loading branding:', error);
       toast({
-        title: "Error",
-        description: `Failed to load branding settings${error?.code ? ` (${error.code})` : ''}${error?.hint ? ` - ${error.hint}` : ''}`,
+        title: t.error,
+        description: `${t.couldntLoadSettings}${error?.code ? ` (${error.code})` : ''}`,
         variant: "destructive",
       });
     }
@@ -156,8 +158,8 @@ export default function DentistAdminBranding() {
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Invalid File",
-        description: "Please upload an image file",
+        title: t.invalidFile,
+        description: t.uploadImageFile,
         variant: "destructive",
       });
       return;
@@ -166,8 +168,8 @@ export default function DentistAdminBranding() {
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: "File Too Large",
-        description: "Logo must be less than 2MB",
+        title: t.fileTooLarge,
+        description: t.logoSizeLimit,
         variant: "destructive",
       });
       return;
@@ -192,14 +194,14 @@ export default function DentistAdminBranding() {
       setLogoUrl(publicUrl);
 
       toast({
-        title: "Logo Uploaded",
-        description: "Your clinic logo has been uploaded successfully",
+        title: t.logoUploaded,
+        description: t.logoUploadedDesc,
       });
     } catch (error: any) {
       logger.error('Error uploading logo:', error);
       toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload logo",
+        title: t.uploadFailed,
+        description: error.message || t.uploadFailed,
         variant: "destructive",
       });
     } finally {
@@ -256,8 +258,8 @@ export default function DentistAdminBranding() {
         await updateTemplateContext(pendingTemplate);
 
         toast({
-          title: "Template Switched Successfully",
-          description: `Your business is now using the ${newTemplateConfig.name} template`,
+          title: t.templateSwitched,
+          description: `${t.templateSwitchedDesc} ${newTemplateConfig.name} ${t.template}`,
         });
 
         // Update initial state to reflect saved changes
@@ -278,8 +280,8 @@ export default function DentistAdminBranding() {
       } catch (error: any) {
         logger.error('Error saving template:', error);
         toast({
-          title: "Save Failed",
-          description: error.message || "Failed to save template change",
+          title: t.saveFailed,
+          description: error.message || t.saveFailed,
           variant: "destructive",
         });
       } finally {
@@ -319,14 +321,14 @@ export default function DentistAdminBranding() {
       await navigator.clipboard.writeText(businessLink);
       setCopiedLink(true);
       toast({
-        title: "Link copied!",
-        description: "Business link copied to clipboard",
+        title: t.linkCopied,
+        description: t.linkCopiedDesc,
       });
       setTimeout(() => setCopiedLink(false), 2000);
     } catch (err) {
       toast({
-        title: "Failed to copy",
-        description: "Could not copy link to clipboard",
+        title: t.failedToCopy,
+        description: t.couldNotCopyLink,
         variant: "destructive",
       });
     }
@@ -348,14 +350,14 @@ export default function DentistAdminBranding() {
       link.click();
 
       toast({
-        title: "QR Code Downloaded",
-        description: "The QR code for your business link has been downloaded",
+        title: t.qrDownloaded,
+        description: t.qrDownloadedDesc,
       });
     } catch (error) {
       logger.error("Error downloading QR code", error);
       toast({
-        title: "Download Failed",
-        description: "We couldn't download the QR code. Please try again.",
+        title: t.downloadFailed,
+        description: t.qrDownloadFailed,
         variant: "destructive",
       });
     }
@@ -417,8 +419,8 @@ export default function DentistAdminBranding() {
       await updateTemplateContext(templateType);
 
       toast({
-        title: "Settings Saved",
-        description: "Your branding settings have been saved successfully. All changes are now active!",
+        title: t.settingsSaved,
+        description: t.settingsSavedDesc,
       });
 
       setInitialState({
@@ -439,8 +441,8 @@ export default function DentistAdminBranding() {
     } catch (error: any) {
       logger.error('Error saving branding:', error);
       toast({
-        title: "Error",
-        description: `Failed to save branding settings${error?.code ? ` (${error.code})` : ''}${error?.hint ? ` - ${error.hint}` : ''}`,
+        title: t.error,
+        description: `${t.saveFailed}${error?.code ? ` (${error.code})` : ''}`,
         variant: "destructive",
       });
     } finally {
@@ -484,31 +486,31 @@ export default function DentistAdminBranding() {
       <ConfirmationDialog />
       <div>
         <PageHeader
-          title="Branding & Settings"
-          subtitle="Customize your business appearance, services, and AI behavior"
+          title={t.brandingSettings}
+          subtitle={t.brandingSubtitle}
           breadcrumbs={[
-            { label: 'Home', href: '/dentist' },
-            { label: 'Admin' },
-            { label: 'Branding & Settings' }
+            { label: t.navDashboard, href: '/dentist' },
+            { label: t.navAdmin },
+            { label: t.brandingSettings }
           ]}
         />
 
         <Tabs defaultValue="branding" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="branding">{t.branding}</TabsTrigger>
             <TabsTrigger value="services">
               <Package className="h-4 w-4 mr-2" />
-              Services
+              {t.services}
             </TabsTrigger>
             <TabsTrigger value="payments">
               <CreditCard className="h-4 w-4 mr-2" />
-              Payments
+              {t.payments}
             </TabsTrigger>
             <TabsTrigger value="emails">
               <Mail className="h-4 w-4 mr-2" />
-              Emails
+              {t.emailTemplates}
             </TabsTrigger>
-            <TabsTrigger value="ai">AI Behavior</TabsTrigger>
+            <TabsTrigger value="ai">{t.aiAssistantConfig}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="branding" className="space-y-6">
@@ -516,10 +518,10 @@ export default function DentistAdminBranding() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Briefcase className="h-5 w-5" />
-                  Business Template
+                  {t.businessTemplate}
                 </CardTitle>
                 <CardDescription>
-                  Choose the template that best fits your business type. This controls which features are available and the terminology used throughout the platform.
+                  {t.templateWarning}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -547,10 +549,10 @@ export default function DentistAdminBranding() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ImageIcon className="h-5 w-5" />
-                  Clinic Logo
+                  {t.uploadLogo}
                 </CardTitle>
                 <CardDescription>
-                  Upload your clinic logo (recommended size: 512x512px, max 2MB)
+                  {t.logoUploadDesc}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -579,12 +581,12 @@ export default function DentistAdminBranding() {
                         {loading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Uploading...
+                            {t.loading}
                           </>
                         ) : (
                           <>
                             <Upload className="mr-2 h-4 w-4" />
-                            Upload Logo
+                            {t.chooseLogo}
                           </>
                         )}
                       </span>
@@ -596,7 +598,7 @@ export default function DentistAdminBranding() {
                       onClick={() => setLogoUrl("")}
                       disabled={loading}
                     >
-                      Remove
+                      {t.cancel}
                     </Button>
                   )}
                 </div>
@@ -605,24 +607,24 @@ export default function DentistAdminBranding() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Clinic Information</CardTitle>
+                <CardTitle>{t.clinicInformation}</CardTitle>
                 <CardDescription>
-                  Basic information about your clinic
+                  {t.brandingSubtitle}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="clinic-name">Clinic Name</Label>
+                  <Label htmlFor="clinic-name">{t.clinicName}</Label>
                   <Input
                     id="clinic-name"
                     value={clinicName}
                     onChange={(e) => setClinicName(e.target.value)}
-                    placeholder="Enter your clinic name"
+                    placeholder={t.clinicName}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="slug">Business URL</Label>
+                  <Label htmlFor="slug">{t.businessSlug}</Label>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
                       {baseOrigin ? `${baseOrigin}/` : "/"}
@@ -657,6 +659,7 @@ export default function DentistAdminBranding() {
                             type="button"
                             variant="outline"
                             size="sm"
+                            title={t.showQrCode}
                             className="flex items-center gap-2"
                             onClick={() => setShowQrDialog(true)}
                           >
@@ -686,32 +689,32 @@ export default function DentistAdminBranding() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tagline">Tagline</Label>
+                  <Label htmlFor="tagline">{t.tagline}</Label>
                   <Input
                     id="tagline"
                     value={tagline}
                     onChange={(e) => setTagline(e.target.value)}
-                    placeholder="e.g., Modern dental care excellence"
+                    placeholder={t.tagline}
                   />
                   <p className="text-xs text-muted-foreground">
-                    A short phrase that describes your clinic (optional)
+                    ({t.optional})
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">Clinic Address</Label>
+                  <Label htmlFor="address">{t.clinicAddress}</Label>
                   <AddressAutocomplete
                     value={address}
                     onChange={setAddress}
-                    placeholder="Search for your clinic address..."
+                    placeholder={t.clinicAddressPlaceholder}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t.phoneNumber}</Label>
                   <PhoneNumberInput
                     value={phone}
                     onChange={(val) => setPhone(val || "")}
-                    placeholder="Enter phone number"
+                    placeholder={t.enterPhoneNumber}
                   />
                 </div>
               </CardContent>
@@ -719,16 +722,16 @@ export default function DentistAdminBranding() {
 
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={loadBrandingSettings}>
-                Reset
+                {t.cancel}
               </Button>
               <Button onClick={handleSaveBranding} disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t.savingChanges}
                   </>
                 ) : (
-                  "Save Changes"
+                  t.saveChanges
                 )}
               </Button>
             </div>
@@ -760,16 +763,16 @@ export default function DentistAdminBranding() {
 
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={loadBrandingSettings}>
-                Reset to Template Defaults
+                {t.cancel}
               </Button>
               <Button onClick={handleSaveBranding} disabled={loading}>
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {t.savingChanges}
                   </>
                 ) : (
-                  "Save AI Settings"
+                  t.save
                 )}
               </Button>
             </div>
@@ -779,9 +782,9 @@ export default function DentistAdminBranding() {
         <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Business QR Code</DialogTitle>
+              <DialogTitle>{t.businessLinkQr}</DialogTitle>
               <DialogDescription>
-                Share this QR code so patients can easily access your business page.
+                {t.businessLinkQr}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4">
@@ -798,7 +801,7 @@ export default function DentistAdminBranding() {
               </div>
               <Button onClick={handleDownloadQr} className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
-                Download QR Code
+                {t.downloadQr}
               </Button>
             </div>
           </DialogContent>
