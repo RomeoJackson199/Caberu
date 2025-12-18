@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, MessageSquare, User, Settings, CreditCard, FileText, Heart, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UserTourProps {
   isOpen: boolean;
@@ -203,31 +204,77 @@ export const UserTour = ({ isOpen, onClose, userRole }: UserTourProps) => {
   );
 };
 
-// Hook to manage tour visibility
-// DISABLED: Auto-show disabled - tour now only shown on manual trigger
-// This prevents overwhelming new users with multiple onboarding popups
-// The OnboardingOrchestrator provides comprehensive onboarding instead
+// Hook to manage tour visibility using database
 export const useUserTour = (userRole: "patient" | "dentist") => {
   const [showTour, setShowTour] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Auto-show disabled - tour is now opt-in only
-  // Users can access it manually via help/tour buttons
+  // Check if tour is completed from database
   useEffect(() => {
-    // Tour auto-show is intentionally disabled
-    // Keep this empty to prevent automatic tour display
+    const checkTourCompletion = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data } = await supabase
+          .from('tour_completions')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('tour_type', userRole)
+          .maybeSingle();
+
+        // Tour not completed - could show it, but keeping disabled for now
+        // setShowTour(!data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error checking tour completion:', error);
+        setLoading(false);
+      }
+    };
+
+    checkTourCompletion();
   }, [userRole]);
 
-  const closeTour = () => {
-    const tourKey = `tour_completed_${userRole}`;
-    localStorage.setItem(tourKey, "true");
+  const closeTour = async () => {
     setShowTour(false);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('tour_completions')
+        .upsert({
+          user_id: user.id,
+          tour_type: userRole,
+          completed_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,tour_type'
+        });
+    } catch (error) {
+      console.error('Error saving tour completion:', error);
+    }
   };
 
-  const resetTour = () => {
-    const tourKey = `tour_completed_${userRole}`;
-    localStorage.removeItem(tourKey);
-    setShowTour(true);
+  const resetTour = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await supabase
+        .from('tour_completions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('tour_type', userRole);
+
+      setShowTour(true);
+    } catch (error) {
+      console.error('Error resetting tour:', error);
+    }
   };
 
-  return { showTour, closeTour, resetTour };
+  return { showTour, closeTour, resetTour, loading };
 };
