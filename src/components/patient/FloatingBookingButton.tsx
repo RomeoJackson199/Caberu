@@ -90,16 +90,16 @@ export const FloatingBookingButton = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 mb-2">
-          <DropdownMenuItem onClick={() => navigate('/book-appointment-ai')} className="cursor-pointer">
-            <Bot className="mr-2 h-4 w-4" />
-            {t.bookWithAIAssistant || 'Book with AI Assistant'}
-          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => {
             if (onBookAppointment) return onBookAppointment();
             try { localStorage.setItem('pd_section', 'assistant'); } catch { }
             window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
             navigate('/dashboard');
           }} className="cursor-pointer">
+            <Bot className="mr-2 h-4 w-4" />
+            {t.bookWithAIAssistant || 'Book with AI Assistant'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/book-appointment-ai')} className="cursor-pointer">
             <CalendarDays className="mr-2 h-4 w-4" />
             {t.bookManually || 'Book Manually'}
           </DropdownMenuItem>
