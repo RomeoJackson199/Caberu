@@ -10,19 +10,23 @@ import {
   CheckCircle, 
   XCircle, 
   CalendarClock,
-  User
+  User,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatClinicTime, getClinicTimeSlots } from "@/lib/timezone";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useNavigate } from "react-router-dom";
 
 interface PendingAppointment {
   id: string;
   appointment_date: string;
   reason: string | null;
   patient_name: string | null;
+  patient_id: string;
   profiles: {
     first_name: string;
     last_name: string;
@@ -32,9 +36,10 @@ interface PendingAppointment {
 interface PendingApprovalCardProps {
   dentistId: string;
   onAction?: () => void;
+  onNavigateToPatient?: (patientId: string) => void;
 }
 
-export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCardProps) {
+export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }: PendingApprovalCardProps) {
   const [pendingAppointments, setPendingAppointments] = useState<PendingAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [requiresApproval, setRequiresApproval] = useState(false);
@@ -43,8 +48,10 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
   const [rescheduleDate, setRescheduleDate] = useState<Date | undefined>(undefined);
   const [rescheduleTime, setRescheduleTime] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const { toast } = useToast();
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,6 +79,7 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
             appointment_date,
             reason,
             patient_name,
+            patient_id,
             profiles!appointments_patient_id_fkey (
               first_name,
               last_name
@@ -109,6 +117,15 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
     return apt.patient_name || 'Unknown Patient';
   };
 
+  const handlePatientClick = (apt: PendingAppointment) => {
+    if (onNavigateToPatient) {
+      onNavigateToPatient(apt.patient_id);
+    } else {
+      // Navigate to patient management with the patient ID
+      navigate(`/dentist/dashboard?tab=patients&patientId=${apt.patient_id}`);
+    }
+  };
+
   const handleApprove = async (appointmentId: string) => {
     setActionLoading(appointmentId);
     try {
@@ -119,7 +136,14 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
 
       if (error) throw error;
 
-      setPendingAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+      setPendingAppointments(prev => {
+        const newList = prev.filter(apt => apt.id !== appointmentId);
+        // Adjust currentIndex if needed
+        if (currentIndex >= newList.length && newList.length > 0) {
+          setCurrentIndex(newList.length - 1);
+        }
+        return newList;
+      });
       toast({
         title: "Success",
         description: "Appointment confirmed successfully",
@@ -146,7 +170,13 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
 
       if (error) throw error;
 
-      setPendingAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+      setPendingAppointments(prev => {
+        const newList = prev.filter(apt => apt.id !== appointmentId);
+        if (currentIndex >= newList.length && newList.length > 0) {
+          setCurrentIndex(newList.length - 1);
+        }
+        return newList;
+      });
       toast({
         title: "Success",
         description: "Appointment declined",
@@ -182,7 +212,13 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
 
       if (error) throw error;
 
-      setPendingAppointments(prev => prev.filter(apt => apt.id !== selectedAppointment.id));
+      setPendingAppointments(prev => {
+        const newList = prev.filter(apt => apt.id !== selectedAppointment.id);
+        if (currentIndex >= newList.length && newList.length > 0) {
+          setCurrentIndex(newList.length - 1);
+        }
+        return newList;
+      });
       setIsRescheduleOpen(false);
       setSelectedAppointment(null);
       setRescheduleDate(undefined);
@@ -211,12 +247,21 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
     setIsRescheduleOpen(true);
   };
 
+  const goToPrevious = () => {
+    setCurrentIndex(prev => Math.max(0, prev - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentIndex(prev => Math.min(pendingAppointments.length - 1, prev + 1));
+  };
+
   // Don't render if dentist doesn't require approval or still loading
   if (loading || !requiresApproval) {
     return null;
   }
 
   const timeSlots = rescheduleDate ? getClinicTimeSlots(rescheduleDate) : [];
+  const currentAppointment = pendingAppointments[currentIndex];
 
   return (
     <>
@@ -224,78 +269,102 @@ export function PendingApprovalCard({ dentistId, onAction }: PendingApprovalCard
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 opacity-10" />
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
           <CardTitle className="text-sm font-medium">
-            Pending Approval
+            Pending Approvals
           </CardTitle>
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
             <Clock className="h-5 w-5 text-white" />
           </div>
         </CardHeader>
         <CardContent className="relative z-10">
-          <div className="text-2xl font-bold">{pendingAppointments.length}</div>
-          <p className="text-xs text-muted-foreground">
-            Appointments needing review
-          </p>
-          
-          {pendingAppointments.length > 0 && (
-            <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
-              {pendingAppointments.slice(0, 3).map((apt) => (
-                <div 
-                  key={apt.id} 
-                  className="p-2 bg-background/80 rounded-lg border border-border/50"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                      <span className="text-xs font-medium truncate">
-                        {getPatientName(apt)}
-                      </span>
-                    </div>
-                    <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">
-                      {formatClinicTime(apt.appointment_date, 'MMM d, HH:mm')}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs flex-1 bg-success/10 text-success border-success/20 hover:bg-success/20"
-                      onClick={() => handleApprove(apt.id)}
-                      disabled={actionLoading === apt.id}
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      {t.confirm || "Approve"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs flex-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
-                      onClick={() => handleDecline(apt.id)}
-                      disabled={actionLoading === apt.id}
-                    >
-                      <XCircle className="h-3 w-3 mr-1" />
-                      {t.cancel || "Decline"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                      onClick={() => openReschedule(apt)}
-                      disabled={actionLoading === apt.id}
-                    >
-                      <CalendarClock className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              
-              {pendingAppointments.length > 3 && (
-                <p className="text-xs text-muted-foreground text-center">
-                  +{pendingAppointments.length - 3} {t.more || "more"}
-                </p>
-              )}
+          {pendingAppointments.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">No pending approvals</p>
             </div>
-          )}
+          ) : currentAppointment ? (
+            <div className="space-y-3">
+              {/* Navigation */}
+              {pendingAppointments.length > 1 && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={goToPrevious}
+                    disabled={currentIndex === 0}
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </Button>
+                  <span>{currentIndex + 1} / {pendingAppointments.length}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={goToNext}
+                    disabled={currentIndex === pendingAppointments.length - 1}
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Current appointment */}
+              <div className="p-3 bg-background/80 rounded-lg border border-border/50">
+                <div className="flex items-center justify-between mb-2">
+                  <button
+                    onClick={() => handlePatientClick(currentAppointment)}
+                    className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
+                  >
+                    <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm font-medium truncate underline underline-offset-2">
+                      {getPatientName(currentAppointment)}
+                    </span>
+                  </button>
+                </div>
+                
+                <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20 mb-3">
+                  {formatClinicTime(currentAppointment.appointment_date, 'MMM d, HH:mm')}
+                </Badge>
+
+                {currentAppointment.reason && (
+                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                    {currentAppointment.reason}
+                  </p>
+                )}
+                
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs flex-1 bg-success/10 text-success border-success/20 hover:bg-success/20"
+                    onClick={() => handleApprove(currentAppointment.id)}
+                    disabled={actionLoading === currentAppointment.id}
+                  >
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    {t.confirm || "Approve"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs flex-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                    onClick={() => handleDecline(currentAppointment.id)}
+                    disabled={actionLoading === currentAppointment.id}
+                  >
+                    <XCircle className="h-3 w-3 mr-1" />
+                    {t.cancel || "Decline"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-2 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                    onClick={() => openReschedule(currentAppointment)}
+                    disabled={actionLoading === currentAppointment.id}
+                  >
+                    <CalendarClock className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
