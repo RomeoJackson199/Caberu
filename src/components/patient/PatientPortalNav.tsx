@@ -16,6 +16,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { FloatingBookingButton } from "./FloatingBookingButton";
 import { BusinessSelector } from "@/components/BusinessSelector";
 import { useClinicBranding } from "@/hooks/useClinicBranding";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { logger } from '@/lib/logger';
 
 type NavItem = {
@@ -60,6 +61,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
   const { state, toggleSidebar, open, setOpen } = useSidebar();
   const { counts } = usePatientBadgeCounts();
   const { branding } = useClinicBranding();
+  const { businessName } = useBusinessContext();
   const [openGroupId, setOpenGroupId] = useState<string | null>(() => localStorage.getItem(STORAGE_KEYS.lastGroup));
   const [moreOpen, setMoreOpen] = useState(false);
   const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
@@ -225,11 +227,11 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
             <img src={branding.logoUrl} alt={t.clinicLogoAlt} className="h-7 w-7 rounded-lg object-cover flex-shrink-0" />
           ) : (
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold flex-shrink-0">
-              {branding.clinicName?.[0]?.toUpperCase() || 'P'}
+              {(businessName || branding.clinicName)?.[0]?.toUpperCase() || 'P'}
             </span>
           )}
           <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-sm truncate">{branding.clinicName || t.patientPortal}</span>
+            <span className="font-semibold text-sm truncate">{businessName || branding.clinicName || t.patientPortal}</span>
             <BusinessSelector />
           </div>
         </div>
@@ -268,7 +270,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
                               {item.onClick ? (
                                 <button
                                   onClick={(e) => {
-                                    item.onClick(e);
+                                    item.onClick?.(e);
                                     handleNav(group.id, item, e as any);
                                   }}
                                   aria-label={item.label}
