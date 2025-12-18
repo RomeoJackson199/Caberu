@@ -146,7 +146,7 @@ export async function createAppointmentWithNotification(appointmentData: {
 
   // Send confirmation email to patient
   try {
-    const dentistProfile = dentist?.profiles as { first_name: string; last_name: string } | null;
+    const dentistProfile = (dentist?.profiles as unknown) as { first_name: string; last_name: string } | null;
     
     console.log('📧 Checking email conditions:', {
       patientEmail: patient?.email,

@@ -159,7 +159,7 @@ export default function DataRightsManager() {
       console.error('Request submission error:', error);
       toast({
         title: "Submission failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive"
       });
     } finally {

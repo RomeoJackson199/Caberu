@@ -64,8 +64,8 @@ export const MedicalDataConsentDialog = ({
 
             if (error) throw error;
 
-            // Log consent in audit trail
-            await supabase.from('audit_logs').insert({
+            // Log consent in audit trail (fire and forget - don't fail if audit log fails)
+            supabase.from('audit_logs').insert({
                 user_id: userId,
                 action: 'GDPR_CONSENT_GRANTED',
                 target_table: 'gdpr_consents',
@@ -75,7 +75,7 @@ export const MedicalDataConsentDialog = ({
                     gdpr_article: '9(2)(a)'
                 },
                 created_at: new Date().toISOString()
-            }).catch(() => { }); // Don't fail if audit log fails
+            });
 
             toast({
                 title: "Consent Granted",

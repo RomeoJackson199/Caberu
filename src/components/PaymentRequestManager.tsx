@@ -28,9 +28,10 @@ interface PaymentRequest {
 interface PaymentRequestManagerProps {
   dentistId: string;
   patientId?: string; // Optional: filter by specific patient
+  onPaymentCreated?: () => void | Promise<void>; // Optional callback when payment is created
 }
 
-export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ dentistId, patientId }) => {
+export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ dentistId, patientId, onPaymentCreated }) => {
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

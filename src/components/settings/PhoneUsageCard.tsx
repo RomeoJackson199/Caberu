@@ -200,17 +200,17 @@ export function PhoneUsageCard() {
         </div>
 
         {/* Overage Cost */}
-        {usage?.overage_minutes > 0 && (
+        {usage && (usage.overage_minutes ?? 0) > 0 && (
           <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-destructive">Overage Charges</p>
                 <p className="text-xs text-muted-foreground">
-                  {usage.overage_minutes} extra minutes used
+                  {usage?.overage_minutes ?? 0} extra minutes used
                 </p>
               </div>
               <span className="text-lg font-bold text-destructive">
-                {formatCost(usage.overage_cost_cents)}
+                {formatCost(usage?.overage_cost_cents ?? 0)}
               </span>
             </div>
           </div>
