@@ -258,6 +258,34 @@ export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailability
         title: t.success,
         description: t.changesSaved,
       });
+
+      // Auto-cancel any overlapping appointments and notify patients
+      try {
+        const { data: cancelResult, error: cancelError } = await supabase.functions.invoke(
+          'cancel-vacation-appointments',
+          {
+            body: {
+              vacation_id: data.id,
+              dentist_id: dentistId,
+              start_date: newVacation.start_date,
+              end_date: newVacation.end_date,
+              vacation_type: newVacation.vacation_type,
+              reason: newVacation.reason
+            }
+          }
+        );
+
+        if (cancelError) {
+          logger.error('Failed to auto-cancel appointments:', cancelError);
+        } else if (cancelResult?.cancelled_count > 0) {
+          toast({
+            title: "Appointments Cancelled",
+            description: `${cancelResult.cancelled_count} appointment(s) were automatically cancelled and patients have been notified.`,
+          });
+        }
+      } catch (cancelErr) {
+        logger.error('Error invoking cancel-vacation-appointments:', cancelErr);
+      }
     } catch (error) {
       logger.error('Failed to add vacation:', error);
       toast({
