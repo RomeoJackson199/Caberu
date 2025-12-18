@@ -603,8 +603,9 @@ export const InteractiveDentalChat = ({
         responseMessage += `📅 **Your upcoming appointments:**\n\n`;
         upcoming.forEach((apt, index) => {
           const date = new Date(apt.appointment_date);
-          const dentistName = apt.dentists?.profiles 
-            ? `Dr. ${apt.dentists.profiles.first_name} ${apt.dentists.profiles.last_name}`
+          const dentistProfiles = (apt.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
+          const dentistName = dentistProfiles 
+            ? `Dr. ${dentistProfiles.first_name} ${dentistProfiles.last_name}`
             : "Unknown dentist";
           
           responseMessage += `${index + 1}. **${format(date, "EEEE, MMMM d")}** at **${format(date, "h:mm a")}**\n`;
@@ -618,10 +619,10 @@ export const InteractiveDentalChat = ({
         responseMessage += `📋 **Your recent appointments:**\n\n`;
         past.slice(-3).forEach((apt, index) => {
           const date = new Date(apt.appointment_date);
-          const dentistName = apt.dentists?.profiles 
-            ? `Dr. ${apt.dentists.profiles.first_name} ${apt.dentists.profiles.last_name}`
+          const dentistProfiles = (apt.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
+          const dentistName = dentistProfiles 
+            ? `Dr. ${dentistProfiles.first_name} ${dentistProfiles.last_name}`
             : "Unknown dentist";
-          
           responseMessage += `${index + 1}. **${format(date, "EEEE, MMMM d")}** at **${format(date, "h:mm a")}**\n`;
           responseMessage += `   👨‍⚕️ ${dentistName}\n`;
           responseMessage += `   📝 ${apt.reason}\n\n`;
@@ -741,7 +742,7 @@ Just type what you need! 😊
         handleDentistSelection(data[0]);
       } else {
         setBookingFlow(prev => ({ ...prev, step: 'dentist' }));
-        setWidgetData({ dentists: data || [], recommendedDentists });
+        setWidgetData({ dentists: (data as unknown as DentistWithProfile[]) || [], recommendedDentists });
         setActiveWidget('dentist-selection');
         addBotMessage("Please choose your preferred dentist:");
       }
@@ -805,7 +806,7 @@ Just type what you need! 😊
       // Map to the widget format
       const slots = availabilitySlots.map(slot => ({
         time: slot.time.substring(0, 5), // Format: "HH:mm"
-        available: slot.available && (bookingFlow.urgency >= 4 ? true : slot.reason !== 'emergency_only'),
+        available: slot.available && (bookingFlow.urgency >= 4 ? true : (slot.reason as string) !== 'emergency_only'),
         reason: slot.reason
       }));
 
@@ -845,9 +846,9 @@ Just type what you need! 😊
 
     setTimeout(async () => {
       const appointmentData = {
-        date: bookingFlow.selectedDate,
+        date: bookingFlow.selectedDate || undefined,
         time: time,
-        dentist: bookingFlow.selectedDentist,
+        dentist: bookingFlow.selectedDentist || undefined,
         reason: bookingFlow.reason
       };
       setWidgetData({ appointment: appointmentData });
@@ -893,8 +894,8 @@ Just type what you need! 😊
       }
 
       // Only require essential fields for booking (phone is optional)
-      const requiredFields = ['first_name', 'last_name', 'email'];
-      const missingFields = requiredFields.filter(field => !profile[field]);
+      const requiredFields = ['first_name', 'last_name', 'email'] as const;
+      const missingFields = requiredFields.filter(field => !(profile as Record<string, unknown>)[field]);
       
       if (missingFields.length > 0) {
         addBotMessage("I need some additional information to complete your booking. Please update your profile first.");
@@ -971,11 +972,12 @@ Just type what you need! 😊
       });
 
       // Show success widget with navigation options
+      const dentistProfileData = (bookingFlow.selectedDentist.profiles as unknown) as { first_name: string; last_name: string } | null;
       setWidgetData({
         appointment: {
-          date: format(bookingFlow.selectedDate, "EEEE, MMMM d, yyyy"),
+          date: format(bookingFlow.selectedDate, "EEEE, MMMM d, yyyy") as unknown as Date,
           time: bookingFlow.selectedTime,
-          dentistName: `Dr. ${bookingFlow.selectedDentist.profiles?.first_name} ${bookingFlow.selectedDentist.profiles?.last_name}`,
+          dentistName: `Dr. ${dentistProfileData?.first_name || ''} ${dentistProfileData?.last_name || ''}`,
           reason: appointmentReason
         }
       });
@@ -1315,8 +1317,9 @@ You'll receive a confirmation email shortly.`;
       }
 
       const appointment = appointments[0];
-      const dentistName = appointment.dentists?.profiles ? 
-        `${appointment.dentists.profiles.first_name} ${appointment.dentists.profiles.last_name}` : 
+      const dentistProfiles = (appointment.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
+      const dentistName = dentistProfiles ? 
+        `${dentistProfiles.first_name} ${dentistProfiles.last_name}` : 
         "Your dentist";
 
       setWidgetData({ 
@@ -1380,8 +1383,9 @@ You'll receive a confirmation email shortly.`;
       }
 
       const appointment = appointments[0];
-      const dentistName = appointment.dentists?.profiles ? 
-        `${appointment.dentists.profiles.first_name} ${appointment.dentists.profiles.last_name}` : 
+      const dentistProfiles = (appointment.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
+      const dentistName = dentistProfiles ? 
+        `${dentistProfiles.first_name} ${dentistProfiles.last_name}` : 
         "Your dentist";
 
       setWidgetData({ 
@@ -1546,9 +1550,9 @@ You'll receive a confirmation email shortly.`;
         );
 
       case 'pay-now':
-        return widgetData?.outstandingAmount > 0 ? (
+        return (widgetData?.outstandingAmount ?? 0) > 0 ? (
           <PayNowWidget
-            outstandingAmount={widgetData.outstandingAmount}
+            outstandingAmount={widgetData?.outstandingAmount ?? 0}
             onPay={handlePayNow}
             onCancel={() => {
               setActiveWidget(null);
@@ -1620,7 +1624,7 @@ You'll receive a confirmation email shortly.`;
       case 'appointment-success':
         return widgetData?.appointment ? (
           <AppointmentSuccessWidget
-            appointmentDetails={widgetData.appointment}
+            appointmentDetails={widgetData.appointment as unknown as { date: string; time: string; dentistName: string; reason: string }}
             onBookAnother={() => {
               setActiveWidget(null);
               setBookingFlow({
