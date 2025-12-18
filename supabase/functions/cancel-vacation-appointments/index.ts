@@ -61,7 +61,7 @@ serve(async (req) => {
                 reason,
                 patient_id,
                 status,
-                profiles:patient_id (
+                profiles!appointments_patient_id_fkey (
                     email,
                     first_name,
                     last_name
