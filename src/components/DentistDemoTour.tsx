@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS } from "react-joyride";
 import { DentistSection } from "@/components/layout/DentistAppShell";
+import { supabase } from "@/integrations/supabase/client";
+
+const TOUR_KEY = 'dentist-dashboard';
 
 interface DentistDemoTourProps {
   run: boolean;
@@ -15,6 +18,24 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
   useEffect(() => {
     setRunTour(run);
   }, [run]);
+
+  const markTourComplete = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      await supabase.from('tour_completions').upsert({
+        user_id: user.id,
+        tour_type: TOUR_KEY,
+        completed_at: new Date().toISOString()
+      }, { onConflict: 'user_id,tour_type' });
+      
+      localStorage.setItem('dentist-tour-completed', 'true');
+    } catch (error) {
+      console.error('Failed to save tour completion:', error);
+      localStorage.setItem('dentist-tour-completed', 'true');
+    }
+  };
 
   const steps: Step[] = [
     {
@@ -158,10 +179,8 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
     if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       setRunTour(false);
       setStepIndex(0);
-      // Mark tour as completed
-      if (status === STATUS.FINISHED) {
-        localStorage.setItem('dentist-tour-completed', 'true');
-      }
+      // Mark tour as completed in database
+      markTourComplete();
       onClose();
     } else if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
       const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);

@@ -99,9 +99,9 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
       // Insert into database - ignore if already exists
       await supabase.from('tour_completions').upsert({
         user_id: user.id,
-        tour_key: TOUR_KEY,
+        tour_type: TOUR_KEY,
         completed_at: new Date().toISOString()
-      }, { onConflict: 'user_id,tour_key' });
+      }, { onConflict: 'user_id,tour_type' });
       
       // Also set localStorage as fallback
       localStorage.setItem('ai-chat-onboarding-seen', 'true');
