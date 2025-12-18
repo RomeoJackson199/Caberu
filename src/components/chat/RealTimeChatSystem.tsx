@@ -103,12 +103,15 @@ export function RealTimeChatSystem({
           .eq('is_active', true);
 
         if (dentists) {
-          const participants: ChatParticipant[] = dentists.map(dentist => ({
-            id: dentist.id,
-            name: `Dr. ${dentist.profile.first_name} ${dentist.profile.last_name}`,
-            role: 'dentist' as const,
-            status: Math.random() > 0.5 ? 'online' : 'offline' as const
-          }));
+          const participants: ChatParticipant[] = dentists.map(dentist => {
+            const profile = (dentist.profile as unknown) as { first_name: string; last_name: string } | null;
+            return {
+              id: dentist.id,
+              name: `Dr. ${profile?.first_name || ''} ${profile?.last_name || ''}`,
+              role: 'dentist' as const,
+              status: Math.random() > 0.5 ? 'online' : 'offline' as const
+            };
+          });
           setParticipants(participants);
         }
       } else {
@@ -128,15 +131,18 @@ export function RealTimeChatSystem({
 
         if (appointments) {
           const uniquePatients = Array.from(
-            new Map(appointments.map(apt => [
-              apt.patient_id, 
-              {
-                id: apt.patient_id,
-                name: `${apt.patient.first_name} ${apt.patient.last_name}`,
-                role: 'patient' as const,
-                status: Math.random() > 0.5 ? 'online' : 'offline' as const
-              }
-            ])).values()
+            new Map(appointments.map(apt => {
+              const patient = (apt.patient as unknown) as { first_name: string; last_name: string } | null;
+              return [
+                apt.patient_id, 
+                {
+                  id: apt.patient_id,
+                  name: `${patient?.first_name || ''} ${patient?.last_name || ''}`,
+                  role: 'patient' as const,
+                  status: Math.random() > 0.5 ? 'online' : 'offline' as const
+                }
+              ];
+            })).values()
           );
           setParticipants(uniquePatients as ChatParticipant[]);
         }

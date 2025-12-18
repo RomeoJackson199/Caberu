@@ -248,8 +248,8 @@ export const EnhancedAppointmentBooking = ({
       if (profileError) throw profileError;
 
       // Validate required fields
-      const requiredFields = ['first_name', 'last_name', 'phone', 'email'];
-      const missingFields = requiredFields.filter(field => !profile[field]);
+      const requiredFields = ['first_name', 'last_name', 'phone', 'email'] as const;
+      const missingFields = requiredFields.filter(field => !(profile as Record<string, unknown>)[field]);
 
       if (missingFields.length > 0) {
         toast({
@@ -324,8 +324,9 @@ export const EnhancedAppointmentBooking = ({
           .eq('id', selectedDentist)
           .single();
 
-        const dentistName = dentistProfile?.profiles
-          ? `Dr. ${dentistProfile.profiles.first_name} ${dentistProfile.profiles.last_name}`
+        const profileData = (dentistProfile?.profiles as unknown) as { first_name: string; last_name: string } | null;
+        const dentistName = profileData
+          ? `Dr. ${profileData.first_name} ${profileData.last_name}`
           : 'Your dentist';
 
         const appointmentDetails = {
