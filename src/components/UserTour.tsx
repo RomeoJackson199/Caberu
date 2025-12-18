@@ -118,17 +118,17 @@ export const UserTour = ({ isOpen, onClose, userRole }: UserTourProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleSkip}>
-      <DialogContent className="sm:max-w-[600px] overflow-hidden">
-        <DialogHeader className="space-y-4">
+      <DialogContent className="max-w-[90vw] sm:max-w-[500px] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader className="space-y-3">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold">
+            <DialogTitle className="text-lg sm:text-2xl font-bold">
               {userRole === "patient" ? "Patient" : "Practice"} Tour
             </DialogTitle>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs sm:text-sm text-muted-foreground">
               {currentStep + 1} of {steps.length}
             </span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-1.5 sm:h-2" />
         </DialogHeader>
 
         <AnimatePresence mode="wait">
@@ -138,36 +138,36 @@ export const UserTour = ({ isOpen, onClose, userRole }: UserTourProps) => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="py-6 space-y-6"
+            className="py-4 sm:py-6 space-y-4 sm:space-y-6"
           >
             {/* Icon with gradient background */}
             <div className="flex justify-center">
-              <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${currentStepData.gradient} flex items-center justify-center shadow-lg`}>
-                <Icon className="h-12 w-12 text-white" />
+              <div className={`w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br ${currentStepData.gradient} flex items-center justify-center shadow-lg`}>
+                <Icon className="h-8 w-8 sm:h-12 sm:w-12 text-white" />
               </div>
             </div>
 
             {/* Content */}
-            <div className="text-center space-y-4">
-              <h3 className="text-2xl font-bold">
+            <div className="text-center space-y-2 sm:space-y-4">
+              <h3 className="text-lg sm:text-2xl font-bold">
                 {currentStepData.title}
               </h3>
-              <DialogDescription className="text-base leading-relaxed">
+              <DialogDescription className="text-sm sm:text-base leading-relaxed">
                 {currentStepData.description}
               </DialogDescription>
             </div>
 
             {/* Step indicators */}
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-1.5 sm:gap-2">
               {steps.map((_, index) => (
                 <div
                   key={index}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
                     index === currentStep
-                      ? "w-8 bg-primary"
+                      ? "w-6 sm:w-8 bg-primary"
                       : index < currentStep
-                      ? "w-2 bg-primary/50"
-                      : "w-2 bg-muted"
+                      ? "w-1.5 sm:w-2 bg-primary/50"
+                      : "w-1.5 sm:w-2 bg-muted"
                   }`}
                 />
               ))}
@@ -176,10 +176,10 @@ export const UserTour = ({ isOpen, onClose, userRole }: UserTourProps) => {
         </AnimatePresence>
 
         {/* Navigation buttons */}
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex justify-between items-center pt-3 sm:pt-4 border-t gap-2">
           <div>
             {currentStep > 0 && (
-              <Button variant="ghost" onClick={handleBack}>
+              <Button variant="ghost" size="sm" onClick={handleBack}>
                 Back
               </Button>
             )}
@@ -187,11 +187,12 @@ export const UserTour = ({ isOpen, onClose, userRole }: UserTourProps) => {
           
           <div className="flex gap-2">
             {currentStep < steps.length - 1 && (
-              <Button variant="outline" onClick={handleSkip}>
-                Skip Tour
+              <Button variant="outline" size="sm" onClick={handleSkip}>
+                Skip
               </Button>
             )}
             <Button 
+              size="sm"
               onClick={handleNext}
               className={`bg-gradient-to-r ${currentStepData.gradient} text-white hover:opacity-90`}
             >

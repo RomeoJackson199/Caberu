@@ -180,8 +180,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           className="md:col-span-2 lg:col-span-4"
         >
           <Card
-            className="h-full border-2 hover:border-primary/30 transition-all hover:shadow-lg cursor-pointer"
-            onClick={() => onNavigateTo('appointments')}
+            className="h-full border-2 hover:border-primary/30 transition-all hover:shadow-lg"
           >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between">
