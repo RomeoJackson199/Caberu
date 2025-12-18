@@ -30,6 +30,7 @@ import { clinicTimeToUtc, utcToClinicTime, getClinicTimeSlots } from '@/lib/time
 import { emitAnalyticsEvent } from '@/lib/analyticsEvents';
 import { Appointment } from './AppointmentManager';
 import { logger } from '@/lib/logger';
+import { createAppointmentWithNotification } from '@/hooks/useAppointments';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -170,8 +171,8 @@ export const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
           changes: Object.keys(appointmentData),
         });
       } else {
-        // Use the email-enabled appointment creation function
-        const { createAppointmentWithNotification } = await import('@/hooks/useAppointments');
+        // Use the email-enabled appointment creation function directly
+        console.log('📧 Creating appointment with notification...');
         await createAppointmentWithNotification({
           patient_id: appointmentData.patient_id,
           dentist_id: appointmentData.dentist_id,
@@ -182,6 +183,7 @@ export const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
           urgency: formData.urgency === 'emergency' ? 'high' : formData.urgency as 'low' | 'medium' | 'high',
           duration_minutes: appointmentData.duration_minutes
         });
+        console.log('✅ Appointment with notification created');
         
         await emitAnalyticsEvent('appointment_created', dentistId, {
           urgency: formData.urgency,
