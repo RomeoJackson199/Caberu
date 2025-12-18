@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Check, Loader2, AlertTriangle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Building2, Check, Loader2, AlertTriangle, Search, Crown } from 'lucide-react';
 import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
 import { toast } from 'sonner';
 
@@ -15,8 +16,10 @@ export default function SelectBusiness() {
     const [selecting, setSelecting] = useState<string | null>(null);
     const [loadingBusinesses, setLoadingBusinesses] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
 
-    // Check authentication
+    // Check authentication and get profile ID
     useEffect(() => {
         const checkAuth = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -24,10 +27,44 @@ export default function SelectBusiness() {
                 navigate('/login', { replace: true });
             } else {
                 setIsAuthenticated(true);
+                // Get profile ID to determine ownership
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                if (profile) {
+                    setCurrentUserProfileId(profile.id);
+                }
             }
         };
         checkAuth();
     }, [navigate]);
+
+    // Filter and sort businesses - owners first, then search
+    const sortedFilteredBusinesses = useMemo(() => {
+        let filtered = allBusinessesList;
+        
+        // Apply search filter
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase();
+            filtered = allBusinessesList.filter(b => 
+                b.name?.toLowerCase().includes(term) || 
+                b.tagline?.toLowerCase().includes(term) ||
+                b.slug?.toLowerCase().includes(term)
+            );
+        }
+        
+        // Sort: owned businesses first, then alphabetically
+        return filtered.sort((a, b) => {
+            const aIsOwned = a.owner_profile_id === currentUserProfileId;
+            const bIsOwned = b.owner_profile_id === currentUserProfileId;
+            
+            if (aIsOwned && !bIsOwned) return -1;
+            if (!aIsOwned && bIsOwned) return 1;
+            return (a.name || '').localeCompare(b.name || '');
+        });
+    }, [allBusinessesList, searchTerm, currentUserProfileId]);
 
     // Fetch all available businesses
     useEffect(() => {
@@ -45,7 +82,7 @@ export default function SelectBusiness() {
             if (error || !data || data.length === 0) {
                 const fallback = await supabase
                     .from('businesses')
-                    .select('id, name, slug, logo_url, tagline, template_type')
+                    .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id')
                     .order('name');
                 data = fallback.data;
             }
@@ -174,15 +211,30 @@ export default function SelectBusiness() {
                     </p>
                 </div>
 
+                {/* Search Input */}
+                <div className="relative mb-6">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search businesses..."
+                        className="pl-10"
+                    />
+                </div>
+
                 <div className="space-y-4">
-                    {allBusinessesList.length === 0 ? (
+                    {sortedFilteredBusinesses.length === 0 ? (
                         <Card className="text-center py-12">
                             <CardContent>
-                                <p className="text-muted-foreground">No businesses available</p>
+                                <p className="text-muted-foreground">
+                                    {searchTerm ? 'No businesses match your search' : 'No businesses available'}
+                                </p>
                             </CardContent>
                         </Card>
                     ) : (
-                        allBusinessesList.map((business) => {
+                        sortedFilteredBusinesses.map((business) => {
+                            const isOwner = business.owner_profile_id === currentUserProfileId;
                             const membership = memberships.find(m => m.business_id === business.id);
                             const role = membership?.role || 'Patient';
                             const isSelected = businessId === business.id;
@@ -224,6 +276,12 @@ export default function SelectBusiness() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3">
+                                                {isOwner && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                                        <Crown className="h-3 w-3" />
+                                                        Owner
+                                                    </span>
+                                                )}
                                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${role !== 'Patient'
                                                     ? 'bg-primary/10 text-primary'
                                                     : 'bg-muted text-muted-foreground'

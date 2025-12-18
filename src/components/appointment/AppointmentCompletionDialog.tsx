@@ -172,9 +172,12 @@ export function AppointmentCompletionDialog({
 
   useEffect(() => {
     const fetchServices = async () => {
+      if (!businessId) return;
+      
       const { data } = await supabase
         .from('business_services')
         .select('name, price_cents')
+        .eq('business_id', businessId)
         .eq('is_active', true);
 
       if (data) {
@@ -183,7 +186,7 @@ export function AppointmentCompletionDialog({
     };
 
     fetchServices();
-  }, []);
+  }, [businessId]);
 
   const addTreatment = (treatment: { name: string; price: number; tooth?: string }) => {
     const newTreatment: Treatment = {

@@ -2930,6 +2930,30 @@ export type Database = {
           },
         ]
       }
+      tour_completions: {
+        Row: {
+          completed_at: string
+          created_at: string
+          id: string
+          tour_type: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          tour_type: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          tour_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       treatment_plans: {
         Row: {
           business_id: string
