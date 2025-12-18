@@ -105,20 +105,29 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
   const handleSave = async () => {
     try {
       // Get business_id for the dentist
-      const { data: dentistData } = await supabase
+      const { data: dentistData, error: dentistError } = await supabase
         .from('dentists')
         .select('profile_id')
         .eq('id', dentistId)
         .single();
 
+      if (dentistError) {
+        console.error('Error fetching dentist:', dentistError);
+        throw new Error('Could not fetch dentist data');
+      }
+
       let businessId: string | null = null;
       if (dentistData?.profile_id) {
-        const { data: membership } = await supabase
+        const { data: membership, error: membershipError } = await supabase
           .from('business_members')
           .select('business_id')
           .eq('profile_id', dentistData.profile_id)
           .limit(1)
           .maybeSingle();
+        
+        if (membershipError) {
+          console.error('Error fetching membership:', membershipError);
+        }
         businessId = membership?.business_id || null;
       }
 
@@ -126,11 +135,19 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         throw new Error('Could not determine business');
       }
 
-      // Delete existing availability
-      await supabase
+      console.log('Saving availability for dentist:', dentistId, 'business:', businessId);
+
+      // Delete existing availability - include business_id for RLS
+      const { error: deleteError } = await supabase
         .from('dentist_availability')
         .delete()
-        .eq('dentist_id', dentistId);
+        .eq('dentist_id', dentistId)
+        .eq('business_id', businessId);
+
+      if (deleteError) {
+        console.error('Error deleting old availability:', deleteError);
+        // Continue anyway - might be first time setting availability
+      }
 
       // Insert ALL days (including unavailable ones for tracking)
       const dataToInsert = availability.map(day => ({
@@ -144,18 +161,29 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         break_end_time: day.break_end_time || null,
       }));
 
-      const { error } = await supabase
-        .from('dentist_availability')
-        .insert(dataToInsert);
+      console.log('Inserting availability:', dataToInsert);
 
-      if (error) throw error;
+      const { error: insertError } = await supabase
+        .from('dentist_availability')
+        .upsert(dataToInsert, { 
+          onConflict: 'dentist_id,day_of_week,business_id'
+        });
+
+      if (insertError) {
+        console.error('Error inserting availability:', insertError);
+        throw insertError;
+      }
 
       // Clear stale appointment slots so they regenerate with new times
-      await supabase
+      const { error: slotsError } = await supabase
         .from('appointment_slots')
         .delete()
         .eq('dentist_id', dentistId)
         .is('appointment_id', null);
+
+      if (slotsError) {
+        console.error('Error clearing slots (non-fatal):', slotsError);
+      }
 
       toast({
         title: t.success,
