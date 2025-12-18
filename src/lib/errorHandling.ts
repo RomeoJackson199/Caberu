@@ -307,7 +307,7 @@ export const shouldRetry = (error: unknown): boolean => {
   }
 
   // Retry network errors and temporary database errors
-  return isNetworkError(error) || 
+  return Boolean(isNetworkError(error) || 
          errorObj?.code?.includes('TEMPORARY') ||
-         errorObj?.code?.includes('TIMEOUT');
+         errorObj?.code?.includes('TIMEOUT'));
 };

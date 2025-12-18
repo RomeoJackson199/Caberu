@@ -131,7 +131,7 @@ export function CancelSubscriptionSection() {
                 setSubscription({
                     id: businessId,
                     status: business.subscription_status || 'inactive',
-                    current_period_end: null,
+                    current_period_end: undefined as unknown as string,
                     cancel_at_period_end: false,
                     subscription_plans: {
                         name: business.subscription_plan || 'Free',

@@ -250,7 +250,8 @@ export const useLanguageDetection = (): LanguageDetectionHook => {
   const { language: contextLanguage, setLanguage: setContextLanguage } = useLanguage();
 
   const t = (key: string): string => {
-    return translations[contextLanguage as SupportedLanguage]?.[key] || key;
+    const langTranslations = translations[contextLanguage as SupportedLanguage] as Record<string, string> | undefined;
+    return langTranslations?.[key] || key;
   };
 
   return {

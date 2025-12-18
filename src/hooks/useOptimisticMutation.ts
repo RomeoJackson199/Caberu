@@ -71,8 +71,8 @@ export function useOptimisticMutation<
 
         onError: (error: Error, variables: TVariables, context: TContext | undefined) => {
             // Roll back to the previous value on error
-            if (context && 'previousData' in context) {
-                queryClient.setQueryData(queryKey, (context as { previousData: TData[] }).previousData);
+            if (context && typeof context === 'object' && context !== null && 'previousData' in (context as Record<string, unknown>)) {
+                queryClient.setQueryData(queryKey, (context as unknown as { previousData: TData[] }).previousData);
             }
 
             // Show error toast

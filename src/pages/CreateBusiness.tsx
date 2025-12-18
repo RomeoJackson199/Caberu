@@ -52,9 +52,9 @@ export default function CreateBusiness() {
 
           toast.success('Business created successfully!');
           navigate('/auth-redirect');
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Error completing business:', error);
-          toast.error(error.message || 'Failed to complete business setup');
+          toast.error(error instanceof Error ? error.message : 'Failed to complete business setup');
         }
       }
     };

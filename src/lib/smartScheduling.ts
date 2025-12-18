@@ -4,6 +4,7 @@ import { getCurrentBusinessId } from '@/lib/businessScopedSupabase';
 import { TimeSlot } from './appointmentAvailability';
 import { getGeminiSlotRecommendations, GeminiSlotRecommendation } from './geminiAI';
 import { isSlotUnderutilized, updateSlotStatisticsAfterBooking, calculateSlotUsageStatistics } from './slotUsageTracking';
+import { logger } from '@/lib/logger';
 
 // Re-export for convenience
 export { updateSlotStatisticsAfterBooking, calculateSlotUsageStatistics } from './slotUsageTracking';

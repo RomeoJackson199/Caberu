@@ -95,7 +95,7 @@ export function EnhancedMedicalRecords({ patientId, dentistId, viewMode = "denti
                 <DialogTitle>Create Medical Record</DialogTitle>
               </DialogHeader>
               <MedicalRecordForm
-                onSubmit={(data) => createMutation.mutate(data)}
+                onSubmit={(data: { title: string; record_type: string; findings: string; treatment_provided: string }) => createMutation.mutate(data)}
                 isSubmitting={createMutation.isPending}
               />
             </DialogContent>

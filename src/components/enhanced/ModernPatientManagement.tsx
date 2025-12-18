@@ -1295,7 +1295,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               {item.type === 'note' ? (
                                 <Badge className="bg-indigo-100 text-indigo-700">{t.note || 'Note'}</Badge>
                               ) : (
-                                <Badge className="bg-emerald-100 text-emerald-700">{t.appointment || 'Appointment'}</Badge>
+                                <Badge className="bg-emerald-100 text-emerald-700">Appointment</Badge>
                               )}
                               <span className="text-xs text-slate-400">
                                 {format(item.date, 'MMM d, yyyy h:mm a')}
@@ -2099,7 +2099,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     className="p-2 text-sm rounded-lg border border-slate-200"
                                   >
                                     <option value="active">{t.active || 'Active'}</option>
-                                    <option value="draft">{t.draft || 'Draft'}</option>
+                                    <option value="draft">Draft</option>
                                   </select>
                                   <select
                                     value={newTreatmentPlan.priority}
