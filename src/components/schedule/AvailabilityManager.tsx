@@ -104,30 +104,58 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
 
   const handleSave = async () => {
     try {
+      // Get business_id for the dentist
+      const { data: dentistData } = await supabase
+        .from('dentists')
+        .select('profile_id')
+        .eq('id', dentistId)
+        .single();
+
+      let businessId: string | null = null;
+      if (dentistData?.profile_id) {
+        const { data: membership } = await supabase
+          .from('business_members')
+          .select('business_id')
+          .eq('profile_id', dentistData.profile_id)
+          .limit(1)
+          .maybeSingle();
+        businessId = membership?.business_id || null;
+      }
+
+      if (!businessId) {
+        throw new Error('Could not determine business');
+      }
+
       // Delete existing availability
       await supabase
         .from('dentist_availability')
         .delete()
         .eq('dentist_id', dentistId);
 
-      // Insert new availability
-      const dataToInsert = availability
-        .filter(day => day.is_available)
-        .map(day => ({
-          dentist_id: dentistId,
-          day_of_week: day.day_of_week,
-          is_available: day.is_available,
-          start_time: day.start_time,
-          end_time: day.end_time,
-          break_start_time: day.break_start_time || null,
-          break_end_time: day.break_end_time || null,
-        }));
+      // Insert ALL days (including unavailable ones for tracking)
+      const dataToInsert = availability.map(day => ({
+        dentist_id: dentistId,
+        business_id: businessId,
+        day_of_week: day.day_of_week,
+        is_available: day.is_available,
+        start_time: day.start_time,
+        end_time: day.end_time,
+        break_start_time: day.break_start_time || null,
+        break_end_time: day.break_end_time || null,
+      }));
 
       const { error } = await supabase
         .from('dentist_availability')
         .insert(dataToInsert);
 
       if (error) throw error;
+
+      // Clear stale appointment slots so they regenerate with new times
+      await supabase
+        .from('appointment_slots')
+        .delete()
+        .eq('dentist_id', dentistId)
+        .is('appointment_id', null);
 
       toast({
         title: t.success,
@@ -175,7 +203,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
               <div key={day.value} className="border rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-semibold">
-                    {t[day.label] || day.label}
+                    {(t as unknown as Record<string, string>)[day.label] || day.label}
                   </Label>
                   <Switch
                     checked={dayAvailability.is_available}
