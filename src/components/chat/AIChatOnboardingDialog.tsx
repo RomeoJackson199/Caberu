@@ -18,6 +18,7 @@ import {
   ChevronRight,
   CheckCircle2
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AIChatOnboardingDialogProps {
   isOpen: boolean;
@@ -59,7 +60,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     icon: Settings,
     title: 'Personalized preferences',
     description: 'Change language, theme, and reminders so the experience fits you.',
-    highlight: 'Just say “switch to dark mode” or “remind me about cleanings” and I’ll adjust.',
+    highlight: "Just say 'switch to dark mode' or 'remind me about cleanings' and I will adjust.",
     examples: [
       'Change language to French',
       'Switch to dark mode',
@@ -70,7 +71,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     icon: Image,
     title: 'Share photos when needed',
     description: 'Upload dental photos or X-rays for faster triage and guidance.',
-    highlight: 'I’ll never share them without permission and I’ll use them only to assist you.',
+    highlight: "I will never share them without permission and I will use them only to assist you.",
     examples: [
       'Upload a photo',
       'Share my X-ray',
@@ -78,6 +79,8 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     ]
   }
 ];
+
+const TOUR_KEY = 'ai-chat-onboarding';
 
 export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDialogProps) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -88,18 +91,39 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
     }
   }, [isOpen]);
 
+  const markTourComplete = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      // Insert into database - ignore if already exists
+      await supabase.from('tour_completions').upsert({
+        user_id: user.id,
+        tour_key: TOUR_KEY,
+        completed_at: new Date().toISOString()
+      }, { onConflict: 'user_id,tour_key' });
+      
+      // Also set localStorage as fallback
+      localStorage.setItem('ai-chat-onboarding-seen', 'true');
+    } catch (error) {
+      console.error('Failed to save tour completion:', error);
+      // Fallback to localStorage if DB fails
+      localStorage.setItem('ai-chat-onboarding-seen', 'true');
+    }
+  };
+
   const handleNext = () => {
     if (currentStep < ONBOARDING_STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
       // Mark as seen and close
-      localStorage.setItem('ai-chat-onboarding-seen', 'true');
+      markTourComplete();
       onClose();
     }
   };
 
   const handleSkip = () => {
-    localStorage.setItem('ai-chat-onboarding-seen', 'true');
+    markTourComplete();
     onClose();
   };
 

@@ -157,12 +157,34 @@ export const InteractiveDentalChat = ({
       loadUserProfile();
       initializeChat();
 
-      const hasSeenOnboarding = localStorage.getItem("ai-chat-onboarding-seen");
-      if (!hasSeenOnboarding) {
+      // Check database first, then localStorage as fallback
+      const checkOnboardingStatus = async () => {
+        const hasSeenLocally = localStorage.getItem("ai-chat-onboarding-seen");
+        if (hasSeenLocally) return;
+        
+        try {
+          const { data } = await supabase
+            .from('tour_completions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('tour_key', 'ai-chat-onboarding')
+            .maybeSingle();
+          
+          if (data) {
+            // User completed tour before, sync localStorage
+            localStorage.setItem('ai-chat-onboarding-seen', 'true');
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to check tour status:', error);
+        }
+        
         // Show the guided AI introduction the first time users open the assistant
         const timeout = setTimeout(() => setShowOnboarding(true), 400);
         return () => clearTimeout(timeout);
-      }
+      };
+      
+      checkOnboardingStatus();
     } else {
       setShowConsentWidget(true);
     }
