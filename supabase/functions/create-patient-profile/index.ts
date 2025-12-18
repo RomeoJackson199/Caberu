@@ -101,6 +101,7 @@ serve(async (req) => {
         profileId = existingProfile.id;
       } else {
         // Create minimal placeholder profile that patient will claim
+        // Note: user_id is omitted - it will be set when patient claims via auth
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -109,8 +110,7 @@ serve(async (req) => {
             last_name: patientData.last_name || '',
             business_id: patientData.business_id,
             role: 'patient',
-            profile_completion_status: 'incomplete',
-            user_id: crypto.randomUUID() // Placeholder user_id - patient will claim via auth
+            profile_completion_status: 'incomplete'
           })
           .select('id')
           .single();
@@ -150,7 +150,7 @@ serve(async (req) => {
         if (updateError) throw updateError;
         profileId = existingProfile.id;
       } else {
-        // Create new profile with placeholder user_id
+        // Create new profile - user_id is omitted until patient claims via auth
         const { data: newProfile, error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -164,8 +164,7 @@ serve(async (req) => {
             emergency_contact: patientData.emergency_contact || null,
             business_id: patientData.business_id,
             role: 'patient',
-            profile_completion_status: 'incomplete',
-            user_id: crypto.randomUUID() // Placeholder - patient will claim via auth
+            profile_completion_status: 'incomplete'
           })
           .select('id')
           .single();
