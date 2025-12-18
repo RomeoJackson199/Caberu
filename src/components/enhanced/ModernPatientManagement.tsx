@@ -1730,10 +1730,10 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
                                   <Calendar className="h-4 w-4 text-indigo-600" />
                                 </div>
-                                <span className="font-semibold text-slate-800 text-sm">Upcoming</span>
+                                <span className="font-semibold text-slate-800 text-sm">{t.upcoming || 'Upcoming'}</span>
                               </div>
                               <Button variant="ghost" size="sm" className="h-7 text-xs text-indigo-600" onClick={() => setActiveTab('schedule')}>
-                                View All →
+                                {t.viewAll || 'View All'} →
                               </Button>
                             </div>
                             <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
@@ -1763,9 +1763,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               ) : (
                                 <div className="text-center py-6 text-slate-400">
                                   <Calendar className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-                                  <p className="text-xs">No upcoming appointments</p>
+                                  <p className="text-xs">{t.noUpcomingAppointments || 'No upcoming appointments'}</p>
                                   <Button variant="ghost" size="sm" className="mt-2 h-7 text-xs text-indigo-600" onClick={() => setBookingDialogOpen(true)}>
-                                    <Plus className="h-3 w-3 mr-1" /> Schedule Now
+                                    <Plus className="h-3 w-3 mr-1" /> {t.scheduleNow || 'Schedule Now'}
                                   </Button>
                                 </div>
                               )}
@@ -1781,7 +1781,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                                   <Clock className="h-4 w-4 text-emerald-600" />
                                 </div>
-                                <span className="font-semibold text-slate-800 text-sm">Recent Activity</span>
+                                <span className="font-semibold text-slate-800 text-sm">{t.recentActivity || 'Recent Activity'}</span>
                               </div>
                             </div>
                             <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
@@ -1802,7 +1802,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   return (
                                     <div className="text-center py-6 text-slate-400">
                                       <Clock className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-                                      <p className="text-xs">No recent activity</p>
+                                      <p className="text-xs">{t.noRecentActivity || 'No recent activity'}</p>
                                     </div>
                                   );
                                 }
@@ -1855,7 +1855,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               <AlertTriangle className="h-5 w-5 text-rose-600" />
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-semibold text-rose-800 mb-1">Medical Alert</h4>
+                              <h4 className="font-semibold text-rose-800 mb-1">{t.medicalAlert || 'Medical Alert'}</h4>
                               <p className="text-sm text-rose-700">{sanitizeText(selectedPatient.medical_history)}</p>
                             </div>
                           </div>
@@ -1873,8 +1873,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   <FileText className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
-                                  <h4 className="font-semibold text-slate-800">Patient Notes</h4>
-                                  <p className="text-xs text-slate-500">{patientNotes.length} total notes</p>
+                                  <h4 className="font-semibold text-slate-800">{t.patientNotes || 'Patient Notes'}</h4>
+                                  <p className="text-xs text-slate-500">{patientNotes.length} {t.totalNotes || 'total notes'}</p>
                                 </div>
                               </div>
                               {/* Category Filter Pills with counts */}

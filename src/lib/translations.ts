@@ -927,6 +927,11 @@ export interface Translations {
     balanceDue: string;
     addNote: string;
     treatmentPlan: string;
+    scheduleNow: string;
+    recentActivity: string;
+    noRecentActivity: string;
+    patientNotes: string;
+    totalNotes: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1856,6 +1861,11 @@ export const translations: Record<Language, TranslationEntry> = {
         balanceDue: "Balance Due",
         addNote: "Add Note",
         treatmentPlan: "Treatment Plan",
+        scheduleNow: "Schedule Now",
+        recentActivity: "Recent Activity",
+        noRecentActivity: "No recent activity",
+        patientNotes: "Patient Notes",
+        totalNotes: "total notes",
 
         // Common
         'common.cancel': "Cancel",
