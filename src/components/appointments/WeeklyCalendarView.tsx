@@ -32,6 +32,34 @@ const STATUS_COLORS: Record<string, string> = {
   "google-calendar": "bg-purple-100/80 dark:bg-purple-900/40 text-purple-900 dark:text-purple-100 border-l-4 border-l-purple-500",
 };
 
+// Visual block patterns for schedule indicators
+const BLOCK_STYLES: Record<string, { bg: string; pattern: string; label: string; icon: string }> = {
+  "break": {
+    bg: "bg-orange-100/60 dark:bg-orange-900/30",
+    pattern: "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(251,146,60,0.3)_5px,rgba(251,146,60,0.3)_10px)]",
+    label: "Break",
+    icon: "☕"
+  },
+  "sick-leave": {
+    bg: "bg-red-100/60 dark:bg-red-900/30",
+    pattern: "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(239,68,68,0.3)_5px,rgba(239,68,68,0.3)_10px)]",
+    label: "Sick Leave",
+    icon: "🏥"
+  },
+  "unavailable": {
+    bg: "bg-gray-200/60 dark:bg-gray-800/60",
+    pattern: "bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,rgba(156,163,175,0.2)_2px,rgba(156,163,175,0.2)_4px)]",
+    label: "Unavailable",
+    icon: "🚫"
+  },
+  "vacation": {
+    bg: "bg-teal-100/60 dark:bg-teal-900/30",
+    pattern: "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(20,184,166,0.3)_5px,rgba(20,184,166,0.3)_10px)]",
+    label: "Vacation",
+    icon: "🌴"
+  }
+};
+
 const HOUR_HEIGHT = 80; // Height of one hour in pixels
 const START_HOUR = 7; // Calendar starts at 7 AM
 const END_HOUR = 20; // Calendar ends at 8 PM
@@ -101,6 +129,127 @@ export function WeeklyCalendarView({
       return appointments;
     }
   });
+
+  // Fetch dentist availability for the week (break times, working hours, availability)
+  const { data: availability = [] } = useQuery({
+    queryKey: ["dentist-availability", dentistId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dentist_availability")
+        .select("*")
+        .eq("dentist_id", dentistId);
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch vacation/sick leave days for the current week
+  const { data: vacationDays = [] } = useQuery({
+    queryKey: ["dentist-vacation-days", dentistId, format(weekStart, "yyyy-MM-dd")],
+    queryFn: async () => {
+      const weekEnd = addDays(weekStart, 7);
+      const { data, error } = await supabase
+        .from("dentist_vacation_days")
+        .select("*")
+        .eq("dentist_id", dentistId)
+        .gte("end_date", format(weekStart, "yyyy-MM-dd"))
+        .lte("start_date", format(weekEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Get availability info for a specific day
+  const getDayAvailability = (day: Date) => {
+    const dayOfWeek = day.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    return availability.find((a: any) => a.day_of_week === dayOfWeek);
+  };
+
+  // Check if a day has vacation/leave
+  const getDayVacation = (day: Date) => {
+    const dateStr = format(day, "yyyy-MM-dd");
+    return vacationDays.find((v: any) =>
+      dateStr >= v.start_date && dateStr <= v.end_date
+    );
+  };
+
+  // Get scheduled blocks (breaks, unavailable time) for a day
+  const getScheduleBlocks = (day: Date) => {
+    const blocks: Array<{ type: string; startHour: number; endHour: number; label: string }> = [];
+
+    const dayAvail = getDayAvailability(day);
+    const vacation = getDayVacation(day);
+
+    // If there's vacation/sick leave for this day, mark entire day
+    if (vacation) {
+      const vacationType = vacation.vacation_type || 'vacation';
+      const blockType = vacationType === 'sick' ? 'sick-leave' : 'vacation';
+      blocks.push({
+        type: blockType,
+        startHour: START_HOUR,
+        endHour: END_HOUR,
+        label: vacation.reason || BLOCK_STYLES[blockType]?.label || 'Time Off'
+      });
+      return blocks;
+    }
+
+    if (!dayAvail) return blocks;
+
+    // If day is not available, mark as unavailable
+    if (!dayAvail.is_available) {
+      blocks.push({
+        type: 'unavailable',
+        startHour: START_HOUR,
+        endHour: END_HOUR,
+        label: 'Day Off'
+      });
+      return blocks;
+    }
+
+    // Add unavailable time before working hours
+    const workStartHour = parseTimeToHours(dayAvail.start_time);
+    const workEndHour = parseTimeToHours(dayAvail.end_time);
+
+    if (workStartHour > START_HOUR) {
+      blocks.push({
+        type: 'unavailable',
+        startHour: START_HOUR,
+        endHour: workStartHour,
+        label: 'Before Hours'
+      });
+    }
+
+    // Add break time if exists
+    if (dayAvail.break_start_time && dayAvail.break_end_time) {
+      const breakStart = parseTimeToHours(dayAvail.break_start_time);
+      const breakEnd = parseTimeToHours(dayAvail.break_end_time);
+      blocks.push({
+        type: 'break',
+        startHour: breakStart,
+        endHour: breakEnd,
+        label: 'Lunch Break'
+      });
+    }
+
+    // Add unavailable time after working hours
+    if (workEndHour < END_HOUR) {
+      blocks.push({
+        type: 'unavailable',
+        startHour: workEndHour,
+        endHour: END_HOUR,
+        label: 'After Hours'
+      });
+    }
+
+    return blocks;
+  };
+
+  // Helper to parse time string (HH:MM) to decimal hours
+  const parseTimeToHours = (timeStr: string): number => {
+    if (!timeStr) return 0;
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours + (minutes || 0) / 60;
+  };
 
   // Combine regular appointments with Google Calendar events
   const allEvents = useMemo(() => {
@@ -298,6 +447,43 @@ export function WeeklyCalendarView({
                         onClick={() => handleEmptySlotClick(day, START_HOUR + i)}
                       />
                     ))}
+
+                    {/* Schedule Blocks (breaks, unavailable, vacation) */}
+                    {getScheduleBlocks(day).map((block, blockIndex) => {
+                      const blockStyle = BLOCK_STYLES[block.type];
+                      const topOffset = (block.startHour - START_HOUR) * HOUR_HEIGHT;
+                      const height = (block.endHour - block.startHour) * HOUR_HEIGHT;
+
+                      return (
+                        <Tooltip key={`block-${blockIndex}`}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={cn(
+                                "absolute left-0 right-0 z-5 flex items-center justify-center border-y border-dashed pointer-events-none",
+                                blockStyle?.bg,
+                                blockStyle?.pattern,
+                                "border-gray-300 dark:border-gray-600"
+                              )}
+                              style={{
+                                top: `${Math.max(0, topOffset)}px`,
+                                height: `${Math.max(20, height)}px`,
+                              }}
+                            >
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/80 dark:bg-gray-900/80 shadow-sm">
+                                <span className="text-sm">{blockStyle?.icon}</span>
+                                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                  {block.label}
+                                </span>
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-medium">{blockStyle?.label}</p>
+                            <p className="text-xs text-muted-foreground">{block.label}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
 
                     {/* Events */}
                     {dayEvents.map((event) => {

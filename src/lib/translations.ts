@@ -879,6 +879,17 @@ export interface Translations {
     availabilitySaved: string;
     failedToSave: string;
 
+    // Schedule block labels
+    breakLabel: string;
+    sickLeaveLabel: string;
+    vacationLabel: string;
+    unavailableLabel: string;
+    dayOff: string;
+    beforeHours: string;
+    afterHours: string;
+    lunchBreak: string;
+    timeOff: string;
+
     // Common
     'common.cancel': string;
     'common.next': string;
@@ -1772,6 +1783,17 @@ export const translations: Record<Language, TranslationEntry> = {
         weekendsOnly: "Weekends Only (Sat-Sun)",
         availabilitySaved: "Availability settings saved successfully",
         failedToSave: "Failed to save availability settings",
+
+        // Schedule block labels
+        breakLabel: "Break",
+        sickLeaveLabel: "Sick Leave",
+        vacationLabel: "Vacation",
+        unavailableLabel: "Unavailable",
+        dayOff: "Day Off",
+        beforeHours: "Before Hours",
+        afterHours: "After Hours",
+        lunchBreak: "Lunch Break",
+        timeOff: "Time Off",
 
         // Common
         'common.cancel': "Cancel",
