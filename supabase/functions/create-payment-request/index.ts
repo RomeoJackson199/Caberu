@@ -84,8 +84,8 @@ serve(async (req) => {
         metadata: { patient_id: pr.patient_id, dentist_id: pr.dentist_id, payment_request_id, description: pr.description },
       });
 
-      // Update DB (adminClient)
-      await adminClient.from('payment_requests').update({ stripe_session_id: session.id }).eq('id', payment_request_id);
+      // Update DB (adminClient) - also reset status to pending so user can try again
+      await adminClient.from('payment_requests').update({ stripe_session_id: session.id, status: 'pending' }).eq('id', payment_request_id);
 
       return new Response(JSON.stringify({
         payment_url: session.url, session_id: session.id, message: "Payment link created successfully"
