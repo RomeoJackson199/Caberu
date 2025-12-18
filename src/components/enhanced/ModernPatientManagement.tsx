@@ -245,7 +245,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
+      
+      // First, get patients who have appointments with this dentist
+      let appointmentQuery = supabase
         .from('appointments')
         .select(`
           patient_id,
@@ -257,18 +259,40 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         .eq('dentist_id', dentistId);
 
       if (businessId) {
-        query = query.eq('business_id', businessId);
+        appointmentQuery = appointmentQuery.eq('business_id', businessId);
       }
 
-      const { data: appointmentData, error } = await query;
-      if (error) throw error;
+      const { data: appointmentData, error: appointmentError } = await appointmentQuery;
+      if (appointmentError) throw appointmentError;
 
-      const uniquePatients = appointmentData
+      const patientsFromAppointments = appointmentData
         .map(apt => Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles)
-        .filter((patient, index, self) =>
-          patient && self.findIndex(p => p?.id === patient.id) === index
-        )
         .filter(Boolean) as Patient[];
+
+      // Also get patients directly linked to the business (including those without appointments)
+      let allPatients = [...patientsFromAppointments];
+      
+      if (businessId) {
+        const { data: businessPatients, error: businessError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, phone, date_of_birth, address, medical_history, emergency_contact, profile_picture_url')
+          .eq('business_id', businessId)
+          .eq('role', 'patient');
+
+        if (!businessError && businessPatients) {
+          // Merge patients, avoiding duplicates
+          businessPatients.forEach(bp => {
+            if (!allPatients.some(p => p.id === bp.id)) {
+              allPatients.push(bp as Patient);
+            }
+          });
+        }
+      }
+
+      // Remove duplicates and filter nulls
+      const uniquePatients = allPatients.filter((patient, index, self) =>
+        patient && self.findIndex(p => p?.id === patient.id) === index
+      );
 
       setPatients(uniquePatients);
       if (uniquePatients.length > 0 && !selectedPatient) {
