@@ -191,7 +191,9 @@ export const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
 
       toast({
         title: 'Success',
-        description: `Appointment ${isEdit ? 'updated' : 'created'} successfully`,
+        description: isEdit 
+          ? 'Appointment updated successfully' 
+          : 'Appointment created! Confirmation email sent to patient.',
       });
       
       onSave();
