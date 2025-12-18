@@ -957,6 +957,12 @@ export interface Translations {
     compareImages: string;
     selectAnImage: string;
     selectImagesToCompare: string;
+    compare: string;
+    addNotesPlaceholder: string;
+    images: string;
+    add: string;
+    clickToAddImages: string;
+    noTreatmentPlanLinked: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1916,6 +1922,12 @@ export const translations: Record<Language, TranslationEntry> = {
         compareImages: "Compare Images",
         selectAnImage: "Select an image",
         selectImagesToCompare: "Select images to compare:",
+        compare: "Compare",
+        addNotesPlaceholder: "Add notes...",
+        images: "Images",
+        add: "Add",
+        clickToAddImages: "Click to add images",
+        noTreatmentPlanLinked: "No treatment plan linked",
 
         // Common
         'common.cancel': "Cancel",
@@ -2686,6 +2698,12 @@ export const translations: Record<Language, TranslationEntry> = {
         compareImages: "Comparer les Images",
         selectAnImage: "Sélectionnez une image",
         selectImagesToCompare: "Sélectionnez les images à comparer :",
+        compare: "Comparer",
+        addNotesPlaceholder: "Ajouter des notes...",
+        images: "Images",
+        add: "Ajouter",
+        clickToAddImages: "Cliquez pour ajouter des images",
+        noTreatmentPlanLinked: "Aucun plan de traitement lié",
 
         // Settings pages extended
         approveNewPatientRequests: "Approuver les demandes de nouveaux patients pour éviter les doubles réservations.",

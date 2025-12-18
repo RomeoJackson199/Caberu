@@ -2358,7 +2358,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                       className="border-slate-200 hover:border-indigo-400 hover:bg-indigo-50"
                                     >
                                       <ImageIcon className="h-4 w-4 mr-2 text-indigo-600" />
-                                      Compare
+                                      {t.compare || 'Compare'}
                                     </Button>
                                   </div>
                                 </div>
@@ -2367,11 +2367,11 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="grid grid-cols-2 gap-5">
                                   {/* Notes */}
                                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Notes</h3>
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">{t.notes || 'Notes'}</h3>
                                     <textarea
                                       value={selectedAppointment.notes || ''}
                                       onChange={(e) => setSelectedAppointment({ ...selectedAppointment, notes: e.target.value })}
-                                      placeholder="Add notes..."
+                                      placeholder={t.addNotesPlaceholder || 'Add notes...'}
                                       className="w-full min-h-[140px] text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border-0 resize-none focus:ring-2 focus:ring-indigo-200 focus:bg-white transition-all"
                                     />
                                   </div>
@@ -2379,7 +2379,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   {/* Images */}
                                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                                     <div className="flex items-center justify-between mb-3">
-                                      <h3 className="text-sm font-semibold text-slate-700">Images</h3>
+                                      <h3 className="text-sm font-semibold text-slate-700">{t.images || 'Images'}</h3>
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -2387,7 +2387,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                         className="h-7 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
                                       >
                                         <Plus className="h-3.5 w-3.5 mr-1" />
-                                        Add
+                                        {t.add || 'Add'}
                                       </Button>
                                     </div>
                                     {appointmentImages.files.length > 0 ? (
@@ -2421,7 +2421,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                         className="w-full py-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all flex flex-col items-center gap-2"
                                       >
                                         <Camera className="h-8 w-8 text-slate-300" />
-                                        <span className="text-sm text-slate-400">Click to add images</span>
+                                        <span className="text-sm text-slate-400">{t.clickToAddImages || 'Click to add images'}</span>
                                       </button>
                                     )}
                                   </div>
@@ -2431,13 +2431,13 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="grid grid-cols-2 gap-5">
                                   {/* Treatment Plan */}
                                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Treatment Plan</h3>
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">{t.treatmentPlan || 'Treatment Plan'}</h3>
                                     <select
                                       value={selectedAppointment.treatment_plan_id || ''}
                                       onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
                                       className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
                                     >
-                                      <option value="">No treatment plan linked</option>
+                                      <option value="">{t.noTreatmentPlanLinked || 'No treatment plan linked'}</option>
                                       {treatmentPlans.map(plan => (
                                         <option key={plan.id} value={plan.id}>{plan.title}</option>
                                       ))}
@@ -2446,7 +2446,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
                                   {/* Amount */}
                                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Amount Due</h3>
+                                    <h3 className="text-sm font-semibold text-slate-700 mb-3">{t.amountDue || 'Amount Due'}</h3>
                                     <div className="flex items-center gap-2">
                                       <span className="text-xl font-medium text-slate-400">€</span>
                                       <Input
