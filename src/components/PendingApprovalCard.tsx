@@ -38,7 +38,6 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
   const [pendingAppointments, setPendingAppointments] = useState<PendingAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [requiresApproval, setRequiresApproval] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -131,7 +130,25 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
   };
 
   const handleApprove = async (appointmentId: string) => {
-    setActionLoading(appointmentId);
+    const appointmentToApprove = pendingAppointments.find(apt => apt.id === appointmentId);
+    const previousAppointments = [...pendingAppointments];
+    
+    // Optimistic UI - remove immediately
+    setPendingAppointments(prev => {
+      const newList = prev.filter(apt => apt.id !== appointmentId);
+      if (currentIndex >= newList.length && newList.length > 0) {
+        setCurrentIndex(newList.length - 1);
+      }
+      return newList;
+    });
+    
+    toast({
+      title: "Confirming...",
+      description: appointmentToApprove 
+        ? `Approving appointment for ${getPatientName(appointmentToApprove)}`
+        : "Approving appointment",
+    });
+
     try {
       const { error } = await supabase
         .from('appointments')
@@ -140,34 +157,45 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
       if (error) throw error;
 
-      // Send approval email
-      await sendDecisionEmail(appointmentId, 'approved');
+      // Send approval email (don't await to keep UI snappy)
+      sendDecisionEmail(appointmentId, 'approved');
 
-      setPendingAppointments(prev => {
-        const newList = prev.filter(apt => apt.id !== appointmentId);
-        if (currentIndex >= newList.length && newList.length > 0) {
-          setCurrentIndex(newList.length - 1);
-        }
-        return newList;
-      });
       toast({
         title: "Success",
         description: "Appointment confirmed and patient notified",
       });
       onAction?.();
     } catch (error) {
+      // Rollback on error
+      setPendingAppointments(previousAppointments);
       toast({
         title: "Error",
         description: "Failed to confirm appointment",
         variant: "destructive",
       });
-    } finally {
-      setActionLoading(null);
     }
   };
 
   const handleDecline = async (appointmentId: string) => {
-    setActionLoading(appointmentId);
+    const appointmentToDecline = pendingAppointments.find(apt => apt.id === appointmentId);
+    const previousAppointments = [...pendingAppointments];
+    
+    // Optimistic UI - remove immediately
+    setPendingAppointments(prev => {
+      const newList = prev.filter(apt => apt.id !== appointmentId);
+      if (currentIndex >= newList.length && newList.length > 0) {
+        setCurrentIndex(newList.length - 1);
+      }
+      return newList;
+    });
+    
+    toast({
+      title: "Declining...",
+      description: appointmentToDecline 
+        ? `Declining appointment for ${getPatientName(appointmentToDecline)}`
+        : "Declining appointment",
+    });
+
     try {
       const { error } = await supabase
         .from('appointments')
@@ -176,29 +204,22 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
       if (error) throw error;
 
-      // Send decline email
-      await sendDecisionEmail(appointmentId, 'declined');
+      // Send decline email (don't await to keep UI snappy)
+      sendDecisionEmail(appointmentId, 'declined');
 
-      setPendingAppointments(prev => {
-        const newList = prev.filter(apt => apt.id !== appointmentId);
-        if (currentIndex >= newList.length && newList.length > 0) {
-          setCurrentIndex(newList.length - 1);
-        }
-        return newList;
-      });
       toast({
         title: "Success",
         description: "Appointment declined and patient notified",
       });
       onAction?.();
     } catch (error) {
+      // Rollback on error
+      setPendingAppointments(previousAppointments);
       toast({
         title: "Error",
         description: "Failed to decline appointment",
         variant: "destructive",
       });
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -290,7 +311,6 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
                   variant="outline"
                   className="h-8 px-3 text-xs flex-1 bg-success/10 text-success border-success/20 hover:bg-success/20"
                   onClick={() => handleApprove(currentAppointment.id)}
-                  disabled={actionLoading === currentAppointment.id}
                 >
                   <CheckCircle className="h-3 w-3 mr-1" />
                   {t.confirm || "Approve"}
@@ -300,7 +320,6 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
                   variant="outline"
                   className="h-8 px-3 text-xs flex-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                   onClick={() => handleDecline(currentAppointment.id)}
-                  disabled={actionLoading === currentAppointment.id}
                 >
                   <XCircle className="h-3 w-3 mr-1" />
                   {t.cancel || "Decline"}
