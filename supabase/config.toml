@@ -110,3 +110,9 @@ verify_jwt = false
 
 [functions.create-patient-profile]
 verify_jwt = true
+
+[functions.cancel-vacation-appointments]
+verify_jwt = true
+
+[functions.message-notification-check]
+verify_jwt = false
