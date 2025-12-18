@@ -906,6 +906,27 @@ export interface Translations {
     // Next Appointment Widget
     viewDetails: string;
     complete: string;
+
+    // Patient Management Page (new keys only)
+    searchNotesAppointments: string;
+    timeline: string;
+    select: string;
+    delete: string;
+    patientScore: string;
+    appointmentAttendance: string;
+    noBalance: string;
+    outstandingBalance: string;
+    needsFollowup: string;
+    treatmentProgress: string;
+    noActiveTreatmentPlans: string;
+    createPlan: string;
+    totalVisits: string;
+    lastVisit: string;
+    never: string;
+    daysAgo: string;
+    balanceDue: string;
+    addNote: string;
+    treatmentPlan: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1814,6 +1835,27 @@ export const translations: Record<Language, TranslationEntry> = {
         // Next Appointment Widget
         viewDetails: "View Details",
         complete: "Complete",
+
+        // Patient Management Page (new keys)
+        searchNotesAppointments: "Search notes, appointments, treatments...",
+        timeline: "Timeline",
+        select: "Select",
+        delete: "Delete",
+        patientScore: "Patient Score",
+        appointmentAttendance: "Appointment Attendance",
+        noBalance: "No Balance",
+        outstandingBalance: "Outstanding Balance",
+        needsFollowup: "Needs Followup",
+        treatmentProgress: "Treatment Progress",
+        noActiveTreatmentPlans: "No active treatment plans",
+        createPlan: "Create Plan",
+        totalVisits: "Total Visits",
+        lastVisit: "Last Visit",
+        never: "Never",
+        daysAgo: "days ago",
+        balanceDue: "Balance Due",
+        addNote: "Add Note",
+        treatmentPlan: "Treatment Plan",
 
         // Common
         'common.cancel': "Cancel",

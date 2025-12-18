@@ -245,7 +245,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // First, get patients who have appointments with this dentist
       let appointmentQuery = supabase
         .from('appointments')
@@ -271,7 +271,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
       // Also get patients directly linked to the business (including those without appointments)
       let allPatients = [...patientsFromAppointments];
-      
+
       if (businessId) {
         const { data: businessPatients, error: businessError } = await supabase
           .from('profiles')
@@ -1089,7 +1089,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             {selectedPatient.first_name} {selectedPatient.last_name}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {getAge(selectedPatient.date_of_birth)} Years
+                            {getAge(selectedPatient.date_of_birth)} {t.years || 'Years'}
                           </p>
                         </div>
                         <ChevronDown className="h-4 w-4 text-slate-400 ml-2" />
@@ -1135,7 +1135,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               {patient.first_name} {patient.last_name}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {getAge(patient.date_of_birth)} years old
+                              {getAge(patient.date_of_birth)} {t.yearsOld || 'years old'}
                             </p>
                           </div>
                           {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
@@ -1169,7 +1169,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               {patientFlags[selectedPatient?.id || '']?.hasUnpaidBalance && (
                 <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
                   <CreditCard className="h-3 w-3 mr-1" />
-                  Unpaid Balance
+                  {t.unpaidBalance || 'Unpaid Balance'}
                 </Badge>
               )}
             </div>
@@ -1177,7 +1177,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
             <div className="flex items-center gap-4">
               {patientFlags[selectedPatient?.id || '']?.outstandingCents ? (
                 <div className="text-right">
-                  <p className="text-xs text-slate-500">BALANCE</p>
+                  <p className="text-xs text-slate-500">{t.balance || 'BALANCE'}</p>
                   <p className="text-lg font-bold text-slate-800">
                     €{((patientFlags[selectedPatient?.id || '']?.outstandingCents || 0) / 100).toFixed(2)}
                   </p>
@@ -1222,7 +1222,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Search notes, appointments, treatments..."
+                  placeholder={t.searchNotesAppointments || "Search notes, appointments, treatments..."}
                   value={globalSearchTerm}
                   onChange={(e) => setGlobalSearchTerm(e.target.value)}
                   className="pl-10"
@@ -1235,7 +1235,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 className={timelineView ? "bg-indigo-600 hover:bg-indigo-700" : ""}
               >
                 <Clock className="h-4 w-4 mr-2" />
-                Timeline
+                {t.timeline || 'Timeline'}
               </Button>
               <Button
                 variant={bulkSelectMode ? "default" : "outline"}
@@ -1244,12 +1244,12 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                 className={bulkSelectMode ? "bg-indigo-600 hover:bg-indigo-700" : ""}
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                Select
+                {t.select || 'Select'}
               </Button>
               {bulkSelectMode && selectedItems.size > 0 && (
                 <Button variant="destructive" size="sm" onClick={bulkDelete}>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete ({selectedItems.size})
+                  {t.delete || 'Delete'} ({selectedItems.size})
                 </Button>
               )}
             </div>
@@ -1262,7 +1262,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
             <div className="flex-1 flex items-center justify-center text-slate-400 h-full">
               <div className="text-center">
                 <User className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium">No patients yet</p>
+                <p className="text-lg font-medium">{t.noPatientsYet || 'No patients yet'}</p>
               </div>
             </div>
           ) : (
@@ -1355,7 +1355,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
                                       {selectedPatient.date_of_birth && (
                                         <>
-                                          <span>{getAge(selectedPatient.date_of_birth)} years old</span>
+                                          <span>{getAge(selectedPatient.date_of_birth)} {t.yearsOld || 'years old'}</span>
                                           <span className="text-slate-300">•</span>
                                         </>
                                       )}
@@ -1403,7 +1403,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
                                   <Zap className="h-4 w-4 text-white" />
                                 </div>
-                                <span className="font-medium text-slate-700 text-sm">Patient Score</span>
+                                <span className="font-medium text-slate-700 text-sm">{t.patientScore || 'Patient Score'}</span>
                               </div>
                               <div className="text-2xl font-bold text-emerald-600">
                                 {(() => {
@@ -1432,7 +1432,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             {/* Score breakdown */}
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-500">Appointment Attendance</span>
+                                <span className="text-slate-500">{t.appointmentAttendance || 'Appointment Attendance'}</span>
                                 <span className="text-slate-700 font-medium">
                                   {appointments.filter(a => a.status === 'completed').length}/{appointments.length}
                                 </span>
@@ -1450,11 +1450,11 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               <div className="flex gap-2 mt-2">
                                 {(patientFlags[selectedPatient.id]?.outstandingCents || 0) === 0 ? (
                                   <Badge className="bg-emerald-50 text-emerald-600 text-[10px]">
-                                    <Check className="h-2.5 w-2.5 mr-1" /> No Balance
+                                    <Check className="h-2.5 w-2.5 mr-1" /> {t.noBalance || 'No Balance'}
                                   </Badge>
                                 ) : (
                                   <Badge className="bg-amber-50 text-amber-600 text-[10px]">
-                                    Outstanding Balance
+                                    {t.outstandingBalance || 'Outstanding Balance'}
                                   </Badge>
                                 )}
                                 {appointments.some(a => {
@@ -1464,11 +1464,11 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   return aptDate > sixMonthsAgo && a.status === 'completed';
                                 }) ? (
                                   <Badge className="bg-blue-50 text-blue-600 text-[10px]">
-                                    <Check className="h-2.5 w-2.5 mr-1" /> Active
+                                    <Check className="h-2.5 w-2.5 mr-1" /> {t.active || 'Active'}
                                   </Badge>
                                 ) : (
                                   <Badge className="bg-slate-100 text-slate-500 text-[10px]">
-                                    Needs Followup
+                                    {t.needsFollowup || 'Needs Followup'}
                                   </Badge>
                                 )}
                               </div>
@@ -1484,7 +1484,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center">
                                   <ClipboardList className="h-4 w-4 text-white" />
                                 </div>
-                                <span className="font-medium text-slate-700 text-sm">Treatment Progress</span>
+                                <span className="font-medium text-slate-700 text-sm">{t.treatmentProgress || 'Treatment Progress'}</span>
                               </div>
                               <Button
                                 variant="ghost"
@@ -1492,7 +1492,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 className="h-7 text-xs text-violet-600"
                                 onClick={() => setActiveTab('clinical')}
                               >
-                                View All →
+                                {t.viewAll || 'View All'} →
                               </Button>
                             </div>
                             {treatmentPlans.length > 0 ? (
@@ -1534,14 +1534,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             ) : (
                               <div className="text-center py-4">
                                 <ClipboardList className="h-8 w-8 mx-auto text-slate-300 mb-2" />
-                                <p className="text-xs text-slate-400">No active treatment plans</p>
+                                <p className="text-xs text-slate-400">{t.noActiveTreatmentPlans || 'No active treatment plans'}</p>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   className="mt-2 h-7 text-xs text-violet-600"
                                   onClick={() => setNewTreatmentPlanOpen(true)}
                                 >
-                                  <Plus className="h-3 w-3 mr-1" /> Create Plan
+                                  <Plus className="h-3 w-3 mr-1" /> {t.createPlan || 'Create Plan'}
                                 </Button>
                               </div>
                             )}
@@ -1565,7 +1565,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               {patientFlags[selectedPatient.id]?.totalAppointments || 0}
                             </span>
                           </div>
-                          <p className="text-xs font-medium text-slate-500 mb-2">Total Visits</p>
+                          <p className="text-xs font-medium text-slate-500 mb-2">{t.totalVisits || 'Total Visits'}</p>
                           {/* Mini bar showing visit distribution */}
                           <div className="flex gap-0.5">
                             {[...Array(Math.min(patientFlags[selectedPatient.id]?.totalAppointments || 0, 10))].map((_, i) => (
@@ -1592,7 +1592,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 : 0}%
                             </span>
                           </div>
-                          <p className="text-xs font-medium text-slate-500 mb-2">Completion Rate</p>
+                          <p className="text-xs font-medium text-slate-500 mb-2">{t.completionRate || 'Completion Rate'}</p>
                           {/* Progress bar */}
                           <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                             <div
@@ -1615,14 +1615,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               <span className="text-sm font-bold text-slate-700 block">
                                 {patientFlags[selectedPatient.id]?.lastVisitDate
                                   ? format(new Date(patientFlags[selectedPatient.id].lastVisitDate!), 'MMM d')
-                                  : 'Never'}
+                                  : (t.never || 'Never')}
                               </span>
                             </div>
                           </div>
-                          <p className="text-xs font-medium text-slate-500 mb-1">Last Visit</p>
+                          <p className="text-xs font-medium text-slate-500 mb-1">{t.lastVisit || 'Last Visit'}</p>
                           {patientFlags[selectedPatient.id]?.lastVisitDate && (
                             <p className="text-[10px] text-slate-400">
-                              {Math.floor((Date.now() - new Date(patientFlags[selectedPatient.id].lastVisitDate!).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                              {Math.floor((Date.now() - new Date(patientFlags[selectedPatient.id].lastVisitDate!).getTime()) / (1000 * 60 * 60 * 24))} {t.daysAgo || 'days ago'}
                             </p>
                           )}
                         </motion.div>
@@ -1658,10 +1658,10 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <p className="text-xs font-medium text-slate-500">Balance Due</p>
+                            <p className="text-xs font-medium text-slate-500">{t.balanceDue || 'Balance Due'}</p>
                             {(patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 && (
                               <span className="text-[10px] bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded-full font-medium">
-                                Pay Now →
+                                {t.payNow || 'Pay Now'} →
                               </span>
                             )}
                           </div>
@@ -1670,7 +1670,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
                       {/* Quick Actions Bar - Streamlined one-click actions */}
                       <div className="bg-gradient-to-r from-slate-50 to-white rounded-2xl p-4 border border-slate-100">
-                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Quick Actions</p>
+                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">{t.quickActions || 'Quick Actions'}</p>
                         <div className="flex flex-wrap gap-2">
                           <Button
                             variant="outline"
@@ -1679,7 +1679,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             onClick={() => setBookingDialogOpen(true)}
                           >
                             <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                            Book Appointment
+                            {t.bookAppointment || 'Book Appointment'}
                           </Button>
                           <Button
                             variant="outline"
@@ -1688,7 +1688,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             onClick={() => document.getElementById('quick-note-input')?.focus()}
                           >
                             <Edit2 className="h-3.5 w-3.5 mr-1.5" />
-                            Add Note
+                            {t.addNote || 'Add Note'}
                           </Button>
                           <Button
                             variant="outline"
@@ -1697,7 +1697,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             onClick={() => setActiveTab('clinical')}
                           >
                             <ClipboardList className="h-3.5 w-3.5 mr-1.5" />
-                            Treatment Plan
+                            {t.treatmentPlan || 'Treatment Plan'}
                           </Button>
                           <Button
                             variant="outline"
@@ -1706,7 +1706,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             onClick={() => setActiveTab('financial')}
                           >
                             <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                            Create Payment
+                            {t.createPayment || 'Create Payment'}
                           </Button>
                           <Button
                             variant="outline"
@@ -1715,7 +1715,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             onClick={exportPatientPDF}
                           >
                             <Download className="h-3.5 w-3.5 mr-1.5" />
-                            Export PDF
+                            {t.exportPdf || 'Export PDF'}
                           </Button>
                         </div>
                       </div>
