@@ -966,6 +966,27 @@ export interface Translations {
     noDescription: string;
     linkedAppointments: string;
     appointmentsForThisTreatment: string;
+    // Payment Request Manager
+    paymentRequests: string;
+    manageTrackPayments: string;
+    newPayment: string;
+    loadingPaymentRequests: string;
+    sendReminders: string;
+    markPaid: string;
+    exportCSV: string;
+    searchDescription: string;
+    allStatuses: string;
+    patientEmail: string;
+    anyCreator: string;
+    createdByMe: string;
+    minAmount: string;
+    maxAmount: string;
+    noPaymentRequestsYet: string;
+    createFirstPaymentRequest: string;
+    createPaymentRequest: string;
+    remindPatient: string;
+    reminderSent: string;
+    failedToSendReminder: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1935,6 +1956,28 @@ export const translations: Record<Language, TranslationEntry> = {
         linkedAppointments: "Linked Appointments",
         appointmentsForThisTreatment: "Appointments for this Treatment",
 
+        // Payment Request Manager
+        paymentRequests: "Payment Requests",
+        manageTrackPayments: "Manage and track patient payment requests",
+        newPayment: "New Payment",
+        loadingPaymentRequests: "Loading payment requests...",
+        sendReminders: "Send reminders",
+        markPaid: "Mark paid",
+        exportCSV: "Export CSV",
+        searchDescription: "Search description",
+        allStatuses: "All statuses",
+        patientEmail: "Patient email",
+        anyCreator: "Any creator",
+        createdByMe: "Created by me",
+        minAmount: "Min €",
+        maxAmount: "Max €",
+        noPaymentRequestsYet: "No payment requests yet",
+        createFirstPaymentRequest: "Create your first payment request to get started",
+        createPaymentRequest: "Create Payment Request",
+        remindPatient: "Remind Patient",
+        reminderSent: "Reminder sent to patient",
+        failedToSendReminder: "Failed to send reminder",
+
         // Common
         'common.cancel': "Cancel",
         'common.next': "Next",
@@ -2714,6 +2757,28 @@ export const translations: Record<Language, TranslationEntry> = {
         linkedAppointments: "Rendez-vous liés",
         appointmentsForThisTreatment: "Rendez-vous pour ce traitement",
 
+
+        // Payment Request Manager
+        paymentRequests: "Demandes de paiement",
+        manageTrackPayments: "Gérer et suivre les demandes de paiement des patients",
+        newPayment: "Nouveau paiement",
+        loadingPaymentRequests: "Chargement des demandes de paiement...",
+        sendReminders: "Envoyer des rappels",
+        markPaid: "Marquer payé",
+        exportCSV: "Exporter CSV",
+        searchDescription: "Rechercher description",
+        allStatuses: "Tous les statuts",
+        patientEmail: "Email du patient",
+        anyCreator: "Créateur quelconque",
+        createdByMe: "Créé par moi",
+        minAmount: "Min €",
+        maxAmount: "Max €",
+        noPaymentRequestsYet: "Aucune demande de paiement",
+        createFirstPaymentRequest: "Créez votre première demande de paiement pour commencer",
+        createPaymentRequest: "Créer une demande de paiement",
+        remindPatient: "Rappeler le patient",
+        reminderSent: "Rappel envoyé au patient",
+        failedToSendReminder: "Échec de l'envoi du rappel",
         // Settings pages extended
         approveNewPatientRequests: "Approuver les demandes de nouveaux patients pour éviter les doubles réservations.",
         manualReviewRequired: "Révision manuelle requise",

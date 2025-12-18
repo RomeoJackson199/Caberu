@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, DollarSign, Clock, CheckCircle, XCircle, Search, Filter, MoreHorizontal, Send, FileDown, Check, Edit } from 'lucide-react';
 import { PaymentRequestForm } from '@/components/PaymentRequestForm';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import PaymentWizard from '@/components/payments/PaymentWizard';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -36,6 +37,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
   const [showWizard, setShowWizard] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -241,7 +243,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-center">Loading payment requests...</div>
+          <div className="text-center">{t.loadingPaymentRequests || 'Loading payment requests...'}</div>
         </CardContent>
       </Card>
     );
@@ -251,21 +253,21 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-dental-primary mb-2">Payment Requests</h2>
-          <p className="text-sm sm:text-base text-dental-text/70">Manage and track patient payment requests</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-dental-primary mb-2">{t.paymentRequests || 'Payment Requests'}</h2>
+          <p className="text-sm sm:text-base text-dental-text/70">{t.manageTrackPayments || 'Manage and track patient payment requests'}</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowWizard(true)} size="lg" className="h-12 px-6 rounded-xl bg-gradient-to-r from-dental-accent to-dental-accent/80 hover:from-dental-accent/90 hover:to-dental-accent/70 text-white font-semibold shadow-lg hover:shadow-xl transition-all">
-            <Plus className="h-5 w-5 mr-2" /> New Payment
+            <Plus className="h-5 w-5 mr-2" />{t.newPayment || 'New Payment'}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="lg" className="h-12"><MoreHorizontal className="h-5 w-5" /></Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={sendReminders}><Send className="h-4 w-4 mr-2" />Send reminders</DropdownMenuItem>
-              <DropdownMenuItem onClick={markPaid}><Check className="h-4 w-4 mr-2" />Mark paid</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportCsv}><FileDown className="h-4 w-4 mr-2" />Export CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={sendReminders}><Send className="h-4 w-4 mr-2" />{t.sendReminders || 'Send reminders'}</DropdownMenuItem>
+              <DropdownMenuItem onClick={markPaid}><Check className="h-4 w-4 mr-2" />{t.markPaid || 'Mark paid'}</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportCsv}><FileDown className="h-4 w-4 mr-2" />{t.exportCSV || 'Export CSV'}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -275,24 +277,24 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
       <div className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row gap-3 items-center">
           <div className="relative w-full sm:w-64">
-            <Input placeholder="Search description" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <Input placeholder={t.searchDescription || 'Search description'} value={query} onChange={(e) => setQuery(e.target.value)} />
             <Search className="h-4 w-4 absolute right-2 top-3 text-muted-foreground" />
           </div>
           <select className="border rounded-md p-2" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">All statuses</option>
+            <option value="">{t.allStatuses || 'All statuses'}</option>
             {['draft', 'sent', 'pending', 'paid', 'overdue', 'failed', 'cancelled'].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <div className="relative w-full sm:w-64">
-            <Input placeholder="Patient email" value={patientTerm} onChange={(e) => setPatientTerm(e.target.value)} />
+            <Input placeholder={t.patientEmail || 'Patient email'} value={patientTerm} onChange={(e) => setPatientTerm(e.target.value)} />
           </div>
           <select className="border rounded-md p-2" value={creatorScope} onChange={(e) => setCreatorScope(e.target.value as any)}>
-            <option value="any">Any creator</option>
-            <option value="me">Created by me</option>
+            <option value="any">{t.anyCreator || 'Any creator'}</option>
+            <option value="me">{t.createdByMe || 'Created by me'}</option>
           </select>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <Input className="w-full sm:w-40" placeholder="Min €" type="number" min={0} step="0.01" value={amountMin} onChange={(e) => setAmountMin(e.target.value)} />
-          <Input className="w-full sm:w-40" placeholder="Max €" type="number" min={0} step="0.01" value={amountMax} onChange={(e) => setAmountMax(e.target.value)} />
+          <Input className="w-full sm:w-40" placeholder={t.minAmount || 'Min €'} type="number" min={0} step="0.01" value={amountMin} onChange={(e) => setAmountMin(e.target.value)} />
+          <Input className="w-full sm:w-40" placeholder={t.maxAmount || 'Max €'} type="number" min={0} step="0.01" value={amountMax} onChange={(e) => setAmountMax(e.target.value)} />
           <Input className="w-full sm:w-48" type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} />
           <Input className="w-full sm:w-48" type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} />
         </div>
@@ -319,14 +321,14 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
           <Card className="bg-gradient-to-br from-dental-primary/5 to-dental-accent/5 border-dental-primary/20">
             <CardContent className="p-8 sm:p-12 text-center">
               <DollarSign className="h-12 sm:h-16 w-12 sm:w-16 mx-auto text-dental-primary/30 mb-6" />
-              <h3 className="text-lg sm:text-xl font-semibold text-dental-primary mb-2">No payment requests yet</h3>
-              <p className="text-sm sm:text-base text-dental-text/60 mb-6">Create your first payment request to get started</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-dental-primary mb-2">{t.noPaymentRequestsYet || 'No payment requests yet'}</h3>
+              <p className="text-sm sm:text-base text-dental-text/60 mb-6">{t.createFirstPaymentRequest || 'Create your first payment request to get started'}</p>
               <Button
                 onClick={() => setShowForm(true)}
                 size="lg"
                 className="h-12 px-6 rounded-xl bg-gradient-to-r from-dental-accent to-dental-accent/80 hover:from-dental-accent/90 hover:to-dental-accent/70 text-white font-semibold"
               >
-                Create Payment Request
+                {t.createPaymentRequest || 'Create Payment Request'}
               </Button>
             </CardContent>
           </Card>
@@ -348,7 +350,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                       </p>
                       <p className="text-xs text-dental-text/50 flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
-                        Created {new Date(request.created_at).toLocaleDateString()}
+                        {t.created || 'Created'} {new Date(request.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -373,10 +375,10 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                         <Button variant="outline" size="sm" onClick={() => {
                           setEditingRequest(request);
                           setEditForm({ amount: (request.amount / 100).toFixed(2), description: request.description });
-                        }}><Edit className="h-4 w-4 mr-1" />Edit</Button>
+                        }}><Edit className="h-4 w-4 mr-1" />{t.edit || 'Edit'}</Button>
                         <Button variant="outline" size="sm" onClick={() => {
-                          supabase.functions.invoke('send-payment-reminder', { body: { payment_request_ids: [request.id], template_key: 'friendly' } }).then(() => toast({ title: 'Reminder sent to patient' })).catch(() => toast({ title: 'Error', description: 'Failed to send reminder', variant: 'destructive' }));
-                        }}><Send className="h-4 w-4 mr-1" />Remind Patient</Button>
+                          supabase.functions.invoke('send-payment-reminder', { body: { payment_request_ids: [request.id], template_key: 'friendly' } }).then(() => toast({ title: t.reminderSent || 'Reminder sent to patient' })).catch(() => toast({ title: t.error || 'Error', description: t.failedToSendReminder || 'Failed to send reminder', variant: 'destructive' }));
+                        }}><Send className="h-4 w-4 mr-1" />{t.remindPatient || 'Remind Patient'}</Button>
                         <Button variant="outline" size="sm" onClick={() => {
                           (async () => {
                             try {
@@ -388,7 +390,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                               toast({ title: 'Error', description: 'Failed to cancel', variant: 'destructive' });
                             }
                           })();
-                        }}>Cancel</Button>
+                        }}>{t.cancel || 'Cancel'}</Button>
                       </div>
                     </div>
                   </div>
