@@ -10,11 +10,11 @@ import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { AppointmentDetailsDialog } from "@/components/AppointmentDetailsDialog";
 import {
-  Calendar, 
-  Clock, 
-  User, 
-  Phone, 
-  Mail, 
+  Calendar,
+  Clock,
+  User,
+  Phone,
+  Mail,
   AlertTriangle,
   MapPin,
   FileText,
@@ -24,9 +24,10 @@ import {
 import { format } from "date-fns";
 import { utcToClinicTime, formatClinicTime } from "@/lib/timezone";
 import { logger } from '@/lib/logger';
-import { 
-  getStatusClasses, 
-  getUrgencyClasses, 
+import { useLanguage } from "@/hooks/useLanguage";
+import {
+  getStatusClasses,
+  getUrgencyClasses,
   canCompleteAppointment,
   formatAppointmentDate,
   getAppointmentDate
@@ -61,6 +62,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const { toast } = useToast();
   const { businessId } = useBusinessContext();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchNextAppointment = async () => {
@@ -69,7 +71,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
           setLoading(false);
           return;
         }
-        
+
         const { data, error } = await supabase
           .from('appointments')
           .select(`
@@ -144,7 +146,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
   const handleCompletionSuccess = async () => {
     // Refresh the appointment data to get the next one
     if (!businessId) return;
-    
+
     const { data } = await supabase
       .from('appointments')
       .select(`
@@ -185,7 +187,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-dental-primary" />
-            Next Appointment
+            {t.nextAppointment || 'Next Appointment'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -205,13 +207,13 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-dental-primary" />
-            Next Appointment
+            {t.nextAppointment || 'Next Appointment'}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6">
             <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No upcoming appointments</p>
+            <p className="text-muted-foreground">{t.noUpcomingAppointments || 'No upcoming appointments'}</p>
           </div>
         </CardContent>
       </Card>
@@ -219,7 +221,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
   }
 
   const appointmentDate = getAppointmentDate(nextAppointment.appointment_date);
-  const patientName = nextAppointment.profiles?.first_name && nextAppointment.profiles?.last_name 
+  const patientName = nextAppointment.profiles?.first_name && nextAppointment.profiles?.last_name
     ? `${nextAppointment.profiles.first_name} ${nextAppointment.profiles.last_name}`
     : nextAppointment.patient_name || 'Unknown Patient';
 
@@ -229,7 +231,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-dental-primary flex-shrink-0" />
-            Next Appointment
+            {t.nextAppointment || 'Next Appointment'}
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
             <Badge className={`${getStatusClasses(nextAppointment.status)} text-xs`}>
@@ -279,7 +281,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
               {format(appointmentDate, 'MMM dd, yyyy')}
             </span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
             <span className="text-xs sm:text-sm">
@@ -298,7 +300,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
           <div className="flex items-start gap-2">
             <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium">Reason</p>
+              <p className="text-xs sm:text-sm font-medium">{t.reason || 'Reason'}</p>
               <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{nextAppointment.reason}</p>
             </div>
           </div>
@@ -309,7 +311,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
           <div className="flex items-start gap-2">
             <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium">Notes</p>
+              <p className="text-xs sm:text-sm font-medium">{t.notes || 'Notes'}</p>
               <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{nextAppointment.consultation_notes}</p>
             </div>
           </div>
@@ -319,12 +321,12 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <Button size="sm" className="flex-1 text-xs sm:text-sm" onClick={() => setShowDetailsDialog(true)}>
             <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-            View Details
+            {t.viewDetails || 'View Details'}
           </Button>
           {canCompleteAppointment(nextAppointment.status) && (
             <Button size="sm" variant="outline" className="flex-1 text-xs sm:text-sm" onClick={() => setShowCompleteDialog(true)}>
               <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              Complete
+              {t.complete || 'Complete'}
             </Button>
           )}
         </div>

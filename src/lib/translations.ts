@@ -902,6 +902,10 @@ export interface Translations {
     failedToSignOut: string;
     dentalPortal: string;
     provider: string;
+
+    // Next Appointment Widget
+    viewDetails: string;
+    complete: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1806,6 +1810,10 @@ export const translations: Record<Language, TranslationEntry> = {
         failedToSignOut: "Failed to sign out. Please try again.",
         dentalPortal: "Dental Portal",
         provider: "Provider",
+
+        // Next Appointment Widget
+        viewDetails: "View Details",
+        complete: "Complete",
 
         // Common
         'common.cancel': "Cancel",

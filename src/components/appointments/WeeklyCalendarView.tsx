@@ -15,6 +15,7 @@ import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
 import { logger } from '@/lib/logger';
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface WeeklyCalendarViewProps {
   dentistId: string;
@@ -75,6 +76,7 @@ export function WeeklyCalendarView({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { t } = useLanguage();
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
@@ -188,7 +190,7 @@ export function WeeklyCalendarView({
         type: blockType,
         startHour: START_HOUR,
         endHour: END_HOUR,
-        label: vacation.reason || BLOCK_STYLES[blockType]?.label || 'Time Off'
+        label: vacation.reason || (blockType === 'sick-leave' ? t.sickLeaveLabel : t.vacationLabel) || 'Time Off'
       });
       return blocks;
     }
@@ -201,7 +203,7 @@ export function WeeklyCalendarView({
         type: 'unavailable',
         startHour: START_HOUR,
         endHour: END_HOUR,
-        label: 'Day Off'
+        label: t.dayOff || 'Day Off'
       });
       return blocks;
     }
@@ -215,7 +217,7 @@ export function WeeklyCalendarView({
         type: 'unavailable',
         startHour: START_HOUR,
         endHour: workStartHour,
-        label: 'Before Hours'
+        label: t.beforeHours || 'Before Hours'
       });
     }
 
@@ -227,7 +229,7 @@ export function WeeklyCalendarView({
         type: 'break',
         startHour: breakStart,
         endHour: breakEnd,
-        label: 'Lunch Break'
+        label: t.lunchBreak || 'Lunch Break'
       });
     }
 
@@ -237,7 +239,7 @@ export function WeeklyCalendarView({
         type: 'unavailable',
         startHour: workEndHour,
         endHour: END_HOUR,
-        label: 'After Hours'
+        label: t.afterHours || 'After Hours'
       });
     }
 
