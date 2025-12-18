@@ -1009,6 +1009,27 @@ export interface Translations {
     configurePreferences: string;
     bookWithAIAssistant: string;
     bookManually: string;
+    // PatientDetailsTabs
+    appointmentCancelled: string;
+    appointmentCancelledSuccessfully: string;
+    failedToCancelAppointment: string;
+    appointmentApproved: string;
+    appointmentConfirmedNotified: string;
+    failedToApproveAppointment: string;
+    appointmentRejected: string;
+    appointmentCancelledPatientNotified: string;
+    failedToRejectAppointment: string;
+    treatments: string;
+    prescriptions: string;
+    payments: string;
+    info: string;
+    scheduleNewAppointmentAbove: string;
+    approve: string;
+    reject: string;
+    pastAppointments: string;
+    noPastAppointments: string;
+    patientInformation: string;
+    editDetails: string;
 }
 
 type TranslationEntry = Partial<Translations>;

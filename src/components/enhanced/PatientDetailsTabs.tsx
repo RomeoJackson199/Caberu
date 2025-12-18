@@ -40,6 +40,7 @@ import {
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { logger } from '@/lib/logger';
 import { sanitizeText } from '@/utils/sanitize';
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface Appointment {
   id: string;
@@ -83,6 +84,7 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
   const { hasFeature } = useBusinessTemplate();
   const canShowTreatments = hasFeature('treatmentPlans');
   const canShowPrescriptions = hasFeature('prescriptions');
+  const { t } = useLanguage();
 
   const handleCancelAppointment = async () => {
     if (!cancellingAppointment) return;
@@ -97,8 +99,8 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
       if (error) throw error;
 
       toast({
-        title: "Appointment cancelled",
-        description: "The appointment has been cancelled successfully.",
+        title: t.appointmentCancelled || "Appointment cancelled",
+        description: t.appointmentCancelledSuccessfully || "The appointment has been cancelled successfully.",
       });
 
       onRefresh();
@@ -106,8 +108,8 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
     } catch (error) {
       console.error('Error cancelling appointment:', error);
       toast({
-        title: "Error",
-        description: "Failed to cancel appointment. Please try again.",
+        title: t.error || "Error",
+        description: t.failedToCancelAppointment || "Failed to cancel appointment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -142,16 +144,16 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
       }
 
       toast({
-        title: "Appointment approved",
-        description: "The appointment has been confirmed and the patient has been notified.",
+        title: t.appointmentApproved || "Appointment approved",
+        description: t.appointmentConfirmedNotified || "The appointment has been confirmed and the patient has been notified.",
       });
 
       onRefresh();
     } catch (error) {
       console.error('Error approving appointment:', error);
       toast({
-        title: "Error",
-        description: "Failed to approve appointment. Please try again.",
+        title: t.error || "Error",
+        description: t.failedToApproveAppointment || "Failed to approve appointment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -186,16 +188,16 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
       }
 
       toast({
-        title: "Appointment rejected",
-        description: "The appointment has been cancelled and the patient has been notified.",
+        title: t.appointmentRejected || "Appointment rejected",
+        description: t.appointmentCancelledPatientNotified || "The appointment has been cancelled and the patient has been notified.",
       });
 
       onRefresh();
     } catch (error) {
       console.error('Error rejecting appointment:', error);
       toast({
-        title: "Error",
-        description: "Failed to reject appointment. Please try again.",
+        title: t.error || "Error",
+        description: t.failedToRejectAppointment || "Failed to reject appointment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -217,27 +219,27 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="appointments" className="text-xs sm:text-sm">
             <Calendar className="h-4 w-4 mr-1" />
-            Appointments
+            {t.appointments || 'Appointments'}
           </TabsTrigger>
           {canShowTreatments && (
             <TabsTrigger value="treatments" className="text-xs sm:text-sm">
               <ClipboardListIcon className="h-4 w-4 mr-1" />
-              Treatments
+              {t.treatments || 'Treatments'}
             </TabsTrigger>
           )}
           {canShowPrescriptions && (
             <TabsTrigger value="prescriptions" className="text-xs sm:text-sm">
               <Pill className="h-4 w-4 mr-1" />
-              Prescriptions
+              {t.prescriptions || 'Prescriptions'}
             </TabsTrigger>
           )}
           <TabsTrigger value="payments" className="text-xs sm:text-sm">
             <CreditCard className="h-4 w-4 mr-1" />
-            Payments
+            {t.payments || 'Payments'}
           </TabsTrigger>
           <TabsTrigger value="info" className="text-xs sm:text-sm">
             <User className="h-4 w-4 mr-1" />
-            Info
+            {t.info || 'Info'}
           </TabsTrigger>
         </TabsList>
 
@@ -248,20 +250,20 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
                 <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
-                <span className="truncate">Upcoming Appointments</span>
+                <span className="truncate">{t.upcomingAppointments || 'Upcoming Appointments'}</span>
                 <Badge variant="secondary" className="rounded-full flex-shrink-0">{upcomingAppointments.length}</Badge>
               </h3>
               <Button variant="outline" size="sm" disabled title="Staff booking temporarily disabled - needs reimplementation with slot locking">
                 <Calendar className="h-4 w-4 mr-1" />
-                Book Appointment
+                {t.bookAppointment || 'Book Appointment'}
               </Button>
             </div>
 
             {upcomingAppointments.length === 0 ? (
               <Card className="p-8 text-center bg-muted/30">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">No upcoming appointments</p>
-                <p className="text-sm text-muted-foreground/60 mt-1">Schedule a new appointment above</p>
+                <p className="text-muted-foreground font-medium">{t.noUpcomingAppointments || 'No upcoming appointments'}</p>
+                <p className="text-sm text-muted-foreground/60 mt-1">{t.scheduleNewAppointmentAbove || 'Schedule a new appointment above'}</p>
               </Card>
             ) : (
               <div className="space-y-2 sm:space-y-3">
@@ -308,7 +310,7 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
                               disabled={loading}
                             >
                               <ThumbsUp className="h-3 w-3 sm:h-4 sm:w-4" />
-                              Approve
+                              {t.approve || 'Approve'}
                             </Button>
                             <Button
                               size="sm"
@@ -318,7 +320,7 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
                               disabled={loading}
                             >
                               <ThumbsDown className="h-3 w-3 sm:h-4 sm:w-4" />
-                              Reject
+                              {t.reject || 'Reject'}
                             </Button>
                           </>
                         ) : (
@@ -329,7 +331,7 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
                               onClick={() => setCompletingAppointment(apt)}
                             >
                               <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                              Complete
+                              {t.complete || 'Complete'}
                             </Button>
                             <Button
                               size="sm"
@@ -353,14 +355,14 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
           <div className="space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <ClipboardListIcon className="h-5 w-5 text-muted-foreground" />
-              Past Appointments
+              {t.pastAppointments || 'Past Appointments'}
               <Badge variant="secondary" className="rounded-full">{pastAppointments.length}</Badge>
             </h3>
 
             {pastAppointments.length === 0 ? (
               <Card className="p-8 text-center bg-muted/30">
                 <ClipboardListIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">No past appointments</p>
+                <p className="text-muted-foreground font-medium">{t.noPastAppointments || 'No past appointments'}</p>
               </Card>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
@@ -436,10 +438,10 @@ export function PatientDetailsTabs({ selectedPatient, dentistId, appointments, o
         <TabsContent value="info" className="space-y-4">
           <Card className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold">Patient Information</h3>
+              <h3 className="text-lg font-semibold">{t.patientInformation || 'Patient Information'}</h3>
               <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
                 <Pencil className="h-4 w-4 mr-2" />
-                Edit Details
+                {t.editDetails || 'Edit Details'}
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
