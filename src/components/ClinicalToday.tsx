@@ -3,7 +3,7 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User as UserIcon, CheckCircle, TrendingUp, AlertCircle, Plus } from "lucide-react";
+import { Calendar, Clock, User as UserIcon, CheckCircle, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { NextAppointmentWidget } from "@/components/NextAppointmentWidget";
@@ -35,7 +35,7 @@ interface TodayAppointment {
 
 export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppointmentsTab }: ClinicalTodayProps) {
 	const today = new Date();
-	const { hasFeature, t: businessT } = useBusinessTemplate();
+	const { t: businessT } = useBusinessTemplate();
 	const { t } = useLanguage();
 	const [stats, setStats] = useState({
 		todayCount: 0,
@@ -166,7 +166,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				</div>
 			</div>
 
-			{/* Quick Stats with Polished Components */}
+		{/* Quick Stats with Polished Components */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-tour="stats-cards">
 				<StatCard
 					title={t.todaysAppointments}
@@ -175,18 +175,8 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 					gradient="from-blue-500 to-cyan-500"
 				/>
 
-				{/* Show PendingApprovalCard for dentists with require_appointment_approval, otherwise show urgent cases */}
+				{/* Show PendingApprovalCard for dentists with require_appointment_approval */}
 				<PendingApprovalCard dentistId={dentistId} />
-				
-				{/* Fallback to urgent cases if PendingApprovalCard returns null */}
-				{hasFeature('urgencyLevels') && (
-					<StatCard
-						title={t.urgentCases}
-						value={stats.urgentCount.toString()}
-						icon={AlertCircle}
-						gradient="from-red-500 to-orange-500"
-					/>
-				)}
 
 				<StatCard
 					title={t.completedThisWeek || "Completed This Week"}
