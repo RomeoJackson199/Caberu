@@ -333,10 +333,10 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
               <img src={branding.logoUrl} alt={t.clinicLogoAlt} className="h-6 w-6 rounded-lg object-cover" />
             ) : (
               <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground text-xs font-semibold">
-                {branding.clinicName?.[0]?.toUpperCase() || 'P'}
+                {(businessName || branding.clinicName)?.[0]?.toUpperCase() || 'P'}
               </span>
             )}
-            <span className="text-sm font-medium truncate">{branding.clinicName || t.patientPortal}</span>
+            <span className="text-sm font-medium truncate">{businessName || branding.clinicName || t.patientPortal}</span>
           </div>
         </header>
 
