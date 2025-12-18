@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppointmentCard } from "./AppointmentCard";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
+import { Palmtree } from "lucide-react";
 
 interface AppointmentCalendarViewProps {
   dentistId: string;
@@ -65,6 +66,39 @@ export function AppointmentCalendarView({
     }
   });
 
+  // Fetch vacation days for the dentist
+  const { data: vacationDays } = useQuery({
+    queryKey: ["vacation-days", dentistId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dentist_vacation_days")
+        .select("start_date, end_date, reason, vacation_type")
+        .eq("dentist_id", dentistId)
+        .eq("is_approved", true);
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const isVacationDay = (date: Date) => {
+    if (!vacationDays) return false;
+    return vacationDays.some(vacation => {
+      const start = parseISO(vacation.start_date);
+      const end = parseISO(vacation.end_date);
+      return isWithinInterval(date, { start, end });
+    });
+  };
+
+  const getVacationInfo = (date: Date) => {
+    if (!vacationDays) return null;
+    return vacationDays.find(vacation => {
+      const start = parseISO(vacation.start_date);
+      const end = parseISO(vacation.end_date);
+      return isWithinInterval(date, { start, end });
+    });
+  };
+
   if (isLoading) {
     return <Skeleton className="h-[600px] w-full" />;
   }
@@ -89,17 +123,35 @@ export function AppointmentCalendarView({
         const dayAppointments = appointments?.filter((apt) =>
           isSameDay(new Date(apt.appointment_date), day)
         ) || [];
+        const vacation = isVacationDay(day);
+        const vacationInfo = getVacationInfo(day);
 
         return (
-          <div key={day.toISOString()} className="border rounded-lg p-4 min-h-[150px]">
-            <h3 className="font-semibold mb-2">
+          <div 
+            key={day.toISOString()} 
+            className={`border rounded-lg p-4 min-h-[150px] ${
+              vacation ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800" : ""
+            }`}
+          >
+            <h3 className="font-semibold mb-2 flex items-center gap-2">
               {format(day, view === "month" ? "d" : "EEE, MMM d")}
+              {vacation && (
+                <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                  <Palmtree className="h-3 w-3" />
+                  {vacationInfo?.vacation_type || "Vacation"}
+                </span>
+              )}
             </h3>
             <div className="space-y-2">
+              {vacation && dayAppointments.length === 0 && (
+                <p className="text-sm text-amber-600 dark:text-amber-400 italic">
+                  {vacationInfo?.reason || "On vacation"}
+                </p>
+              )}
               {dayAppointments.map((apt) => (
                 <AppointmentCard key={apt.id} appointment={apt} compact={view === "month"} />
               ))}
-              {dayAppointments.length === 0 && (
+              {!vacation && dayAppointments.length === 0 && (
                 <p className="text-sm text-muted-foreground">No appointments</p>
               )}
             </div>
