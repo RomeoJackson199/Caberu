@@ -397,7 +397,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                 </div>
                 {expanded[request.id] && (
                   <div className="mt-4 border-t pt-4 text-sm">
-                    <div className="mb-2 font-medium">Items</div>
+                    <div className="mb-2 font-medium">{t.items || 'Items'}</div>
                     <div className="space-y-1">
                       {(itemsById[request.id] || []).map((it) => (
                         <div key={it.id} className="flex justify-between">
@@ -406,10 +406,10 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                         </div>
                       ))}
                       {(!itemsById[request.id] || itemsById[request.id].length === 0) && (
-                        <div className="text-muted-foreground">No items added</div>
+                        <div className="text-muted-foreground">{t.noItemsAdded || 'No items added'}</div>
                       )}
                     </div>
-                    <div className="mt-4 mb-2 font-medium">Reminder log</div>
+                    <div className="mt-4 mb-2 font-medium">{t.reminderLog || 'Reminder log'}</div>
                     <div className="space-y-1">
                       {(remindersById[request.id] || []).map((r) => (
                         <div key={r.id} className="flex justify-between">
@@ -418,7 +418,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                         </div>
                       ))}
                       {(!remindersById[request.id] || remindersById[request.id].length === 0) && (
-                        <div className="text-muted-foreground">No reminders yet</div>
+                        <div className="text-muted-foreground">{t.noRemindersYet || 'No reminders yet'}</div>
                       )}
                     </div>
                   </div>
@@ -433,11 +433,11 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
       <Dialog open={!!editingRequest} onOpenChange={(open) => !open && setEditingRequest(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Payment Request</DialogTitle>
+            <DialogTitle>{t.editPaymentRequest || 'Edit Payment Request'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Amount (€)</Label>
+              <Label>{t.amountEuro || 'Amount (€)'}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -446,13 +446,13 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
               />
             </div>
             <div>
-              <Label>Description</Label>
+              <Label>{t.description || 'Description'}</Label>
               <Input
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
               />
             </div>
-            <Button onClick={handleEditPayment} className="w-full">Save Changes</Button>
+            <Button onClick={handleEditPayment} className="w-full">{t.saveChanges || 'Save Changes'}</Button>
           </div>
         </DialogContent>
       </Dialog>

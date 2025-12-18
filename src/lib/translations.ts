@@ -987,6 +987,12 @@ export interface Translations {
     remindPatient: string;
     reminderSent: string;
     failedToSendReminder: string;
+    items: string;
+    noItemsAdded: string;
+    reminderLog: string;
+    noRemindersYet: string;
+    editPaymentRequest: string;
+    amountEuro: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1977,6 +1983,12 @@ export const translations: Record<Language, TranslationEntry> = {
         remindPatient: "Remind Patient",
         reminderSent: "Reminder sent to patient",
         failedToSendReminder: "Failed to send reminder",
+        items: "Items",
+        noItemsAdded: "No items added",
+        reminderLog: "Reminder log",
+        noRemindersYet: "No reminders yet",
+        editPaymentRequest: "Edit Payment Request",
+        amountEuro: "Amount (€)",
 
         // Common
         'common.cancel': "Cancel",
@@ -2789,6 +2801,14 @@ export const translations: Record<Language, TranslationEntry> = {
         loseAccessWarning: "Vous perdrez l'accès à toutes les données et rendez-vous de la clinique.",
         lastMemberWarning: "Si vous êtes le dernier membre, l'entreprise sera définitivement supprimée.",
         leaveClinicConfirm: "Cette action est irréversible. Vous perdrez l'accès à toutes les données, rendez-vous et dossiers patients.",
+
+        // Payment Request Manager (expanded view and edit dialog)
+        items: "Articles",
+        noItemsAdded: "Aucun article ajouté",
+        reminderLog: "Journal des rappels",
+        noRemindersYet: "Pas encore de rappels",
+        editPaymentRequest: "Modifier la demande de paiement",
+        amountEuro: "Montant (€)",
         enterPasswordConfirm: "Entrez votre mot de passe pour confirmer",
         yourPassword: "Votre mot de passe",
         leaving: "Départ en cours...",
