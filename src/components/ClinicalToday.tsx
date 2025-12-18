@@ -11,6 +11,7 @@ import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { logger } from '@/lib/logger';
 import { AnimatedBackground, StatCard, EmptyState } from "@/components/ui/polished-components";
 import { useLanguage } from "@/hooks/useLanguage";
+import { PendingApprovalCard } from "@/components/PendingApprovalCard";
 
 interface ClinicalTodayProps {
 	user: User;
@@ -174,6 +175,10 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 					gradient="from-blue-500 to-cyan-500"
 				/>
 
+				{/* Show PendingApprovalCard for dentists with require_appointment_approval, otherwise show urgent cases */}
+				<PendingApprovalCard dentistId={dentistId} />
+				
+				{/* Fallback to urgent cases if PendingApprovalCard returns null */}
 				{hasFeature('urgencyLevels') && (
 					<StatCard
 						title={t.urgentCases}
