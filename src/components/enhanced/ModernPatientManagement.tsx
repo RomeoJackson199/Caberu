@@ -1270,7 +1270,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               {/* TIMELINE VIEW */}
               {timelineView ? (
                 <div className="p-8 max-w-4xl mx-auto">
-                  <h2 className="text-xl font-bold text-slate-800 mb-6">Patient Timeline</h2>
+                  <h2 className="text-xl font-bold text-slate-800 mb-6">{t.patientTimeline || 'Patient Timeline'}</h2>
                   <div className="relative border-l-2 border-indigo-200 ml-4 space-y-4">
                     {[
                       ...patientNotes.map(n => ({ type: 'note' as const, data: n, date: new Date(n.created_at) })),
@@ -1292,9 +1292,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
                             <div className="flex items-center gap-2 mb-2">
                               {item.type === 'note' ? (
-                                <Badge className="bg-indigo-100 text-indigo-700">Note</Badge>
+                                <Badge className="bg-indigo-100 text-indigo-700">{t.note || 'Note'}</Badge>
                               ) : (
-                                <Badge className="bg-emerald-100 text-emerald-700">Appointment</Badge>
+                                <Badge className="bg-emerald-100 text-emerald-700">{t.appointment || 'Appointment'}</Badge>
                               )}
                               <span className="text-xs text-slate-400">
                                 {format(item.date, 'MMM d, yyyy h:mm a')}
@@ -1997,8 +1997,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             ) : (
                               <div className="text-center py-8 text-slate-400">
                                 <FileText className="h-10 w-10 mx-auto mb-2 text-slate-300" />
-                                <p className="text-sm">No notes yet</p>
-                                <p className="text-xs">Add a note above to get started</p>
+                                <p className="text-sm">{t.noNotesYet || 'No notes yet'}</p>
+                                <p className="text-xs">{t.addNoteAbove || 'Add a note above to get started'}</p>
                               </div>
                             )}
                           </div>
@@ -2246,7 +2246,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                             {appt.status === 'cancelled' && <X className="h-4 w-4 text-slate-300 flex-shrink-0" />}
                                           </button>
                                         )) : (
-                                          <p className="text-xs text-slate-400 py-2">No appointments linked</p>
+                                          <p className="text-xs text-slate-400 py-2">{t.noAppointmentsLinkedShort || 'No appointments linked'}</p>
                                         )}
                                       </div>
                                     </CollapsibleContent>
@@ -2260,7 +2260,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
                                   <Folder className="h-6 w-6 text-slate-300" />
                                 </div>
-                                <p className="text-sm text-slate-500 font-medium">No treatment plans yet</p>
+                                <p className="text-sm text-slate-500 font-medium">{t.noTreatmentPlansYet || 'No treatment plans yet'}</p>
                               </div>
                             )}
                           </div>
@@ -2276,9 +2276,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             {compareMode ? (
                               <div className="space-y-4">
                                 <div className="flex items-center justify-between mb-4">
-                                  <h2 className="text-lg font-semibold text-slate-800">Compare Images</h2>
+                                  <h2 className="text-lg font-semibold text-slate-800">{t.compareImages || 'Compare Images'}</h2>
                                   <Button variant="outline" size="sm" onClick={() => setCompareMode(false)}>
-                                    <X className="h-4 w-4 mr-1" /> Close
+                                    <X className="h-4 w-4 mr-1" />{t.close || 'Close'}
                                   </Button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
@@ -2289,7 +2289,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     ) : (
                                       <div className="text-center text-slate-400">
                                         <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                                        <p className="text-sm">Select an image</p>
+                                        <p className="text-sm">{t.selectAnImage || 'Select an image'}</p>
                                       </div>
                                     )}
                                   </div>
@@ -2300,14 +2300,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     ) : (
                                       <div className="text-center text-slate-400">
                                         <Camera className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                                        <p className="text-sm">Select an image</p>
+                                        <p className="text-sm">{t.selectAnImage || 'Select an image'}</p>
                                       </div>
                                     )}
                                   </div>
                                 </div>
                                 {/* Image Selection */}
                                 <div className="bg-slate-50 rounded-xl p-4">
-                                  <p className="text-sm font-medium text-slate-700 mb-3">Select images to compare:</p>
+                                  <p className="text-sm font-medium text-slate-700 mb-3">{t.selectImagesToCompare || 'Select images to compare:'}</p>
                                   <div className="grid grid-cols-4 gap-2">
                                     {appointmentImages.files.map((file) => (
                                       <button

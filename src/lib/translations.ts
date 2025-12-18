@@ -949,6 +949,14 @@ export interface Translations {
     moreAppointments: string;
     financialLedger: string;
     emailSummary: string;
+    note: string;
+    noNotesYet: string;
+    addNoteAbove: string;
+    noAppointmentsLinkedShort: string;
+    noTreatmentPlansYet: string;
+    compareImages: string;
+    selectAnImage: string;
+    selectImagesToCompare: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1900,6 +1908,14 @@ export const translations: Record<Language, TranslationEntry> = {
         moreAppointments: "more appointments",
         financialLedger: "Financial Ledger",
         emailSummary: "Email Summary",
+        note: "Note",
+        noNotesYet: "No notes yet",
+        addNoteAbove: "Add a note above to get started",
+        noAppointmentsLinkedShort: "No appointments linked",
+        noTreatmentPlansYet: "No treatment plans yet",
+        compareImages: "Compare Images",
+        selectAnImage: "Select an image",
+        selectImagesToCompare: "Select images to compare:",
 
         // Common
         'common.cancel': "Cancel",
@@ -2663,6 +2679,13 @@ export const translations: Record<Language, TranslationEntry> = {
         noRecentActivity: "Aucune activité récente",
         patientNotes: "Notes du Patient",
         totalNotes: "notes en tout",
+        noNotesYet: "Aucune note pour le moment",
+        addNoteAbove: "Ajoutez une note ci-dessus pour commencer",
+        noAppointmentsLinkedShort: "Aucun rendez-vous lié",
+        noTreatmentPlansYet: "Aucun plan de traitement",
+        compareImages: "Comparer les Images",
+        selectAnImage: "Sélectionnez une image",
+        selectImagesToCompare: "Sélectionnez les images à comparer :",
 
         // Settings pages extended
         approveNewPatientRequests: "Approuver les demandes de nouveaux patients pour éviter les doubles réservations.",
