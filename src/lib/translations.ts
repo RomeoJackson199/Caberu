@@ -834,6 +834,51 @@ export interface Translations {
     managePaymentsDesc: string;
     amountDueLabel: string;
 
+    // New appointment action translations
+    noAppointmentsYet: string;
+    bookFirstAppointment: string;
+    confirmReschedule: string;
+    rescheduleAppointment: string;
+    newDate: string;
+    newTime: string;
+    bookNewAppointment: string;
+    selectAPatient: string;
+    reasonForVisit: string;
+    durationMinutes: string;
+    fillRequiredFields: string;
+    appointmentBookedDesc: string;
+    cancelAppointmentTitle: string;
+    cancelAppointmentConfirm: string;
+    goBack: string;
+    all: string;
+
+    // Availability settings (unique)
+    availabilitySettings: string;
+    manageWorkingHours: string;
+    loadingAvailability: string;
+    failedToFetchAvailability: string;
+    quickSchedulePresets: string;
+    standardWeek: string;
+    standardWeekDesc: string;
+    extendedHours: string;
+    extendedHoursDesc: string;
+    partTime: string;
+    partTimeDesc: string;
+    presetApplied: string;
+    scheduleApplied: string;
+    saveSettings: string;
+    workingDays: string;
+    totalHoursWeek: string;
+    currentStatus: string;
+    available: string;
+    unavailable: string;
+    makeAllDaysAvailable: string;
+    makeAllDaysUnavailable: string;
+    weekdaysOnly: string;
+    weekendsOnly: string;
+    availabilitySaved: string;
+    failedToSave: string;
+
     // Common
     'common.cancel': string;
     'common.next': string;
@@ -1682,6 +1727,51 @@ export const translations: Record<Language, TranslationEntry> = {
         noStatementsDesc: "Your billing statements will be available for download once generated.",
         managePaymentsDesc: "Manage your payments, invoices, and billing statements",
         amountDueLabel: "due",
+
+        // Appointment actions
+        noAppointmentsYet: "You don't have any appointments yet.",
+        bookFirstAppointment: "Book Your First Appointment",
+        confirmReschedule: "Confirm Reschedule",
+        rescheduleAppointment: "Reschedule Appointment",
+        newDate: "New Date",
+        newTime: "New Time",
+        bookNewAppointment: "Book New Appointment",
+        selectAPatient: "Select a patient",
+        reasonForVisit: "Reason for Visit",
+        durationMinutes: "Duration (minutes)",
+        fillRequiredFields: "Please fill in all required fields",
+        appointmentBookedDesc: "The appointment has been booked successfully.",
+        cancelAppointmentTitle: "Cancel Appointment",
+        cancelAppointmentConfirm: "Are you sure you want to cancel this appointment? This action cannot be undone.",
+        goBack: "Go Back",
+        all: "All",
+
+        // Availability settings
+        availabilitySettings: "Availability Settings",
+        manageWorkingHours: "Manage your working hours and schedule",
+        loadingAvailability: "Loading availability settings...",
+        failedToFetchAvailability: "Failed to fetch availability settings",
+        quickSchedulePresets: "Quick Schedule Presets",
+        standardWeek: "Standard Week",
+        standardWeekDesc: "Monday to Friday, 9 AM - 5 PM",
+        extendedHours: "Extended Hours",
+        extendedHoursDesc: "Monday to Saturday, 8 AM - 6 PM",
+        partTime: "Part-Time",
+        partTimeDesc: "Tuesday, Thursday, Saturday only",
+        presetApplied: "Preset Applied",
+        scheduleApplied: "schedule has been applied",
+        saveSettings: "Save Settings",
+        workingDays: "Working Days",
+        totalHoursWeek: "Total Hours/Week",
+        currentStatus: "Current Status",
+        available: "Available",
+        unavailable: "Unavailable",
+        makeAllDaysAvailable: "Make All Days Available",
+        makeAllDaysUnavailable: "Make All Days Unavailable",
+        weekdaysOnly: "Weekdays Only (Mon-Fri)",
+        weekendsOnly: "Weekends Only (Sat-Sun)",
+        availabilitySaved: "Availability settings saved successfully",
+        failedToSave: "Failed to save availability settings",
 
         // Common
         'common.cancel': "Cancel",
@@ -2549,6 +2639,51 @@ export const translations: Record<Language, TranslationEntry> = {
         noRolesAssigned: "Aucun rôle assigné",
         invitationPending: "Invitation en Attente",
         inactive: "Inactif",
+
+        // Appointment actions
+        noAppointmentsYet: "Vous n'avez pas encore de rendez-vous.",
+        bookFirstAppointment: "Réservez Votre Premier Rendez-vous",
+        confirmReschedule: "Confirmer le Report",
+        rescheduleAppointment: "Reporter le Rendez-vous",
+        newDate: "Nouvelle Date",
+        newTime: "Nouvelle Heure",
+        bookNewAppointment: "Réserver un Nouveau Rendez-vous",
+        selectAPatient: "Sélectionner un patient",
+        reasonForVisit: "Motif de la Visite",
+        durationMinutes: "Durée (minutes)",
+        fillRequiredFields: "Veuillez remplir tous les champs obligatoires",
+        appointmentBookedDesc: "Le rendez-vous a été réservé avec succès.",
+        cancelAppointmentTitle: "Annuler le Rendez-vous",
+        cancelAppointmentConfirm: "Êtes-vous sûr de vouloir annuler ce rendez-vous ? Cette action est irréversible.",
+        goBack: "Retour",
+        all: "Tous",
+
+        // Availability settings
+        availabilitySettings: "Paramètres de Disponibilité",
+        manageWorkingHours: "Gérez vos heures de travail et votre planning",
+        loadingAvailability: "Chargement des paramètres de disponibilité...",
+        failedToFetchAvailability: "Échec du chargement des disponibilités",
+        quickSchedulePresets: "Préréglages Rapides de Planning",
+        standardWeek: "Semaine Standard",
+        standardWeekDesc: "Lundi au Vendredi, 9h - 17h",
+        extendedHours: "Heures Prolongées",
+        extendedHoursDesc: "Lundi au Samedi, 8h - 18h",
+        partTime: "Temps Partiel",
+        partTimeDesc: "Mardi, Jeudi, Samedi uniquement",
+        presetApplied: "Préréglage Appliqué",
+        scheduleApplied: "le planning a été appliqué",
+        saveSettings: "Enregistrer les Paramètres",
+        workingDays: "Jours de Travail",
+        totalHoursWeek: "Heures/Semaine",
+        currentStatus: "Statut Actuel",
+        available: "Disponible",
+        unavailable: "Indisponible",
+        makeAllDaysAvailable: "Rendre Tous les Jours Disponibles",
+        makeAllDaysUnavailable: "Rendre Tous les Jours Indisponibles",
+        weekdaysOnly: "Jours Ouvrables Uniquement (Lun-Ven)",
+        weekendsOnly: "Week-ends Uniquement (Sam-Dim)",
+        availabilitySaved: "Paramètres de disponibilité enregistrés",
+        failedToSave: "Échec de l'enregistrement des disponibilités",
     },
     nl: {
         // Error & status messages

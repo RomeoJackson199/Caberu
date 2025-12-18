@@ -435,7 +435,7 @@ export function UnifiedAppointments({
               size="sm"
               onClick={() => setFilterStatus('all')}
             >
-              All
+              {t.all || 'All'}
             </Button>
             <Button
               variant={filterStatus === 'upcoming' ? 'default' : 'outline'}
@@ -553,14 +553,14 @@ export function UnifiedAppointments({
           <Card>
             <CardContent className="text-center py-12">
               <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No appointments found</p>
+              <p className="text-muted-foreground">{t.noAppointmentsFound}</p>
               <Button
                 variant="outline"
                 className="mt-4"
                 onClick={() => setShowBooking(true)}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Book Your First Appointment
+                {t.bookFirstAppointment || 'Book Your First Appointment'}
               </Button>
             </CardContent>
           </Card>
@@ -571,7 +571,7 @@ export function UnifiedAppointments({
       <Dialog open={showBooking} onOpenChange={setShowBooking}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Book New Appointment</DialogTitle>
+            <DialogTitle>{t.bookNewAppointment || 'Book New Appointment'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {!patientId && (
@@ -671,7 +671,7 @@ export function UnifiedAppointments({
       <Dialog open={showReschedule} onOpenChange={setShowReschedule}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogTitle>{t.rescheduleAppointment || 'Reschedule Appointment'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">

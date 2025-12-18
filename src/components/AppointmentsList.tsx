@@ -10,16 +10,16 @@ import { toast } from "sonner";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ReviewDialog } from "@/components/ReviewDialog";
 import { logger } from '@/lib/logger';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 
 interface Appointment {
@@ -58,7 +58,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
   const fetchAppointments = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Get user profile first
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
@@ -218,7 +218,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
   // Filter appointments based on selected tab
   const getFilteredAppointments = () => {
     let filtered = appointments;
-    
+
     switch (filterTab) {
       case 'upcoming':
         filtered = appointments.filter(apt => isUpcoming(apt.appointment_date) && apt.status !== 'cancelled');
@@ -232,7 +232,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
       default:
         filtered = appointments;
     }
-    
+
     return filtered;
   };
 
@@ -272,7 +272,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
               {t.newAppointment}
             </Button>
           </div>
-          
+
           {/* Filter Tabs */}
           <div className="flex gap-2 mt-4 flex-wrap">
             <Button
@@ -281,7 +281,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
               onClick={() => setFilterTab('all')}
               className="rounded-full"
             >
-              All
+              {t.all || 'All'}
             </Button>
             <Button
               variant={filterTab === 'upcoming' ? 'default' : 'outline'}
@@ -289,7 +289,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
               onClick={() => setFilterTab('upcoming')}
               className="rounded-full"
             >
-              Upcoming
+              {t.upcoming}
             </Button>
             <Button
               variant={filterTab === 'completed' ? 'default' : 'outline'}
@@ -297,7 +297,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
               onClick={() => setFilterTab('completed')}
               className="rounded-full"
             >
-              Completed
+              {t.completed}
             </Button>
             <Button
               variant={filterTab === 'cancelled' ? 'default' : 'outline'}
@@ -305,7 +305,7 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
               onClick={() => setFilterTab('cancelled')}
               className="rounded-full"
             >
-              Cancelled
+              {t.cancelled}
             </Button>
           </div>
         </CardHeader>
@@ -317,10 +317,10 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
           {displayedAppointments.map((appointment, index) => {
             const { date, time } = formatDateTime(appointment.appointment_date);
             const isUpcomingAppt = isUpcoming(appointment.appointment_date);
-            
+
             return (
-              <Card 
-                key={appointment.id} 
+              <Card
+                key={appointment.id}
                 className="hover:shadow-md transition-shadow border-l-4 border-l-primary/50"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
@@ -355,18 +355,18 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
 
                     {/* Right Section - Status & Actions */}
                     <div className="flex flex-col sm:items-end gap-3">
-                      <Badge 
+                      <Badge
                         className={`${getStatusColor(appointment.status)} w-fit`}
                       >
                         {appointment.status}
                       </Badge>
-                      
+
                       {isUpcomingAppt && appointment.status !== 'cancelled' && (
                         <div className="flex gap-2">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 className="border-destructive text-destructive hover:bg-destructive/10"
                               >
@@ -376,18 +376,18 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+                                <AlertDialogTitle>{t.cancelAppointmentTitle || 'Cancel Appointment'}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to cancel this appointment? This action cannot be undone.
+                                  {t.cancelAppointmentConfirm || 'Are you sure you want to cancel this appointment? This action cannot be undone.'}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Go Back</AlertDialogCancel>
-                                <AlertDialogAction 
+                                <AlertDialogCancel>{t.goBack || 'Go Back'}</AlertDialogCancel>
+                                <AlertDialogAction
                                   onClick={() => cancelAppointment(appointment.id)}
                                   className="bg-destructive hover:bg-destructive/90"
                                 >
-                                  Confirm Cancellation
+                                  {t.confirmCancellation}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -418,8 +418,8 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
       {/* View More Button */}
       {!showAll && filteredAppointments.length > 10 && (
         <div className="flex justify-center">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setShowAll(true)}
             className="w-full sm:w-auto"
           >
@@ -430,8 +430,8 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
 
       {showAll && filteredAppointments.length > 10 && (
         <div className="flex justify-center">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => setShowAll(false)}
             className="w-full sm:w-auto"
           >
@@ -445,15 +445,13 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
         <Card>
           <CardContent className="p-12 text-center">
             <CalendarDays className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No appointments found</h3>
+            <h3 className="text-lg font-semibold mb-2">{t.noAppointmentsFound}</h3>
             <p className="text-muted-foreground mb-6">
-              {filterTab === 'all' 
-                ? "You don't have any appointments yet."
-                : `You don't have any ${filterTab} appointments.`}
+              {t.noAppointmentsYet || "You don't have any appointments yet."}
             </p>
             <Button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <Plus className="h-4 w-4 mr-2" />
-              Book Your First Appointment
+              {t.bookFirstAppointment || 'Book Your First Appointment'}
             </Button>
           </CardContent>
         </Card>
