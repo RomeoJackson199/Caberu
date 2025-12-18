@@ -896,6 +896,12 @@ export interface Translations {
     'common.back': string;
     'common.loading': string;
     'common.success': string;
+
+    // Top bar / Navigation
+    logOut: string;
+    failedToSignOut: string;
+    dentalPortal: string;
+    provider: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1794,6 +1800,12 @@ export const translations: Record<Language, TranslationEntry> = {
         afterHours: "After Hours",
         lunchBreak: "Lunch Break",
         timeOff: "Time Off",
+
+        // Top bar / Navigation
+        logOut: "Log Out",
+        failedToSignOut: "Failed to sign out. Please try again.",
+        dentalPortal: "Dental Portal",
+        provider: "Provider",
 
         // Common
         'common.cancel': "Cancel",
