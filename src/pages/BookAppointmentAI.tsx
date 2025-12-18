@@ -64,6 +64,7 @@ export default function BookAppointment() {
   const [bookingStep, setBookingStep] = useState<'dentist' | 'datetime' | 'confirm'>('dentist');
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successDetails, setSuccessDetails] = useState<{ date: string; time: string; dentist?: string; reason?: string; pendingApproval?: boolean } | undefined>(undefined);
+  const [dentistAvailableDays, setDentistAvailableDays] = useState<number[]>([]);
 
   useEffect(() => {
     if (!businessLoading && businessId) {
@@ -206,9 +207,26 @@ export default function BookAppointment() {
     }
   };
 
-  const handleDentistSelect = (dentist: Dentist) => {
+  const handleDentistSelect = async (dentist: Dentist) => {
     setSelectedDentist(dentist);
     setBookingStep('datetime');
+    
+    // Fetch dentist's available days
+    if (businessId) {
+      const { data: availabilityData } = await supabase
+        .from('dentist_availability')
+        .select('day_of_week, is_available')
+        .eq('dentist_id', dentist.id)
+        .eq('business_id', businessId)
+        .eq('is_available', true);
+      
+      if (availabilityData && availabilityData.length > 0) {
+        setDentistAvailableDays(availabilityData.map(d => d.day_of_week));
+      } else {
+        // Default to weekdays if no availability set
+        setDentistAvailableDays([1, 2, 3, 4, 5]);
+      }
+    }
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -353,7 +371,11 @@ export default function BookAppointment() {
 
   const isDateDisabled = (date: Date) => {
     const today = startOfDay(new Date());
-    return date < today || date.getDay() === 0 || date.getDay() === 6;
+    if (date < today) return true;
+    
+    // Check if dentist works on this day of the week
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    return !dentistAvailableDays.includes(dayOfWeek);
   };
 
   const navigateWeek = (direction: 'prev' | 'next') => {
