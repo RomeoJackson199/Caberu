@@ -963,6 +963,9 @@ export interface Translations {
     add: string;
     clickToAddImages: string;
     noTreatmentPlanLinked: string;
+    noDescription: string;
+    linkedAppointments: string;
+    appointmentsForThisTreatment: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1928,6 +1931,9 @@ export const translations: Record<Language, TranslationEntry> = {
         add: "Add",
         clickToAddImages: "Click to add images",
         noTreatmentPlanLinked: "No treatment plan linked",
+        noDescription: "No description",
+        linkedAppointments: "Linked Appointments",
+        appointmentsForThisTreatment: "Appointments for this Treatment",
 
         // Common
         'common.cancel': "Cancel",
@@ -2704,6 +2710,9 @@ export const translations: Record<Language, TranslationEntry> = {
         add: "Ajouter",
         clickToAddImages: "Cliquez pour ajouter des images",
         noTreatmentPlanLinked: "Aucun plan de traitement lié",
+        noDescription: "Pas de description",
+        linkedAppointments: "Rendez-vous liés",
+        appointmentsForThisTreatment: "Rendez-vous pour ce traitement",
 
         // Settings pages extended
         approveNewPatientRequests: "Approuver les demandes de nouveaux patients pour éviter les doubles réservations.",

@@ -2516,7 +2516,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             <div className="flex items-start justify-between">
                               <div>
                                 <h2 className="text-xl font-semibold text-slate-800">{selectedTreatmentPlan.title}</h2>
-                                <p className="text-slate-500 mt-1">{selectedTreatmentPlan.description || 'No description'}</p>
+                                <p className="text-slate-500 mt-1">{selectedTreatmentPlan.description || t.noDescription || 'No description'}</p>
                               </div>
                               <Badge className={cn(statusConfig[selectedTreatmentPlan.status]?.bg, statusConfig[selectedTreatmentPlan.status]?.text, 'text-sm px-3 py-1')}>
                                 {selectedTreatmentPlan.status}
@@ -2527,7 +2527,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             <div className="grid grid-cols-2 gap-4">
                               <Card className="border-slate-200">
                                 <CardContent className="p-4">
-                                  <p className="text-xs text-slate-500 mb-1">Created</p>
+                                  <p className="text-xs text-slate-500 mb-1">{t.created || 'Created'}</p>
                                   <p className="font-medium text-slate-700">
                                     {format(new Date(selectedTreatmentPlan.created_at), 'PPP')}
                                   </p>
@@ -2535,7 +2535,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               </Card>
                               <Card className="border-slate-200">
                                 <CardContent className="p-4">
-                                  <p className="text-xs text-slate-500 mb-1">Linked Appointments</p>
+                                  <p className="text-xs text-slate-500 mb-1">{t.linkedAppointments || 'Linked Appointments'}</p>
                                   <p className="font-medium text-slate-700">
                                     {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length}
                                   </p>
@@ -2547,7 +2547,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             <div>
                               <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
-                                Appointments for this Treatment
+                                {t.appointmentsForThisTreatment || 'Appointments for this Treatment'}
                               </h3>
                               <div className="space-y-2">
                                 {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).map(appt => (
