@@ -65,6 +65,7 @@ export default function BookAppointment() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successDetails, setSuccessDetails] = useState<{ date: string; time: string; dentist?: string; reason?: string; pendingApproval?: boolean } | undefined>(undefined);
   const [dentistAvailableDays, setDentistAvailableDays] = useState<number[]>([]);
+  const [dentistVacationDays, setDentistVacationDays] = useState<{ start_date: string; end_date: string }[]>([]);
 
   useEffect(() => {
     if (!businessLoading && businessId) {
@@ -211,21 +212,31 @@ export default function BookAppointment() {
     setSelectedDentist(dentist);
     setBookingStep('datetime');
     
-    // Fetch dentist's available days
     if (businessId) {
-      const { data: availabilityData } = await supabase
-        .from('dentist_availability')
-        .select('day_of_week, is_available')
-        .eq('dentist_id', dentist.id)
-        .eq('business_id', businessId)
-        .eq('is_available', true);
+      // Fetch dentist's available days and vacation days in parallel
+      const [availabilityResult, vacationResult] = await Promise.all([
+        supabase
+          .from('dentist_availability')
+          .select('day_of_week, is_available')
+          .eq('dentist_id', dentist.id)
+          .eq('business_id', businessId)
+          .eq('is_available', true),
+        supabase
+          .from('dentist_vacation_days')
+          .select('start_date, end_date')
+          .eq('dentist_id', dentist.id)
+          .eq('business_id', businessId)
+          .eq('is_approved', true)
+          .gte('end_date', format(new Date(), 'yyyy-MM-dd'))
+      ]);
       
-      if (availabilityData && availabilityData.length > 0) {
-        setDentistAvailableDays(availabilityData.map(d => d.day_of_week));
+      if (availabilityResult.data && availabilityResult.data.length > 0) {
+        setDentistAvailableDays(availabilityResult.data.map(d => d.day_of_week));
       } else {
-        // Default to weekdays if no availability set
         setDentistAvailableDays([1, 2, 3, 4, 5]);
       }
+      
+      setDentistVacationDays(vacationResult.data || []);
     }
   };
 
@@ -374,8 +385,16 @@ export default function BookAppointment() {
     if (date < today) return true;
     
     // Check if dentist works on this day of the week
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    return !dentistAvailableDays.includes(dayOfWeek);
+    const dayOfWeek = date.getDay();
+    if (!dentistAvailableDays.includes(dayOfWeek)) return true;
+    
+    // Check if date falls within vacation period
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const isOnVacation = dentistVacationDays.some(
+      v => dateStr >= v.start_date && dateStr <= v.end_date
+    );
+    
+    return isOnVacation;
   };
 
   const navigateWeek = (direction: 'prev' | 'next') => {
