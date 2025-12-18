@@ -57,7 +57,42 @@ serve(async (req) => {
     }
     console.log('✅ Found actor profile:', actorProfile.id);
 
-    // 2. Dentist Resolution
+    // EARLY EXIT: If paying an existing request, patients don't need dentist validation
+    if (payment_request_id) {
+      console.log('Processing payment for existing request:', payment_request_id);
+      
+      // Use adminClient to bypass RLS for reading payment request
+      const { data: pr, error: prError } = await adminClient.from('payment_requests')
+        .select('*').eq('id', payment_request_id).single();
+      
+      if (prError || !pr) {
+        console.error('Payment request error:', prError);
+        throw new Error('Payment request not found');
+      }
+
+      // Create new Stripe session
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: { currency: "eur", product_data: { name: pr.description }, unit_amount: pr.amount },
+          quantity: 1
+        }],
+        mode: "payment",
+        success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get("origin")}/payment-cancelled`,
+        customer_email: pr.patient_email,
+        metadata: { patient_id: pr.patient_id, dentist_id: pr.dentist_id, payment_request_id, description: pr.description },
+      });
+
+      // Update DB (adminClient)
+      await adminClient.from('payment_requests').update({ stripe_session_id: session.id }).eq('id', payment_request_id);
+
+      return new Response(JSON.stringify({
+        payment_url: session.url, session_id: session.id, message: "Payment link created successfully"
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+    }
+
+    // 2. Dentist Resolution (only needed for creating new payment requests)
     let dentist_id = requestedDentistId;
     let validDentist = null;
     let business_id: string | null = null;  // Track business_id for payment_requests
@@ -144,35 +179,6 @@ serve(async (req) => {
     if (!validDentist) {
       console.error(`No valid dentist. Req: ${requestedDentistId}, Actor: ${actorProfile.id}`);
       throw new Error(`Unauthorized: Could not find a valid dentist profile for your account. (Requested: ${requestedDentistId})`);
-    }
-
-    // 3. Handle Updates (Regenerate Link)
-    if (payment_request_id) {
-      // Use adminClient to bypass RLS for reading payment request too, just in case
-      const { data: pr } = await adminClient.from('payment_requests')
-        .select('*').eq('id', payment_request_id).single();
-      if (!pr) throw new Error('Payment request not found');
-
-      // Create new session
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [{
-          price_data: { currency: "eur", product_data: { name: pr.description }, unit_amount: pr.amount },
-          quantity: 1
-        }],
-        mode: "payment",
-        success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.get("origin")}/payment-cancelled`,
-        customer_email: pr.patient_email,
-        metadata: { patient_id: pr.patient_id, dentist_id: pr.dentist_id, payment_request_id, description: pr.description },
-      });
-
-      // Update DB (adminClient)
-      await adminClient.from('payment_requests').update({ stripe_session_id: session.id }).eq('id', payment_request_id);
-
-      return new Response(JSON.stringify({
-        payment_url: session.url, session_id: session.id, message: "Payment link created successfully"
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
     }
 
     // 4. Create New Request
