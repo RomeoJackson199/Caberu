@@ -91,13 +91,16 @@ serve(async (req) => {
             );
         }
 
-        // Format date 
+        // Format date in Brussels timezone
+        const CLINIC_TIMEZONE = 'Europe/Brussels';
         const appointmentDate = new Date(appointment.appointment_date);
         const formattedDate = appointmentDate.toLocaleDateString('en-US', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+            timeZone: CLINIC_TIMEZONE
         });
         const formattedTime = appointmentDate.toLocaleTimeString('en-US', {
-            hour: 'numeric', minute: '2-digit', hour12: true
+            hour: 'numeric', minute: '2-digit', hour12: true,
+            timeZone: CLINIC_TIMEZONE
         });
 
         // Prepare email content
