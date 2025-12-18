@@ -90,6 +90,14 @@ serve(async (req) => {
     // Password provided: attempt to create auth user and link
     if (claimable.length !== 1) {
       console.log('No single claimable profile found:', claimable.length);
+      // Check if profile exists but is already claimed
+      const alreadyClaimed = (profiles || []).some((p: any) => p.user_id !== null);
+      if (alreadyClaimed) {
+        return new Response(JSON.stringify({ error: 'ALREADY_CLAIMED' }), { 
+          status: 409, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
       return new Response(JSON.stringify({ error: 'Not allowed' }), { 
         status: 404, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
