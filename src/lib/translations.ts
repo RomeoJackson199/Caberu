@@ -943,6 +943,12 @@ export interface Translations {
     estCost: string;
     targetDate: string;
     create: string;
+    noAppointmentsLinked: string;
+    selectTreatmentOrAppointment: string;
+    totalAppointments: string;
+    moreAppointments: string;
+    financialLedger: string;
+    emailSummary: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1888,6 +1894,12 @@ export const translations: Record<Language, TranslationEntry> = {
         estCost: "Est. Cost €",
         targetDate: "Target Date",
         create: "Create",
+        noAppointmentsLinked: "No appointments linked to this treatment yet",
+        selectTreatmentOrAppointment: "Select a treatment or appointment from the sidebar",
+        totalAppointments: "total appointments",
+        moreAppointments: "more appointments",
+        financialLedger: "Financial Ledger",
+        emailSummary: "Email Summary",
 
         // Common
         'common.cancel': "Cancel",

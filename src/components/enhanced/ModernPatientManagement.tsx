@@ -2564,7 +2564,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                   </Card>
                                 ))}
                                 {appointments.filter(a => a.treatment_plan_id === selectedTreatmentPlan.id).length === 0 && (
-                                  <p className="text-sm text-slate-400 text-center py-8">No appointments linked to this treatment yet</p>
+                                  <p className="text-sm text-slate-400 text-center py-8">{t.noAppointmentsLinked || 'No appointments linked to this treatment yet'}</p>
                                 )}
                               </div>
                             </div>
@@ -2573,7 +2573,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <div className="flex items-center justify-center h-full text-slate-400">
                             <div className="text-center">
                               <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                              <p>Select a treatment or appointment from the sidebar</p>
+                              <p>{t.selectTreatmentOrAppointment || 'Select a treatment or appointment from the sidebar'}</p>
                             </div>
                           </div>
                         )}
@@ -2595,15 +2595,15 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             <Calendar className="h-6 w-6 text-white" />
                           </div>
                           <div>
-                            <h2 className="text-xl font-bold text-slate-800">Appointments</h2>
-                            <p className="text-sm text-slate-500">{appointments.length} total appointments</p>
+                            <h2 className="text-xl font-bold text-slate-800">{t.appointments || 'Appointments'}</h2>
+                            <p className="text-sm text-slate-500">{appointments.length} {t.totalAppointments || 'total appointments'}</p>
                           </div>
                         </div>
                         <Button
                           className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:shadow-lg"
                           onClick={() => setBookingDialogOpen(true)}
                         >
-                          <Plus className="h-4 w-4 mr-2" /> New Appointment
+                          <Plus className="h-4 w-4 mr-2" />{t.newAppointment || 'New Appointment'}
                         </Button>
                       </div>
 
@@ -2616,7 +2616,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             </div>
                             <div>
                               <p className="text-2xl font-bold text-slate-800">{upcomingAppts.length}</p>
-                              <p className="text-xs text-slate-500">Upcoming</p>
+                              <p className="text-xs text-slate-500">{t.upcoming || 'Upcoming'}</p>
                             </div>
                           </div>
                         </div>
@@ -2627,7 +2627,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             </div>
                             <div>
                               <p className="text-2xl font-bold text-slate-800">{appointments.filter(a => a.status === 'pending').length}</p>
-                              <p className="text-xs text-slate-500">Pending</p>
+                              <p className="text-xs text-slate-500">{t.pending || 'Pending'}</p>
                             </div>
                           </div>
                         </div>
@@ -2638,7 +2638,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             </div>
                             <div>
                               <p className="text-2xl font-bold text-slate-800">{appointments.filter(a => a.status === 'completed').length}</p>
-                              <p className="text-xs text-slate-500">Completed</p>
+                              <p className="text-xs text-slate-500">{t.completed || 'Completed'}</p>
                             </div>
                           </div>
                         </div>
@@ -2649,7 +2649,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                             </div>
                             <div>
                               <p className="text-2xl font-bold text-slate-800">{appointments.filter(a => a.status === 'cancelled').length}</p>
-                              <p className="text-xs text-slate-500">Cancelled</p>
+                              <p className="text-xs text-slate-500">{t.cancelled || 'Cancelled'}</p>
                             </div>
                           </div>
                         </div>
@@ -2662,7 +2662,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           <div className="flex items-center gap-3 mb-4">
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Upcoming</h3>
+                              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">{t.upcoming || 'Upcoming'}</h3>
                             </div>
                             <div className="flex-1 h-px bg-gradient-to-r from-emerald-200 to-transparent" />
                             <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{upcomingAppts.length}</span>
@@ -2671,14 +2671,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           {upcomingAppts.length === 0 ? (
                             <div className="bg-slate-50 rounded-xl p-6 text-center">
                               <Calendar className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-                              <p className="text-slate-500 text-sm">No upcoming appointments</p>
+                              <p className="text-slate-500 text-sm">{t.noUpcomingAppointments || 'No upcoming appointments'}</p>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="mt-2 text-emerald-600"
                                 onClick={() => setBookingDialogOpen(true)}
                               >
-                                <Plus className="h-3 w-3 mr-1" /> Schedule now
+                                <Plus className="h-3 w-3 mr-1" />{t.scheduleNow || 'Schedule now'}
                               </Button>
                             </div>
                           ) : (
@@ -2740,7 +2740,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                                 className="h-8 bg-emerald-500 hover:bg-emerald-600 text-white text-xs"
                                                 onClick={(e) => handleConfirmAppointment(appt.id, e)}
                                               >
-                                                <Check className="h-3 w-3 mr-1" /> Confirm
+                                                <Check className="h-3 w-3 mr-1" />{t.confirm || 'Confirm'}
                                               </Button>
                                               <Button
                                                 size="sm"
@@ -2804,7 +2804,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               ))}
                               {pastAppts.length > 10 && (
                                 <div className="p-3 text-center bg-slate-50">
-                                  <span className="text-xs text-slate-500">+ {pastAppts.length - 10} more appointments</span>
+                                  <span className="text-xs text-slate-500">+ {pastAppts.length - 10} {t.moreAppointments || 'more appointments'}</span>
                                 </div>
                               )}
                             </div>
@@ -2819,9 +2819,9 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     activeTab === 'financial' && (
                       <div className="p-8 space-y-6 max-w-5xl mx-auto">
                         <div className="flex items-center justify-between">
-                          <h2 className="text-lg font-semibold text-slate-800">Financial Ledger</h2>
+                          <h2 className="text-lg font-semibold text-slate-800">{t.financialLedger || 'Financial Ledger'}</h2>
                           <div className="flex items-center gap-4">
-                            <span className="text-sm text-slate-500">Balance:</span>
+                            <span className="text-sm text-slate-500">{t.balance || 'Balance'}:</span>
                             <span className={cn(
                               "text-xl font-bold",
                               (patientFlags[selectedPatient.id]?.outstandingCents || 0) > 0 ? "text-rose-600" : "text-slate-800"
@@ -2865,7 +2865,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
                   >
                     <Calendar className="h-4 w-4 text-indigo-600" />
-                    <span className="text-sm font-medium">New Appointment</span>
+                    <span className="text-sm font-medium">{t.newAppointment || 'New Appointment'}</span>
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -2874,7 +2874,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
                   >
                     <FileText className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-medium">Add Note</span>
+                    <span className="text-sm font-medium">{t.addNote || 'Add Note'}</span>
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -2883,7 +2883,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
                   >
                     <Send className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium">Email Summary</span>
+                    <span className="text-sm font-medium">{t.emailSummary || 'Email Summary'}</span>
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -2892,7 +2892,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                     className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border hover:bg-slate-50"
                   >
                     <Download className="h-4 w-4 text-violet-600" />
-                    <span className="text-sm font-medium">Export PDF</span>
+                    <span className="text-sm font-medium">{t.exportPdf || 'Export PDF'}</span>
                   </motion.button>
                 </motion.div>
               )}
