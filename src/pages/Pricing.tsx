@@ -174,9 +174,9 @@ export default function Pricing() {
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error('Subscription error:', error);
-      toast.error(error.message || "Failed to start checkout");
+      toast.error(error instanceof Error ? error.message : "Failed to start checkout");
       setLoading(null);
     }
   };

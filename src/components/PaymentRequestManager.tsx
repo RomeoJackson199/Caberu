@@ -376,7 +376,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
                         <Button variant="outline" size="sm" onClick={() => {
                           setEditingRequest(request);
                           setEditForm({ amount: (request.amount / 100).toFixed(2), description: request.description });
-                        }}><Edit className="h-4 w-4 mr-1" />{t.edit || 'Edit'}</Button>
+                        }}><Edit className="h-4 w-4 mr-1" />Edit</Button>
                         <Button variant="outline" size="sm" onClick={() => {
                           supabase.functions.invoke('send-payment-reminder', { body: { payment_request_ids: [request.id], template_key: 'friendly' } }).then(() => toast({ title: t.reminderSent || 'Reminder sent to patient' })).catch(() => toast({ title: t.error || 'Error', description: t.failedToSendReminder || 'Failed to send reminder', variant: 'destructive' }));
                         }}><Send className="h-4 w-4 mr-1" />{t.remindPatient || 'Remind Patient'}</Button>
@@ -447,7 +447,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
               />
             </div>
             <div>
-              <Label>{t.description || 'Description'}</Label>
+              <Label>Description</Label>
               <Input
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}

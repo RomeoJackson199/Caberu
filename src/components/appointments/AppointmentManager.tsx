@@ -209,7 +209,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
 
       toast({
         title: t.success || 'Success',
-        description: `${t.appointment || 'Appointment'} ${newStatus}`,
+        description: `Appointment ${newStatus}`,
       });
     } catch (error) {
       console.error('Error updating appointment:', error);

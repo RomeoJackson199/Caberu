@@ -185,7 +185,7 @@ export const createSecureErrorResponse = (
       headers: {
         ...getCorsHeaders(environment),
         'Content-Type': 'application/json'
-      }
+      } as HeadersInit
     }
   );
 };

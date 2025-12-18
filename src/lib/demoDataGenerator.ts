@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { addDays, subDays, startOfDay, setHours, setMinutes } from "date-fns";
+import { logger } from '@/lib/logger';
 
 /**
  * Demo Data Generator for New Dentists

@@ -167,10 +167,10 @@ export function AppointmentCompletionModal({ open, onOpenChange, appointment, de
 					vat_amount_cents: vatCents,
 					status: 'issued',
 					claim_status: 'to_be_submitted'
-				}).select('*').single().then(res => {
+				}).select('*').single().then((res: { error: Error | null; data: { id: string } | null }) => {
 					if (res.error) throw res.error;
 					return res.data;
-				}).catch(err => {
+				}).catch((err: Error) => {
 					console.error('Error creating invoice:', err);
 					throw err;
 				}), sb) as { id: string };
@@ -626,10 +626,10 @@ export function AppointmentCompletionModal({ open, onOpenChange, appointment, de
 							vat_amount_cents: Math.round(totals.vat * 100),
 							status: 'draft',
 							claim_status: 'to_be_submitted'
-						}).select('*').single().then(res => {
+						}).select('*').single().then((res: { error: Error | null; data: { id: string } | null }) => {
 							if (res.error) throw res.error;
 							return res.data;
-						}).catch(err => {
+						}).catch((err: Error) => {
 							console.error('Error creating invoice:', err);
 							throw err;
 						}), sb) as { id: string };

@@ -629,8 +629,8 @@ export const TRANSLATIONS = {
 };
 
 export function getTranslation(key: string, language: string = DEFAULT_LANGUAGE): string {
-  const lang = TRANSLATIONS[language] || TRANSLATIONS[DEFAULT_LANGUAGE];
-  return (lang as any)[key] || key;
+  const lang = (TRANSLATIONS as Record<string, unknown>)[language] || (TRANSLATIONS as Record<string, unknown>)[DEFAULT_LANGUAGE];
+  return (lang as Record<string, string>)?.[key] || key;
 }
 
 export function getSupportedLanguages(): LanguageConfig[] {

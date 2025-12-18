@@ -117,10 +117,10 @@ const Onboarding = () => {
             });
 
             navigate("/dashboard");
-        } catch (error) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message,
+                description: error instanceof Error ? error.message : "An error occurred",
                 variant: "destructive",
             });
         } finally {

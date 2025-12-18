@@ -82,8 +82,8 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
   }, [businessId]);
 
   const templateConfig = templateType ? getTemplateConfig(templateType) : null;
-  const categories = templateConfig?.serviceCategories || [];
-  const fieldLabels = templateConfig?.serviceFieldLabels || {
+  const categories = (templateConfig as { serviceCategories?: string[] } | null)?.serviceCategories || [];
+  const fieldLabels = (templateConfig as { serviceFieldLabels?: Record<string, string> } | null)?.serviceFieldLabels || {
     serviceName: 'Service Name',
     serviceNamePlaceholder: 'e.g., Consultation, Service',
     descriptionPlaceholder: 'Describe what\'s included...',
@@ -162,7 +162,7 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
           console.error('Database error:', error);
           throw new Error(error.message || 'Failed to update service');
         }
-        toast.success(t.serviceUpdatedSuccessfully || 'Service updated successfully');
+        toast.success('Service updated successfully');
         logger.info('Service updated', { serviceId: service.id });
       } else {
         const { error, data } = await supabase
@@ -175,7 +175,7 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
           console.error('Database error:', error);
           throw new Error(error.message || 'Failed to create service');
         }
-        toast.success(t.serviceCreatedSuccessfully || 'Service created successfully');
+        toast.success('Service created successfully');
         logger.info('Service created', { serviceId: data?.id });
       }
 
@@ -191,10 +191,10 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
           newErrors[path] = err.message;
         });
         setErrors(newErrors);
-        toast.error(t.pleaseFixValidationErrors || 'Please fix the validation errors');
+        toast.error('Please fix the validation errors');
       } else {
         // Handle other errors
-        const errorMessage = error.message || (t.failedToSaveService || 'Failed to save service');
+        const errorMessage = error.message || 'Failed to save service';
         toast.error(errorMessage);
       }
     } finally {
@@ -206,11 +206,11 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
     <Dialog open={open} onOpenChange={(open) => !open && onClose(false)}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{service ? (t.editService || 'Edit Service') : (t.addNewService || 'Add New Service')}</DialogTitle>
+          <DialogTitle>{service ? 'Edit Service' : 'Add New Service'}</DialogTitle>
           <DialogDescription>
             {service
-              ? (t.updateServiceDetailsAndPricing || 'Update service details and pricing')
-              : (t.addServiceWithNamePriceDuration || 'Add a service with a name, price, and duration. Everything else is optional.')}
+              ? 'Update service details and pricing'
+              : 'Add a service with a name, price, and duration. Everything else is optional.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -277,7 +277,7 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
                 required
                 className={errors.price ? 'border-red-500' : ''}
               />
-              <p className="text-xs text-muted-foreground">{t.setServicePriceInEuros || 'Set your service price in euros'}</p>
+              <p className="text-xs text-muted-foreground">Set your service price in euros</p>
               {errors.price && (
                 <div className="flex items-center gap-1 text-sm text-red-500">
                   <AlertCircle className="h-3 w-3" />
@@ -301,7 +301,7 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
                 required
                 className={errors.duration ? 'border-red-500' : ''}
               />
-              <p className="text-xs text-muted-foreground">{t.howLongDoesThisServiceTake || 'How long does this service take?'}</p>
+              <p className="text-xs text-muted-foreground">How long does this service take?</p>
               {errors.duration && (
                 <div className="flex items-center gap-1 text-sm text-red-500">
                   <AlertCircle className="h-3 w-3" />
@@ -327,7 +327,7 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
                   <SelectValue placeholder="Select a category..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
+                  {categories.map((cat: string) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
@@ -356,12 +356,12 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
 
           {/* Switches */}
           <div className="space-y-4 pt-4 border-t">
-            <p className="text-sm font-medium">{t.advancedOptions || 'Advanced Options'}</p>
+            <p className="text-sm font-medium">Advanced Options</p>
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="is-active">{t.availableForBooking || 'Available for Booking'}</Label>
+                <Label htmlFor="is-active">Available for Booking</Label>
                 <p className="text-xs text-muted-foreground">
-                  {t.turnOffToHideTemporarily || 'Turn off to hide this service temporarily'}
+                  Turn off to hide this service temporarily
                 </p>
               </div>
               <Switch
@@ -375,9 +375,9 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="upfront-payment">{t.requireUpfrontPayment || 'Require Upfront Payment'}</Label>
+                <Label htmlFor="upfront-payment">Require Upfront Payment</Label>
                 <p className="text-xs text-muted-foreground">
-                  {t.customersPayBeforeBooking || 'Customers pay before booking (requires Stripe setup)'}
+                  Customers pay before booking (requires Stripe setup)
                 </p>
               </div>
               <Switch
@@ -396,7 +396,7 @@ export function ServiceDialog({ open, onClose, service, businessId, defaultCateg
               {t.cancel || 'Cancel'}
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? (t.saving || 'Saving...') : service ? (t.updateService || 'Update Service') : (t.createService || 'Create Service')}
+              {saving ? 'Saving...' : service ? 'Update Service' : 'Create Service'}
             </Button>
           </div>
         </form>

@@ -104,7 +104,7 @@ export default function DentistAdminBranding() {
       if (business) {
         const template = getTemplateConfig((business.template_type as TemplateType) || "healthcare");
         const customConfig = (business.custom_config as Record<string, any>) || {};
-        const aiBehaviorDefaults = template?.aiBehaviorDefaults || {
+        const aiBehaviorDefaults = (template as unknown as { aiBehaviorDefaults?: { systemBehavior: string; greeting: string; personalityTraits: string[] } })?.aiBehaviorDefaults || {
           systemBehavior: "",
           greeting: "",
           personalityTraits: []
@@ -223,7 +223,7 @@ export default function DentistAdminBranding() {
 
       // Load AI defaults from new template
       const newTemplateConfig = getTemplateConfig(pendingTemplate);
-      const aiConfig = newTemplateConfig.aiBehaviorDefaults;
+      const aiConfig = (newTemplateConfig as unknown as { aiBehaviorDefaults: { systemBehavior: string; greeting: string; personalityTraits: string[] } }).aiBehaviorDefaults || { systemBehavior: '', greeting: '', personalityTraits: [] };
 
       setAiSystemBehavior(aiConfig.systemBehavior);
       setAiGreeting(aiConfig.greeting);
@@ -259,7 +259,7 @@ export default function DentistAdminBranding() {
 
         toast({
           title: t.templateSwitched,
-          description: `${t.templateSwitchedDesc} ${newTemplateConfig.name} ${t.template}`,
+          description: `${t.templateSwitchedDesc} ${pendingTemplate} ${t.template}`,
         });
 
         // Update initial state to reflect saved changes
@@ -268,6 +268,7 @@ export default function DentistAdminBranding() {
           slug,
           tagline,
           address,
+          phone,
           primaryColor,
           secondaryColor,
           logoUrl,
@@ -275,7 +276,6 @@ export default function DentistAdminBranding() {
           aiSystemBehavior: aiConfig.systemBehavior,
           aiGreeting: aiConfig.greeting,
           aiPersonalityTraits: aiConfig.personalityTraits,
-          dailyRevenueGoal,
         });
       } catch (error: any) {
         logger.error('Error saving template:', error);
@@ -527,7 +527,7 @@ export default function DentistAdminBranding() {
               <CardContent>
                 <BusinessTemplateSelector
                   selectedTemplate={templateType}
-                  onSelect={handleTemplateSelect}
+                  onSelectTemplate={handleTemplateSelect}
                 />
                 <div className="mt-4 p-4 bg-muted/50 rounded-lg">
                   <h4 className="font-medium mb-2">Current Template Features:</h4>
@@ -754,7 +754,7 @@ export default function DentistAdminBranding() {
               systemBehavior={aiSystemBehavior}
               greeting={aiGreeting}
               personalityTraits={aiPersonalityTraits}
-              businessId={businessId}
+              businessId={businessId || undefined}
               onSystemBehaviorChange={setAiSystemBehavior}
               onGreetingChange={setAiGreeting}
               onPersonalityTraitsChange={setAiPersonalityTraits}
@@ -817,16 +817,16 @@ export default function DentistAdminBranding() {
         />
 
         {pendingTemplate && (
-          <TemplatePreview
-            currentTemplate={templateType}
-            previewTemplate={pendingTemplate}
-            open={showTemplateWarning}
-            onOpenChange={(open) => {
-              setShowTemplateWarning(open);
-              if (!open) setPendingTemplate(null);
-            }}
-            onConfirmSwitch={confirmTemplateChange}
-          />
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-background p-6 rounded-lg max-w-md">
+              <h3 className="font-bold mb-2">Switch Template?</h3>
+              <p className="mb-4">Are you sure you want to switch from {templateType} to {pendingTemplate}?</p>
+              <div className="flex gap-2 justify-end">
+                <button className="px-4 py-2 border rounded" onClick={() => { setShowTemplateWarning(false); setPendingTemplate(null); }}>Cancel</button>
+                <button className="px-4 py-2 bg-primary text-primary-foreground rounded" onClick={confirmTemplateChange}>Confirm</button>
+              </div>
+            </div>
+          </div>
         )}
       </div >
     </>

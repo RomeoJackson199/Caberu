@@ -90,7 +90,10 @@ export default function PublicBooking() {
         .in('profile_id', members.map(m => m.profile_id));
 
       if (!error && data) {
-        setDentists(data);
+        setDentists(data.map(d => ({
+          ...d,
+          profiles: d.profiles as unknown as { first_name: string; last_name: string }
+        })));
       }
     };
     fetchDentists();

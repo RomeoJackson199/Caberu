@@ -1010,9 +1010,7 @@ export interface Translations {
     bookWithAIAssistant: string;
     bookManually: string;
     // PatientDetailsTabs
-    appointmentCancelled: string;
     appointmentCancelledSuccessfully: string;
-    failedToCancelAppointment: string;
     appointmentApproved: string;
     appointmentConfirmedNotified: string;
     failedToApproveAppointment: string;
@@ -1020,14 +1018,10 @@ export interface Translations {
     appointmentCancelledPatientNotified: string;
     failedToRejectAppointment: string;
     treatments: string;
-    prescriptions: string;
-    payments: string;
     info: string;
     scheduleNewAppointmentAbove: string;
     approve: string;
     reject: string;
-    pastAppointments: string;
-    noPastAppointments: string;
     patientInformation: string;
     editDetails: string;
     // AppointmentManager
@@ -1038,12 +1032,9 @@ export interface Translations {
     appointmentsWord: string;
     failedToUpdateAppointments: string;
     manageYourPatientAppointments: string;
-    newAppointment: string;
     filtersAndSearch: string;
     searchPatients: string;
     clearFilters: string;
-    upcoming: string;
-    confirmed: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -3727,7 +3718,7 @@ const mergeTranslations = (
         if (value === undefined) return;
 
         if (isTranslationObject(value) && isTranslationObject(base[key])) {
-            result[key] = mergeTranslations(base[key], value as TranslationEntry);
+            result[key] = mergeTranslations(base[key], value as unknown as TranslationEntry);
         } else {
             result[key] = value;
         }

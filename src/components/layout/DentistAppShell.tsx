@@ -47,12 +47,12 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
   const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
   const allNavItems = useMemo(() => [{
     id: 'dashboard' as DentistSection,
-    label: t.dashboard || 'Dashboard',
+    label: t.navDashboard || 'Dashboard',
     icon: LayoutDashboard,
     path: '/dentist/dashboard'
   }, {
     id: 'patients' as DentistSection,
-    label: t.patients || 'Patients',
+    label: t.patient || 'Patients',
     icon: Users,
     path: '/dentist/patients'
   }, {
@@ -62,7 +62,7 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
     path: '/dentist/appointments'
   }, {
     id: 'messages' as DentistSection,
-    label: t.messages || 'Messages',
+    label: 'Messages',
     icon: MessageSquare,
     path: '/dentist/messages'
   }], [t]);
@@ -142,7 +142,7 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel>{userName || t.account || 'Account'}</DropdownMenuLabel>
+              <DropdownMenuLabel>{userName || 'Account'}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onChangeSection('settings')} className="gap-2">
                 <SettingsIcon className="mr-2 h-4 w-4" />
@@ -261,14 +261,14 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
                   <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start text-left">
-                  <span className="text-xs font-medium truncate max-w-[120px]">{userName || t.account || 'Account'}</span>
+                  <span className="text-xs font-medium truncate max-w-[120px]">{userName || 'Account'}</span>
                   <span className="text-[10px] text-muted-foreground">{t.provider || 'Dentist'}</span>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel>{t.account || 'Account'}</DropdownMenuLabel>
+              <DropdownMenuLabel>Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onChangeSection('settings')} className="gap-2">
                 <SettingsIcon className="mr-2 h-4 w-4" />

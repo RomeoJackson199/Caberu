@@ -154,14 +154,15 @@ export class EventEmailService {
       .limit(1)
       .maybeSingle();
 
+    const profile = clinic?.profiles as { first_name?: string; last_name?: string; email?: string; phone?: string } | null;
     return {
       patient_name: `${patient.first_name} ${patient.last_name}`,
       patient_email: patient.email,
       patient_language: 'en', // Default to English for now
-      clinic_name: clinic?.profiles?.first_name ? `Dr. ${clinic.profiles.first_name} ${clinic.profiles.last_name}` : 'Dental Clinic',
+      clinic_name: profile?.first_name ? `Dr. ${profile.first_name} ${profile.last_name}` : 'Dental Clinic',
       clinic_address: clinic?.clinic_address || '',
-      clinic_phone: clinic?.profiles?.phone || '',
-      clinic_email: clinic?.profiles?.email || '',
+      clinic_phone: profile?.phone || '',
+      clinic_email: profile?.email || '',
       clinic_id: clinic?.id || 'default'
     };
   }

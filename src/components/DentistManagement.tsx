@@ -54,7 +54,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
     } catch (error: unknown) {
       toast({
         title: t.error || "Error",
-        description: error instanceof Error ? error.message : (t.unknownError || "Unknown error"),
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     }
@@ -64,7 +64,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
     if (!newDentistEmail.trim()) {
       toast({
         title: t.error || "Error",
-        description: t.pleaseEnterEmailAddress || "Please enter an email address",
+        description: "Please enter an email address",
         variant: "destructive",
       });
       return;
@@ -75,7 +75,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
     if (!emailRegex.test(newDentistEmail)) {
       toast({
         title: t.error || "Error",
-        description: t.pleaseEnterValidEmailAddress || "Please enter a valid email address",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
@@ -146,8 +146,8 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
       }
 
       toast({
-        title: t.invitationSent || "Invitation Sent",
-        description: (t.invitationSentToEmail || "An invitation has been sent to {email}. They will see it when they log in.").replace('{email}', newDentistEmail),
+        title: "Invitation Sent",
+        description: `An invitation has been sent to ${newDentistEmail}. They will see it when they log in.`,
       });
 
       setNewDentistEmail("");
@@ -187,7 +187,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
         <CardHeader>
           <CardTitle className="flex items-center space-x-2 text-dental-primary">
             <UserPlus className="h-5 w-5" />
-            <span>{t.addNewDentist || 'Add New Dentist'}</span>
+            <span>Add New Dentist</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -195,9 +195,9 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
             <div className="flex items-start space-x-3">
               <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
               <div>
-                <h4 className="font-medium text-blue-900 dark:text-blue-100">{t.howItWorks || 'How it works'}</h4>
+                <h4 className="font-medium text-blue-900 dark:text-blue-100">How it works</h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  {t.dentistInvitationExplanation || 'Enter the email address of the dentist you want to add. We\'ll send them an invitation email with instructions to set up their account and access the dentist dashboard.'}
+                  Enter the email address of the dentist you want to add. We'll send them an invitation email with instructions to set up their account and access the dentist dashboard.
                 </p>
               </div>
             </div>
@@ -206,7 +206,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
           <div className="space-y-4">
             <div>
               <Label htmlFor="dentistEmail" className="text-sm font-medium">
-                {t.dentistEmailAddress || 'Dentist Email Address'}
+                Dentist Email Address
               </Label>
               <div className="flex space-x-2 mt-2">
                 <Input
@@ -256,7 +256,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
         <CardHeader>
           <CardTitle className="flex items-center space-x-2 text-dental-primary">
             <User className="h-5 w-5" />
-            <span>{t.dentistProfiles || 'Dentist Profiles'}</span>
+            <span>Dentist Profiles</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -264,7 +264,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder={t.searchDentists || "Search dentists..."}
+              placeholder="Search dentists..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -276,7 +276,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
             {filteredDentists.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p>{t.noDentistsFound || 'No dentists found'}</p>
+                <p>No dentists found</p>
               </div>
             ) : (
               filteredDentists.map((dentist) => {
@@ -299,7 +299,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                             {profile.first_name} {profile.last_name}
                           </h4>
                           {isCurrentUser && (
-                            <Badge variant="secondary" className="text-xs">{t.you || 'You'}</Badge>
+                            <Badge variant="secondary" className="text-xs">You</Badge>
                           )}
                           <Badge variant={dentist.is_active ? "default" : "secondary"}>
                             {dentist.is_active ? (t.active || "Active") : (t.inactive || "Inactive")}
@@ -330,12 +330,12 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle>{t.removeDentist || 'Remove Dentist'}</DialogTitle>
+                              <DialogTitle>Remove Dentist</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
                               <p className="text-muted-foreground">
-                                {t.removeDentistConfirm || 'Are you sure you want to remove'} {profile.first_name} {profile.last_name} {t.asDentist || 'as a dentist'}?
-                                {t.theyWillLoseAccess || 'They will lose access to the dentist dashboard.'}
+                                Are you sure you want to remove {profile.first_name} {profile.last_name} as a dentist?
+                                They will lose access to the dentist dashboard.
                               </p>
                               <div className="flex justify-end space-x-2">
                                 <Button variant="outline">{t.cancel || 'Cancel'}</Button>
@@ -343,7 +343,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                                   variant="destructive"
                                   onClick={() => handleRemoveDentist(dentist.id)}
                                 >
-                                  {t.remove || 'Remove'}
+                                  Remove
                                 </Button>
                               </div>
                             </div>
@@ -364,7 +364,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
         <Dialog open={!!selectedDentist} onOpenChange={() => setSelectedDentist(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t.dentistProfile || 'Dentist Profile'}</DialogTitle>
+              <DialogTitle>Dentist Profile</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -381,13 +381,13 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
 
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="font-medium">{t.statusLabel || 'Status'}:</span>
+                  <span className="font-medium">Status:</span>
                   <Badge variant={selectedDentist.is_active ? "default" : "secondary"}>
                     {selectedDentist.is_active ? (t.active || "Active") : (t.inactive || "Inactive")}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-medium">{t.role || 'Role'}:</span>
+                  <span className="font-medium">{t.roles || 'Role'}:</span>
                   <span className="text-muted-foreground capitalize">{selectedDentist.profiles.role}</span>
                 </div>
                 {selectedDentist.profiles.phone && (

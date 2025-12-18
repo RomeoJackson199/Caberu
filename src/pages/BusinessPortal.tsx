@@ -212,7 +212,7 @@ export default function BusinessPortal() {
                 Sign in or create an account to book appointments with {business.name}
               </AlertDescription>
             </Alert>
-            <UnifiedAuthForm onSignInSuccess={handleAuthSuccess} />
+            <div className="text-center text-muted-foreground">Please sign in to continue</div>
           </CardContent>
         </Card>
       </div>

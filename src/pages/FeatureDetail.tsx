@@ -261,8 +261,8 @@ const FeatureDetail = () => {
   const { language, t } = useLanguage();
   
   // Get feature content for current language, fallback to English
-  const feature = featureContent[id as keyof typeof featureContent];
-  const content = feature ? feature[language as keyof typeof feature.en] || feature.en : null;
+  const feature = featureContent[id as keyof typeof featureContent] as { en: { title: string; subtitle: string; description: string; details: string[]; benefits: string[]; icon: React.ComponentType<{ className?: string }> }; fr?: unknown; nl?: unknown } | undefined;
+  const content = feature ? (feature[language as 'en' | 'fr' | 'nl'] || feature.en) as { title: string; subtitle: string; description: string; details: string[]; benefits: string[]; icon: React.ComponentType<{ className?: string }> } : null;
   
   if (!content) {
     return (
@@ -319,7 +319,7 @@ const FeatureDetail = () => {
                  'Key Features'}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {content.details.map((detail, index) => (
+                {content.details.map((detail: string, index: number) => (
                   <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                     <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                     <span className="text-gray-700">{detail}</span>
@@ -337,7 +337,7 @@ const FeatureDetail = () => {
                  'Benefits'}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {content.benefits.map((benefit, index) => (
+                {content.benefits.map((benefit: string, index: number) => (
                   <div key={index} className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
                     <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                     <span className="text-gray-700">{benefit}</span>
