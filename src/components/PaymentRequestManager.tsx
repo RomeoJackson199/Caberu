@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, DollarSign, Clock, CheckCircle, XCircle, Search, Filter, MoreHorizontal, Send, FileDown, Check, Edit } from 'lucide-react';
 import { PaymentRequestForm } from '@/components/PaymentRequestForm';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/hooks/useLanguage';
 import PaymentWizard from '@/components/payments/PaymentWizard';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
