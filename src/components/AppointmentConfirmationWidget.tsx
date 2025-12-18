@@ -21,9 +21,9 @@ import {
   Eye,
   Clock as ClockIcon
 } from "lucide-react";
-import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatClinicTime } from "@/lib/timezone";
 
 interface AppointmentDetails {
   id: string;
@@ -164,7 +164,7 @@ export function AppointmentConfirmationWidget({
 
   const appointmentDate = new Date(appointment.appointment_date);
   const isPast = appointmentDate < new Date();
-  const isToday = format(appointmentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+  const isToday = formatClinicTime(appointment.appointment_date, 'yyyy-MM-dd') === formatClinicTime(new Date(), 'yyyy-MM-dd');
 
   return (
     <Card className={`glass-card hover:shadow-lg transition-all duration-300 ${className}`}>
@@ -203,10 +203,10 @@ export function AppointmentConfirmationWidget({
             <Calendar className="h-5 w-5 text-blue-600" />
             <div>
               <p className="font-medium text-blue-900">
-                {format(appointmentDate, 'EEEE, MMMM d, yyyy')}
+                {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d, yyyy')}
               </p>
               <p className="text-sm text-blue-700">
-                {isToday ? "Today" : format(appointmentDate, 'MMM d, yyyy')}
+                {isToday ? "Today" : formatClinicTime(appointment.appointment_date, 'MMM d, yyyy')}
               </p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export function AppointmentConfirmationWidget({
             <Clock className="h-5 w-5 text-green-600" />
             <div>
               <p className="font-medium text-green-900">
-                {format(appointmentDate, 'h:mm a')}
+                {formatClinicTime(appointment.appointment_date, 'h:mm a')}
               </p>
               <p className="text-sm text-green-700">
                 Duration: {formatDuration(appointment.duration_minutes)}
