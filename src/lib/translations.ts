@@ -544,6 +544,181 @@ export interface Translations {
         };
     };
 
+    // Settings pages
+    profile: string;
+    services: string;
+    hours: string;
+    appts: string;
+    team: string;
+    brand: string;
+    billing: string;
+    security: string;
+    scheduleAvailability: string;
+    appointmentPreferences: string;
+    requireApprovalBefore: string;
+    approveNewPatientRequests: string;
+    manualReviewRequired: string;
+    requestsAutoConfirmed: string;
+    saveChanges: string;
+    savingChanges: string;
+    saveImmediately: string;
+    staffManagement: string;
+    manageTeamMembers: string;
+    dangerZone: string;
+    irreversibleActions: string;
+    leaveClinic: string;
+    loseAccessWarning: string;
+    lastMemberWarning: string;
+    leaveClinicConfirm: string;
+    enterPasswordConfirm: string;
+    yourPassword: string;
+    leaving: string;
+    businessDeleted: string;
+    lastMemberDeletedDesc: string;
+    leftClinic: string;
+    stillBelongOther: string;
+    leftRoleRemoved: string;
+    passwordRequired: string;
+    enterPasswordLeave: string;
+    couldntLoadSettings: string;
+    refreshOrTryAgain: string;
+    couldntSaveSettings: string;
+    appointmentRulesUpdated: string;
+    rulesUpdatedDesc: string;
+    loadingPortal: string;
+    accessDenied: string;
+    startTour: string;
+    reportsComingSoon: string;
+    sectionNotFound: string;
+    clinicalNotAvailable: string;
+    paymentNotAvailable: string;
+
+    // Branding page
+    brandingSettings: string;
+    brandingSubtitle: string;
+    branding: string;
+    aiAssistantConfig: string;
+    templates: string;
+    emailTemplates: string;
+    payments: string;
+    clinicInformation: string;
+    businessLinkQr: string;
+    uploadLogo: string;
+    logoUploadDesc: string;
+    chooseLogo: string;
+    logoUploaded: string;
+    logoUploadedDesc: string;
+    invalidFile: string;
+    uploadImageFile: string;
+    fileTooLarge: string;
+    logoSizeLimit: string;
+    uploadFailed: string;
+    clinicName: string;
+    tagline: string;
+    businessSlug: string;
+    slugCannotContain: string;
+    forwardSlashes: string;
+    spaces: string;
+    onlyOneDot: string;
+    copyLink: string;
+    linkCopied: string;
+    linkCopiedDesc: string;
+    failedToCopy: string;
+    couldNotCopyLink: string;
+    showQrCode: string;
+    downloadQr: string;
+    qrDownloaded: string;
+    qrDownloadedDesc: string;
+    downloadFailed: string;
+    qrDownloadFailed: string;
+    settingsSaved: string;
+    settingsSavedDesc: string;
+    templateSwitched: string;
+    templateSwitchedDesc: string;
+    template: string;
+    saveFailed: string;
+    businessTemplate: string;
+    changeTemplate: string;
+    templateWarning: string;
+    confirmTemplateChange: string;
+    testAi: string;
+
+    // Security page
+    securityAccess: string;
+    securitySubtitle: string;
+    changePassword: string;
+    changePasswordDesc: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+    enterCurrentPassword: string;
+    enterNewPasswordMin: string;
+    confirmPasswordPlaceholder: string;
+    updatePassword: string;
+    updating: string;
+    passwordsDontMatch: string;
+    passwordsDontMatchDesc: string;
+    passwordTooShort: string;
+    passwordMinLength: string;
+    passwordUpdated: string;
+    passwordUpdatedDesc: string;
+    twoFactorAuth: string;
+    twoFactorAuthDesc: string;
+    enable2fa: string;
+    require2faCode: string;
+    twoFaDisabled: string;
+    twoFaDisabledDesc: string;
+    twoFaEnabled: string;
+    staffRoles: string;
+    staffRolesDesc: string;
+    noStaffYet: string;
+    dataPrivacy: string;
+    dataPrivacyDesc: string;
+    exportYourData: string;
+    exportDataDesc: string;
+    exportData: string;
+    exporting: string;
+    exportStarted: string;
+    exportStartedDesc: string;
+    exportFailed: string;
+    deleteYourAccount: string;
+    deleteAccountDesc: string;
+    deleteAccountWarningDesc: string;
+    confirmDeleteAccount: string;
+    deleting: string;
+    accountDeleted: string;
+    accountDeletedDesc: string;
+    deleteFailed: string;
+
+    // Users page
+    teamMembers: string;
+    teamMembersDesc: string;
+    totalUsers: string;
+    activeUsers: string;
+    pendingInvites: string;
+    admins: string;
+    userList: string;
+    userListDesc: string;
+    searchByNameEmailRole: string;
+    name: string;
+    roles: string;
+    joined: string;
+    noUsersFound: string;
+    noRolesAssigned: string;
+    invitationPending: string;
+    inactive: string;
+
+    // Profile page
+    profileInformation: string;
+    profileInfoDesc: string;
+    specialization: string;
+    specializationPlaceholder: string;
+    clinicAddress: string;
+    clinicAddressPlaceholder: string;
+    professionalBio: string;
+    bioPlaceholder: string;
+    profileUpdated: string;
+
     // Dentist: Clinical appointment UI
     completeAppointment: string;
     prescriptionsShort: string;
@@ -641,6 +816,23 @@ export interface Translations {
     confirmDeleteSelected: string;
     itemsDeleted: string;
     undo: string;
+
+    // Payment page
+    paymentCancelled: string;
+    paymentCancelledMessage: string;
+    closeWindow: string;
+
+    // Billing empty states
+    billingNotAvailable: string;
+    billingNotAvailableDesc: string;
+    goToCareHome: string;
+    noPaidInvoices: string;
+    noPaidInvoicesDesc: string;
+    viewUnpaid: string;
+    noStatementsAvailable: string;
+    noStatementsDesc: string;
+    managePaymentsDesc: string;
+    amountDueLabel: string;
 
     // Common
     'common.cancel': string;
@@ -1061,13 +1253,6 @@ export const translations: Record<Language, TranslationEntry> = {
         'entry.stats.directBooking': 'Direct Booking',
         'entry.stats.noChat': 'No Chat Required',
 
-        // Common
-        'common.cancel': 'Cancel',
-        'common.next': 'Next',
-        'common.back': 'Back',
-        'common.loading': 'Loading...',
-        'common.success': 'Success',
-
         // Appointment Details Dialog
         appointmentDetailsTitle: "Appointment Details",
         appointmentInformation: "Appointment Information",
@@ -1480,6 +1665,23 @@ export const translations: Record<Language, TranslationEntry> = {
         professionalBio: "Professional Bio",
         bioPlaceholder: "Tell patients about yourself, your experience, and specializations...",
         profileUpdated: "Profile updated successfully",
+
+        // Payment page
+        paymentCancelled: "Payment Cancelled",
+        paymentCancelledMessage: "Your payment was cancelled. You can try again or contact your dentist if you need assistance.",
+        closeWindow: "Close Window",
+
+        // Billing empty states
+        billingNotAvailable: "Billing Not Available",
+        billingNotAvailableDesc: "Payment requests are not enabled for this practice. Please contact your provider for payment information.",
+        goToCareHome: "Go to Care Home",
+        noPaidInvoices: "No Paid Invoices",
+        noPaidInvoicesDesc: "Your payment history will appear here once you've made payments.",
+        viewUnpaid: "View Unpaid",
+        noStatementsAvailable: "No Statements Available",
+        noStatementsDesc: "Your billing statements will be available for download once generated.",
+        managePaymentsDesc: "Manage your payments, invoices, and billing statements",
+        amountDueLabel: "due",
 
         // Common
         'common.cancel': "Cancel",
@@ -1998,7 +2200,7 @@ export const translations: Record<Language, TranslationEntry> = {
         today: "Aujourd'hui",
         calendar: "Calendrier",
         list: "Liste",
-        history: "Geschiedenis",
+        history: "Historique",
         cancelled: "Annulé",
         scheduled: "Programmé",
 
@@ -2034,7 +2236,7 @@ export const translations: Record<Language, TranslationEntry> = {
                 care: "Soins",
                 billing: "Facturation",
                 documents: "Documents",
-                account: "Account",
+                account: "Compte",
             },
             care: {
                 home: "Accueil",
@@ -2045,8 +2247,8 @@ export const translations: Record<Language, TranslationEntry> = {
             billing: { main: "Factures & Paiements" },
             docs: { main: "Mes Documents" },
             account: {
-                profile: "Profiel & Instellingen",
-                insurance: "Verzekering / Mutualiteit",
+                profile: "Profil & Paramètres",
+                insurance: "Assurance / Mutualité",
                 privacy: "Confidentialité & Sécurité",
                 help: "Aide & Support",
             },
@@ -2076,6 +2278,277 @@ export const translations: Record<Language, TranslationEntry> = {
         expand: "Développer",
         srAlertNew: "Nouvelle alerte critique",
         srQuickActions: "Barre d'actions rapides",
+
+        // Payment page
+        paymentCancelled: "Paiement Annulé",
+        paymentCancelledMessage: "Votre paiement a été annulé. Vous pouvez réessayer ou contacter votre dentiste si vous avez besoin d'aide.",
+        closeWindow: "Fermer la Fenêtre",
+
+        // Billing empty states
+        billingNotAvailable: "Facturation Non Disponible",
+        billingNotAvailableDesc: "Les demandes de paiement ne sont pas activées pour ce cabinet. Veuillez contacter votre prestataire pour les informations de paiement.",
+        goToCareHome: "Aller à l'Accueil Soins",
+        noPaidInvoices: "Aucune Facture Payée",
+        noPaidInvoicesDesc: "Votre historique de paiement apparaîtra ici une fois que vous aurez effectué des paiements.",
+        viewUnpaid: "Voir les Impayés",
+        noStatementsAvailable: "Aucun Relevé Disponible",
+        noStatementsDesc: "Vos relevés de facturation seront disponibles au téléchargement une fois générés.",
+        managePaymentsDesc: "Gérez vos paiements, factures et relevés de facturation",
+        amountDueLabel: "dû",
+
+        // Settings pages
+        profile: "Profil",
+        services: "Services",
+        hours: "Heures",
+        appts: "RDV",
+        team: "Équipe",
+        brand: "Marque",
+        billing: "Facturation",
+        security: "Sécurité",
+        scheduleAvailability: "Planning & Disponibilité",
+        appointmentPreferences: "Préférences de rendez-vous",
+        requireApprovalBefore: "Nécessite approbation avant confirmation",
+        saveChanges: "Enregistrer les modifications",
+        savingChanges: "Enregistrement...",
+        staffManagement: "Gestion du Personnel",
+        manageTeamMembers: "Gérez les membres de votre équipe et leurs accès",
+        dangerZone: "Zone Dangereuse",
+
+        // Security page
+        securityAccess: "Sécurité & Accès",
+        changePassword: "Changer le Mot de Passe",
+        currentPassword: "Mot de Passe Actuel",
+        newPassword: "Nouveau Mot de Passe",
+        confirmNewPassword: "Confirmer le Nouveau Mot de Passe",
+        updatePassword: "Mettre à Jour le Mot de Passe",
+        updating: "Mise à jour...",
+        passwordUpdated: "Mot de Passe Mis à Jour",
+        twoFactorAuth: "Authentification à Deux Facteurs",
+
+        // Branding page
+        brandingSettings: "Paramètres de Marque",
+        branding: "Marque",
+        clinicInformation: "Informations du Cabinet",
+        uploadLogo: "Téléverser le Logo",
+        clinicName: "Nom du Cabinet",
+        tagline: "Slogan",
+        copyLink: "Copier le Lien",
+        linkCopied: "Lien copié !",
+        showQrCode: "Afficher QR",
+        downloadQr: "Télécharger QR",
+        settingsSaved: "Paramètres Enregistrés",
+
+        // Profile page
+        profileInformation: "Informations du Profil",
+        specialization: "Spécialisation",
+        clinicAddress: "Adresse du Cabinet",
+        professionalBio: "Biographie Professionnelle",
+        profileUpdated: "Profil mis à jour avec succès",
+        specializationPlaceholder: "Dentisterie Générale, Orthodontie, etc.",
+        clinicAddressPlaceholder: "123 Rue Principale, Ville, Code Postal",
+        bioPlaceholder: "Parlez aux patients de vous, de votre expérience et de vos spécialisations...",
+        profileInfoDesc: "Mettez à jour vos informations personnelles et professionnelles",
+
+        // Dashboard & Portal
+        todaysSchedule: "Planning d'Aujourd'hui",
+        completedThisWeek: "Terminé Cette Semaine",
+        noAppointmentsToday: "Aucun rendez-vous aujourd'hui",
+        noAppointmentsTodayDesc: "Vous n'avez aucun rendez-vous prévu pour aujourd'hui. Profitez-en pour rattraper d'autres tâches ou planifier de nouveaux rendez-vous.",
+        viewAllAppointments: "Voir Tous les Rendez-vous",
+        scheduleNew: "Planifier Nouveau",
+        unknownPatient: "Patient Inconnu",
+        urgent: "Urgent",
+        noReasonSpecified: "Aucun motif spécifié",
+
+        // Messages Page
+        signInToMessage: "Connectez-vous pour Envoyer des Messages",
+        needSignedInToMessage: "Vous devez être connecté pour envoyer et recevoir des messages",
+        selectConversation: "Sélectionnez une conversation",
+
+        // Patient Management
+        selectPatient: "Sélectionner un Patient",
+        findPatient: "Rechercher un patient...",
+        addNewPatient: "Ajouter un Nouveau Patient",
+        overview: "Aperçu",
+        clinical: "Clinique",
+        schedule: "Planning",
+        financial: "Financier",
+        years: "ans",
+        yearsOld: "ans",
+        medicalAlert: "Alerte Médicale",
+        unpaidBalance: "Solde Impayé",
+        quickActions: "Actions Rapides",
+        createPayment: "Créer un Paiement",
+        addTreatmentPlan: "Ajouter un Plan de Traitement",
+        addQuickNote: "Ajouter une Note Rapide",
+        exportPdf: "Exporter en PDF",
+        searchNotesAppointmentsTreatments: "Rechercher notes, rendez-vous, traitements...",
+        patientTimeline: "Chronologie du Patient",
+        noPatientsYet: "Aucun patient pour le moment",
+        appointmentCompleted: "Rendez-vous terminé",
+        appointmentCancelledToast: "Rendez-vous annulé",
+        patientNotifiedByEmail: "Le patient a été notifié par email",
+        appointmentConfirmedToast: "Rendez-vous confirmé",
+        noteAdded: "Note ajoutée",
+        treatmentPlanCreated: "Plan de traitement créé",
+        treatmentPlanDeleted: "Plan de traitement supprimé",
+        clickUndoToRestore: "Cliquez sur annuler pour restaurer",
+        appointmentDeleted: "Rendez-vous supprimé",
+        noteDeleted: "Note supprimée",
+        treatmentPlanRestored: "Plan de traitement restauré",
+        appointmentRestored: "Rendez-vous restauré",
+        noteRestored: "Note restaurée",
+        appointmentLinked: "Rendez-vous lié",
+        linkedTo: "Lié à",
+        noEmail: "Pas d'email",
+        patientHasNoEmail: "Le patient n'a pas d'adresse email",
+        patientUpdated: "Patient mis à jour",
+        enterTitle: "Veuillez entrer un titre",
+        failedToCreateTreatmentPlan: "Échec de la création du plan de traitement",
+        failedToUpdatePatient: "Échec de la mise à jour du patient",
+        failedToDeleteTreatmentPlan: "Échec de la suppression du plan de traitement",
+        failedToDeleteAppointment: "Échec de la suppression du rendez-vous",
+        failedToDeleteNote: "Échec de la suppression de la note",
+        failedToRestoreTreatmentPlan: "Échec de la restauration du plan de traitement",
+        failedToRestoreAppointment: "Échec de la restauration du rendez-vous",
+        failedToRestoreNote: "Échec de la restauration de la note",
+        failedToLinkAppointment: "Échec du lien du rendez-vous",
+        failedToAddNote: "Échec de l'ajout de la note",
+        deleteTreatmentPlan: "Supprimer le Plan de Traitement",
+        deleteAppointment: "Supprimer le Rendez-vous",
+        confirmDeleteTreatmentPlan: "Êtes-vous sûr de vouloir supprimer ce plan de traitement ?",
+        confirmDeleteAppointment: "Êtes-vous sûr de vouloir supprimer définitivement ce rendez-vous ?",
+        confirmDeleteSelected: "Êtes-vous sûr de vouloir supprimer les éléments sélectionnés ?",
+        itemsDeleted: "éléments supprimés",
+        undo: "Annuler",
+
+        // Settings pages extended
+        approveNewPatientRequests: "Approuver les demandes de nouveaux patients pour éviter les doubles réservations.",
+        manualReviewRequired: "Révision manuelle requise",
+        requestsAutoConfirmed: "Demandes auto-confirmées",
+        saveImmediately: "Enregistrez les modifications pour que les patients voient immédiatement les nouvelles règles.",
+        irreversibleActions: "Actions irréversibles affectant votre adhésion à la clinique",
+        leaveClinic: "Quitter la Clinique",
+        loseAccessWarning: "Vous perdrez l'accès à toutes les données et rendez-vous de la clinique.",
+        lastMemberWarning: "Si vous êtes le dernier membre, l'entreprise sera définitivement supprimée.",
+        leaveClinicConfirm: "Cette action est irréversible. Vous perdrez l'accès à toutes les données, rendez-vous et dossiers patients.",
+        enterPasswordConfirm: "Entrez votre mot de passe pour confirmer",
+        yourPassword: "Votre mot de passe",
+        leaving: "Départ en cours...",
+        businessDeleted: "Entreprise supprimée",
+        lastMemberDeletedDesc: "Vous étiez le dernier membre. L'entreprise a été définitivement supprimée.",
+        leftClinic: "Clinique quittée",
+        stillBelongOther: "Vous avez quitté la clinique. Vous appartenez toujours à d'autres cliniques.",
+        leftRoleRemoved: "Vous avez quitté la clinique et votre rôle de prestataire a été supprimé.",
+        passwordRequired: "Mot de passe requis",
+        enterPasswordLeave: "Veuillez entrer votre mot de passe pour confirmer votre départ de la clinique.",
+        couldntLoadSettings: "Impossible de charger les paramètres de rendez-vous",
+        refreshOrTryAgain: "Veuillez rafraîchir la page ou réessayer dans un moment.",
+        couldntSaveSettings: "Impossible d'enregistrer les paramètres de rendez-vous",
+        appointmentRulesUpdated: "Règles de rendez-vous mises à jour",
+        rulesUpdatedDesc: "Les patients verront immédiatement les nouvelles règles d'approbation.",
+        loadingPortal: "Chargement du portail...",
+        accessDenied: "Accès Refusé",
+        startTour: "Démarrer la Visite",
+        reportsComingSoon: "Rapports (Bientôt Disponible)",
+        sectionNotFound: "Section introuvable",
+        clinicalNotAvailable: "Fonctionnalités cliniques non disponibles pour ce type d'entreprise",
+        paymentNotAvailable: "Fonctionnalités de paiement non disponibles",
+
+        // Branding page extended
+        brandingSubtitle: "Personnalisez l'apparence de votre entreprise, les services et le comportement de l'IA",
+        aiAssistantConfig: "Assistant IA",
+        templates: "Modèles",
+        emailTemplates: "Email",
+        payments: "Paiements",
+        businessLinkQr: "Lien Entreprise & QR Code",
+        logoUploadDesc: "Téléversez le logo de votre clinique (max 2Mo)",
+        chooseLogo: "Choisir le Logo",
+        logoUploaded: "Logo Téléversé",
+        logoUploadedDesc: "Le logo de votre clinique a été téléversé avec succès",
+        invalidFile: "Fichier Invalide",
+        uploadImageFile: "Veuillez téléverser un fichier image",
+        fileTooLarge: "Fichier Trop Volumineux",
+        logoSizeLimit: "Le logo doit faire moins de 2Mo",
+        uploadFailed: "Échec du Téléversement",
+        businessSlug: "Identifiant Entreprise",
+        slugCannotContain: "L'identifiant ne peut pas contenir",
+        forwardSlashes: "les barres obliques",
+        spaces: "les espaces",
+        onlyOneDot: "L'identifiant ne peut contenir qu'un seul point",
+        linkCopiedDesc: "Le lien entreprise a été copié dans le presse-papiers",
+        failedToCopy: "Échec de la copie",
+        couldNotCopyLink: "Impossible de copier le lien dans le presse-papiers",
+        qrDownloaded: "QR Code Téléchargé",
+        qrDownloadedDesc: "Le QR code de votre lien entreprise a été téléchargé",
+        downloadFailed: "Échec du Téléchargement",
+        qrDownloadFailed: "Nous n'avons pas pu télécharger le QR code. Veuillez réessayer.",
+        settingsSavedDesc: "Vos paramètres de marque ont été enregistrés avec succès. Tous les changements sont maintenant actifs !",
+        templateSwitched: "Modèle Changé avec Succès",
+        templateSwitchedDesc: "Votre entreprise utilise maintenant le",
+        template: "modèle",
+        saveFailed: "Échec de l'Enregistrement",
+        businessTemplate: "Modèle d'Entreprise",
+        changeTemplate: "Changer de Modèle",
+        templateWarning: "Changer de modèle réinitialisera vos paramètres de comportement IA aux valeurs par défaut du nouveau modèle.",
+        confirmTemplateChange: "Confirmer le Changement",
+        testAi: "Tester l'IA",
+
+        // Security page extended
+        securitySubtitle: "Gérez les paramètres de sécurité et l'accès de l'équipe",
+        changePasswordDesc: "Mettez régulièrement à jour votre mot de passe pour sécuriser votre compte",
+        enterCurrentPassword: "Entrez le mot de passe actuel",
+        enterNewPasswordMin: "Entrez le nouveau mot de passe (min 8 caractères)",
+        confirmPasswordPlaceholder: "Confirmez le nouveau mot de passe",
+        passwordsDontMatch: "Les Mots de Passe ne Correspondent Pas",
+        passwordsDontMatchDesc: "Veuillez vous assurer que vos nouveaux mots de passe correspondent",
+        passwordTooShort: "Mot de Passe Trop Court",
+        passwordMinLength: "Le mot de passe doit contenir au moins 8 caractères",
+        passwordUpdatedDesc: "Votre mot de passe a été modifié avec succès. Un email de confirmation a été envoyé.",
+        twoFactorAuthDesc: "Ajoutez une couche de sécurité supplémentaire à votre compte",
+        enable2fa: "Activer l'A2F",
+        require2faCode: "Exiger un code de vérification en plus de votre mot de passe",
+        twoFaDisabled: "A2F Désactivée",
+        twoFaDisabledDesc: "L'authentification à deux facteurs a été désactivée",
+        twoFaEnabled: "L'authentification à deux facteurs est activée. Vous recevrez un code de vérification par email lors de la connexion.",
+        staffRoles: "Personnel & Rôles",
+        staffRolesDesc: "Gérez les membres de l'équipe et leurs niveaux d'accès",
+        noStaffYet: "Aucun membre du personnel ajouté",
+        dataPrivacy: "Données & Confidentialité",
+        dataPrivacyDesc: "Gérez vos paramètres de données et de confidentialité",
+        exportYourData: "Exporter Vos Données",
+        exportDataDesc: "Téléchargez toutes vos données personnelles dans un format portable",
+        exportData: "Exporter les Données",
+        exporting: "Exportation...",
+        exportStarted: "Exportation Démarrée",
+        exportStartedDesc: "L'exportation de vos données a été lancée. Vous recevrez un email quand elle sera prête.",
+        exportFailed: "Échec de l'Exportation",
+        deleteYourAccount: "Supprimer Votre Compte",
+        deleteAccountDesc: "Supprimez définitivement votre compte et toutes les données associées",
+        deleteAccountWarningDesc: "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
+        confirmDeleteAccount: "Je comprends que c'est permanent",
+        deleting: "Suppression...",
+        accountDeleted: "Compte Supprimé",
+        accountDeletedDesc: "Votre compte a été définitivement supprimé.",
+        deleteFailed: "Échec de la Suppression",
+
+        // Users page
+        teamMembers: "Membres de l'Équipe",
+        teamMembersDesc: "Gérez le personnel et les patients de votre clinique",
+        totalUsers: "Total Utilisateurs",
+        activeUsers: "Utilisateurs Actifs",
+        pendingInvites: "Invitations en Attente",
+        admins: "Administrateurs",
+        userList: "Liste des Utilisateurs",
+        userListDesc: "Recherchez et gérez tous les utilisateurs du système",
+        searchByNameEmailRole: "Rechercher par nom, email ou rôle...",
+        name: "Nom",
+        roles: "Rôles",
+        joined: "Inscrit",
+        noUsersFound: "Aucun utilisateur trouvé",
+        noRolesAssigned: "Aucun rôle assigné",
+        invitationPending: "Invitation en Attente",
+        inactive: "Inactif",
     },
     nl: {
         // Error & status messages
@@ -2288,10 +2761,442 @@ export const translations: Record<Language, TranslationEntry> = {
         invalidPhoneFormat: "Ongeldig telefoonnummer",
         invalidEmailFormat: "Ongeldig e-mailadres",
         requiredField: "Verplicht veld",
+        consentHealthData: "Ik geef toestemming aan Caberu om mijn persoonlijke en gezondheidsgegevens te verwerken voor het plannen van afspraken en ondersteuning van tandheelkundige diensten.",
+        childConsentNote: "Als je gegevens invoert voor een patiënt jonger dan 16 jaar, bevestig je dat je hun ouder of wettelijke voogd bent en toestemming geeft voor de verwerking van hun gegevens.",
+        downloadMyData: "Mijn Gegevens Downloaden",
+        deleteAccount: "Mijn Account & Gegevens Verwijderen",
+        deleteAccountConfirm: "Het verwijderen van je account zal al je persoonlijke en gezondheidsgegevens permanent verwijderen uit de systemen van Caberu. Dit kan niet ongedaan worden gemaakt. Weet je het zeker?",
+        aiAdviceDisclaimer: "⚠️ AI-suggesties zijn alleen ter informatie en vervangen geen professioneel tandheelkundig advies.",
 
         // Language selection
         selectPreferredLanguage: "Kies je voorkeurstaal",
         languageSelectionDescription: "Pas de ervaring aan je taalvoorkeur aan.",
+
+        // Personal Info
+        firstName: "Voornaam",
+        lastName: "Achternaam",
+        phoneNumber: "Telefoonnummer",
+        dateOfBirth: "Geboortedatum",
+        medicalHistory: "Medische Geschiedenis",
+        personalInformation: "Persoonlijke Informatie",
+        savePersonalInfo: "Persoonlijke Informatie Opslaan",
+        address: "Adres",
+        emergencyContact: "Noodcontact",
+        enterAddress: "Voer je adres in",
+        enterEmergencyContact: "Voer noodcontactinformatie in",
+
+        // Vacation & Schedule Management
+        availabilityManagement: "Beschikbaarheidsbeheer",
+        weeklySchedule: "Weekrooster",
+        vacationsAbsences: "Vakanties & Afwezigheden",
+        weeklyPlanning: "Wekelijkse Planning",
+        quickPresets: "Snelle presets:",
+        presetMonFri: "Ma-Vr 9:00-17:00",
+        presetMonSat: "Ma-Za 8:00-18:00",
+        startTime: "Start",
+        endTime: "Einde",
+        breakStart: "Pauze start",
+        breakEnd: "Pauze einde",
+        addVacation: "Vakantie Toevoegen",
+        startDate: "Startdatum",
+        endDate: "Einddatum",
+        vacationType: "Type vakantie",
+        scheduledVacations: "Geplande vakanties",
+        loadingSettings: "Instellingen laden...",
+        vacationsTypeVacation: "Vakantie",
+        vacationsTypeSick: "Ziekteverlof",
+        vacationsTypePersonal: "Persoonlijk verlof",
+        addButton: "Toevoegen",
+        noVacationsScheduled: "Geen vakanties gepland",
+        deleteVacation: "Verwijderen",
+        day: "dag",
+        days: "dagen",
+
+        // Chat commands & integration
+        showMyAppointments: "Hier zijn je afspraken:",
+        nextAppointment: "Je volgende afspraak is:",
+        suggestedTime: (dentist: string, time: string) =>
+            `Op basis van je voorkeuren stel ik ${time} voor met ${dentist}`,
+        wouldYouLikeToBook: "Wil je deze afspraak boeken?",
+        seeOtherOptions: "Andere opties bekijken",
+        appointmentSuggestion: (dentist: string, date: string, time: string) =>
+            `📅 Beschikbaar: ${date} om ${time} met ${dentist}`,
+        bookThisSlot: "Dit tijdslot boeken",
+        showOtherTimes: "Andere tijden tonen",
+        settingsUpdated: "Instellingen Bijgewerkt",
+        preferencesChanged: "Je voorkeuren zijn bijgewerkt",
+
+        // Onboarding
+        welcomeToFirstSmile: "Welkom bij First Smile AI! 🦷",
+        yourAIDentalAssistant: "Je AI Tandartsassistent",
+        onboardingIntro: "Ik ben hier om je te helpen met al je tandheelkundige behoeften, 24/7. Deze preview laat zien hoe First Smile AI in de praktijk werkt.",
+        smartFeaturesService: "Slimme Functies tot Je Dienst",
+        aiChat: "AI Chat",
+        aiChatDesc: "Krijg direct antwoord op tandheelkundige vragen",
+        photoAnalysis: "Foto Analyse",
+        photoAnalysisDesc: "Upload foto's voor AI-analyse",
+        familyCare: "Gezinszorg",
+        familyCareDesc: "Boek ook voor familieleden",
+        bookForFamilyTitle: "Boek voor Iedereen in Je Familie",
+        familyFriendlyBooking: "Gezinsvriendelijk Boeken",
+        bookForYourself: "Boek afspraken voor jezelf",
+        bookForChildren: "Boek voor je kinderen",
+        bookForFamily: "Boek voor familieleden",
+        alwaysTellDuration: "Ik vertel je altijd de duur en eindtijd van de afspraak",
+        readyToStart: "Klaar om te Beginnen?",
+        youreAllSet: "Je Bent Klaar! 🎉",
+        onboardingEnd: "Begin hieronder met me te chatten om afspraken te boeken, vragen te stellen of tandheelkundig advies te krijgen.",
+        proTip: "💡 Pro Tip:",
+        proTipText: "Vertel me gewoon wat er aan de hand is, dan begeleid ik je door alles!",
+        letsStart: "Laten We Beginnen!",
+        next: "Volgende",
+        back: "Terug",
+        previewNotice: "Dit is een werkende preview van First Smile AI klaar voor gebruik in de praktijk.",
+        aiDisclaimer: "Deze assistent gebruikt AI. Controleer altijd medisch advies.",
+        acceptTerms: "Ik accepteer de Algemene Voorwaarden",
+        viewTerms: "Voorwaarden Bekijken",
+        termsTitle: "Algemene Voorwaarden",
+        termsIntro: "Lees deze voorwaarden zorgvuldig door voordat je First Smile AI gebruikt.",
+        termsUse: "Gebruik deze dienst verantwoordelijk en respecteer anderen.",
+        termsPrivacy: "We verwerken je gegevens volgens ons privacybeleid.",
+        termsMedical: "Raadpleeg altijd een professional voor ernstige medische problemen.",
+
+        // Emergency Triage
+        'triage.title': 'Spoed Tandheelkundige Triage',
+        'triage.subtitle': 'Beantwoord de volgende vragen om je urgentieniveau te beoordelen',
+        'triage.pain.title': 'Pijnbeoordeling',
+        'triage.pain.question': 'Op een schaal van 1-10, hoe ernstig is je pijn?',
+        'triage.pain.none': 'Geen pijn (1)',
+        'triage.pain.severe': 'Ernstige pijn (10)',
+        'triage.symptoms.title': 'Extra Symptomen',
+        'triage.symptoms.bleeding': 'Bloeding van tandvlees of tanden',
+        'triage.symptoms.swelling': 'Zwelling van gezicht of tandvlees',
+        'triage.symptoms.fever': 'Koorts (>38°C)',
+        'triage.symptoms.difficulty': 'Moeite met slikken of ademen',
+        'triage.symptoms.trauma': 'Recent tandheelkundig trauma of letsel',
+        'triage.duration.title': 'Duur van Symptomen',
+        'triage.duration.question': 'Hoe lang heb je deze symptomen al?',
+        'triage.duration.hours': 'Minder dan 6 uur',
+        'triage.duration.day': '6-24 uur',
+        'triage.duration.days': '2-7 dagen',
+        'triage.duration.week': 'Meer dan een week',
+        'triage.medical.title': 'Medische Geschiedenis',
+        'triage.medical.diabetes': 'Diabetes',
+        'triage.medical.heart': 'Hartaandoening',
+        'triage.medical.blood': 'Bloedaandoeningen',
+        'triage.medical.immune': 'Verzwakt immuunsysteem',
+        'triage.submit': 'Urgentie Beoordelen & Afspraak Boeken',
+        'triage.result.emergency': 'NOODGEVAL - Onmiddellijke aandacht vereist',
+        'triage.result.high': 'HOGE URGENTIE - Afspraak dezelfde dag nodig',
+        'triage.result.medium': 'GEMIDDELDE URGENTIE - Afspraak binnen 2-3 dagen',
+        'triage.result.low': 'LAGE URGENTIE - Reguliere afspraak nodig',
+
+        // Booking Triage
+        'booking.title': 'Boek Je Afspraak',
+        'booking.earliest': 'Eerst Beschikbare Tijdslots',
+        'booking.confirm': 'Afspraak Bevestigen',
+        'booking.success': 'Afspraak succesvol geboekt!',
+        'booking.detailsTitle': 'Afspraakdetails',
+        'booking.dentist': 'Tandarts',
+        'booking.date': 'Datum',
+        'booking.time': 'Tijd',
+        'booking.urgency': 'Urgentie',
+        'booking.urgentArrivalNotice': 'Vanwege de urgente aard van je zaak, kom alsjeblieft 15 minuten eerder. Als je toestand verslechtert, neem dan onmiddellijk contact op met de hulpdiensten.',
+        'booking.continue': 'Doorgaan naar Dashboard',
+        'booking.selectDate': 'Selecteer Datum',
+        'booking.availableTimes': 'Beschikbare Tijden',
+        'booking.noSlots': 'Geen beschikbare tijdslots voor deze datum',
+        'booking.selectDatePrompt': 'Selecteer een datum om beschikbare tijden te bekijken',
+        'booking.selectedDentist': 'Geselecteerde tandarts',
+        'booking.selectedBadge': 'Geselecteerd',
+
+        // Emergency Triage Entry
+        'entry.heroTitle': 'Spoed Triage Beoordeling',
+        'entry.heroDesc': 'Snelle, veilige en nauwkeurige tandheelkundige spoedbeoordeling',
+        'entry.ctaStart': 'Start Spoedbeoordeling',
+        'entry.steps.assessSymptoms.title': 'Symptomen Beoordelen',
+        'entry.steps.assessSymptoms.desc': 'Beantwoord vragen over je pijn en symptomen',
+        'entry.steps.getUrgency.title': 'Urgentieniveau Krijgen',
+        'entry.steps.getUrgency.desc': 'Ontvang je urgentiewaardering (schaal 1-5)',
+        'entry.steps.viewSlots.title': 'Beschikbare Tijdslots Bekijken',
+        'entry.steps.viewSlots.desc': 'Bekijk geprioriteerde afspraaktijden',
+        'entry.steps.bookInstantly.title': 'Direct Boeken',
+        'entry.steps.bookInstantly.desc': 'Bevestig je afspraak onmiddellijk',
+        'entry.emergencyNotice.title': 'Levensbedreigende Noodsituatie?',
+        'entry.emergencyNotice.desc': "Als je ernstige ademhalingsproblemen, ongecontroleerde bloedingen of tekenen van ernstige infectie ervaart, bel dan onmiddellijk de hulpdiensten (112).",
+        'entry.gdpr.title': 'Privacy & Veiligheid',
+        'entry.gdpr.desc': 'Je gezondheidsinformatie is beschermd onder de AVG. Gegevens zijn versleuteld en worden alleen gedeeld met je geselecteerde tandarts voor afspraakdoeleinden.',
+        'entry.return': 'Terug naar Hoofdapp',
+        'entry.stats.minutes': '2-3 Minuten',
+        'entry.stats.quick': 'Snelle Beoordeling',
+        'entry.stats.gdpr': 'AVG Conform',
+        'entry.stats.secure': 'Veilig & Privé',
+        'entry.stats.directBooking': 'Direct Boeken',
+        'entry.stats.noChat': 'Geen Chat Nodig',
+
+        // Appointment Details Dialog
+        appointmentDetailsTitle: "Afspraakdetails",
+        appointmentInformation: "Afspraakinformatie",
+        urgency: "urgentie",
+        reason: "Reden:",
+        completed: "Voltooid:",
+        notes: "Notities",
+        consultationNotes: "Consultnotities",
+        additionalNotes: "Aanvullende Notities",
+        medicalRecords: "Medische Dossiers",
+        prescriptions: "Recepten",
+        billingInformation: "Factuurinformatie",
+        findings: "Bevindingen:",
+        recommendations: "Aanbevelingen:",
+        prescribed: "Voorgeschreven:",
+        invoice: "Factuur",
+        download: "Downloaden",
+        patientAmount: "Patiëntbedrag:",
+        vat: "BTW:",
+        total: "Totaal:",
+        created: "Aangemaakt:",
+        failedToLoadDetails: "Laden van afspraakdetails mislukt",
+
+        // Patient Dashboard Components
+        goodMorning: "Goedemorgen",
+        goodAfternoon: "Goedemiddag",
+        goodEvening: "Goedenavond",
+        hereIsYourHealthOverview: "Hier is je gezondheidsoverzicht",
+        confirmed: "Bevestigd",
+        join: "Deelnemen",
+        activeMedications: "Actieve medicatie",
+        viewInCareTab: "Bekijk in Zorg-tabblad",
+        balance: "Saldo",
+        due: "Verschuldigd",
+        amountDue: "Verschuldigd bedrag",
+        allPaid: "Alles betaald",
+        payNow: "Nu Betalen",
+        aiAssistant: "AI Assistent",
+        getInstantHelpWith: "Krijg direct hulp met:",
+        bookingAppointments: "Afspraken boeken",
+        dentalQuestions: "Tandheelkundige vragen",
+        emergencyTriage: "Spoedtriage",
+        startChat: "Start Chat",
+        dailyTipsReminders: "Dagelijkse Tips & Herinneringen",
+        morningReminder: "Ochtendherinnering",
+        dontForgetToBrush: "Vergeet niet 2 minuten te poetsen",
+        healthTip: "Gezondheidstip",
+        flossingDaily: "Dagelijks flossen vermindert tandvleesziekten met 40%",
+        upcoming: "Aankomend",
+        past: "Afgelopen",
+        book: "Boeken",
+        dentalCleaningRecommended: "Tandreiniging aanbevolen over 2 maanden",
+        healthRecords: "Gezondheidsdossiers",
+        rewards: "Beloningen",
+        quicklyBookViewRecords: "Snel boeken, dossiers bekijken en betalingen beheren.",
+        yourTreatmentsWillAppear: "Je behandelingen en bezoeken verschijnen hier.",
+        unpaid: "Onbetaald",
+        paid: "Betaald",
+        statements: "Overzichten",
+        paidInvoices: "Je betaalde facturen verschijnen hier.",
+        downloadStatements: "Maandelijkse overzichten downloaden.",
+        viewManageMedications: "Bekijk en beheer je medicatie.",
+        upload: "Uploaden",
+        shareLink: "Link delen",
+        insuranceProvider: "Aanbieder",
+        insuranceProviderPlaceholder: "Zorgverzekering / Naam verzekeraar",
+        policyNumber: "Polis / Lidnummer",
+        policyNumberPlaceholder: "Polisnummer",
+        healthStats: "Gezondheidsstatistieken",
+        healthRating: "Gezondheidsbeoordeling",
+        excellent: "Uitstekend",
+        visitsThisYear: "Bezoeken Dit Jaar",
+        onTrack: "Op schema",
+        coverageUsed: "Dekking Gebruikt",
+        remaining: "resterend",
+        healthImproved: "Gezondheid Verbeterd",
+        lastSixMonths: "Laatste 6 maanden",
+        treatmentPlans: "Behandelplannen",
+        manageDentalVisits: "Beheer je tandartsbezoeken",
+        bookNew: "Nieuw Boeken",
+        active: "Actief",
+        mainClinic: "Hoofdkliniek",
+        generalCheckup: "Algemene Controle",
+        today: "Vandaag",
+        calendar: "Kalender",
+        list: "Lijst",
+        history: "Geschiedenis",
+        cancelled: "Geannuleerd",
+        scheduled: "Gepland",
+
+        // Dentist Dashboard
+        loadingDentistDashboard: "Tandartsdashboard laden...",
+        notRegisteredAsDentist: "Je bent niet geregistreerd als tandarts. Neem contact op met support.",
+        dentiDashboard: "Tandarts Dashboard",
+        dentistPortal: "Tandartsportaal",
+        loadingDentistProfile: "Tandartsprofiel laden...",
+
+        // AppShell & Navigation
+        navClinical: "Klinisch",
+        navBusiness: "Zakelijk",
+        navOperations: "Operaties",
+        navAdmin: "Admin",
+        navDashboard: "Dashboard",
+        navAppointments: "Afspraken",
+        navPatients: "Patiënten",
+        navPayments: "Betalingen",
+        navAnalytics: "Analyse",
+        navReports: "Rapporten",
+        navInventory: "Inventaris",
+        navImport: "Import",
+        navSchedule: "Planning",
+        navSettings: "Instellingen",
+        navBrandingLoc: "Branding & Lokalisatie",
+        navSecurity: "Privacy & Beveiliging",
+        topSearch: "Zoeken",
+        topClinic: "Kliniek",
+        topProfile: "Profiel",
+
+        // Patient portal navigation (pnav.*)
+        pnav: {
+            group: {
+                care: "Zorg",
+                billing: "Facturatie",
+                documents: "Documenten",
+                account: "Account",
+            },
+            care: {
+                home: "Home",
+                appointments: "Afspraken",
+                prescriptions: "Recepten",
+                history: "Behandelgeschiedenis",
+            },
+            billing: { main: "Facturen & Betalingen" },
+            docs: { main: "Mijn Documenten" },
+            account: {
+                profile: "Profiel & Instellingen",
+                insurance: "Verzekering / Mutualiteit",
+                privacy: "Privacy & Beveiliging",
+                help: "Hulp & Ondersteuning",
+            },
+        },
+
+        // Treatment records
+        searchTreatments: "Behandelingen zoeken...",
+        filterByType: "Filteren op type",
+        allTypes: "Alle types",
+        consultation: "Consult",
+        treatment: "Behandeling",
+        xray: "Röntgenfoto",
+        labResult: "Labresultaat",
+        dentist: "Tandarts",
+        treatmentType: "Behandelingstype",
+        date: "Datum",
+        noRecordsFound: "Geen behandeldossiers gevonden",
+        appointmentRescheduled: "Afspraak verzet",
+        savedSuccessfully: "Succesvol opgeslagen",
+
+        // Dashboard & Portal
+        todaysSchedule: "Planning Vandaag",
+        completedThisWeek: "Voltooid Deze Week",
+        noAppointmentsToday: "Geen afspraken vandaag",
+        noAppointmentsTodayDesc: "Je hebt geen afspraken gepland voor vandaag. Gebruik deze tijd om andere taken in te halen of nieuwe afspraken te plannen.",
+        viewAllAppointments: "Alle Afspraken Bekijken",
+        scheduleNew: "Nieuw Plannen",
+        unknownPatient: "Onbekende Patiënt",
+        urgent: "Urgent",
+        noReasonSpecified: "Geen reden opgegeven",
+
+        // Messages Page
+        signInToMessage: "Log in om te Berichten",
+        needSignedInToMessage: "Je moet ingelogd zijn om berichten te versturen en ontvangen",
+        selectConversation: "Selecteer een gesprek",
+
+        // Patient Management
+        selectPatient: "Selecteer Patiënt",
+        findPatient: "Patiënt zoeken...",
+        addNewPatient: "Nieuwe Patiënt Toevoegen",
+        overview: "Overzicht",
+        clinical: "Klinisch",
+        schedule: "Planning",
+        financial: "Financieel",
+        years: "jaar",
+        yearsOld: "jaar oud",
+        medicalAlert: "Medische Waarschuwing",
+        unpaidBalance: "Openstaand Saldo",
+        quickActions: "Snelle Acties",
+        createPayment: "Betaling Aanmaken",
+        addTreatmentPlan: "Behandelplan Toevoegen",
+        addQuickNote: "Snelle Notitie Toevoegen",
+        exportPdf: "PDF Exporteren",
+        searchNotesAppointmentsTreatments: "Zoek notities, afspraken, behandelingen...",
+        patientTimeline: "Patiënttijdlijn",
+        noPatientsYet: "Nog geen patiënten",
+        appointmentCompleted: "Afspraak voltooid",
+        appointmentCancelledToast: "Afspraak geannuleerd",
+        patientNotifiedByEmail: "Patiënt is per e-mail geïnformeerd",
+        appointmentConfirmedToast: "Afspraak bevestigd",
+        noteAdded: "Notitie toegevoegd",
+        treatmentPlanCreated: "Behandelplan aangemaakt",
+        treatmentPlanDeleted: "Behandelplan verwijderd",
+        clickUndoToRestore: "Klik ongedaan maken om te herstellen",
+        appointmentDeleted: "Afspraak verwijderd",
+        noteDeleted: "Notitie verwijderd",
+        treatmentPlanRestored: "Behandelplan hersteld",
+        appointmentRestored: "Afspraak hersteld",
+        noteRestored: "Notitie hersteld",
+        appointmentLinked: "Afspraak gekoppeld",
+        linkedTo: "Gekoppeld aan",
+        noEmail: "Geen e-mail",
+        patientHasNoEmail: "Patiënt heeft geen e-mailadres",
+        patientUpdated: "Patiënt bijgewerkt",
+        enterTitle: "Voer een titel in",
+        failedToCreateTreatmentPlan: "Behandelplan aanmaken mislukt",
+        failedToUpdatePatient: "Patiënt bijwerken mislukt",
+        failedToDeleteTreatmentPlan: "Behandelplan verwijderen mislukt",
+        failedToDeleteAppointment: "Afspraak verwijderen mislukt",
+        failedToDeleteNote: "Notitie verwijderen mislukt",
+        failedToRestoreTreatmentPlan: "Behandelplan herstellen mislukt",
+        failedToRestoreAppointment: "Afspraak herstellen mislukt",
+        failedToRestoreNote: "Notitie herstellen mislukt",
+        failedToLinkAppointment: "Afspraak koppelen mislukt",
+        failedToAddNote: "Notitie toevoegen mislukt",
+        deleteTreatmentPlan: "Behandelplan Verwijderen",
+        deleteAppointment: "Afspraak Verwijderen",
+        confirmDeleteTreatmentPlan: "Weet je zeker dat je dit behandelplan wilt verwijderen?",
+        confirmDeleteAppointment: "Weet je zeker dat je deze afspraak permanent wilt verwijderen?",
+        confirmDeleteSelected: "Weet je zeker dat je de geselecteerde items wilt verwijderen?",
+        itemsDeleted: "items verwijderd",
+        undo: "Ongedaan Maken",
+
+        // Dentist: Clinical appointment UI
+        completeAppointment: "Afspraak Voltooien",
+        prescriptionsShort: "Recepten",
+        paymentsShort: "Betalingen",
+        viewAll: "Alles bekijken",
+        collapse: "Inklappen",
+        expand: "Uitklappen",
+        srAlertNew: "Nieuwe kritieke waarschuwing",
+        srQuickActions: "Snelle acties werkbalk",
+
+        // All Status labels
+        allStatus: "Alle Statussen",
+        pending: "In behandeling",
+        time: "Tijd",
+        patient: "Patiënt",
+        status: "Status",
+        actions: "Acties",
+        view: "Bekijken",
+        notRegisteredDentist: "Je bent niet geregistreerd als tandarts. Neem contact op met support.",
+        contactSupport: "Contact Support",
+        todaysAppointments: "Afspraken Vandaag",
+        urgentCases: "Urgente Gevallen",
+        completionRate: "Voltooiingspercentage",
+        highPriority: "Hoge prioriteit afspraken",
+        estimatedRevenue: "Geschatte Omzet",
+        avg: "Gem",
+        statusOverview: "Statusoverzicht",
+        generalConsultationLower: "Algemeen consult",
+
+        // Payment page translations
+        paymentCancelled: "Betaling Geannuleerd",
+        paymentCancelledMessage: "Je betaling is geannuleerd. Je kunt het opnieuw proberen of contact opnemen met je tandarts als je hulp nodig hebt.",
+        closeWindow: "Venster Sluiten",
 
         // Common
         'common.cancel': "Annuleren",

@@ -21,14 +21,16 @@ export default function PatientBillingPage() {
   const [tab, setTab] = React.useState<'unpaid' | 'paid' | 'statements'>('unpaid');
   const [totalDueCents, setTotalDueCents] = React.useState<number>(0);
 
-  React.useEffect(() => { (async () => {
-    const { data } = await supabase.auth.getUser();
-    setUser(data.user as any);
-    if (data.user?.id) {
-      const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', data.user.id).maybeSingle();
-      if (profile?.id) setPatientId(profile.id);
-    }
-  })(); }, []);
+  React.useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user as any);
+      if (data.user?.id) {
+        const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', data.user.id).maybeSingle();
+        if (profile?.id) setPatientId(profile.id);
+      }
+    })();
+  }, []);
 
   React.useEffect(() => {
     (async () => {
@@ -38,7 +40,7 @@ export default function PatientBillingPage() {
         .select('amount,status')
         .eq('patient_id', patientId);
       if (!error) {
-        const open = (data || []).filter(r => ['pending','overdue'].includes(String(r.status)));
+        const open = (data || []).filter(r => ['pending', 'overdue'].includes(String(r.status)));
         setTotalDueCents(open.reduce((s, r: any) => s + (r.amount || 0), 0));
       }
     })();
@@ -54,7 +56,7 @@ export default function PatientBillingPage() {
 
   React.useEffect(() => {
     if (tab === 'unpaid') {
-      try { emitAnalyticsEvent('pnav_funnel_unpaid_open', '', { path: '/billing', status: 'unpaid' }); } catch {}
+      try { emitAnalyticsEvent('pnav_funnel_unpaid_open', '', { path: '/billing', status: 'unpaid' }); } catch { }
     }
   }, [tab]);
 
@@ -66,10 +68,10 @@ export default function PatientBillingPage() {
           <CardContent className="pt-6">
             <EmptyState
               icon={AlertCircle}
-              title="Billing Not Available"
-              description="Payment requests are not enabled for this practice. Please contact your provider for payment information."
+              title={t.billingNotAvailable}
+              description={t.billingNotAvailableDesc}
               action={{
-                label: "Go to Care Home",
+                label: t.goToCareHome,
                 onClick: () => navigate('/care')
               }}
             />
@@ -89,12 +91,12 @@ export default function PatientBillingPage() {
           <SectionHeader
             icon={DollarSign}
             title={t.pnav.billing.main}
-            description="Manage your payments, invoices, and billing statements"
+            description={t.managePaymentsDesc}
             gradient="from-amber-600 to-orange-600"
           />
           {totalDueCents > 0 && (
             <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg">
-              ${(totalDueCents / 100).toFixed(2)} due
+              ${(totalDueCents / 100).toFixed(2)} {t.amountDueLabel}
             </Badge>
           )}
         </div>
@@ -122,10 +124,10 @@ export default function PatientBillingPage() {
           <TabsContent value="paid">
             <EmptyState
               icon={Receipt}
-              title="No Paid Invoices"
-              description={t.paidInvoices || "Your payment history will appear here once you've made payments."}
+              title={t.noPaidInvoices}
+              description={t.noPaidInvoicesDesc}
               action={{
-                label: "View Unpaid",
+                label: t.viewUnpaid,
                 onClick: () => setTab('unpaid')
               }}
             />
@@ -133,11 +135,11 @@ export default function PatientBillingPage() {
           <TabsContent value="statements">
             <EmptyState
               icon={FileText}
-              title="No Statements Available"
-              description={t.downloadStatements || "Your billing statements will be available for download once generated."}
+              title={t.noStatementsAvailable}
+              description={t.noStatementsDesc}
               action={{
-                label: "Contact Support",
-                onClick: () => {}
+                label: t.contactSupport,
+                onClick: () => { }
               }}
             />
           </TabsContent>
