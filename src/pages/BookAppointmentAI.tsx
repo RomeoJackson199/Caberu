@@ -230,6 +230,10 @@ export default function BookAppointment() {
           .gte('end_date', format(new Date(), 'yyyy-MM-dd'))
       ]);
       
+      console.log('Fetching availability for dentist:', dentist.id, 'business:', businessId);
+      console.log('Availability result:', availabilityResult.data);
+      console.log('Vacation result:', vacationResult.data, vacationResult.error);
+      
       if (availabilityResult.data && availabilityResult.data.length > 0) {
         setDentistAvailableDays(availabilityResult.data.map(d => d.day_of_week));
       } else {
