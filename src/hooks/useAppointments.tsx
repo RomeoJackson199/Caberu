@@ -167,17 +167,17 @@ export async function createAppointmentWithNotification(appointmentData: {
         hour12: true
       });
 
-      const emailSubject = `Appointment Confirmation - ${formattedDate} at ${formattedTime}`;
+      const emailSubject = `Dr. ${dentistProfile.first_name} ${dentistProfile.last_name} has booked your appointment`;
       const emailMessage = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2D5D7B; margin-bottom: 24px;">Your Appointment is Confirmed!</h2>
+          <h2 style="color: #2D5D7B; margin-bottom: 24px;">Your Dentist Has Scheduled an Appointment for You</h2>
           
           <p>Dear ${patient.first_name},</p>
           
-          <p>Your dental appointment has been scheduled. Here are the details:</p>
+          <p><strong>Dr. ${dentistProfile.first_name} ${dentistProfile.last_name}</strong> has scheduled a dental appointment for you. Here are the details:</p>
           
           <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #1e293b; margin: 0 0 16px 0;">Appointment Details:</h3>
+            <h3 style="color: #1e293b; margin: 0 0 16px 0;">📅 Appointment Details:</h3>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; font-weight: bold; color: #475569;">Date:</td>
@@ -199,20 +199,20 @@ export async function createAppointmentWithNotification(appointmentData: {
           </div>
 
           <div style="background: #dbeafe; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h4 style="color: #1e40af; margin: 0 0 12px 0;">📍 Important Notes:</h4>
+            <h4 style="color: #1e40af; margin: 0 0 12px 0;">📍 Please Remember:</h4>
             <ul style="color: #1e40af; margin: 0; padding-left: 20px;">
-              <li>Please arrive 10 minutes early for check-in</li>
+              <li>Arrive 10 minutes early for check-in</li>
               <li>Bring a valid ID and insurance card</li>
-              <li>If you need to reschedule, please call us at least 24 hours in advance</li>
+              <li>Contact us at least 24 hours in advance if you need to reschedule</li>
             </ul>
           </div>
           
           <p style="color: #059669; font-size: 14px; background: #d1fae5; padding: 12px; border-radius: 6px;">
-            📧 You will receive a reminder email 24 hours before your appointment.
+            📧 You'll receive a reminder 24 hours before your appointment.
           </p>
 
           <p style="color: #64748b; font-size: 14px; margin-top: 24px;">
-            Thank you for choosing our dental practice. We look forward to seeing you soon!
+            We look forward to seeing you!
           </p>
         </div>
       `;

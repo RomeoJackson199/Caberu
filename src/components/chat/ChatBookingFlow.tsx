@@ -145,6 +145,12 @@ export const ChatBookingFlow = ({
         profile = inserted as any;
       }
 
+      if (!profile) {
+        onResponse("Could not create or find your profile. Please try again.");
+        onCancel();
+        return;
+      }
+
       // Check required fields (allow booking without phone)
       const email = profile.email || user.email;
       const missing: string[] = [];

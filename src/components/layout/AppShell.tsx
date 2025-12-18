@@ -112,6 +112,7 @@ function TopBar() {
   const { switchBusiness, memberships, businessId } = useBusinessContext();
   const { toast } = useToast();
   const location = useLocation();
+  const { branding } = useClinicBranding();
 
   const breadcrumbLabels = React.useMemo<Record<string, string>>(
     () => ({

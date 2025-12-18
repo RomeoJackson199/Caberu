@@ -41,8 +41,8 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
           reason,
           status,
           notes,
-          dentists:dentist_id (
-            profiles:profile_id (
+          dentist:dentists!dentist_id (
+            profile:profiles!profile_id (
               first_name,
               last_name
             )
@@ -73,8 +73,10 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
         responseMessage += `📅 **Your upcoming appointments:**\n\n`;
         upcoming.forEach((apt, index) => {
           const date = new Date(apt.appointment_date);
-          const dentistName = apt.dentists?.profiles 
-            ? `Dr. ${apt.dentists.profiles.first_name} ${apt.dentists.profiles.last_name}`
+          const dentistData = apt.dentist as any;
+          const profileData = dentistData?.profile as any;
+          const dentistName = profileData?.first_name 
+            ? `Dr. ${profileData.first_name} ${profileData.last_name}`
             : "Unknown dentist";
           
           responseMessage += `${index + 1}. **${format(date, "EEEE, MMMM d")}** at **${format(date, "h:mm a")}**\n`;
@@ -108,8 +110,10 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
         responseMessage += `📋 **Your past appointments:**\n\n`;
         past.slice(-3).forEach((apt, index) => {
           const date = new Date(apt.appointment_date);
-          const dentistName = apt.dentists?.profiles 
-            ? `Dr. ${apt.dentists.profiles.first_name} ${apt.dentists.profiles.last_name}`
+          const dentistData = apt.dentist as any;
+          const profileData = dentistData?.profile as any;
+          const dentistName = profileData?.first_name 
+            ? `Dr. ${profileData.first_name} ${profileData.last_name}`
             : "Unknown dentist";
           
           responseMessage += `${index + 1}. **${format(date, "EEEE, MMMM d")}** at **${format(date, "h:mm a")}**\n`;
