@@ -65,23 +65,39 @@ serve(async (req) => {
     // A. Check requested dentist
     if (requestedDentistId) {
       const { data: requestedDentist } = await adminClient
-        .from('dentists').select('id, business_id, profile_id')
+        .from('dentists').select('id, profile_id')
         .eq('id', requestedDentistId).maybeSingle();
       if (requestedDentist) {
         validDentist = requestedDentist;
         console.log('✅ Using requested dentist:', requestedDentist.id);
+        
+        // Get business_id via business_members
+        const { data: membership } = await adminClient
+          .from('business_members').select('business_id')
+          .eq('profile_id', requestedDentist.profile_id).limit(1).maybeSingle();
+        if (membership) {
+          business_id = membership.business_id;
+        }
       }
     }
 
     // B. Fallback: User's own dentist
     if (!validDentist) {
       const { data: ownDentist } = await adminClient
-        .from('dentists').select('id, business_id')
+        .from('dentists').select('id, profile_id')
         .eq('profile_id', actorProfile.id).eq('is_active', true).limit(1).maybeSingle();
       if (ownDentist) {
         validDentist = ownDentist;
         dentist_id = ownDentist.id;
         console.log('✅ Found user dentist:', ownDentist.id);
+        
+        // Get business_id via business_members
+        const { data: membership } = await adminClient
+          .from('business_members').select('business_id')
+          .eq('profile_id', ownDentist.profile_id).limit(1).maybeSingle();
+        if (membership) {
+          business_id = membership.business_id;
+        }
       }
     }
 
