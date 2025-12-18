@@ -61,7 +61,7 @@ export const AuthCallbackHandler = () => {
           cleanupUrl(false);
         }
 
-        // If we processed authentication, check for profile linking
+        // If we processed authentication, check for profile linking and business context
         if (authProcessed) {
           setTimeout(async () => {
             try {
@@ -104,13 +104,28 @@ export const AuthCallbackHandler = () => {
                 }
               }
 
-              // Apply pre-login clinic selection if present
+              // Auto-set business context from user's profile if not already set
               const selectedBusinessId = localStorage.getItem('selected_business_id');
               if (selectedBusinessId) {
+                // Apply pre-login clinic selection if present
                 await supabase.functions.invoke('set-current-business', {
                   body: { businessId: selectedBusinessId },
                 }).catch(console.warn);
                 localStorage.removeItem('selected_business_id');
+              } else {
+                // No pre-selected business, check if user's profile has a business_id
+                const { data: userProfile } = await supabase
+                  .from('profiles')
+                  .select('business_id')
+                  .eq('user_id', session?.user?.id)
+                  .maybeSingle();
+
+                if (userProfile?.business_id) {
+                  logger.info('Auto-setting business context from profile:', userProfile.business_id);
+                  await supabase.functions.invoke('set-current-business', {
+                    body: { businessId: userProfile.business_id },
+                  }).catch(console.warn);
+                }
               }
 
             } catch (error) {
