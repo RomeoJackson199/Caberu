@@ -13,6 +13,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { createAppointmentWithNotification } from "@/hooks/useAppointments";
 
 interface Patient {
   id: string;
@@ -288,24 +289,21 @@ export function QuickAppointmentDialog({
       const [hours, minutes] = appointmentTime.split(":");
       appointmentDateTime.setHours(parseInt(hours), parseInt(minutes || "0"), 0, 0);
 
-      const { error: appointmentError } = await supabase
-        .from("appointments")
-        .insert({
-          dentist_id: dentistId,
-          patient_id: selectedPatient.id,
-          business_id: dentistBusiness,
-          appointment_date: appointmentDateTime.toISOString(),
-          duration_minutes: parseInt(duration),
-          status: "pending",
-          urgency: "medium",
-          reason: reason || "General consultation",
-        });
-
-      if (appointmentError) throw appointmentError;
+      // Use createAppointmentWithNotification to send email to patient
+      await createAppointmentWithNotification({
+        dentist_id: dentistId,
+        patient_id: selectedPatient.id,
+        business_id: dentistBusiness,
+        appointment_date: appointmentDateTime.toISOString(),
+        duration_minutes: parseInt(duration),
+        status: "confirmed",
+        urgency: "medium",
+        reason: reason || "General consultation",
+      });
 
       toast({
         title: "Appointment Created",
-        description: `Successfully created appointment for ${selectedPatient.first_name} ${selectedPatient.last_name}`,
+        description: `Successfully created appointment for ${selectedPatient.first_name} ${selectedPatient.last_name}. Confirmation email sent.`,
       });
 
       await queryClient.invalidateQueries({ queryKey: ["appointments-calendar"] });
