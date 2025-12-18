@@ -75,19 +75,29 @@ export async function createAppointmentWithNotification(appointmentData: {
   duration_minutes?: number;
   business_id?: string;
 }): Promise<Appointment> {
+  console.log('📧 createAppointmentWithNotification called with:', appointmentData);
 
   // Get business_id if not provided
   let businessId = appointmentData.business_id;
   if (!businessId) {
     // Try to get business_id from dentist's business membership
-    const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('profile_id', (await supabase.from('dentists').select('profile_id').eq('id', appointmentData.dentist_id).single()).data?.profile_id || '')
-      .limit(1)
-      .maybeSingle();
-    businessId = membership?.business_id;
+    const { data: dentistData } = await supabase
+      .from('dentists')
+      .select('profile_id')
+      .eq('id', appointmentData.dentist_id)
+      .single();
+    
+    if (dentistData?.profile_id) {
+      const { data: membership } = await supabase
+        .from('business_members')
+        .select('business_id')
+        .eq('profile_id', dentistData.profile_id)
+        .limit(1)
+        .maybeSingle();
+      businessId = membership?.business_id;
+    }
   }
+  console.log('📧 Business ID resolved:', businessId);
 
   // Create the appointment
   const { data: appointment, error } = await supabase
@@ -98,24 +108,31 @@ export async function createAppointmentWithNotification(appointmentData: {
       status: appointmentData.status || 'confirmed',
       urgency: appointmentData.urgency || 'medium'
     })
-    .select(`
-      *,
-      profiles(
-        first_name,
-        last_name,
-        email,
-        phone
-      ),
-      dentists(
-        profiles(
-          first_name,
-          last_name
-        )
-      )
-    `)
+    .select('*')
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Failed to create appointment:', error);
+    throw error;
+  }
+  console.log('✅ Appointment created:', appointment.id);
+
+  // Fetch patient data separately for reliability
+  const { data: patient } = await supabase
+    .from('profiles')
+    .select('first_name, last_name, email, phone')
+    .eq('id', appointment.patient_id)
+    .single();
+
+  // Fetch dentist data separately
+  const { data: dentist } = await supabase
+    .from('dentists')
+    .select('profile_id, profiles(first_name, last_name)')
+    .eq('id', appointment.dentist_id)
+    .single();
+
+  console.log('📧 Patient data:', patient);
+  console.log('📧 Dentist data:', dentist);
 
   // Sync to Google Calendar
   try {
@@ -129,11 +146,14 @@ export async function createAppointmentWithNotification(appointmentData: {
 
   // Send confirmation email to patient
   try {
-    // Access profiles (patient data) from the joined query
-    const patient = appointment.profiles as { first_name: string; last_name: string; email: string; phone?: string } | null;
-    const dentist = appointment.dentists as { profiles: { first_name: string; last_name: string } } | null;
+    const dentistProfile = dentist?.profiles as { first_name: string; last_name: string } | null;
+    
+    console.log('📧 Checking email conditions:', {
+      patientEmail: patient?.email,
+      dentistProfile: dentistProfile
+    });
 
-    if (patient?.email && dentist?.profiles) {
+    if (patient?.email && dentistProfile) {
       const appointmentDate = new Date(appointment.appointment_date);
       const formattedDate = appointmentDate.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -169,7 +189,7 @@ export async function createAppointmentWithNotification(appointmentData: {
               </tr>
               <tr>
                 <td style="padding: 8px 0; font-weight: bold; color: #475569;">Dentist:</td>
-                <td style="padding: 8px 0; color: #1e293b;">Dr. ${dentist.profiles.first_name} ${dentist.profiles.last_name}</td>
+                <td style="padding: 8px 0; color: #1e293b;">Dr. ${dentistProfile.first_name} ${dentistProfile.last_name}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; font-weight: bold; color: #475569;">Reason:</td>
@@ -197,7 +217,9 @@ export async function createAppointmentWithNotification(appointmentData: {
         </div>
       `;
 
-      await supabase.functions.invoke('send-email-notification', {
+      console.log('📧 Sending email to:', patient.email);
+      
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email-notification', {
         body: {
           to: patient.email,
           subject: emailSubject,
@@ -208,13 +230,21 @@ export async function createAppointmentWithNotification(appointmentData: {
           businessId: businessId,
           appointmentDate: formattedDate,
           appointmentTime: formattedTime,
-          isSystemNotification: true // Allow sending without auth for system notifications
+          isSystemNotification: true
         }
       });
       
-      logger.info(`✅ Confirmation email sent to ${patient.email} for appointment ${appointment.id}`);
+      if (emailError) {
+        console.error('❌ Email sending failed:', emailError);
+      } else {
+        console.log('✅ Email sent successfully:', emailResult);
+        logger.info(`✅ Confirmation email sent to ${patient.email} for appointment ${appointment.id}`);
+      }
+    } else {
+      console.warn('⚠️ Cannot send email - missing patient email or dentist profile');
     }
   } catch (emailError: any) {
+    console.error('❌ Exception during email sending:', emailError);
     // Check if it's an email limit error and show popup
     if (!handleEmailError(emailError)) {
       logger.error('Failed to send appointment confirmation email:', emailError);
