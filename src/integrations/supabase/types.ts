@@ -3390,7 +3390,7 @@ export type Database = {
         Returns: undefined
       }
       generate_daily_slots: {
-        Args: { p_business_id: string; p_date: string; p_dentist_id: string }
+        Args: { p_business_id?: string; p_date: string; p_dentist_id: string }
         Returns: undefined
       }
       get_all_businesses_admin: {
