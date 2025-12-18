@@ -2,22 +2,17 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Clock, 
   CheckCircle, 
   XCircle, 
-  CalendarClock,
   User,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatClinicTime, getClinicTimeSlots } from "@/lib/timezone";
+import { formatClinicTime } from "@/lib/timezone";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useNavigate } from "react-router-dom";
 
@@ -43,10 +38,6 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
   const [pendingAppointments, setPendingAppointments] = useState<PendingAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [requiresApproval, setRequiresApproval] = useState(false);
-  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<PendingAppointment | null>(null);
-  const [rescheduleDate, setRescheduleDate] = useState<Date | undefined>(undefined);
-  const [rescheduleTime, setRescheduleTime] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { toast } = useToast();
@@ -121,8 +112,21 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
     if (onNavigateToPatient) {
       onNavigateToPatient(apt.patient_id);
     } else {
-      // Navigate to patient management with the patient ID
       navigate(`/dentist/dashboard?tab=patients&patientId=${apt.patient_id}`);
+    }
+  };
+
+  const sendDecisionEmail = async (appointmentId: string, decision: 'approved' | 'declined') => {
+    try {
+      const { error } = await supabase.functions.invoke('send-appointment-decision', {
+        body: { appointment_id: appointmentId, decision }
+      });
+      
+      if (error) {
+        console.error('Error sending decision email:', error);
+      }
+    } catch (err) {
+      console.error('Failed to send decision email:', err);
     }
   };
 
@@ -136,9 +140,11 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
       if (error) throw error;
 
+      // Send approval email
+      await sendDecisionEmail(appointmentId, 'approved');
+
       setPendingAppointments(prev => {
         const newList = prev.filter(apt => apt.id !== appointmentId);
-        // Adjust currentIndex if needed
         if (currentIndex >= newList.length && newList.length > 0) {
           setCurrentIndex(newList.length - 1);
         }
@@ -146,7 +152,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
       });
       toast({
         title: "Success",
-        description: "Appointment confirmed successfully",
+        description: "Appointment confirmed and patient notified",
       });
       onAction?.();
     } catch (error) {
@@ -170,6 +176,9 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
       if (error) throw error;
 
+      // Send decline email
+      await sendDecisionEmail(appointmentId, 'declined');
+
       setPendingAppointments(prev => {
         const newList = prev.filter(apt => apt.id !== appointmentId);
         if (currentIndex >= newList.length && newList.length > 0) {
@@ -179,7 +188,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
       });
       toast({
         title: "Success",
-        description: "Appointment declined",
+        description: "Appointment declined and patient notified",
       });
       onAction?.();
     } catch (error) {
@@ -191,60 +200,6 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
     } finally {
       setActionLoading(null);
     }
-  };
-
-  const handleReschedule = async () => {
-    if (!selectedAppointment || !rescheduleDate || !rescheduleTime) return;
-
-    setActionLoading(selectedAppointment.id);
-    try {
-      const [hours, minutes] = rescheduleTime.split(':').map(Number);
-      const newDate = new Date(rescheduleDate);
-      newDate.setHours(hours, minutes, 0, 0);
-
-      const { error } = await supabase
-        .from('appointments')
-        .update({ 
-          appointment_date: newDate.toISOString(),
-          status: 'confirmed' 
-        })
-        .eq('id', selectedAppointment.id);
-
-      if (error) throw error;
-
-      setPendingAppointments(prev => {
-        const newList = prev.filter(apt => apt.id !== selectedAppointment.id);
-        if (currentIndex >= newList.length && newList.length > 0) {
-          setCurrentIndex(newList.length - 1);
-        }
-        return newList;
-      });
-      setIsRescheduleOpen(false);
-      setSelectedAppointment(null);
-      setRescheduleDate(undefined);
-      setRescheduleTime("");
-      
-      toast({
-        title: "Success",
-        description: "Appointment rescheduled and confirmed",
-      });
-      onAction?.();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reschedule appointment",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const openReschedule = (apt: PendingAppointment) => {
-    setSelectedAppointment(apt);
-    setRescheduleDate(new Date(apt.appointment_date));
-    setRescheduleTime(format(new Date(apt.appointment_date), 'HH:mm'));
-    setIsRescheduleOpen(true);
   };
 
   const goToPrevious = () => {
@@ -260,171 +215,101 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
     return null;
   }
 
-  const timeSlots = rescheduleDate ? getClinicTimeSlots(rescheduleDate) : [];
   const currentAppointment = pendingAppointments[currentIndex];
 
   return (
-    <>
-      <Card className="relative overflow-hidden border-none shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 opacity-10" />
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-          <CardTitle className="text-sm font-medium">
-            Pending Approvals
-          </CardTitle>
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
-            <Clock className="h-5 w-5 text-white" />
+    <Card className="relative overflow-hidden border-none shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 opacity-10" />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+        <CardTitle className="text-sm font-medium">
+          Pending Approvals
+        </CardTitle>
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+          <Clock className="h-5 w-5 text-white" />
+        </div>
+      </CardHeader>
+      <CardContent className="relative z-10">
+        {pendingAppointments.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-muted-foreground">No pending approvals</p>
           </div>
-        </CardHeader>
-        <CardContent className="relative z-10">
-          {pendingAppointments.length === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">No pending approvals</p>
-            </div>
-          ) : currentAppointment ? (
-            <div className="space-y-3">
-              {/* Navigation */}
-              {pendingAppointments.length > 1 && (
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2"
-                    onClick={goToPrevious}
-                    disabled={currentIndex === 0}
-                  >
-                    <ChevronLeft className="h-3 w-3" />
-                  </Button>
-                  <span>{currentIndex + 1} / {pendingAppointments.length}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2"
-                    onClick={goToNext}
-                    disabled={currentIndex === pendingAppointments.length - 1}
-                  >
-                    <ChevronRight className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
-
-              {/* Current appointment */}
-              <div className="p-3 bg-background/80 rounded-lg border border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <button
-                    onClick={() => handlePatientClick(currentAppointment)}
-                    className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
-                  >
-                    <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm font-medium truncate underline underline-offset-2">
-                      {getPatientName(currentAppointment)}
-                    </span>
-                  </button>
-                </div>
-                
-                <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20 mb-3">
-                  {formatClinicTime(currentAppointment.appointment_date, 'MMM d, HH:mm')}
-                </Badge>
-
-                {currentAppointment.reason && (
-                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                    {currentAppointment.reason}
-                  </p>
-                )}
-                
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs flex-1 bg-success/10 text-success border-success/20 hover:bg-success/20"
-                    onClick={() => handleApprove(currentAppointment.id)}
-                    disabled={actionLoading === currentAppointment.id}
-                  >
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    {t.confirm || "Approve"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs flex-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
-                    onClick={() => handleDecline(currentAppointment.id)}
-                    disabled={actionLoading === currentAppointment.id}
-                  >
-                    <XCircle className="h-3 w-3 mr-1" />
-                    {t.cancel || "Decline"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                    onClick={() => openReschedule(currentAppointment)}
-                    disabled={actionLoading === currentAppointment.id}
-                  >
-                    <CalendarClock className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Dialog open={isRescheduleOpen} onOpenChange={setIsRescheduleOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t.reschedule || "Reschedule Appointment"}</DialogTitle>
-          </DialogHeader>
-          
-          {selectedAppointment && (
-            <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium">{getPatientName(selectedAppointment)}</p>
-                <p className="text-xs text-muted-foreground">
-                  Current: {formatClinicTime(selectedAppointment.appointment_date, 'PPP HH:mm')}
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-2 block">New Date</label>
-                <Calendar
-                  mode="single"
-                  selected={rescheduleDate}
-                  onSelect={setRescheduleDate}
-                  disabled={(date) => date < new Date()}
-                  className="rounded-md border"
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-2 block">New Time</label>
-                <Select value={rescheduleTime} onValueChange={setRescheduleTime}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((slot) => (
-                      <SelectItem key={slot} value={slot}>
-                        {slot}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsRescheduleOpen(false)}>
-                  {t.cancel || "Cancel"}
-                </Button>
-                <Button 
-                  onClick={handleReschedule}
-                  disabled={!rescheduleDate || !rescheduleTime || actionLoading !== null}
+        ) : currentAppointment ? (
+          <div className="space-y-3">
+            {/* Navigation */}
+            {pendingAppointments.length > 1 && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2"
+                  onClick={goToPrevious}
+                  disabled={currentIndex === 0}
                 >
-                  Confirm & Reschedule
+                  <ChevronLeft className="h-3 w-3" />
+                </Button>
+                <span>{currentIndex + 1} / {pendingAppointments.length}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2"
+                  onClick={goToNext}
+                  disabled={currentIndex === pendingAppointments.length - 1}
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+
+            {/* Current appointment */}
+            <div className="p-3 bg-background/80 rounded-lg border border-border/50">
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  onClick={() => handlePatientClick(currentAppointment)}
+                  className="flex items-center gap-2 min-w-0 hover:text-primary transition-colors"
+                >
+                  <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm font-medium truncate underline underline-offset-2">
+                    {getPatientName(currentAppointment)}
+                  </span>
+                </button>
+              </div>
+              
+              <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20 mb-3">
+                {formatClinicTime(currentAppointment.appointment_date, 'MMM d, HH:mm')}
+              </Badge>
+
+              {currentAppointment.reason && (
+                <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                  {currentAppointment.reason}
+                </p>
+              )}
+              
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-3 text-xs flex-1 bg-success/10 text-success border-success/20 hover:bg-success/20"
+                  onClick={() => handleApprove(currentAppointment.id)}
+                  disabled={actionLoading === currentAppointment.id}
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  {t.confirm || "Approve"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-3 text-xs flex-1 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                  onClick={() => handleDecline(currentAppointment.id)}
+                  disabled={actionLoading === currentAppointment.id}
+                >
+                  <XCircle className="h-3 w-3 mr-1" />
+                  {t.cancel || "Decline"}
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
