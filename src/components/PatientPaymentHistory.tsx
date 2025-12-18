@@ -6,6 +6,7 @@ import { DollarSign, Clock, CheckCircle, XCircle, ExternalLink, Loader2, Bell } 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface PaymentRequest {
   id: string;
@@ -28,19 +29,28 @@ export const PatientPaymentHistory: React.FC<PatientPaymentHistoryProps> = ({ pa
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const { toast } = useToast();
+  const { businessId } = useBusinessContext();
 
   useEffect(() => {
     fetchPaymentHistory();
-  }, [patientId]);
+  }, [patientId, businessId]);
 
   const fetchPaymentHistory = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('payment_requests')
         .select('*')
         .eq('patient_id', patientId)
         .order('created_at', { ascending: false });
+      
+      // Filter by business if we have a business context
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setPaymentRequests(data || []);
