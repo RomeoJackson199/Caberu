@@ -73,13 +73,28 @@ export async function createAppointmentWithNotification(appointmentData: {
   urgency?: 'low' | 'medium' | 'high';
   patient_name?: string;
   duration_minutes?: number;
+  business_id?: string;
 }): Promise<Appointment> {
+
+  // Get business_id if not provided
+  let businessId = appointmentData.business_id;
+  if (!businessId) {
+    // Try to get business_id from dentist's business membership
+    const { data: membership } = await supabase
+      .from('business_members')
+      .select('business_id')
+      .eq('profile_id', (await supabase.from('dentists').select('profile_id').eq('id', appointmentData.dentist_id).single()).data?.profile_id || '')
+      .limit(1)
+      .maybeSingle();
+    businessId = membership?.business_id;
+  }
 
   // Create the appointment
   const { data: appointment, error } = await supabase
     .from('appointments')
     .insert({
       ...appointmentData,
+      business_id: businessId,
       status: appointmentData.status || 'confirmed',
       urgency: appointmentData.urgency || 'medium'
     })
@@ -112,10 +127,11 @@ export async function createAppointmentWithNotification(appointmentData: {
     // Don't fail the appointment creation if Google Calendar sync fails
   }
 
-  // Send confirmation email
+  // Send confirmation email to patient
   try {
-    const patient = appointment.patient;
-    const dentist = appointment.dentist;
+    // Access profiles (patient data) from the joined query
+    const patient = appointment.profiles as { first_name: string; last_name: string; email: string; phone?: string } | null;
+    const dentist = appointment.dentists as { profiles: { first_name: string; last_name: string } } | null;
 
     if (patient?.email && dentist?.profiles) {
       const appointmentDate = new Date(appointment.appointment_date);
@@ -135,6 +151,10 @@ export async function createAppointmentWithNotification(appointmentData: {
       const emailMessage = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2D5D7B; margin-bottom: 24px;">Your Appointment is Confirmed!</h2>
+          
+          <p>Dear ${patient.first_name},</p>
+          
+          <p>Your dental appointment has been scheduled. Here are the details:</p>
           
           <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #1e293b; margin: 0 0 16px 0;">Appointment Details:</h3>
@@ -166,6 +186,10 @@ export async function createAppointmentWithNotification(appointmentData: {
               <li>If you need to reschedule, please call us at least 24 hours in advance</li>
             </ul>
           </div>
+          
+          <p style="color: #059669; font-size: 14px; background: #d1fae5; padding: 12px; border-radius: 6px;">
+            📧 You will receive a reminder email 24 hours before your appointment.
+          </p>
 
           <p style="color: #64748b; font-size: 14px; margin-top: 24px;">
             Thank you for choosing our dental practice. We look forward to seeing you soon!
@@ -181,10 +205,14 @@ export async function createAppointmentWithNotification(appointmentData: {
           messageType: 'appointment_confirmation',
           patientId: appointment.patient_id,
           dentistId: appointment.dentist_id,
+          businessId: businessId,
           appointmentDate: formattedDate,
-          appointmentTime: formattedTime
+          appointmentTime: formattedTime,
+          isSystemNotification: true // Allow sending without auth for system notifications
         }
       });
+      
+      logger.info(`✅ Confirmation email sent to ${patient.email} for appointment ${appointment.id}`);
     }
   } catch (emailError: any) {
     // Check if it's an email limit error and show popup
