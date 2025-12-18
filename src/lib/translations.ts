@@ -993,6 +993,22 @@ export interface Translations {
     noRemindersYet: string;
     editPaymentRequest: string;
     amountEuro: string;
+    // Quick Actions and Booking
+    scheduleNewPatientAppointment: string;
+    startEmergencyAssessment: string;
+    addPatient: string;
+    registerNewPatient: string;
+    createNote: string;
+    addPatientNotesOrMemo: string;
+    sendMessage: string;
+    contactPatientOrTeam: string;
+    takePhoto: string;
+    captureDentalImages: string;
+    callPatient: string;
+    makePhoneCall: string;
+    configurePreferences: string;
+    bookWithAIAssistant: string;
+    bookManually: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1990,6 +2006,23 @@ export const translations: Record<Language, TranslationEntry> = {
         editPaymentRequest: "Edit Payment Request",
         amountEuro: "Amount (€)",
 
+        // Quick Actions and Booking
+        scheduleNewPatientAppointment: "Schedule a new patient appointment",
+        startEmergencyAssessment: "Start emergency assessment",
+        addPatient: "Add Patient",
+        registerNewPatient: "Register a new patient",
+        createNote: "Create Note",
+        addPatientNotesOrMemo: "Add patient notes or memo",
+        sendMessage: "Send Message",
+        contactPatientOrTeam: "Contact patient or team",
+        takePhoto: "Take Photo",
+        captureDentalImages: "Capture dental images",
+        callPatient: "Call Patient",
+        makePhoneCall: "Make a phone call",
+        configurePreferences: "Configure preferences",
+        bookWithAIAssistant: "Book with AI Assistant",
+        bookManually: "Book Manually",
+
         // Common
         'common.cancel': "Cancel",
         'common.next': "Next",
@@ -2802,6 +2835,23 @@ export const translations: Record<Language, TranslationEntry> = {
         lastMemberWarning: "Si vous êtes le dernier membre, l'entreprise sera définitivement supprimée.",
         leaveClinicConfirm: "Cette action est irréversible. Vous perdrez l'accès à toutes les données, rendez-vous et dossiers patients.",
 
+
+        // Quick Actions and Booking
+        scheduleNewPatientAppointment: "Planifier un nouveau rendez-vous patient",
+        startEmergencyAssessment: "Commencer l'évaluation d'urgence",
+        addPatient: "Ajouter un patient",
+        registerNewPatient: "Enregistrer un nouveau patient",
+        createNote: "Créer une note",
+        addPatientNotesOrMemo: "Ajouter des notes ou mémos pour le patient",
+        sendMessage: "Envoyer un message",
+        contactPatientOrTeam: "Contacter le patient ou l'équipe",
+        takePhoto: "Prendre une photo",
+        captureDentalImages: "Capturer des images dentaires",
+        callPatient: "Appeler le patient",
+        makePhoneCall: "Passer un appel téléphonique",
+        configurePreferences: "Configurer les préférences",
+        bookWithAIAssistant: "Réserver avec l'assistant IA",
+        bookManually: "Réserver manuellement",
         // Payment Request Manager (expanded view and edit dialog)
         items: "Articles",
         noItemsAdded: "Aucun article ajouté",

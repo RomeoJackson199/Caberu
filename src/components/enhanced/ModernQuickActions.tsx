@@ -1,18 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar, 
-  UserPlus, 
-  FileText, 
-  MessageSquare, 
-  Zap, 
+import {
+  Calendar,
+  UserPlus,
+  FileText,
+  MessageSquare,
+  Zap,
   Settings,
   Camera,
   Phone,
   Mail,
   AlertTriangle
 } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface QuickAction {
   id: string;
@@ -53,11 +54,12 @@ export function ModernQuickActions({
   pendingCount = 0,
   urgentCount = 0
 }: ModernQuickActionsProps) {
+  const { t } = useLanguage();
   const quickActions: QuickAction[] = [
     {
       id: "appointment",
-      title: "Book Appointment",
-      description: "Schedule a new patient appointment",
+      title: t.bookAppointment || "Book Appointment",
+      description: t.scheduleNewPatientAppointment || "Schedule a new patient appointment",
       icon: Calendar,
       color: "text-dental-primary",
       bgColor: "bg-dental-primary/10",
@@ -65,8 +67,8 @@ export function ModernQuickActions({
     },
     {
       id: "emergency",
-      title: "Emergency Triage",
-      description: "Start emergency assessment",
+      title: t.emergencyTriage || "Emergency Triage",
+      description: t.startEmergencyAssessment || "Start emergency assessment",
       icon: Zap,
       color: "text-dental-error",
       bgColor: "bg-dental-error/10",
@@ -78,8 +80,8 @@ export function ModernQuickActions({
     },
     {
       id: "patient",
-      title: "Add Patient",
-      description: "Register a new patient",
+      title: t.addPatient || "Add Patient",
+      description: t.registerNewPatient || "Register a new patient",
       icon: UserPlus,
       color: "text-dental-secondary",
       bgColor: "bg-dental-secondary/10",
@@ -87,8 +89,8 @@ export function ModernQuickActions({
     },
     {
       id: "note",
-      title: "Create Note",
-      description: "Add patient notes or memo",
+      title: t.createNote || "Create Note",
+      description: t.addPatientNotesOrMemo || "Add patient notes or memo",
       icon: FileText,
       color: "text-dental-accent",
       bgColor: "bg-dental-accent/10",
@@ -96,21 +98,21 @@ export function ModernQuickActions({
     },
     {
       id: "message",
-      title: "Send Message",
-      description: "Contact patient or team",
+      title: t.sendMessage || "Send Message",
+      description: t.contactPatientOrTeam || "Contact patient or team",
       icon: MessageSquare,
       color: "text-dental-info",
       bgColor: "bg-dental-info/10",
       action: onSendMessage,
       badge: pendingCount > 0 ? {
-        text: `${pendingCount} pending`,
+        text: `${pendingCount} ${t.pending || 'pending'}`,
         variant: "secondary" as const
       } : undefined
     },
     {
       id: "photo",
-      title: "Take Photo",
-      description: "Capture dental images",
+      title: t.takePhoto || "Take Photo",
+      description: t.captureDentalImages || "Capture dental images",
       icon: Camera,
       color: "text-dental-warning",
       bgColor: "bg-dental-warning/10",
@@ -118,8 +120,8 @@ export function ModernQuickActions({
     },
     {
       id: "call",
-      title: "Call Patient",
-      description: "Make a phone call",
+      title: t.callPatient || "Call Patient",
+      description: t.makePhoneCall || "Make a phone call",
       icon: Phone,
       color: "text-dental-success",
       bgColor: "bg-dental-success/10",
@@ -127,8 +129,8 @@ export function ModernQuickActions({
     },
     {
       id: "settings",
-      title: "Settings",
-      description: "Configure preferences",
+      title: t.settings || "Settings",
+      description: t.configurePreferences || "Configure preferences",
       icon: Settings,
       color: "text-dental-muted-foreground",
       bgColor: "bg-dental-muted/10",
@@ -141,15 +143,15 @@ export function ModernQuickActions({
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center space-x-2">
           <Zap className="h-5 w-5 text-dental-primary" />
-          <span>Quick Actions</span>
+          <span>{t.quickActions || 'Quick Actions'}</span>
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {quickActions.map((action) => {
             const Icon = action.icon;
-            
+
             return (
               <Button
                 key={action.id}
@@ -159,19 +161,19 @@ export function ModernQuickActions({
               >
                 {/* Badge */}
                 {action.badge && (
-                  <Badge 
+                  <Badge
                     variant={action.badge.variant}
                     className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5 h-5"
                   >
                     {action.badge.text}
                   </Badge>
                 )}
-                
+
                 {/* Icon */}
                 <div className={`p-3 rounded-xl ${action.bgColor} group-hover:scale-110 transition-transform`}>
                   <Icon className={`h-6 w-6 ${action.color}`} />
                 </div>
-                
+
                 {/* Content */}
                 <div className="text-center space-y-1">
                   <p className="font-semibold text-sm text-dental-foreground group-hover:text-dental-primary transition-colors">

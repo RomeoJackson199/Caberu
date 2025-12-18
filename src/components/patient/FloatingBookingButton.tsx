@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface FloatingBookingButtonProps {
   onBookAppointment?: () => void;
@@ -24,6 +25,7 @@ export const FloatingBookingButton = ({
   const navigate = useNavigate();
   const { hasFeature, loading } = useBusinessTemplate();
   const hasAIChat = !loading && hasFeature('aiChat');
+  const { t } = useLanguage();
 
   if (loading) {
     return null;
@@ -35,19 +37,19 @@ export const FloatingBookingButton = ({
       <div className={cn("fixed bottom-20 right-4 z-50 md:hidden", className)}>
         {isHovered && (
           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-black/90 text-white text-sm rounded-lg whitespace-nowrap animate-fade-in">
-            Book Appointment
+            {t.bookAppointment || 'Book Appointment'}
             <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
           </div>
         )}
-        
+
         <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20"></div>
-        
+
         <Button
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => {
             if (onBookAppointment) return onBookAppointment();
-            try { localStorage.setItem('pd_section', 'assistant'); } catch {}
+            try { localStorage.setItem('pd_section', 'assistant'); } catch { }
             window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
             navigate('/dashboard');
           }}
@@ -70,10 +72,10 @@ export const FloatingBookingButton = ({
           <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
         </div>
       )}
-      
+
       {/* Pulse Ring - Blue accent */}
       <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20"></div>
-      
+
       {/* Main Button with Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -90,16 +92,16 @@ export const FloatingBookingButton = ({
         <DropdownMenuContent align="end" className="w-56 mb-2">
           <DropdownMenuItem onClick={() => navigate('/book-appointment-ai')} className="cursor-pointer">
             <Bot className="mr-2 h-4 w-4" />
-            Book with AI Assistant
+            {t.bookWithAIAssistant || 'Book with AI Assistant'}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => {
             if (onBookAppointment) return onBookAppointment();
-            try { localStorage.setItem('pd_section', 'assistant'); } catch {}
+            try { localStorage.setItem('pd_section', 'assistant'); } catch { }
             window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } }));
             navigate('/dashboard');
           }} className="cursor-pointer">
             <CalendarDays className="mr-2 h-4 w-4" />
-            Book Manually
+            {t.bookManually || 'Book Manually'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
