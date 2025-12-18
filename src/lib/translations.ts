@@ -932,6 +932,17 @@ export interface Translations {
     noRecentActivity: string;
     patientNotes: string;
     totalNotes: string;
+    totalPlans: string;
+    done: string;
+    newTreatmentPlan: string;
+    treatmentTitlePlaceholder: string;
+    diagnosisPlaceholder: string;
+    descriptionOptional: string;
+    lowPriority: string;
+    normal: string;
+    estCost: string;
+    targetDate: string;
+    create: string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -1866,6 +1877,17 @@ export const translations: Record<Language, TranslationEntry> = {
         noRecentActivity: "No recent activity",
         patientNotes: "Patient Notes",
         totalNotes: "total notes",
+        totalPlans: "total plans",
+        done: "Done",
+        newTreatmentPlan: "New Treatment Plan",
+        treatmentTitlePlaceholder: "Treatment title...",
+        diagnosisPlaceholder: "Diagnosis...",
+        descriptionOptional: "Description (optional)",
+        lowPriority: "Low Priority",
+        normal: "Normal",
+        estCost: "Est. Cost €",
+        targetDate: "Target Date",
+        create: "Create",
 
         // Common
         'common.cancel': "Cancel",

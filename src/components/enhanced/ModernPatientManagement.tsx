@@ -2024,8 +2024,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                 <ClipboardList className="h-5 w-5 text-white" />
                               </div>
                               <div>
-                                <h3 className="font-bold text-slate-800">Treatment Plans</h3>
-                                <p className="text-xs text-slate-500">{treatmentPlans.length} total plans</p>
+                                <h3 className="font-bold text-slate-800">{t.treatmentPlans || 'Treatment Plans'}</h3>
+                                <p className="text-xs text-slate-500">{treatmentPlans.length} {t.totalPlans || 'total plans'}</p>
                               </div>
                             </div>
                             <motion.button
@@ -2049,19 +2049,19 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                               <p className="text-xl font-bold text-violet-700">
                                 {treatmentPlans.filter(p => p.status === 'active').length}
                               </p>
-                              <p className="text-[10px] text-violet-600 font-medium uppercase">Active</p>
+                              <p className="text-[10px] text-violet-600 font-medium uppercase">{t.active || 'Active'}</p>
                             </div>
                             <div className="bg-emerald-50 rounded-xl p-3 text-center">
                               <p className="text-xl font-bold text-emerald-700">
                                 {treatmentPlans.filter(p => p.status === 'completed').length}
                               </p>
-                              <p className="text-[10px] text-emerald-600 font-medium uppercase">Done</p>
+                              <p className="text-[10px] text-emerald-600 font-medium uppercase">{t.done || 'Done'}</p>
                             </div>
                             <div className="bg-slate-100 rounded-xl p-3 text-center">
                               <p className="text-xl font-bold text-slate-700">
                                 {appointments.filter(a => treatmentPlans.some(p => a.treatment_plan_id === p.id)).length}
                               </p>
-                              <p className="text-[10px] text-slate-600 font-medium uppercase">Appts</p>
+                              <p className="text-[10px] text-slate-600 font-medium uppercase">{t.appts || 'Appts'}</p>
                             </div>
                           </div>
                         </div>
@@ -2071,22 +2071,22 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           {/* New Treatment Plan Form */}
                           {newTreatmentPlanOpen && (
                             <div className="mb-4 p-4 bg-white rounded-2xl border border-indigo-100 shadow-sm animate-in slide-in-from-top-2">
-                              <h4 className="font-medium text-sm text-slate-700 mb-3">New Treatment Plan</h4>
+                              <h4 className="font-medium text-sm text-slate-700 mb-3">{t.newTreatmentPlan || 'New Treatment Plan'}</h4>
                               <div className="space-y-3">
                                 <Input
-                                  placeholder="Treatment title..."
+                                  placeholder={t.treatmentTitlePlaceholder || 'Treatment title...'}
                                   value={newTreatmentPlan.title}
                                   onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, title: e.target.value })}
                                   className="text-sm"
                                 />
                                 <Input
-                                  placeholder="Diagnosis..."
+                                  placeholder={t.diagnosisPlaceholder || 'Diagnosis...'}
                                   value={newTreatmentPlan.diagnosis}
                                   onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, diagnosis: e.target.value })}
                                   className="text-sm"
                                 />
                                 <textarea
-                                  placeholder="Description (optional)"
+                                  placeholder={t.descriptionOptional || 'Description (optional)'}
                                   value={newTreatmentPlan.description}
                                   onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, description: e.target.value })}
                                   className="w-full p-2 text-sm rounded-lg border border-slate-200 resize-none h-16"
@@ -2097,31 +2097,31 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, status: e.target.value })}
                                     className="p-2 text-sm rounded-lg border border-slate-200"
                                   >
-                                    <option value="active">Active</option>
-                                    <option value="draft">Draft</option>
+                                    <option value="active">{t.active || 'Active'}</option>
+                                    <option value="draft">{t.draft || 'Draft'}</option>
                                   </select>
                                   <select
                                     value={newTreatmentPlan.priority}
                                     onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, priority: e.target.value })}
                                     className="p-2 text-sm rounded-lg border border-slate-200"
                                   >
-                                    <option value="low">Low Priority</option>
-                                    <option value="normal">Normal</option>
-                                    <option value="high">High Priority</option>
-                                    <option value="urgent">Urgent</option>
+                                    <option value="low">{t.lowPriority || 'Low Priority'}</option>
+                                    <option value="normal">{t.normal || 'Normal'}</option>
+                                    <option value="high">{t.highPriority || 'High Priority'}</option>
+                                    <option value="urgent">{t.urgent || 'Urgent'}</option>
                                   </select>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   <Input
                                     type="number"
-                                    placeholder="Est. Cost €"
+                                    placeholder={t.estCost || 'Est. Cost €'}
                                     value={newTreatmentPlan.estimated_cost}
                                     onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, estimated_cost: e.target.value })}
                                     className="text-sm"
                                   />
                                   <Input
                                     type="date"
-                                    placeholder="Target Date"
+                                    placeholder={t.targetDate || 'Target Date'}
                                     value={newTreatmentPlan.target_completion_date}
                                     onChange={(e) => setNewTreatmentPlan({ ...newTreatmentPlan, target_completion_date: e.target.value })}
                                     className="text-sm"
@@ -2132,14 +2132,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     onClick={createTreatmentPlan}
                                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-sm h-9"
                                   >
-                                    Create
+                                    {t.create || 'Create'}
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     onClick={() => setNewTreatmentPlanOpen(false)}
                                     className="text-sm h-9"
                                   >
-                                    Cancel
+                                    {t.cancel || 'Cancel'}
                                   </Button>
                                 </div>
                               </div>
