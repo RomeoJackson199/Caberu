@@ -1030,6 +1030,20 @@ export interface Translations {
     noPastAppointments: string;
     patientInformation: string;
     editDetails: string;
+    // AppointmentManager
+    failedToLoadAppointments: string;
+    failedToUpdateAppointment: string;
+    noSelection: string;
+    pleaseSelectAppointmentsFirst: string;
+    appointmentsWord: string;
+    failedToUpdateAppointments: string;
+    manageYourPatientAppointments: string;
+    newAppointment: string;
+    filtersAndSearch: string;
+    searchPatients: string;
+    clearFilters: string;
+    upcoming: string;
+    confirmed: string;
 }
 
 type TranslationEntry = Partial<Translations>;

@@ -17,6 +17,7 @@ import { formatClinicTime } from '@/lib/timezone';
 import { emitAnalyticsEvent } from '@/lib/analyticsEvents';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export interface Appointment {
   id: string;
@@ -55,6 +56,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const fetchAppointments = useCallback(async () => {
     try {
@@ -84,20 +86,20 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
         .order('appointment_date', { ascending: true });
 
       if (error) throw error;
-      
+
       // Transform profiles from array to single object
       const transformedData = (data || []).map(apt => ({
         ...apt,
         profiles: Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles
       })) as Appointment[];
-      
+
       setAppointments(transformedData);
       await emitAnalyticsEvent('appointments_fetched', dentistId, { count: data?.length || 0 });
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load appointments',
+        title: t.error || 'Error',
+        description: t.failedToLoadAppointments || 'Failed to load appointments',
         variant: 'destructive',
       });
     } finally {
@@ -119,9 +121,9 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
     // Filter by tab
     switch (activeTab) {
       case 'upcoming':
-        filtered = filtered.filter(apt => 
-          new Date(apt.appointment_date) >= todayStart && 
-          apt.status !== 'cancelled' && 
+        filtered = filtered.filter(apt =>
+          new Date(apt.appointment_date) >= todayStart &&
+          apt.status !== 'cancelled' &&
           apt.status !== 'completed'
         );
         break;
@@ -170,7 +172,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
 
   const handleAppointmentStatusChange = async (appointmentId: string, newStatus: Appointment['status'], reason?: string) => {
     try {
-      const updateData: any = { 
+      const updateData: any = {
         status: newStatus,
         updated_at: new Date().toISOString()
       };
@@ -190,30 +192,30 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
 
       if (error) throw error;
 
-      setAppointments(prev => 
-        prev.map(apt => 
-          apt.id === appointmentId 
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === appointmentId
             ? { ...apt, status: newStatus }
             : apt
         )
       );
 
-      await emitAnalyticsEvent('appointment_status_changed', dentistId, { 
-        appointmentId, 
+      await emitAnalyticsEvent('appointment_status_changed', dentistId, {
+        appointmentId,
         oldStatus: appointments.find(apt => apt.id === appointmentId)?.status,
         newStatus,
-        reason 
+        reason
       });
 
       toast({
-        title: 'Success',
-        description: `Appointment ${newStatus}`,
+        title: t.success || 'Success',
+        description: `${t.appointment || 'Appointment'} ${newStatus}`,
       });
     } catch (error) {
       console.error('Error updating appointment:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update appointment',
+        title: t.error || 'Error',
+        description: t.failedToUpdateAppointment || 'Failed to update appointment',
         variant: 'destructive',
       });
     }
@@ -222,8 +224,8 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
   const handleBulkAction = async (action: 'confirm' | 'cancel' | 'complete', reason?: string) => {
     if (selectedAppointments.length === 0) {
       toast({
-        title: 'No Selection',
-        description: 'Please select appointments first',
+        title: t.noSelection || 'No Selection',
+        description: t.pleaseSelectAppointmentsFirst || 'Please select appointments first',
         variant: 'destructive',
       });
       return;
@@ -236,7 +238,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
         complete: 'completed' as const,
       };
 
-      const updateData: any = { 
+      const updateData: any = {
         status: statusMap[action],
         updated_at: new Date().toISOString()
       };
@@ -256,8 +258,8 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
 
       if (error) throw error;
 
-      setAppointments(prev => 
-        prev.map(apt => 
+      setAppointments(prev =>
+        prev.map(apt =>
           selectedAppointments.includes(apt.id)
             ? { ...apt, status: statusMap[action] }
             : apt
@@ -265,22 +267,22 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
       );
 
       setSelectedAppointments([]);
-      
-      await emitAnalyticsEvent('bulk_appointment_action', dentistId, { 
-        action, 
+
+      await emitAnalyticsEvent('bulk_appointment_action', dentistId, {
+        action,
         count: selectedAppointments.length,
-        appointmentIds: selectedAppointments 
+        appointmentIds: selectedAppointments
       });
 
       toast({
-        title: 'Success',
-        description: `${selectedAppointments.length} appointments ${statusMap[action]}`,
+        title: t.success || 'Success',
+        description: `${selectedAppointments.length} ${t.appointmentsWord || 'appointments'} ${statusMap[action]}`,
       });
     } catch (error) {
       console.error('Error in bulk action:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update appointments',
+        title: t.error || 'Error',
+        description: t.failedToUpdateAppointments || 'Failed to update appointments',
         variant: 'destructive',
       });
     }
@@ -292,9 +294,9 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
     return {
-      upcoming: appointments.filter(apt => 
-        new Date(apt.appointment_date) >= todayStart && 
-        apt.status !== 'cancelled' && 
+      upcoming: appointments.filter(apt =>
+        new Date(apt.appointment_date) >= todayStart &&
+        apt.status !== 'cancelled' &&
         apt.status !== 'completed'
       ).length,
       today: appointments.filter(apt => {
@@ -313,20 +315,20 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Appointments</h1>
-          <p className="text-muted-foreground">Manage your patient appointments</p>
+          <h1 className="text-3xl font-bold text-foreground">{t.appointments || 'Appointments'}</h1>
+          <p className="text-muted-foreground">{t.manageYourPatientAppointments || 'Manage your patient appointments'}</p>
         </div>
-        <Button 
+        <Button
           onClick={() => setShowAppointmentDialog(true)}
           className="w-full sm:w-auto"
         >
           <CalendarIcon className="w-4 h-4 mr-2" />
-          New Appointment
+          {t.newAppointment || 'New Appointment'}
         </Button>
       </div>
 
       {/* Statistics */}
-      <AppointmentStats 
+      <AppointmentStats
         appointments={appointments}
         dentistId={dentistId}
       />
@@ -334,14 +336,14 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filters & Search</CardTitle>
+          <CardTitle className="text-lg">{t.filtersAndSearch || 'Filters & Search'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
-                placeholder="Search patients..."
+                placeholder={t.searchPatients || "Search patients..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -349,14 +351,14 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
+                <SelectValue placeholder={t.allStatuses || "All Statuses"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">{t.allStatuses || 'All Statuses'}</SelectItem>
+                <SelectItem value="pending">{t.pending || 'Pending'}</SelectItem>
+                <SelectItem value="confirmed">{t.confirmed || 'Confirmed'}</SelectItem>
+                <SelectItem value="completed">{t.completed || 'Completed'}</SelectItem>
+                <SelectItem value="cancelled">{t.cancelled || 'Cancelled'}</SelectItem>
               </SelectContent>
             </Select>
             <Input
@@ -364,15 +366,15 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
             />
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
                 setDateFilter('all');
               }}
             >
-              Clear Filters
+              {t.clearFilters || 'Clear Filters'}
             </Button>
           </div>
         </CardContent>
@@ -391,7 +393,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="upcoming" className="relative">
-            Upcoming
+            {t.upcoming || 'Upcoming'}
             {tabCounts.upcoming > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {tabCounts.upcoming}
@@ -399,7 +401,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
             )}
           </TabsTrigger>
           <TabsTrigger value="today" className="relative">
-            Today
+            {t.today || 'Today'}
             {tabCounts.today > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {tabCounts.today}
@@ -407,7 +409,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
             )}
           </TabsTrigger>
           <TabsTrigger value="completed">
-            Completed
+            {t.completed || 'Completed'}
             {tabCounts.completed > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {tabCounts.completed}
@@ -415,7 +417,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
             )}
           </TabsTrigger>
           <TabsTrigger value="cancelled">
-            Cancelled
+            {t.cancelled || 'Cancelled'}
             {tabCounts.cancelled > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {tabCounts.cancelled}
