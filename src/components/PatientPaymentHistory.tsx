@@ -238,7 +238,7 @@ export const PatientPaymentHistory: React.FC<PatientPaymentHistoryProps> = ({ pa
                     <p className="font-bold text-lg md:text-xl text-dental-primary">{formatAmount(request.amount)}</p>
                     {getStatusBadge(request.status)}
                   </div>
-                  {request.status === 'pending' && viewMode === 'patient' && (
+                  {(request.status === 'pending' || request.status === 'failed' || request.status === 'cancelled') && viewMode === 'patient' && (
                     <Button
                       size="default"
                       onClick={() => handlePayNow(request.id)}
