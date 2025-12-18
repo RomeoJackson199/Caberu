@@ -156,7 +156,7 @@ export default function BreachManagement() {
       console.error('Incident reporting error:', error);
       toast({
         title: "Reporting failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive"
       });
     } finally {
@@ -195,7 +195,7 @@ export default function BreachManagement() {
       console.error('Status update error:', error);
       toast({
         title: "Update failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive"
       });
     }

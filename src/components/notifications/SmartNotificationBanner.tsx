@@ -42,9 +42,9 @@ export function SmartNotificationBanner({
       .filter(n => !dismissedIds.has(n.id) && !n.is_read)
       .sort((a, b) => {
         // Priority mapping: handle both UI values and DB values
-        const priorityOrder = { urgent: 4, high: 3, normal: 2, medium: 2, low: 1 };
-        const aPriority = priorityOrder[a.priority] || 0;
-        const bPriority = priorityOrder[b.priority] || 0;
+        const priorityOrder: Record<string, number> = { urgent: 4, high: 3, normal: 2, medium: 2, low: 1 };
+        const aPriority = priorityOrder[a.priority as string] || 0;
+        const bPriority = priorityOrder[b.priority as string] || 0;
         
         if (aPriority !== bPriority) return bPriority - aPriority;
         

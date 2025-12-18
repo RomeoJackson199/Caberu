@@ -73,7 +73,7 @@ export default function DataExportService() {
       console.error('Export error:', error);
       toast({
         title: "Export failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive"
       });
     } finally {

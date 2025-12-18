@@ -141,6 +141,7 @@ interface Appointment {
   notes?: string;
   consultation_notes?: string;
   treatment_plan_id?: string;
+  amount_paid_cents?: number | null;
 }
 
 interface TreatmentPlan {
@@ -2320,7 +2321,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                         }}
                                         className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-indigo-400 transition-all"
                                       >
-                                        <img src={appointmentImages.urls[file.id]} alt={file.description || 'Image'} className="w-full h-full object-cover" />
+                                        <img src={appointmentImages.urls[file.id]} alt={file.original_filename || file.filename || 'Image'} className="w-full h-full object-cover" />
                                       </button>
                                     ))}
                                   </div>
@@ -2401,7 +2402,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                             {appointmentImages.urls[file.id] ? (
                                               <img
                                                 src={appointmentImages.urls[file.id]}
-                                                alt={file.description || 'Image'}
+                                                alt={file.original_filename || file.filename || 'Image'}
                                                 className="w-full h-full object-cover"
                                               />
                                             ) : (
@@ -2410,7 +2411,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                               </div>
                                             )}
                                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
-                                              <span className="text-xs text-white font-medium">{file.description || 'View'}</span>
+                                              <span className="text-xs text-white font-medium">{file.original_filename || file.filename || 'View'}</span>
                                             </div>
                                           </div>
                                         ))}
@@ -2434,7 +2435,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                     <h3 className="text-sm font-semibold text-slate-700 mb-3">{t.treatmentPlan || 'Treatment Plan'}</h3>
                                     <select
                                       value={selectedAppointment.treatment_plan_id || ''}
-                                      onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || null })}
+                                      onChange={(e) => setSelectedAppointment({ ...selectedAppointment, treatment_plan_id: e.target.value || undefined })}
                                       className="w-full p-3 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
                                     >
                                       <option value="">{t.noTreatmentPlanLinked || 'No treatment plan linked'}</option>
@@ -2451,11 +2452,11 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                                       <span className="text-xl font-medium text-slate-400">€</span>
                                       <Input
                                         type="number"
-                                        value={selectedAppointment.amount_cents ? selectedAppointment.amount_cents / 100 : ''}
+                                        value={selectedAppointment.amount_paid_cents ? selectedAppointment.amount_paid_cents / 100 : ''}
                                         onChange={(e) => setSelectedAppointment({
                                           ...selectedAppointment,
-                                          amount_cents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null
-                                        })}
+                                          amount_paid_cents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : undefined
+                                        } as typeof selectedAppointment)}
                                         placeholder="0.00"
                                         className="text-2xl font-semibold border-0 bg-transparent focus:ring-0 p-0"
                                       />
