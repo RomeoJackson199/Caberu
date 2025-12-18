@@ -275,7 +275,7 @@ function TopBar() {
               <DialogTitle>Select Your Clinic</DialogTitle>
             </DialogHeader>
             <BusinessSelectionForPatients
-              selectedBusinessId={businessId}
+              selectedBusinessId={businessId ?? undefined}
               onSelectBusiness={async (businessId) => {
                 await switchBusiness(businessId);
                 setOpenPatientPicker(false);
@@ -321,6 +321,32 @@ function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
         </CommandGroup>
       </CommandList>
     </CommandDialog>
+  );
+}
+
+// Helper component to use useSidebar inside SidebarProvider
+function SidebarLogoToggle({ branding }: { branding: { logoUrl?: string | null; clinicName?: string | null; tagline?: string | null } }) {
+  const { toggleSidebar } = useSidebar();
+  
+  return (
+    <button
+      onClick={toggleSidebar}
+      className="shrink-0 hover:opacity-80 transition-opacity cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      aria-label="Toggle sidebar"
+      title="Click to expand/collapse sidebar"
+    >
+      {branding.logoUrl ? (
+        <img
+          src={branding.logoUrl}
+          alt={branding.clinicName || "Clinic"}
+          className="h-8 w-8 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 text-white flex items-center justify-center font-semibold shadow-md">
+          {branding.clinicName?.[0]?.toUpperCase() || 'D'}
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -517,24 +543,7 @@ export function AppShell() {
       <Sidebar variant="floating" collapsible={isMobile ? "offcanvas" : "icon"} className="border-r-0 bg-background/50 backdrop-blur-xl">
         <SidebarHeader className="px-4 py-4 transition-[padding] duration-200 group-data-[state=collapsed]:px-3 group-data-[state=collapsed]:py-5">
           <div className="flex items-center gap-3 px-1">
-            <button
-              onClick={toggleSidebar}
-              className="shrink-0 hover:opacity-80 transition-opacity cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              aria-label="Toggle sidebar"
-              title="Click to expand/collapse sidebar"
-            >
-              {branding.logoUrl ? (
-                <img
-                  src={branding.logoUrl}
-                  alt={branding.clinicName || "Clinic"}
-                  className="h-8 w-8 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 text-white flex items-center justify-center font-semibold shadow-md">
-                  {branding.clinicName?.[0]?.toUpperCase() || 'D'}
-                </div>
-              )}
-            </button>
+            <SidebarLogoToggle branding={branding} />
             <div className="leading-tight flex-1 min-w-0 transition-opacity duration-200 group-data-[state=collapsed]:opacity-0 group-data-[state=collapsed]:pointer-events-none">
               <div className="font-semibold truncate">{branding.clinicName || "Dental Practice"}</div>
               <div className="text-xs text-muted-foreground truncate">{branding.tagline || "Dashboard"}</div>

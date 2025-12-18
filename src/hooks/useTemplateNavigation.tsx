@@ -2,12 +2,14 @@
  * Stub hook - Template navigation removed since we standardized on healthcare.
  * Returns healthcare navigation items.
  */
+import { ForwardRefExoticComponent, RefAttributes } from "react";
+import { LucideProps } from "lucide-react";
 
-interface NavItem {
+export interface NavItem {
     id: string;
     label: string;
     path: string;
-    icon?: string;
+    icon?: string | ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
 }
 
 export function useTemplateNavigation() {
@@ -27,7 +29,7 @@ export function useTemplateNavigation() {
         getNavItems: () => navItems,
         hasNavItem: () => true,
         // Stub for removed restaurant functionality
-        filterNavItems: (items: NavItem[]) => items,
+        filterNavItems: <T extends NavItem>(items: T[]) => items,
         getRestaurantNavItems: [] as NavItem[],
         isRestaurant: false,
     };

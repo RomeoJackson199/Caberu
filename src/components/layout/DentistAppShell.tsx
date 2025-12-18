@@ -46,19 +46,23 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
   const allNavItems = useMemo(() => [{
     id: 'dashboard' as DentistSection,
     label: 'Dashboard',
-    icon: LayoutDashboard
+    icon: LayoutDashboard,
+    path: '/dentist/dashboard'
   }, {
     id: 'patients' as DentistSection,
     label: 'Patients',
-    icon: Users
+    icon: Users,
+    path: '/dentist/patients'
   }, {
     id: 'appointments' as DentistSection,
     label: 'Appointments',
-    icon: Calendar
+    icon: Calendar,
+    path: '/dentist/appointments'
   }, {
     id: 'messages' as DentistSection,
     label: 'Messages',
-    icon: MessageSquare
+    icon: MessageSquare,
+    path: '/dentist/messages'
   }], [t]);
 
   // Filter navigation items based on template configuration
@@ -177,15 +181,15 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
         <div className="flex items-center justify-around py-2">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
-            const active = isActive(item.id);
+            const active = isActive(item.id as DentistSection);
             const handleClick = () => {
               if (item.path) {
                 navigate(item.path);
               } else {
-                onChangeSection(item.id);
+                onChangeSection(item.id as DentistSection);
               }
             };
-            const badge = badges?.[item.id];
+            const badge = badges?.[item.id as DentistSection];
 
             return (
               <button
@@ -199,7 +203,7 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
                 aria-label={item.label}
               >
                 <div className="relative">
-                  <Icon className={cn("h-5 w-5", active && "scale-110")} />
+                  {Icon && <Icon className={cn("h-5 w-5", active && "scale-110")} />}
                   {badge && badge > 0 && (
                     <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
                   )}
@@ -229,16 +233,16 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
           <nav className="flex items-center gap-2">
             {NAV_ITEMS.map(item => {
             const Icon = item.icon;
-            const active = isActive(item.id);
+            const active = isActive(item.id as DentistSection);
             const handleClick = () => {
               if (item.path) {
                 navigate(item.path);
               } else {
-                onChangeSection(item.id);
+                onChangeSection(item.id as DentistSection);
               }
             };
             return <button key={item.id} onClick={handleClick} data-tour={`nav-${item.id}`} className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all", active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground hover:bg-muted")}>
-                  <Icon className="h-4 w-4" />
+                  {Icon && <Icon className="h-4 w-4" />}
                   {item.label}
                 </button>;
           })}

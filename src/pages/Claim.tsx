@@ -141,20 +141,29 @@ const Claim = () => {
 
       const { data: claimData, error: claimError } = response;
 
-      if (claimError) {
-        // Check for specific error types in the claimError object
-        if (claimError.message === 'USER_EXISTS') {
-          // User already exists in auth; guide to login or reset password
-          setErrorMessage("An account already exists for this email. Please sign in or reset your password.");
-          setStep("error");
-          return;
-        }
-        if (claimError.message === 'Not allowed') {
-          // Show neutral if the backend rejected; don't leak details
-          setStep("neutral");
-          return;
-        }
-        const message = (claimError as any)?.message || "Unable to complete account claim.";
+      // Check for error in response data (edge function returns error in body)
+      const errorCode = claimData?.error || claimError?.message;
+      
+      if (errorCode === 'ALREADY_CLAIMED') {
+        setErrorMessage("This profile has already been claimed. Please sign in with your existing account or reset your password.");
+        setStep("error");
+        return;
+      }
+      
+      if (errorCode === 'USER_EXISTS') {
+        setErrorMessage("An account already exists for this email. Please sign in or reset your password.");
+        setStep("error");
+        return;
+      }
+      
+      if (errorCode === 'Not allowed' || claimError) {
+        // Show neutral if the backend rejected; don't leak details
+        setStep("neutral");
+        return;
+      }
+
+      if (!claimData?.ok) {
+        const message = claimData?.error || "Unable to complete account claim.";
         setErrorMessage(message);
         setStep("error");
         return;
