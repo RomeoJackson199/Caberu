@@ -167,7 +167,7 @@ export const InteractiveDentalChat = ({
             .from('tour_completions')
             .select('id')
             .eq('user_id', user.id)
-            .eq('tour_key', 'ai-chat-onboarding')
+            .eq('tour_type', 'ai-chat-onboarding')
             .maybeSingle();
           
           if (data) {
