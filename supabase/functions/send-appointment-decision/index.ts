@@ -1,5 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { format } from 'npm:date-fns@3';
+import { toZonedTime } from 'npm:date-fns-tz@3';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -91,17 +93,13 @@ serve(async (req) => {
             );
         }
 
-        // Format date in Brussels timezone
+        // Format date in Brussels timezone using date-fns-tz for reliable conversion
         const CLINIC_TIMEZONE = 'Europe/Brussels';
         const appointmentDate = new Date(appointment.appointment_date);
-        const formattedDate = appointmentDate.toLocaleDateString('en-US', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-            timeZone: CLINIC_TIMEZONE
-        });
-        const formattedTime = appointmentDate.toLocaleTimeString('en-US', {
-            hour: 'numeric', minute: '2-digit', hour12: true,
-            timeZone: CLINIC_TIMEZONE
-        });
+        const brusselsTime = toZonedTime(appointmentDate, CLINIC_TIMEZONE);
+        
+        const formattedDate = format(brusselsTime, 'EEEE, MMMM d, yyyy');
+        const formattedTime = format(brusselsTime, 'h:mm a');
 
         // Prepare email content
         const subject = decision === 'approved'
