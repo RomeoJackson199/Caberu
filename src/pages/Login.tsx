@@ -375,6 +375,12 @@ const Login = () => {
                     />
                   </div>
 
+                  {authError && (
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                      <p className="text-sm text-destructive font-medium">{authError}</p>
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
                     className="h-12 w-full text-base font-semibold"
@@ -382,10 +388,6 @@ const Login = () => {
                   >
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continue"}
                   </Button>
-
-                  {authError && (
-                    <p className="text-sm text-destructive text-center">{authError}</p>
-                  )}
                 </form>
               </div>
             </div>

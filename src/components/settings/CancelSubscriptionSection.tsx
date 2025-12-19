@@ -61,8 +61,6 @@ export function CancelSubscriptionSection() {
     const [pendingChange, setPendingChange] = useState<PendingPlanChange | null>(null);
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState(false);
-    const [promoCode, setPromoCode] = useState('');
-    const [applyingPromo, setApplyingPromo] = useState(false);
 
     useEffect(() => {
         loadSubscription();
@@ -117,12 +115,6 @@ export function CancelSubscriptionSection() {
                             customer_limit: plan.customer_limit || -1, // -1 = unlimited
                             email_limit_monthly: plan.email_limit_monthly || -1, // -1 = unlimited
                             features: plan.features || ['Basic features'],
-                        });
-                        // Default limits for promo/free plans (unlimited)
-                        setPlanLimits({
-                            customer_limit: -1, // Unlimited
-                            email_limit_monthly: -1, // Unlimited
-                            features: ['All features included for promotion period'],
                         });
                     }
                 }
@@ -241,49 +233,14 @@ export function CancelSubscriptionSection() {
         }
     };
 
-    const handleApplyPromoCode = async () => {
-        if (!promoCode.trim()) return;
 
-        try {
-            setApplyingPromo(true);
-
-            const { data, error } = await supabase.functions.invoke('apply-promo-code', {
-                body: JSON.stringify({
-                    promo_code: promoCode.trim(),
-                    business_id: businessId,
-                }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if (error) throw error;
-            if (data?.error) throw new Error(data.error);
-
-            toast({
-                title: 'Promo Code Applied!',
-                description: data.new_period_end
-                    ? `You're covered until ${new Date(data.new_period_end).toLocaleDateString()}.`
-                    : data.message || 'Your subscription has been extended.',
-            });
-
-            setPromoCode('');
-            await loadSubscription();
-        } catch (err) {
-            console.error('Promo code error:', err);
-            toast({
-                title: 'Error',
-                description: err instanceof Error ? err.message : 'Failed to apply promo code',
-                variant: 'destructive',
-            });
-        } finally {
-            setApplyingPromo(false);
-        }
-    };
 
     if (loading) {
         return (
             <Card>
-                <CardContent className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin" />
+                <CardContent className="flex flex-col items-center justify-center py-8 gap-3">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Loading subscription details...</p>
                 </CardContent>
             </Card>
         );

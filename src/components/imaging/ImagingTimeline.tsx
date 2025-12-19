@@ -134,7 +134,25 @@ export function ImagingTimeline({
     }, [selectedForCompare, startCompare]);
 
     if (isLoading && imagingSets.length === 0) {
-        return <div className="animate-pulse h-32 bg-muted rounded-lg" />;
+        return (
+            <div className={cn("space-y-4", className)}>
+                <div className="flex items-center justify-between">
+                    <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+                    <div className="h-9 w-24 bg-muted animate-pulse rounded-md" />
+                </div>
+                <div className="flex gap-3 overflow-hidden">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex-shrink-0 w-28">
+                            <div className="aspect-square bg-muted animate-pulse rounded-lg" />
+                            <div className="mt-1.5 space-y-1">
+                                <div className="h-3 w-14 bg-muted animate-pulse rounded mx-auto" />
+                                <div className="h-2 w-10 bg-muted animate-pulse rounded mx-auto" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
     }
 
     if (allImages.length === 0) {
@@ -167,10 +185,15 @@ export function ImagingTimeline({
             </div>
 
             {compareMode && (
-                <p className="text-sm text-muted-foreground">
-                    Select 2 images to compare side-by-side
-                    {selectedForCompare.length > 0 && ` (${selectedForCompare.length}/2 selected)`}
-                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        Select 2 images to compare side-by-side
+                    </span>
+                    {selectedForCompare.length > 0 && (
+                        <span className="font-medium text-primary">({selectedForCompare.length}/2 selected)</span>
+                    )}
+                </div>
             )}
 
             {/* Side-by-side comparison view */}
@@ -226,8 +249,14 @@ export function ImagingTimeline({
 
                             {/* Slider handle */}
                             <div
-                                className="absolute top-0 bottom-0 w-1 bg-primary cursor-ew-resize"
+                                className="absolute top-0 bottom-0 w-1 bg-primary cursor-ew-resize hover:w-1.5 transition-all"
                                 style={{ left: `${compareSliderValue}%` }}
+                                role="slider"
+                                aria-label="Image comparison slider - drag to compare before and after"
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={compareSliderValue}
+                                tabIndex={0}
                             />
                         </div>
                         <div className="p-4">

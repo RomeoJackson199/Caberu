@@ -9,6 +9,9 @@ import {
   Bell,
   Heart,
   Package,
+  Image,
+  CreditCard,
+  CheckCircle,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -71,8 +74,8 @@ export const NoPrescriptions = ({ onCreate }: { onCreate?: () => void }) => (
 export const NoInvoices = () => (
   <EmptyState
     icon={Receipt}
-    title="No invoices"
-    description="You're all caught up! Any outstanding bills or payment requests will appear here."
+    title="All caught up! 🎉"
+    description="You have no outstanding bills or payment requests. Your payment history is available in your account."
   />
 );
 
@@ -114,6 +117,36 @@ export const NoInventoryItems = ({ onAdd }: { onAdd?: () => void }) => (
     description="Track dental supplies, equipment, and materials here. Get low-stock alerts to never run out of essentials."
     actionLabel="Add Item"
     onAction={onAdd}
+  />
+);
+
+// No Imaging - NEW
+export const NoImaging = ({ onUpload }: { onUpload?: () => void }) => (
+  <EmptyState
+    icon={Image}
+    title="No imaging history"
+    description="X-rays, photos, and dental scans will appear here as they are uploaded. Compare images over time to track your dental health."
+    actionLabel="Upload X-ray"
+    onAction={onUpload}
+  />
+);
+
+// No Payments - NEW
+export const NoPayments = () => (
+  <EmptyState
+    icon={CreditCard}
+    title="No payment history"
+    description="Your payment history will appear here after transactions are made. All receipts are stored securely."
+  />
+);
+
+// Payment Success - NEW
+export const PaymentComplete = () => (
+  <EmptyState
+    icon={CheckCircle}
+    title="All paid! ✨"
+    description="You have no outstanding balances. Thank you for keeping your account up to date!"
+    variant="compact"
   />
 );
 
