@@ -20,6 +20,7 @@ import { handleEmailError } from '@/hooks/useEmailLimit';
 
 interface EnhancedAppointmentBookingProps {
   user: User;
+  businessId?: string;
   selectedDentist?: Dentist;
   prefilledReason?: string;
   prefilledServiceId?: string;
@@ -57,6 +58,7 @@ interface TimeSlot {
 
 export const EnhancedAppointmentBooking = ({
   user,
+  businessId: propBusinessId,
   selectedDentist: preSelectedDentist,
   prefilledReason,
   prefilledServiceId,
@@ -97,7 +99,7 @@ export const EnhancedAppointmentBooking = ({
   const fetchServices = useCallback(async () => {
     try {
       setLoadingServices(true);
-      const businessId = await getCurrentBusinessId();
+      const businessId = propBusinessId || await getCurrentBusinessId();
       if (!businessId) return;
 
       const { data, error } = await supabase
@@ -122,7 +124,7 @@ export const EnhancedAppointmentBooking = ({
     } finally {
       setLoadingServices(false);
     }
-  }, [prefilledServiceId]);
+  }, [prefilledServiceId, propBusinessId]);
 
   useEffect(() => {
     fetchServices();
@@ -202,7 +204,7 @@ export const EnhancedAppointmentBooking = ({
     try {
       // Use format to preserve Brussels date without UTC conversion
       const dateStr = format(date, 'yyyy-MM-dd');
-      const businessId = await getCurrentBusinessId();
+      const businessId = propBusinessId || await getCurrentBusinessId();
 
       // Check schedule before generating slots
       try {
