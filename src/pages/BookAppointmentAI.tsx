@@ -16,8 +16,12 @@ import {
   CheckCircle,
   Users,
   Package,
-  Timer
+  Timer,
+  Edit2,
+  Check,
+  Stethoscope
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { format, startOfDay, startOfWeek, addDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 const ClinicMap = lazy(() => import("@/components/Map"));
@@ -80,7 +84,31 @@ export default function BookAppointment() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successDetails, setSuccessDetails] = useState<{ date: string; time: string; dentist?: string; reason?: string; pendingApproval?: boolean } | undefined>(undefined);
   const [dentistAvailableDays, setDentistAvailableDays] = useState<number[]>([]);
-  // Vacation days are no longer shown to patients - they just can't book those dates
+  
+  // AI booking data from chat
+  const [aiBookingData, setAiBookingData] = useState<{ 
+    symptoms?: string; 
+    recommendedService?: string;
+    urgency?: number;
+  } | null>(null);
+  const [symptomSummary, setSymptomSummary] = useState<string>("");
+  const [isEditingSymptoms, setIsEditingSymptoms] = useState(false);
+
+  // Load AI booking data from sessionStorage
+  useEffect(() => {
+    const storedData = sessionStorage.getItem('aiBookingData');
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        setAiBookingData(parsed);
+        setSymptomSummary(parsed.symptoms || "");
+        // Clear after reading
+        sessionStorage.removeItem('aiBookingData');
+      } catch (e) {
+        logger.error("Error parsing AI booking data:", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!businessLoading && businessId) {
@@ -180,7 +208,21 @@ export default function BookAppointment() {
         .order('name');
 
       if (error) throw error;
-      setServices(data || []);
+      
+      const fetchedServices = data || [];
+      setServices(fetchedServices);
+      
+      // Pre-select AI-recommended service if available
+      if (aiBookingData?.recommendedService && fetchedServices.length > 0) {
+        const recommendedServiceName = aiBookingData.recommendedService.toLowerCase();
+        const matchingService = fetchedServices.find(s => 
+          s.name.toLowerCase().includes(recommendedServiceName) ||
+          recommendedServiceName.includes(s.name.toLowerCase())
+        );
+        if (matchingService) {
+          setSelectedService(matchingService);
+        }
+      }
     } catch (error) {
       logger.error("Error fetching services:", error);
     } finally {
@@ -427,10 +469,11 @@ export default function BookAppointment() {
           appointment_date: appointmentDateTime.toISOString(),
           reason: selectedService ? selectedService.name : "General consultation",
           status: appointmentStatus,
-          booking_source: "manual",
+          booking_source: aiBookingData ? "ai_chat" : "manual",
           urgency: "low",
           service_id: selectedService?.id || null,
-          duration_minutes: selectedService?.duration_minutes || 30
+          duration_minutes: selectedService?.duration_minutes || 30,
+          notes: symptomSummary || null // Include symptom summary for dentist
         })
         .select()
         .single();
@@ -724,8 +767,16 @@ export default function BookAppointment() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {services.map((service) => {
+                    {/* Sort to show recommended/selected service first */}
+                    {[...services].sort((a, b) => {
+                      if (selectedService?.id === a.id) return -1;
+                      if (selectedService?.id === b.id) return 1;
+                      return 0;
+                    }).map((service) => {
                       const isSelected = selectedService?.id === service.id;
+                      const isRecommended = aiBookingData?.recommendedService && 
+                        (service.name.toLowerCase().includes(aiBookingData.recommendedService.toLowerCase()) ||
+                         aiBookingData.recommendedService.toLowerCase().includes(service.name.toLowerCase()));
                       return (
                         <Card
                           key={service.id}
@@ -734,14 +785,20 @@ export default function BookAppointment() {
                               ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
                               : "border-border hover:border-indigo-300 dark:hover:border-indigo-700"
                           }`}
-                          onClick={() => handleServiceSelect(service)}
+                          onClick={() => setSelectedService(service)}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <h4 className="font-semibold">{service.name}</h4>
                                   {isSelected && <CheckCircle className="h-4 w-4 text-indigo-600" />}
+                                  {isRecommended && (
+                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
+                                      <Stethoscope className="h-3 w-3" />
+                                      AI Recommended
+                                    </span>
+                                  )}
                                 </div>
                                 {service.description && (
                                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
@@ -769,6 +826,54 @@ export default function BookAppointment() {
                   </div>
                 )}
               </div>
+
+              {/* Symptom Summary Section */}
+              {symptomSummary && (
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Stethoscope className="h-5 w-5 text-orange-600" />
+                      <h3 className="font-semibold">Your Symptoms</h3>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingSymptoms(!isEditingSymptoms)}
+                      className="h-8"
+                    >
+                      {isEditingSymptoms ? (
+                        <><Check className="h-4 w-4 mr-1" /> Done</>
+                      ) : (
+                        <><Edit2 className="h-4 w-4 mr-1" /> Edit</>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">This will be shared with your dentist</p>
+                  {isEditingSymptoms ? (
+                    <Textarea
+                      value={symptomSummary}
+                      onChange={(e) => setSymptomSummary(e.target.value)}
+                      placeholder="Describe your symptoms..."
+                      className="min-h-[80px]"
+                    />
+                  ) : (
+                    <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                      {symptomSummary}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Continue Button */}
+              {selectedService && (
+                <Button 
+                  onClick={() => handleServiceSelect(selectedService)} 
+                  className="w-full"
+                  size="lg"
+                >
+                  Continue with {selectedService.name}
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>

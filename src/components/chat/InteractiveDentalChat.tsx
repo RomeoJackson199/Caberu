@@ -98,6 +98,8 @@ interface WidgetData {
   outstandingAmount?: number;
   appointment?: AppointmentData;
   prescriptions?: PrescriptionData[];
+  recommendedService?: string;
+  symptomSummary?: string;
   [key: string]: unknown;
 }
 
@@ -342,10 +344,28 @@ export const InteractiveDentalChat = ({
     cleanedText: string; 
     detectedWidgets: string[];
     recommendedDentists: string[];
+    recommendedService?: string;
+    symptomSummary?: string;
   } => {
     let cleanedText = text;
     const detectedWidgets: string[] = [];
     const recommendedDentists: string[] = [];
+    let recommendedService: string | undefined;
+    let symptomSummary: string | undefined;
+    
+    // Extract [[SERVICE:...]] tag
+    const serviceMatch = cleanedText.match(/\[\[SERVICE:([^\]]+)\]\]/);
+    if (serviceMatch) {
+      recommendedService = serviceMatch[1].trim();
+      cleanedText = cleanedText.replace(/\[\[SERVICE:[^\]]+\]\]\s*/g, '');
+    }
+    
+    // Extract [[SYMPTOMS:...]] tag
+    const symptomsMatch = cleanedText.match(/\[\[SYMPTOMS:([^\]]+)\]\]/);
+    if (symptomsMatch) {
+      symptomSummary = symptomsMatch[1].trim();
+      cleanedText = cleanedText.replace(/\[\[SYMPTOMS:[^\]]+\]\]\s*/g, '');
+    }
     
     // Detect and remove widget codes from text
     Object.entries(WIDGET_CODES).forEach(([code, widget]) => {
@@ -372,13 +392,13 @@ export const InteractiveDentalChat = ({
       }
     });
     
-    return { cleanedText, detectedWidgets, recommendedDentists };
+    return { cleanedText, detectedWidgets, recommendedDentists, recommendedService, symptomSummary };
   };
 
   const generateBotResponse = async (
     userMessage: string,
     history: ChatMessage[]
-  ): Promise<{ message: ChatMessage; fallback: boolean; suggestions: string[]; recommendedDentists: string[] }> => {
+  ): Promise<{ message: ChatMessage; fallback: boolean; suggestions: string[]; recommendedDentists: string[]; recommendedService?: string; symptomSummary?: string }> => {
     try {
       // Get business_id - fallback to first available business if not in context
       let effectiveBusinessId = businessId;
@@ -424,7 +444,7 @@ export const InteractiveDentalChat = ({
       }
 
       // Detect and extract widget codes from AI response (no forced codes)
-      const { cleanedText, detectedWidgets, recommendedDentists } = detectAndExtractCodes(responseText);
+      const { cleanedText, detectedWidgets, recommendedDentists, recommendedService, symptomSummary } = detectAndExtractCodes(responseText);
 
       const result = {
         id: crypto.randomUUID(),
@@ -438,7 +458,9 @@ export const InteractiveDentalChat = ({
         message: result,
         fallback: Boolean(aiResponse.data?.fallback_response && !aiResponse.data?.response),
         suggestions: detectedWidgets,
-        recommendedDentists: recommendedDentists
+        recommendedDentists: recommendedDentists,
+        recommendedService,
+        symptomSummary
       };
     } catch (error) {
       logger.error('Error generating AI response:', error);
@@ -458,7 +480,7 @@ export const InteractiveDentalChat = ({
     }
   };
 
-  const handleSuggestions = (suggestions: string[], recommendedDentists?: string[]) => {
+  const handleSuggestions = (suggestions: string[], recommendedDentists?: string[], recommendedService?: string, symptomSummary?: string) => {
     if (!suggestions || suggestions.length === 0) {
       return;
     }
@@ -502,6 +524,12 @@ export const InteractiveDentalChat = ({
           break;
         case 'booking-ready':
           setActiveWidget('booking-ready');
+          // Store recommended service and symptoms in widgetData
+          setWidgetData(prev => ({
+            ...prev,
+            recommendedService,
+            symptomSummary
+          }));
           break;
         case 'theme-dark':
           setTheme('dark');
@@ -1056,7 +1084,7 @@ You'll receive a confirmation email shortly.`;
 
     const history = [...messages, userMessage].slice(-10);
 
-    const { message: botResponse, fallback, suggestions, recommendedDentists } = await generateBotResponse(userMessage.message, history);
+    const { message: botResponse, fallback, suggestions, recommendedDentists, recommendedService, symptomSummary } = await generateBotResponse(userMessage.message, history);
 
     setMessages(prev => [...prev, botResponse]);
     await saveMessage(botResponse);
@@ -1064,7 +1092,7 @@ You'll receive a confirmation email shortly.`;
     setIsLoading(false);
 
     if (suggestions && suggestions.length > 0) {
-      handleSuggestions(suggestions, recommendedDentists);
+      handleSuggestions(suggestions, recommendedDentists, recommendedService, symptomSummary);
     }
   };
 
@@ -1614,9 +1642,10 @@ You'll receive a confirmation email shortly.`;
         return (
           <BookingReadyWidget
             conversationData={{
-              symptoms: bookingFlow.reason,
+              symptoms: widgetData.symptomSummary || bookingFlow.reason,
               urgency: bookingFlow.urgency,
-              messages: messages
+              messages: messages,
+              recommendedService: widgetData.recommendedService
             }}
           />
         );
