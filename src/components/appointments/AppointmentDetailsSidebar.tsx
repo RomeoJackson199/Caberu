@@ -40,6 +40,7 @@ export function AppointmentDetailsSidebar({
   const [showCheckout, setShowCheckout] = useState(false);
   const [summaries, setSummaries] = useState<{ short: string; long: string } | null>(null);
   const [loadingSummaries, setLoadingSummaries] = useState(false);
+  const hasPatientSymptoms = !!appointment.notes;
   const [nextAppointment, setNextAppointment] = useState<any>(null);
   const [serviceDetails, setServiceDetails] = useState<any>(null);
 
@@ -49,7 +50,17 @@ export function AppointmentDetailsSidebar({
   const StatusIcon = statusConfig?.icon || Clock;
 
   useEffect(() => {
+    // Only generate AI summaries if there are no patient-provided symptoms
     const generateSummaries = async () => {
+      if (hasPatientSymptoms) {
+        // Use patient's own symptoms as the summary
+        setSummaries({
+          short: appointment.notes,
+          long: appointment.notes
+        });
+        return;
+      }
+      
       setLoadingSummaries(true);
       try {
         const { data, error } = await supabase.functions.invoke('generate-appointment-summary', {
@@ -122,7 +133,7 @@ export function AppointmentDetailsSidebar({
     };
 
     fetchServiceDetails();
-  }, [appointment.id, appointment.patient_id, appointment.appointment_date, appointment.service_id]);
+  }, [appointment.id, appointment.patient_id, appointment.appointment_date, appointment.service_id, appointment.notes, hasPatientSymptoms]);
 
   return (
     <Card className="h-full border-none shadow-none bg-background">
@@ -198,26 +209,31 @@ export function AppointmentDetailsSidebar({
 
           {/* Summary Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Summary</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+              {hasPatientSymptoms ? "Patient Symptoms" : "Summary"}
+            </h3>
 
-            {loadingSummaries ? (
+            {loadingSummaries && !hasPatientSymptoms ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : hasPatientSymptoms ? (
+              <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">From AI Chat Booking</span>
+                </div>
+                <p className="text-sm leading-relaxed text-blue-900 dark:text-blue-100 whitespace-pre-wrap">
+                  {appointment.notes}
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
                   <p className="text-sm leading-relaxed text-foreground font-medium">
-                    {summaries?.short || "Generating summary..."}
-                  </p>
-                </div>
-
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    Detailed Summary
-                  </h4>
-                  <p className="text-sm leading-relaxed text-foreground">
-                    {summaries?.long || "Generating detailed summary..."}
+                    {summaries?.short || "No symptoms provided"}
                   </p>
                 </div>
               </div>
@@ -271,17 +287,6 @@ export function AppointmentDetailsSidebar({
             </div>
           </div>
 
-          {appointment.notes && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Notes</h3>
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <p className="text-sm leading-relaxed">{appointment.notes}</p>
-                </div>
-              </div>
-            </>
-          )}
 
           {/* Imaging Section */}
           <Separator />
