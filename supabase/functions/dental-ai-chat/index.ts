@@ -161,6 +161,7 @@ serve(async (req) => {
     let customGreeting = '';
     let customSystemBehavior = '';
     let customPersonalityTraits: string[] = [];
+    let servicesContent = '';
     
     if (business_id) {
       try {
@@ -172,7 +173,7 @@ serve(async (req) => {
         // Fetch business AI settings
         const { data: business, error: businessError } = await supabase
           .from('businesses')
-          .select('ai_greeting, ai_system_behavior, ai_personality_traits')
+          .select('ai_greeting, ai_system_behavior, ai_personality_traits, currency')
           .eq('id', business_id)
           .single();
 
@@ -183,6 +184,26 @@ serve(async (req) => {
           
           if (Deno.env.get('ENVIRONMENT') === 'development') {
             console.log('Loaded custom AI settings from business');
+          }
+        }
+
+        // Fetch business services
+        const { data: services, error: servicesError } = await supabase
+          .from('business_services')
+          .select('id, name, description, price_cents, currency, duration_minutes, category')
+          .eq('business_id', business_id)
+          .eq('is_active', true)
+          .order('name');
+
+        if (!servicesError && services && services.length > 0) {
+          const formatPrice = (cents: number, currency: string) => {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(cents / 100);
+          };
+          
+          servicesContent = `\n\nAVAILABLE SERVICES:\nThe clinic offers these services. When patients ask about booking or what you offer, mention relevant services:\n${services.map(s => `- ${s.name}: ${s.description || 'No description'} | Price: ${formatPrice(s.price_cents, s.currency)} | Duration: ${s.duration_minutes || 30} minutes`).join('\n')}\n\nIMPORTANT: When proceeding to booking (code 12345), always mention which service seems most appropriate for the patient's needs and include the service details in your summary.`;
+          
+          if (Deno.env.get('ENVIRONMENT') === 'development') {
+            console.log(`Loaded ${services.length} business services`);
           }
         }
 
@@ -500,6 +521,7 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
         content.persona,
         content.guidelines,
         content.examples,
+        servicesContent,
         knowledgeBaseContent,
         `Patient Information: ${JSON.stringify(user_profile)}`,
         patientContextString,
