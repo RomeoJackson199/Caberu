@@ -357,15 +357,34 @@ export default function BookAppointment() {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const appointmentDateTime = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
 
-      // FIRST: Reserve the slot before creating appointment to prevent race conditions
-      const { error: slotError } = await supabase.rpc('book_appointment_slot', {
-        p_dentist_id: selectedDentist.id,
-        p_slot_date: dateStr,
-        p_slot_time: selectedTime + ':00', // Add seconds for TIME format
-        p_appointment_id: null // Will update with actual appointment ID after creation
+      // Check if slot is already taken by checking existing appointments
+      const serviceDuration = selectedService?.duration_minutes || 30;
+      const slotsNeeded = Math.ceil(serviceDuration / 30);
+      
+      // Get all appointments for this dentist on this date to check for conflicts
+      const { data: existingAppts } = await supabase
+        .from("appointments")
+        .select("appointment_date, duration_minutes, status")
+        .eq("dentist_id", selectedDentist.id)
+        .eq("business_id", businessId)
+        .gte("appointment_date", `${dateStr}T00:00:00`)
+        .lt("appointment_date", `${dateStr}T23:59:59`)
+        .in("status", ["pending", "confirmed", "scheduled"]);
+
+      // Check if our desired time slot conflicts with any existing appointment
+      const requestedStart = new Date(`${dateStr}T${selectedTime}:00`);
+      const requestedEnd = new Date(requestedStart.getTime() + serviceDuration * 60000);
+
+      const hasConflict = existingAppts?.some(appt => {
+        const apptStart = new Date(appt.appointment_date);
+        const apptDuration = appt.duration_minutes || 30;
+        const apptEnd = new Date(apptStart.getTime() + apptDuration * 60000);
+        
+        // Check if time ranges overlap
+        return requestedStart < apptEnd && requestedEnd > apptStart;
       });
 
-      if (slotError) {
+      if (hasConflict) {
         throw new Error("This time slot is no longer available. Please select another time.");
       }
 
@@ -391,26 +410,15 @@ export default function BookAppointment() {
         .single();
 
       if (appointmentError) {
-        // Release the slot if appointment creation fails
-        await supabase.rpc('release_appointment_slot', {
-          p_appointment_id: null
-        });
         throw appointmentError;
       }
 
-      // Update the slot with the actual appointment ID
-      await supabase.rpc('book_appointment_slot', {
-        p_dentist_id: selectedDentist.id,
-        p_slot_date: dateStr,
-        p_slot_time: selectedTime + ':00',
-        p_appointment_id: appointmentData.id
-      });
-
-      logger.info("Booking slot with params:", {
+      logger.info("Appointment created:", {
         dentistId: selectedDentist.id,
         date: dateStr,
         time: selectedTime,
-        appointmentId: appointmentData.id
+        appointmentId: appointmentData.id,
+        status: appointmentStatus
       });
 
       setSuccessDetails({
