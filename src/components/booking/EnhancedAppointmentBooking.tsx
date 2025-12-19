@@ -8,19 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { CalendarDays, Clock, User as UserIcon, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CalendarDays, Clock, User as UserIcon, CheckCircle, XCircle, Loader2, Package, Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clinicTimeToUtc, utcToClinicTime, getClinicTimeSlots, formatClinicTime, createAppointmentDateTimeFromStrings } from "@/lib/timezone";
 import { logger } from '@/lib/logger';
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
-import { format } from 'date-fns';
+import { format, addMinutes, parse } from 'date-fns';
 import { handleEmailError } from '@/hooks/useEmailLimit';
 
 interface EnhancedAppointmentBookingProps {
   user: User;
   selectedDentist?: Dentist;
   prefilledReason?: string;
+  prefilledServiceId?: string;
   chatNotes?: string;
   onComplete: (appointmentData?: Record<string, unknown>) => void;
   onCancel: () => void;
@@ -37,6 +39,16 @@ interface Dentist {
   };
 }
 
+interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  currency: string;
+  duration_minutes: number | null;
+  category: string | null;
+}
+
 interface TimeSlot {
   time: string;
   available: boolean;
@@ -47,12 +59,15 @@ export const EnhancedAppointmentBooking = ({
   user,
   selectedDentist: preSelectedDentist,
   prefilledReason,
+  prefilledServiceId,
   chatNotes,
   onComplete,
   onCancel
 }: EnhancedAppointmentBookingProps) => {
   const [dentists, setDentists] = useState<Dentist[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [selectedDentist, setSelectedDentist] = useState("");
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState("");
   const [reason, setReason] = useState("");
@@ -60,6 +75,7 @@ export const EnhancedAppointmentBooking = ({
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [allSlots, setAllSlots] = useState<TimeSlot[]>([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState("");
@@ -76,6 +92,41 @@ export const EnhancedAppointmentBooking = ({
     // Generate idempotency key for this booking session
     setIdempotencyKey(`booking_${user.id}_${Date.now()}`);
   }, [prefilledReason, chatNotes, user.id]);
+
+  // Fetch services
+  const fetchServices = useCallback(async () => {
+    try {
+      setLoadingServices(true);
+      const businessId = await getCurrentBusinessId();
+      if (!businessId) return;
+
+      const { data, error } = await supabase
+        .from('business_services')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setServices(data || []);
+
+      // Pre-select service if provided
+      if (prefilledServiceId && data) {
+        const prefilledService = data.find(s => s.id === prefilledServiceId);
+        if (prefilledService) {
+          setSelectedService(prefilledService);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading services:', error);
+    } finally {
+      setLoadingServices(false);
+    }
+  }, [prefilledServiceId]);
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const fetchDentists = useCallback(async () => {
     try {
@@ -142,7 +193,7 @@ export const EnhancedAppointmentBooking = ({
     }
   }, [availableSlots, selectedTime, toast]);
 
-  const fetchAvailability = async (date: Date) => {
+  const fetchAvailability = async (date: Date, serviceDurationMinutes?: number) => {
     if (!selectedDentist) return;
 
     setLoadingTimes(true);
@@ -203,10 +254,24 @@ export const EnhancedAppointmentBooking = ({
         available: slot.is_available
       }));
 
-      // Filter available slots
-      const availableSlotsData = allSlotsData.filter(slot =>
-        slot.available
-      );
+      // Filter available slots based on service duration
+      const duration = serviceDurationMinutes || selectedService?.duration_minutes || 30;
+      const slotsNeeded = Math.ceil(duration / 30); // Assuming 30-min base slots
+
+      // For each slot, check if enough consecutive slots are available
+      const availableSlotsData = allSlotsData.filter((slot, index) => {
+        if (!slot.available) return false;
+        
+        // If duration is 30 min or less, single slot is enough
+        if (slotsNeeded <= 1) return true;
+        
+        // Check consecutive slots
+        for (let i = 1; i < slotsNeeded; i++) {
+          const nextSlot = allSlotsData[index + i];
+          if (!nextSlot || !nextSlot.available) return false;
+        }
+        return true;
+      });
 
       setAllSlots(allSlotsData);
       setAvailableSlots(availableSlotsData);
@@ -279,6 +344,9 @@ export const EnhancedAppointmentBooking = ({
         throw new Error("This time slot is no longer available");
       }
 
+      // Calculate duration from selected service
+      const appointmentDuration = selectedService?.duration_minutes || 60;
+
       // Create the appointment with full metadata
       const { data: appointmentData, error: appointmentError } = await supabase
         .from("appointments")
@@ -286,12 +354,13 @@ export const EnhancedAppointmentBooking = ({
           patient_id: profile.id,
           dentist_id: selectedDentist,
           appointment_date: appointmentDateTime.toISOString(),
-          reason: reason || "General consultation",
+          reason: selectedService ? `${selectedService.name}${reason ? ` - ${reason}` : ''}` : (reason || "General consultation"),
           notes: notes || chatNotes || "",
           status: "confirmed",
           urgency: "medium",
           patient_name: `${profile.first_name} ${profile.last_name}`,
-          duration_minutes: 60
+          duration_minutes: appointmentDuration,
+          service_id: selectedService?.id || null
         })
         .select()
         .single();
@@ -452,22 +521,26 @@ export const EnhancedAppointmentBooking = ({
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Book Your Appointment
               </CardTitle>
-              <p className="text-muted-foreground mt-2 text-base">Schedule your dental consultation in 3 simple steps</p>
+              <p className="text-muted-foreground mt-2 text-base">Schedule your dental consultation in 4 simple steps</p>
             </CardHeader>
 
             <CardContent className="space-y-8 p-6 md:p-10">
               {/* Step Indicator */}
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${selectedDentist ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${selectedDentist ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
                   <span className="font-semibold">1. Dentist</span>
                   {selectedDentist && <CheckCircle className="h-4 w-4" />}
                 </div>
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${selectedDate ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                  <span className="font-semibold">2. Date & Time</span>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${selectedService ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                  <span className="font-semibold">2. Service</span>
+                  {selectedService && <CheckCircle className="h-4 w-4" />}
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${selectedDate && selectedTime ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                  <span className="font-semibold">3. Date & Time</span>
                   {selectedDate && selectedTime && <CheckCircle className="h-4 w-4" />}
                 </div>
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${reason ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                  <span className="font-semibold">3. Details</span>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${reason ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                  <span className="font-semibold">4. Details</span>
                   {reason && <CheckCircle className="h-4 w-4" />}
                 </div>
               </div>
@@ -504,11 +577,82 @@ export const EnhancedAppointmentBooking = ({
                 </Select>
               </div>
 
+              {/* Service Selection */}
+              <div className="space-y-4">
+                <Label className="text-lg font-bold text-foreground flex items-center">
+                  <Package className="h-5 w-5 mr-2 text-indigo-600" />
+                  Step 2: Select a Service
+                </Label>
+                {loadingServices ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+                  </div>
+                ) : services.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No services available. You can proceed without selecting a service.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {services.map((service) => {
+                      const isSelected = selectedService?.id === service.id;
+                      return (
+                        <Card
+                          key={service.id}
+                          className={cn(
+                            "cursor-pointer transition-all hover:shadow-lg border-2",
+                            isSelected
+                              ? "ring-2 ring-indigo-500 border-indigo-500 shadow-lg bg-indigo-50/50 dark:bg-indigo-950/20"
+                              : "border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
+                          )}
+                          onClick={() => {
+                            setSelectedService(isSelected ? null : service);
+                            // Clear time selection when service changes
+                            setSelectedTime("");
+                            // Refetch availability with new duration if date is selected
+                            if (selectedDate) {
+                              fetchAvailability(selectedDate, service.duration_minutes || 30);
+                            }
+                          }}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-base">{service.name}</h4>
+                                  {isSelected && <CheckCircle className="h-4 w-4 text-indigo-600" />}
+                                </div>
+                                {service.description && (
+                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                    {service.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                              <div className="text-lg font-bold text-indigo-600">
+                                {new Intl.NumberFormat('en-US', {
+                                  style: 'currency',
+                                  currency: service.currency,
+                                }).format(service.price_cents / 100)}
+                              </div>
+                              <Badge variant="secondary" className="flex items-center gap-1">
+                                <Timer className="h-3 w-3" />
+                                {service.duration_minutes || 30} min
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Date Selection */}
               <div className="space-y-4">
                 <Label className="text-lg font-bold text-foreground flex items-center">
                   <CalendarDays className="h-5 w-5 mr-2 text-purple-600" />
-                  Step 2: Pick a Date
+                  Step 3: Pick a Date
                 </Label>
                 <div className="flex justify-center">
                   <Calendar
@@ -516,7 +660,7 @@ export const EnhancedAppointmentBooking = ({
                     selected={selectedDate}
                     onSelect={(date) => {
                       setSelectedDate(date);
-                      if (date) fetchAvailability(date);
+                      if (date) fetchAvailability(date, selectedService?.duration_minutes ?? undefined);
                     }}
                     disabled={isDateDisabled}
                     className="rounded-2xl border-2 border-purple-200 dark:border-purple-900 shadow-xl bg-purple-50/50 dark:bg-purple-950/20 p-6"
@@ -700,9 +844,15 @@ export const EnhancedAppointmentBooking = ({
                 <span className="font-medium">Dentist:</span>
                 <p>Dr {dentists.find(d => d.id === selectedDentist)?.profiles.first_name} {dentists.find(d => d.id === selectedDentist)?.profiles.last_name}</p>
               </div>
+              {selectedService && (
+                <div className="col-span-2">
+                  <span className="font-medium">Service:</span>
+                  <p>{selectedService.name} ({selectedService.duration_minutes || 30} min)</p>
+                </div>
+              )}
               <div className="col-span-2">
                 <span className="font-medium">Reason:</span>
-                <p>{reason || "General consultation"}</p>
+                <p>{reason || (selectedService ? selectedService.name : "General consultation")}</p>
               </div>
             </div>
           </div>
