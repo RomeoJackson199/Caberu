@@ -202,7 +202,7 @@ export default function BookAppointment() {
         p_business_id: businessId
       });
 
-      // Get ALL slots to check consecutive availability
+      // Get ALL slots
       const { data, error } = await supabase
         .from('appointment_slots')
         .select('slot_time, is_available')
@@ -215,6 +215,30 @@ export default function BookAppointment() {
         throw error;
       }
 
+      // Get existing appointments for this day (pending, confirmed, scheduled)
+      const { data: existingAppts } = await supabase
+        .from("appointments")
+        .select("appointment_date, duration_minutes")
+        .eq("dentist_id", dentistId)
+        .eq("business_id", businessId)
+        .gte("appointment_date", `${dateStr}T00:00:00`)
+        .lt("appointment_date", `${dateStr}T23:59:59`)
+        .in("status", ["pending", "confirmed", "scheduled"]);
+
+      // Build set of blocked time slots from existing appointments
+      const blockedSlots = new Set<string>();
+      existingAppts?.forEach(appt => {
+        const apptDate = new Date(appt.appointment_date);
+        const apptDuration = appt.duration_minutes || 30;
+        const slotsBlocked = Math.ceil(apptDuration / 30);
+        
+        for (let i = 0; i < slotsBlocked; i++) {
+          const slotTime = new Date(apptDate.getTime() + i * 30 * 60000);
+          const timeStr = slotTime.toTimeString().substring(0, 5);
+          blockedSlots.add(timeStr);
+        }
+      });
+
       if (!data || data.length === 0) {
         toast({
           title: "No Available Slots",
@@ -226,23 +250,25 @@ export default function BookAppointment() {
         return;
       }
 
-      const allSlots = data.map((slot: { slot_time: string; is_available: boolean }) => ({
-        time: slot.slot_time.substring(0, 5),
-        available: slot.is_available,
-      }));
+      // Map slots and mark as unavailable if blocked by existing appointments
+      const allSlots = data.map((slot: { slot_time: string; is_available: boolean }) => {
+        const timeStr = slot.slot_time.substring(0, 5);
+        return {
+          time: timeStr,
+          available: slot.is_available && !blockedSlots.has(timeStr),
+        };
+      });
 
       // Filter available slots based on service duration
       const duration = selectedService?.duration_minutes || 30;
-      const slotsNeeded = Math.ceil(duration / 30); // Assuming 30-min base slots
+      const slotsNeeded = Math.ceil(duration / 30);
 
       // For each slot, check if enough consecutive slots are available
       const filteredSlots = allSlots.filter((slot: TimeSlot, index: number) => {
         if (!slot.available) return false;
         
-        // If duration is 30 min or less, single slot is enough
         if (slotsNeeded <= 1) return true;
         
-        // Check consecutive slots
         for (let i = 1; i < slotsNeeded; i++) {
           const nextSlot = allSlots[index + i];
           if (!nextSlot || !nextSlot.available) return false;
