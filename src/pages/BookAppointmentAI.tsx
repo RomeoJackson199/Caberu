@@ -202,11 +202,14 @@ export default function BookAppointment() {
         p_business_id: businessId
       });
 
-      const { data, error } = await supabase.rpc('get_dentist_available_slots', {
-        p_dentist_id: dentistId,
-        p_date: dateStr,
-        p_business_id: businessId
-      });
+      // Get ALL slots to check consecutive availability
+      const { data, error } = await supabase
+        .from('appointment_slots')
+        .select('slot_time, is_available')
+        .eq('dentist_id', dentistId)
+        .eq('slot_date', dateStr)
+        .eq('business_id', businessId)
+        .order('slot_time');
 
       if (error) {
         throw error;
@@ -223,14 +226,31 @@ export default function BookAppointment() {
         return;
       }
 
-      const slots: TimeSlot[] = data
-        .filter((slot: { is_available: boolean }) => slot.is_available)
-        .map((slot: { slot_time: string; is_available: boolean }) => ({
-          time: slot.slot_time.substring(0, 5),
-          available: slot.is_available,
-        }));
+      const allSlots = data.map((slot: { slot_time: string; is_available: boolean }) => ({
+        time: slot.slot_time.substring(0, 5),
+        available: slot.is_available,
+      }));
 
-      setAvailableSlots(slots);
+      // Filter available slots based on service duration
+      const duration = selectedService?.duration_minutes || 30;
+      const slotsNeeded = Math.ceil(duration / 30); // Assuming 30-min base slots
+
+      // For each slot, check if enough consecutive slots are available
+      const filteredSlots = allSlots.filter((slot: TimeSlot, index: number) => {
+        if (!slot.available) return false;
+        
+        // If duration is 30 min or less, single slot is enough
+        if (slotsNeeded <= 1) return true;
+        
+        // Check consecutive slots
+        for (let i = 1; i < slotsNeeded; i++) {
+          const nextSlot = allSlots[index + i];
+          if (!nextSlot || !nextSlot.available) return false;
+        }
+        return true;
+      });
+
+      setAvailableSlots(filteredSlots);
     } catch (error) {
       logger.error("Error fetching slots:", error);
       toast({
