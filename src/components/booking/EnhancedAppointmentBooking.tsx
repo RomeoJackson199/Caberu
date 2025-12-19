@@ -769,17 +769,31 @@ export const EnhancedAppointmentBooking = ({
                 </div>
               )}
 
-              {/* Reason and Notes */}
+              {/* Reason and Symptoms */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="reason">Reason for Visit</Label>
                   <Textarea
                     id="reason"
-                    placeholder="Describe your symptoms or reason for the appointment"
+                    placeholder="Brief reason (e.g., Routine checkup, Tooth pain)"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    className="min-h-[100px]"
+                    className="min-h-[60px]"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="symptoms">Describe Your Symptoms (Optional)</Label>
+                  <Textarea
+                    id="symptoms"
+                    placeholder="Please describe your symptoms in detail. For example: Where does it hurt? How long have you had this issue? Any triggers? This helps your dentist prepare for your visit."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="min-h-[120px] bg-blue-50/50 border-blue-200"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your dentist will see this information before your appointment
+                  </p>
                 </div>
 
                 {chatNotes && (
@@ -856,6 +870,12 @@ export const EnhancedAppointmentBooking = ({
                 <span className="font-medium">Reason:</span>
                 <p>{reason || (selectedService ? selectedService.name : "General consultation")}</p>
               </div>
+              {notes && (
+                <div className="col-span-2">
+                  <span className="font-medium">Your Symptoms:</span>
+                  <p className="text-sm text-blue-700 bg-blue-50 p-2 rounded mt-1">{notes}</p>
+                </div>
+              )}
             </div>
           </div>
 
