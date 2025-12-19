@@ -461,6 +461,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const handleConfirmAppointment = async (appointmentId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    
+    // Optimistic update
+    const previousAppointments = [...appointments];
+    setAppointments(appointments.map(a => 
+      a.id === appointmentId ? { ...a, status: 'confirmed' } : a
+    ));
+    toast({ title: 'Appointment confirmed' });
+
     try {
       const { error } = await supabase
         .from('appointments')
@@ -469,18 +477,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
       if (error) throw error;
 
-      // Send email notification
-      try {
-        await supabase.functions.invoke('send-appointment-decision', {
-          body: { appointment_id: appointmentId, decision: 'approved' }
-        });
-      } catch (emailErr) {
-        console.error('Email notification failed:', emailErr);
-      }
+      // Send email notification in background
+      supabase.functions.invoke('send-appointment-decision', {
+        body: { appointment_id: appointmentId, decision: 'approved' }
+      }).catch(emailErr => console.error('Email notification failed:', emailErr));
 
-      toast({ title: 'Appointment confirmed', description: 'Patient has been notified by email' });
-      fetchPatientAppointments(selectedPatient!.id);
     } catch (error) {
+      // Rollback on error
+      setAppointments(previousAppointments);
       toast({ title: 'Error', description: 'Failed to confirm appointment', variant: 'destructive' });
     }
   };
@@ -493,6 +497,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const handleQuickCancel = async (appointmentId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    
+    // Optimistic update
+    const previousAppointments = [...appointments];
+    setAppointments(appointments.map(a => 
+      a.id === appointmentId ? { ...a, status: 'cancelled' } : a
+    ));
+    toast({ title: 'Appointment declined' });
+
     try {
       const { error } = await supabase
         .from('appointments')
@@ -501,18 +513,14 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
       if (error) throw error;
 
-      // Send email notification
-      try {
-        await supabase.functions.invoke('send-appointment-decision', {
-          body: { appointment_id: appointmentId, decision: 'rejected' }
-        });
-      } catch (emailErr) {
-        console.error('Email notification failed:', emailErr);
-      }
+      // Send email notification in background
+      supabase.functions.invoke('send-appointment-decision', {
+        body: { appointment_id: appointmentId, decision: 'rejected' }
+      }).catch(emailErr => console.error('Email notification failed:', emailErr));
 
-      toast({ title: 'Appointment cancelled', description: 'Patient has been notified by email' });
-      fetchPatientAppointments(selectedPatient!.id);
     } catch (error) {
+      // Rollback on error
+      setAppointments(previousAppointments);
       toast({ title: 'Error', description: 'Failed to cancel appointment', variant: 'destructive' });
     }
   };
@@ -725,7 +733,8 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
   const openAppointmentDetail = (appointment: any) => {
     setSelectedAppointment(appointment);
-    setSelectedTreatmentPlan(null); // Show appointment details inline
+    setSelectedTreatmentPlan(null);
+    setAppointmentDetailOpen(true); // Open the sidebar
   };
 
   const restoreAppointment = async (appt: any) => {
@@ -3070,6 +3079,21 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
               appointment={selectedAppointment}
               onClose={() => setAppointmentDetailOpen(false)}
               onStatusChange={async (id, status) => {
+                // Optimistic update immediately
+                const previousAppointments = [...appointments];
+                setAppointments(appointments.map(a =>
+                  a.id === id ? { ...a, status } : a
+                ));
+                
+                toast({
+                  title: "Status updated",
+                  description: `Appointment marked as ${status}`,
+                });
+
+                if (status === 'cancelled' || status === 'completed') {
+                  setAppointmentDetailOpen(false);
+                }
+
                 try {
                   const { error } = await supabase
                     .from('appointments')
@@ -3078,20 +3102,15 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
 
                   if (error) throw error;
 
-                  toast({
-                    title: "Status updated",
-                    description: `Appointment marked as ${status}`,
-                  });
-
-                  // Optimistic update
-                  setAppointments(appointments.map(a =>
-                    a.id === id ? { ...a, status } : a
-                  ));
-
-                  if (status === 'cancelled') {
-                    setAppointmentDetailOpen(false);
+                  // Send email for approve/reject
+                  if (status === 'confirmed' || status === 'cancelled') {
+                    supabase.functions.invoke('send-appointment-decision', {
+                      body: { appointment_id: id, decision: status === 'confirmed' ? 'approved' : 'rejected' }
+                    }).catch(err => console.error('Email notification failed:', err));
                   }
                 } catch (error) {
+                  // Rollback on error
+                  setAppointments(previousAppointments);
                   toast({
                     title: "Error",
                     description: "Failed to update status",
