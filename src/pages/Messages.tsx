@@ -8,6 +8,7 @@ import { ChatWindow } from '@/components/messaging/ChatWindow';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Messages() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -38,8 +39,41 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="h-[calc(100vh-4rem)] overflow-hidden bg-gradient-subtle">
+        <Card className="h-full overflow-hidden shadow-2xl border border-border/60 backdrop-blur rounded-none sm:rounded-lg">
+          <div className="grid grid-cols-12 h-full overflow-hidden">
+            {/* Conversation list skeleton */}
+            <div className="col-span-4 h-full border-r border-border/80 p-4 space-y-4">
+              <Skeleton className="h-10 w-full" />
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-[60%]" />
+                    <Skeleton className="h-3 w-[80%]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Chat area skeleton */}
+            <div className="col-span-8 h-full flex flex-col">
+              <div className="p-4 border-b flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+              <div className="flex-1 p-4 space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+                    <Skeleton className={`h-16 ${i % 2 === 0 ? 'w-[60%]' : 'w-[40%]'} rounded-xl`} />
+                  </div>
+                ))}
+              </div>
+              <div className="p-4 border-t">
+                <Skeleton className="h-12 w-full rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }

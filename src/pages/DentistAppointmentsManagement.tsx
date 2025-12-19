@@ -16,6 +16,7 @@ import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DentistAppointmentsManagement() {
   const { businessId } = useBusinessContext();
@@ -184,9 +185,38 @@ export default function DentistAppointmentsManagement() {
   };
 
   if (dentistLoading) {
-    return <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>;
+    return (
+      <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-blue-950/30 dark:to-purple-950/30">
+        {/* Header skeleton */}
+        <div className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl sticky top-0 z-30 px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <Skeleton className="h-10 w-[200px] rounded-xl" />
+              <Skeleton className="h-10 w-10 rounded-xl" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-[100px] rounded-xl" />
+              <Skeleton className="h-9 w-[80px] rounded-xl" />
+              <Skeleton className="h-9 w-[80px] rounded-xl" />
+            </div>
+          </div>
+        </div>
+        {/* Calendar skeleton */}
+        <div className="flex-1 p-4 sm:p-6">
+          <div className="grid grid-cols-7 gap-4">
+            {Array.from({ length: 7 }).map((_, dayIndex) => (
+              <div key={dayIndex} className="space-y-3">
+                <Skeleton className="h-8 w-full rounded-lg" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!dentistId) {
