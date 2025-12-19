@@ -40,10 +40,10 @@ serve(async (req) => {
           ),
           dentists (
             id,
+            clinic_address,
             profiles (
               first_name,
-              last_name,
-              clinic_address
+              last_name
             )
           )
         )
