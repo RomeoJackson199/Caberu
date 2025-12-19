@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
+import { AppointmentEditDialog } from "@/components/appointments/AppointmentEditDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Calendar,
@@ -45,6 +46,7 @@ interface UnifiedAppointment {
   duration_minutes: number | null;
   status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
   reason?: string | null;
+  notes?: string | null;
   consultation_notes?: string | null;
   urgency?: string;
   patient?: {
@@ -82,6 +84,7 @@ export function UnifiedAppointments({
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'completed' | 'cancelled'>('all');
   const [selectedAppointment, setSelectedAppointment] = useState<UnifiedAppointment | null>(null);
+  const [showAppointmentDetails, setShowAppointmentDetails] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
@@ -466,7 +469,14 @@ export function UnifiedAppointments({
       <div className="space-y-3">
         {filteredAppointments.length > 0 ? (
           filteredAppointments.map((appointment) => (
-            <Card key={appointment.id} className="hover:shadow-lg transition-all">
+            <Card 
+              key={appointment.id} 
+              className="hover:shadow-lg transition-all cursor-pointer"
+              onClick={() => {
+                setSelectedAppointment(appointment);
+                setShowAppointmentDetails(true);
+              }}
+            >
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                   <div className="flex-1 space-y-2">
@@ -489,7 +499,10 @@ export function UnifiedAppointments({
                         <button
                           type="button"
                           className="text-sm text-primary hover:underline"
-                          onClick={() => onOpenPatientProfile?.(appointment.patient!.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenPatientProfile?.(appointment.patient!.id);
+                          }}
                         >
                           {appointment.patient.first_name} {appointment.patient.last_name}
                         </button>
@@ -510,7 +523,7 @@ export function UnifiedAppointments({
                   </div>
 
                   {/* Action buttons - consistent across all views */}
-                  <div className="flex flex-row sm:flex-col gap-2">
+                  <div className="flex flex-row sm:flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                     {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
                       <>
                         <Button
@@ -542,8 +555,6 @@ export function UnifiedAppointments({
                         </Button>
                       </>
                     )}
-
-
                   </div>
                 </div>
               </CardContent>
@@ -739,6 +750,20 @@ export function UnifiedAppointments({
             setShowCompletion(false);
             setSelectedAppointment(null);
             fetchAppointments();
+          }}
+        />
+      )}
+
+      {/* Appointment Details Dialog */}
+      {selectedAppointment && (
+        <AppointmentEditDialog
+          appointment={selectedAppointment}
+          open={showAppointmentDetails}
+          onOpenChange={(open) => {
+            setShowAppointmentDetails(open);
+            if (!open) {
+              fetchAppointments();
+            }
           }}
         />
       )}
