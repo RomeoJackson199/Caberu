@@ -338,7 +338,31 @@ export function AppointmentDetailsSidebar({
               </Button>
             )}
 
-            {(appointment.status !== "completed" && appointment.status !== "cancelled" && appointment.status !== "in_progress") && (
+            {/* Pending appointments - show Approve/Reject buttons */}
+            {appointment.status === "pending" && (
+              <>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                  onClick={() => onStatusChange(appointment.id, "confirmed")}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve Appointment
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full text-red-600 border-red-300 hover:bg-red-50"
+                  size="lg"
+                  onClick={() => onStatusChange(appointment.id, "cancelled")}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reject Appointment
+                </Button>
+              </>
+            )}
+
+            {/* Non-pending, non-completed, non-cancelled, non-in_progress - show Complete/Reschedule/Cancel */}
+            {(appointment.status !== "completed" && appointment.status !== "cancelled" && appointment.status !== "in_progress" && appointment.status !== "pending") && (
               <>
                 <Button
                   className="w-full"
