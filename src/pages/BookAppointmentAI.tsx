@@ -14,7 +14,9 @@ import {
   Clock,
   CalendarDays,
   CheckCircle,
-  Users
+  Users,
+  Package,
+  Timer
 } from "lucide-react";
 import { format, startOfDay, startOfWeek, addDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +51,16 @@ interface TimeSlot {
   available: boolean;
 }
 
+interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  currency: string;
+  duration_minutes: number | null;
+  category: string | null;
+}
+
 export default function BookAppointment() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -61,7 +73,10 @@ export default function BookAppointment() {
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [bookingStep, setBookingStep] = useState<'dentist' | 'datetime' | 'confirm'>('dentist');
+  const [bookingStep, setBookingStep] = useState<'dentist' | 'service' | 'datetime' | 'confirm'>('dentist');
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [loadingServices, setLoadingServices] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successDetails, setSuccessDetails] = useState<{ date: string; time: string; dentist?: string; reason?: string; pendingApproval?: boolean } | undefined>(undefined);
   const [dentistAvailableDays, setDentistAvailableDays] = useState<number[]>([]);
@@ -152,6 +167,27 @@ export default function BookAppointment() {
     }
   };
 
+  const fetchServices = async () => {
+    if (!businessId) return;
+    
+    setLoadingServices(true);
+    try {
+      const { data, error } = await supabase
+        .from('business_services')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      logger.error("Error fetching services:", error);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
   const fetchAvailableSlots = async (date: Date, dentistId: string) => {
     if (!businessId) return;
 
@@ -210,7 +246,11 @@ export default function BookAppointment() {
 
   const handleDentistSelect = async (dentist: Dentist) => {
     setSelectedDentist(dentist);
-    setBookingStep('datetime');
+    setSelectedService(null);
+    
+    // Fetch services first
+    await fetchServices();
+    setBookingStep('service');
     
     if (businessId) {
       // Fetch dentist's available days
@@ -227,6 +267,11 @@ export default function BookAppointment() {
         setDentistAvailableDays([1, 2, 3, 4, 5]);
       }
     }
+  };
+
+  const handleServiceSelect = (service: Service | null) => {
+    setSelectedService(service);
+    setBookingStep('datetime');
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -303,12 +348,12 @@ export default function BookAppointment() {
           dentist_id: selectedDentist.id,
           business_id: businessId,
           appointment_date: appointmentDateTime.toISOString(),
-          reason: "General consultation",
+          reason: selectedService ? selectedService.name : "General consultation",
           status: appointmentStatus,
           booking_source: "manual",
           urgency: "low",
-          service_id: null,
-          duration_minutes: 30
+          service_id: selectedService?.id || null,
+          duration_minutes: selectedService?.duration_minutes || 30
         })
         .select()
         .single();
@@ -340,7 +385,7 @@ export default function BookAppointment() {
         date: format(selectedDate, 'yyyy-MM-dd'),
         time: selectedTime,
         dentist: `Dr. ${selectedDentist.first_name} ${selectedDentist.last_name}`,
-        reason: "General consultation",
+        reason: selectedService ? selectedService.name : "General consultation",
         pendingApproval: needsApproval
       });
       setShowSuccessDialog(true);
@@ -558,8 +603,8 @@ export default function BookAppointment() {
         </div>
       )}
 
-      {/* Step 2: Select Date & Time */}
-      {bookingStep === 'datetime' && selectedDentist && (
+      {/* Step 2: Select Service */}
+      {bookingStep === 'service' && selectedDentist && (
         <div className="max-w-4xl mx-auto p-4 py-8">
           <Button
             variant="ghost"
@@ -569,6 +614,111 @@ export default function BookAppointment() {
           >
             <ArrowLeft className="h-4 w-4" />
             Back to dentists
+          </Button>
+
+          <Card>
+            <CardContent className="p-6 space-y-6">
+              {/* Selected Dentist */}
+              <div className="flex items-center gap-4 pb-4 border-b">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedDentist.profiles?.profile_picture_url || undefined} className="object-cover" />
+                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                    {getDentistInitials(selectedDentist)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-xl font-bold">
+                    Dr. {selectedDentist.first_name} {selectedDentist.last_name}
+                  </h2>
+                  <p className="text-muted-foreground capitalize">
+                    {selectedDentist.specialization || 'General Dentistry'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Service Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-indigo-600" />
+                  <h3 className="font-semibold text-lg">Select a Service</h3>
+                </div>
+
+                {loadingServices ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-32 rounded-lg" />
+                    ))}
+                  </div>
+                ) : services.length === 0 ? (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground mb-4">No services configured yet.</p>
+                    <Button onClick={() => handleServiceSelect(null)}>
+                      Continue without service
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {services.map((service) => {
+                      const isSelected = selectedService?.id === service.id;
+                      return (
+                        <Card
+                          key={service.id}
+                          className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+                            isSelected
+                              ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                              : "border-border hover:border-indigo-300 dark:hover:border-indigo-700"
+                          }`}
+                          onClick={() => handleServiceSelect(service)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold">{service.name}</h4>
+                                  {isSelected && <CheckCircle className="h-4 w-4 text-indigo-600" />}
+                                </div>
+                                {service.description && (
+                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                    {service.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                              <div className="text-lg font-bold text-indigo-600">
+                                {new Intl.NumberFormat('en-US', {
+                                  style: 'currency',
+                                  currency: service.currency,
+                                }).format(service.price_cents / 100)}
+                              </div>
+                              <span className="flex items-center gap-1 text-sm text-muted-foreground bg-secondary px-2 py-1 rounded">
+                                <Timer className="h-3 w-3" />
+                                {service.duration_minutes || 30} min
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Step 3: Select Date & Time */}
+      {bookingStep === 'datetime' && selectedDentist && (
+        <div className="max-w-4xl mx-auto p-4 py-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setBookingStep('service')}
+            className="gap-2 mb-6"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to services
           </Button>
 
           <Card>
