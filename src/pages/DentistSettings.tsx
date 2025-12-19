@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard } from "lucide-react";
 import { EnhancedAvailabilitySettings } from "@/components/enhanced/EnhancedAvailabilitySettings";
 import DentistAdminBranding from "./DentistAdminBranding";
@@ -142,10 +143,32 @@ export default function DentistSettings() {
 
   if (!dentistId) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="container max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg" />
+          <Skeleton className="h-8 w-32" />
+        </div>
+        {/* Tabs skeleton */}
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 p-1">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-20 rounded-md" />
+            ))}
+          </div>
+        </div>
+        {/* Content skeleton */}
         <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">{t.loading}</p>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-2/3" />
+            </div>
           </CardContent>
         </Card>
       </div>
