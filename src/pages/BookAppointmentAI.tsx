@@ -469,7 +469,7 @@ export default function BookAppointment() {
           appointment_date: appointmentDateTime.toISOString(),
           reason: selectedService ? selectedService.name : "General consultation",
           status: appointmentStatus,
-          booking_source: aiBookingData ? "ai_chat" : "manual",
+          booking_source: aiBookingData ? "ai" : "manual",
           urgency: "low",
           service_id: selectedService?.id || null,
           duration_minutes: selectedService?.duration_minutes || 30,
