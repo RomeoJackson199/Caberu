@@ -357,6 +357,18 @@ export default function BookAppointment() {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const appointmentDateTime = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
 
+      // FIRST: Reserve the slot before creating appointment to prevent race conditions
+      const { error: slotError } = await supabase.rpc('book_appointment_slot', {
+        p_dentist_id: selectedDentist.id,
+        p_slot_date: dateStr,
+        p_slot_time: selectedTime + ':00', // Add seconds for TIME format
+        p_appointment_id: null // Will update with actual appointment ID after creation
+      });
+
+      if (slotError) {
+        throw new Error("This time slot is no longer available. Please select another time.");
+      }
+
       // Check if dentist requires approval
       const needsApproval = selectedDentist.require_appointment_approval === true;
       const appointmentStatus = needsApproval ? "pending" : "confirmed";
@@ -378,7 +390,21 @@ export default function BookAppointment() {
         .select()
         .single();
 
-      if (appointmentError) throw appointmentError;
+      if (appointmentError) {
+        // Release the slot if appointment creation fails
+        await supabase.rpc('release_appointment_slot', {
+          p_appointment_id: null
+        });
+        throw appointmentError;
+      }
+
+      // Update the slot with the actual appointment ID
+      await supabase.rpc('book_appointment_slot', {
+        p_dentist_id: selectedDentist.id,
+        p_slot_date: dateStr,
+        p_slot_time: selectedTime + ':00',
+        p_appointment_id: appointmentData.id
+      });
 
       logger.info("Booking slot with params:", {
         dentistId: selectedDentist.id,
@@ -386,20 +412,6 @@ export default function BookAppointment() {
         time: selectedTime,
         appointmentId: appointmentData.id
       });
-
-
-      // Try to mark slot as unavailable (optional - appointments table is now the source of truth)
-      const { error: slotError } = await supabase.rpc('book_appointment_slot', {
-        p_dentist_id: selectedDentist.id,
-        p_slot_date: dateStr,
-        p_slot_time: selectedTime,
-        p_appointment_id: appointmentData.id
-      });
-
-      // Non-critical - the appointment is already created
-      if (slotError) {
-        logger.warn("Could not mark slot in appointment_slots table:", slotError);
-      }
 
       setSuccessDetails({
         date: format(selectedDate, 'yyyy-MM-dd'),
