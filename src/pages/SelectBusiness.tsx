@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Building2, Check, Loader2, AlertTriangle, Search, Crown } from 'lucide-react';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
 export default function SelectBusiness() {
@@ -193,7 +193,40 @@ export default function SelectBusiness() {
     };
 
     if (isAuthenticated === null || contextLoading || loadingBusinesses) {
-        return <ModernLoadingSpinner variant="overlay" message="Loading..." />;
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-950 dark:via-gray-900 dark:to-purple-950 flex items-center justify-center p-4">
+                <div className="w-full max-w-2xl">
+                    {/* Header skeleton */}
+                    <div className="text-center mb-8">
+                        <Skeleton className="w-16 h-16 rounded-full mx-auto mb-4" />
+                        <Skeleton className="h-8 w-64 mx-auto mb-2" />
+                        <Skeleton className="h-4 w-80 mx-auto" />
+                    </div>
+                    {/* Search skeleton */}
+                    <Skeleton className="h-10 w-full mb-6 rounded-md" />
+                    {/* Business cards skeleton */}
+                    <div className="space-y-4">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <Card key={i} className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton className="w-12 h-12 rounded-lg" />
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-5 w-40" />
+                                            <Skeleton className="h-4 w-24" />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Skeleton className="h-6 w-16 rounded-full" />
+                                        <Skeleton className="h-9 w-20 rounded-md" />
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
