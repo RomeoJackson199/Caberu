@@ -130,8 +130,44 @@ const Onboarding = () => {
 
     if (isChecking) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+                <div className="w-full max-w-lg space-y-6">
+                    {/* Header skeleton */}
+                    <div className="text-center space-y-4">
+                        <div className="mx-auto w-16 h-16 bg-muted animate-pulse rounded-2xl" />
+                        <div className="space-y-2">
+                            <div className="h-8 w-64 mx-auto bg-muted animate-pulse rounded" />
+                            <div className="h-4 w-80 mx-auto bg-muted animate-pulse rounded" />
+                        </div>
+                    </div>
+                    {/* Features skeleton */}
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="p-3 bg-white/80 rounded-lg border">
+                                <div className="h-5 w-5 mx-auto bg-muted animate-pulse rounded mb-2" />
+                                <div className="h-3 w-16 mx-auto bg-muted animate-pulse rounded" />
+                            </div>
+                        ))}
+                    </div>
+                    {/* Form skeleton */}
+                    <div className="bg-white border rounded-xl p-6 shadow-lg space-y-5">
+                        <div className="grid grid-cols-2 gap-4">
+                            {[1, 2].map((i) => (
+                                <div key={i} className="space-y-2">
+                                    <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                                    <div className="h-10 w-full bg-muted animate-pulse rounded" />
+                                </div>
+                            ))}
+                        </div>
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="space-y-2">
+                                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                                <div className="h-10 w-full bg-muted animate-pulse rounded" />
+                            </div>
+                        ))}
+                        <div className="h-12 w-full bg-muted animate-pulse rounded" />
+                    </div>
+                </div>
             </div>
         );
     }

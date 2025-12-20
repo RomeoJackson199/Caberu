@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { AnimatedBackground, StatCard, EmptyState } from "@/components/ui/polished-components";
 import { useLanguage } from "@/hooks/useLanguage";
 import { PendingApprovalCard } from "@/components/PendingApprovalCard";
+import { DashboardSkeleton } from "@/components/ui/page-skeletons";
 
 interface ClinicalTodayProps {
 	user: User;
@@ -143,11 +144,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 	};
 
 	if (loading) {
-		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-			</div>
-		);
+		return <DashboardSkeleton />;
 	}
 
 	return (
@@ -166,7 +163,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				</div>
 			</div>
 
-		{/* Quick Stats with Polished Components */}
+			{/* Quick Stats with Polished Components */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-tour="stats-cards">
 				<StatCard
 					title={t.todaysAppointments}
@@ -244,14 +241,14 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-2 mb-1 flex-wrap">
 												<p className="font-medium text-sm sm:text-base truncate">{getPatientName(appointment)}</p>
-											{appointment.urgency === 'high' && (
-												<Badge variant="destructive" className="text-xs flex-shrink-0">{t.urgent || "Urgent"}</Badge>
-											)}
+												{appointment.urgency === 'high' && (
+													<Badge variant="destructive" className="text-xs flex-shrink-0">{t.urgent || "Urgent"}</Badge>
+												)}
+											</div>
+											<p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
+												{appointment.reason || t.noReasonSpecified || 'No reason specified'}
+											</p>
 										</div>
-										<p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
-											{appointment.reason || t.noReasonSpecified || 'No reason specified'}
-										</p>
-									</div>
 									</div>
 
 									<Badge variant="outline" className={`${getStatusColor(appointment.status)} text-xs flex-shrink-0 self-start sm:self-center`}>

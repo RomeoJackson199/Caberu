@@ -31,10 +31,33 @@ const DentistProfiles = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-dental-primary/5 to-dental-accent/5 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-dental-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-dental-muted-foreground">Loading dentist profiles...</p>
+      <div className="min-h-screen bg-gradient-to-br from-dental-primary/5 to-dental-accent/5">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-9 w-28 bg-muted animate-pulse rounded" />
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+            </div>
+          </div>
+          {/* Cards skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="p-6 rounded-lg border bg-card space-y-4">
+                <div className="flex flex-col items-center">
+                  <div className="w-24 h-24 rounded-full bg-muted animate-pulse mb-4" />
+                  <div className="h-6 w-40 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-5 w-24 bg-muted animate-pulse rounded" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                </div>
+                <div className="h-10 w-full bg-muted animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -86,8 +109,8 @@ const DentistProfiles = () => {
                   <Award className="w-4 h-4" />
                   License: {dentist.license_number}
                 </div>
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   onClick={() => navigate("/")}
                 >
                   <Calendar className="w-4 h-4 mr-2" />

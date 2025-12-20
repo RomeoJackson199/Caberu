@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pill, Plus, Search, Filter, Calendar, User } from "lucide-react";
 import { useMobileOptimizations } from "@/components/mobile/MobileOptimizations";
 import { logger } from '@/lib/logger';
+import { ListSkeleton } from "@/components/ui/page-skeletons";
 
 interface Prescription {
   id: string;
@@ -39,7 +40,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
   const { toast } = useToast();
   const { isMobile, cardClass } = useMobileOptimizations();
 
-  const [patients, setPatients] = useState<Array<{id: string, first_name: string, last_name: string}>>([]);
+  const [patients, setPatients] = useState<Array<{ id: string, first_name: string, last_name: string }>>([]);
   const [newPrescription, setNewPrescription] = useState({
     patient_id: '',
     medication_name: '',
@@ -61,16 +62,16 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
         .from('appointments')
         .select('patient_id, profiles(id, first_name, last_name)')
         .eq('dentist_id', dentistId);
-      
+
       if (error) throw error;
-      
+
       const uniquePatients = Array.from(
         new Map(data?.map((item: any) => [
           item.patient?.id,
           { id: item.patient?.id, first_name: item.patient?.first_name, last_name: item.patient?.last_name }
         ])).values()
       ).filter(p => p.id);
-      
+
       setPatients(uniquePatients as any);
     } catch (error) {
       console.error('Error fetching patients:', error);
@@ -90,12 +91,12 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       const mappedPrescriptions = data?.map((p: any) => ({
         ...p,
         patient_name: p.patient ? `${p.patient.first_name} ${p.patient.last_name}` : 'Unknown'
       })) || [];
-      
+
       setPrescriptions(mappedPrescriptions);
       setLoading(false);
     } catch (error: unknown) {
@@ -187,15 +188,15 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
 
   const filteredPrescriptions = prescriptions.filter(prescription => {
     const matchesSearch = prescription.medication_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prescription.patient_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      prescription.patient_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || prescription.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className={`space-y-6 ${isMobile ? 'p-4' : ''}`}>
+        <ListSkeleton rows={5} />
       </div>
     );
   }
@@ -254,7 +255,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
                         id="patient"
                         className="w-full border rounded-md p-2"
                         value={newPrescription.patient_id}
-                        onChange={(e) => setNewPrescription({...newPrescription, patient_id: e.target.value})}
+                        onChange={(e) => setNewPrescription({ ...newPrescription, patient_id: e.target.value })}
                       >
                         <option value="">Select a patient</option>
                         {patients.map((patient) => (
@@ -269,7 +270,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
                       <Input
                         id="medication"
                         value={newPrescription.medication_name}
-                        onChange={(e) => setNewPrescription({...newPrescription, medication_name: e.target.value})}
+                        onChange={(e) => setNewPrescription({ ...newPrescription, medication_name: e.target.value })}
                         placeholder="Enter medication name"
                       />
                     </div>
@@ -279,7 +280,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
                         <Input
                           id="dosage"
                           value={newPrescription.dosage}
-                          onChange={(e) => setNewPrescription({...newPrescription, dosage: e.target.value})}
+                          onChange={(e) => setNewPrescription({ ...newPrescription, dosage: e.target.value })}
                           placeholder="e.g., 500mg"
                         />
                       </div>
@@ -288,7 +289,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
                         <Input
                           id="frequency"
                           value={newPrescription.frequency}
-                          onChange={(e) => setNewPrescription({...newPrescription, frequency: e.target.value})}
+                          onChange={(e) => setNewPrescription({ ...newPrescription, frequency: e.target.value })}
                           placeholder="e.g., 2x daily"
                         />
                       </div>
@@ -298,7 +299,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
                       <Input
                         id="duration"
                         value={newPrescription.duration}
-                        onChange={(e) => setNewPrescription({...newPrescription, duration: e.target.value})}
+                        onChange={(e) => setNewPrescription({ ...newPrescription, duration: e.target.value })}
                         placeholder="e.g., 7 days"
                       />
                     </div>
@@ -307,7 +308,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
                       <Textarea
                         id="instructions"
                         value={newPrescription.instructions}
-                        onChange={(e) => setNewPrescription({...newPrescription, instructions: e.target.value})}
+                        onChange={(e) => setNewPrescription({ ...newPrescription, instructions: e.target.value })}
                         placeholder="Special instructions for the patient"
                         rows={3}
                       />
