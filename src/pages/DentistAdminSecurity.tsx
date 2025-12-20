@@ -28,6 +28,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StaffInviteDialog } from "@/components/staff/StaffInviteDialog";
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
+import { SecuritySettingsSkeleton } from "@/components/ui/page-skeletons";
 
 export default function DentistAdminSecurity() {
   const { businessId } = useBusinessContext();
@@ -324,11 +325,7 @@ export default function DentistAdminSecurity() {
 
 
   if (dentistLoading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <SecuritySettingsSkeleton />;
   }
 
   if (!dentistId) {

@@ -17,6 +17,8 @@ import { LanguageSettings } from "@/components/LanguageSettings";
 import { useLanguage } from "@/hooks/useLanguage";
 
 
+import { ProfileFormSkeleton } from "@/components/ui/page-skeletons";
+
 export default function DentistAdminProfile() {
   const { businessId } = useBusinessContext();
   const { dentistId, profileId, loading: dentistLoading } = useCurrentDentist(businessId);
@@ -149,13 +151,7 @@ export default function DentistAdminProfile() {
   };
 
   if (dentistLoading || loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
+    return <ProfileFormSkeleton />;
   }
 
   return (

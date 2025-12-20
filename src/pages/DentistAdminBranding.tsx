@@ -34,6 +34,7 @@ import { TemplatePreview } from "@/components/TemplatePreview";
 import { EmailTemplateEditor } from "@/components/settings/EmailTemplateEditor";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
+import { BrandingPageSkeleton } from "@/components/ui/page-skeletons";
 import { StripeConnectSettings } from "@/components/settings/StripeConnectSettings";
 import { CreditCard } from "lucide-react";
 
@@ -109,7 +110,7 @@ export default function DentistAdminBranding() {
           greeting: "",
           personalityTraits: []
         };
-        
+
         const state = {
           clinicName: business.name || "",
           slug: business.slug || "",
@@ -474,11 +475,7 @@ export default function DentistAdminBranding() {
   });
 
   if (businessLoading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <BrandingPageSkeleton />;
   }
 
   return (

@@ -257,8 +257,38 @@ export default function Pricing() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+        <Header user={null} minimal={false} />
+        <div className="container mx-auto px-4 py-16 pt-24">
+          {/* Header skeleton */}
+          <div className="text-center mb-12">
+            <div className="h-20 w-64 mx-auto bg-muted animate-pulse rounded-lg mb-4" />
+            <div className="h-5 w-80 mx-auto bg-muted animate-pulse rounded" />
+          </div>
+          {/* Toggle skeleton */}
+          <div className="h-10 w-64 mx-auto bg-muted animate-pulse rounded-xl mb-12" />
+          {/* Cards skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-8 rounded-xl border bg-card/50 space-y-6">
+                <div className="space-y-2">
+                  <div className="h-6 w-24 bg-muted animate-pulse rounded" />
+                  <div className="h-12 w-32 bg-muted animate-pulse rounded" />
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <div key={j} className="flex items-center gap-3">
+                      <div className="h-5 w-5 bg-muted animate-pulse rounded-full" />
+                      <div className="h-4 flex-1 bg-muted animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+                <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
