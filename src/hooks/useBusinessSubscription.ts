@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
-
+import { logger } from '@/lib/logger';
 export interface BusinessSubscriptionStatus {
     hasSubscription: boolean;
     isActive: boolean;
@@ -55,7 +55,7 @@ export function useBusinessSubscription() {
                 const isActive = hasValidStatus && notExpired;
 
                 // Debug logging
-                console.log('🔐 Subscription Check:', {
+                logger.debug('Subscription Check:', {
                     businessId,
                     status: business.subscription_status,
                     endsAt: endsAt?.toISOString(),
@@ -86,7 +86,7 @@ export function useBusinessSubscription() {
                 });
             }
         } catch (err) {
-            console.error('Error checking business subscription:', err);
+            logger.error('Error checking business subscription:', err);
             setStatus(prev => ({
                 ...prev,
                 loading: false,

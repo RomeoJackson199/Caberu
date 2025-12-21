@@ -77,7 +77,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         setAvailability(data);
       }
     } catch (error) {
-      console.error('Error fetching availability:', error);
+      logger.error('Error fetching availability:', error);
       toast({
         title: t.error,
         description: t.failedToLoadAvailability,
@@ -112,7 +112,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         .single();
 
       if (dentistError) {
-        console.error('Error fetching dentist:', dentistError);
+        logger.error('Error fetching dentist:', dentistError);
         throw new Error('Could not fetch dentist data');
       }
 
@@ -126,7 +126,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
           .maybeSingle();
         
         if (membershipError) {
-          console.error('Error fetching membership:', membershipError);
+          logger.error('Error fetching membership:', membershipError);
         }
         businessId = membership?.business_id || null;
       }
@@ -135,7 +135,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         throw new Error('Could not determine business');
       }
 
-      console.log('Saving availability for dentist:', dentistId, 'business:', businessId);
+      logger.debug('Saving availability for dentist:', dentistId, 'business:', businessId);
 
       // Delete existing availability - include business_id for RLS
       const { error: deleteError } = await supabase
@@ -145,7 +145,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         .eq('business_id', businessId);
 
       if (deleteError) {
-        console.error('Error deleting old availability:', deleteError);
+        logger.warn('Error deleting old availability:', deleteError);
         // Continue anyway - might be first time setting availability
       }
 
@@ -161,7 +161,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         break_end_time: day.break_end_time || null,
       }));
 
-      console.log('Inserting availability:', dataToInsert);
+      logger.debug('Inserting availability:', dataToInsert);
 
       const { error: insertError } = await supabase
         .from('dentist_availability')
@@ -170,7 +170,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         });
 
       if (insertError) {
-        console.error('Error inserting availability:', insertError);
+        logger.error('Error inserting availability:', insertError);
         throw insertError;
       }
 
@@ -182,7 +182,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
         .is('appointment_id', null);
 
       if (slotsError) {
-        console.error('Error clearing slots (non-fatal):', slotsError);
+        logger.warn('Error clearing slots (non-fatal):', slotsError);
       }
 
       toast({
@@ -192,7 +192,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
 
       fetchAvailability();
     } catch (error) {
-      console.error('Error saving availability:', error);
+      logger.error('Error saving availability:', error);
       toast({
         title: t.error,
         description: t.failedToSaveAvailability,

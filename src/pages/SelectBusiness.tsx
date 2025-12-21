@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Building2, Check, Loader2, AlertTriangle, Search, Crown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export default function SelectBusiness() {
     const navigate = useNavigate();
@@ -104,7 +105,7 @@ export default function SelectBusiness() {
                 .maybeSingle();
 
             if (error) {
-                console.error('Error checking subscription:', error);
+                logger.error('Error checking subscription:', error);
                 return false;
             }
 
@@ -118,7 +119,7 @@ export default function SelectBusiness() {
 
             return data.status === 'active' && (!periodEnd || periodEnd > now);
         } catch (err) {
-            console.error('Subscription check error:', err);
+            logger.error('Subscription check error:', err);
             return false;
         }
     };
@@ -144,7 +145,7 @@ export default function SelectBusiness() {
 
             return dentist?.id || null;
         } catch (err) {
-            console.error('Error getting dentist ID:', err);
+            logger.error('Error getting dentist ID:', err);
             return null;
         }
     };
@@ -185,7 +186,7 @@ export default function SelectBusiness() {
                 navigate('/dashboard', { replace: true });
             }
         } catch (error) {
-            console.error('Error selecting business:', error);
+            logger.error('Error selecting business:', error);
             toast.error('Failed to select business');
         } finally {
             setSelecting(null);
