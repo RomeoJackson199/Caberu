@@ -77,7 +77,7 @@ class AnalyticsManager {
       // Process queued events
       await this.processEventQueue();
     } catch (error) {
-      console.error('Failed to initialize analytics:', error);
+      logger.error('Failed to initialize analytics:', error);
     }
   }
 
@@ -199,14 +199,14 @@ class AnalyticsManager {
         });
 
       if (error) {
-        console.error('Failed to send analytics event:', error);
-        // Fallback to console logging
-        console.debug('[Analytics]', event.event_name, event.event_data);
+        logger.error('Failed to send analytics event:', error);
+        // Fallback to debug logging
+        logger.debug('[Analytics]', event.event_name, event.event_data);
       }
     } catch (error) {
-      console.error('Analytics error:', error);
-      // Fallback to console logging
-      console.debug('[Analytics]', event.event_name, event.event_data);
+      logger.error('Analytics error:', error);
+      // Fallback to debug logging
+      logger.debug('[Analytics]', event.event_name, event.event_data);
     }
   }
 

@@ -4,12 +4,11 @@ import { User } from "@supabase/supabase-js";
 import { Header } from "@/components/homepage/Header";
 import { Footer } from "@/components/homepage/Footer";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, PlayCircle, Shield, Zap, Globe } from "lucide-react";
+import { ArrowRight, Shield, Zap, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { AccessibleLoadingIndicator } from "@/components/ui/skip-to-content";
+import { HomepageSkeleton } from "@/components/homepage/HomepageSkeleton";
 import { DemoTourFlow } from "@/components/demo/DemoTourFlow";
 import { InteractiveBentoGrid } from "@/components/homepage/InteractiveBentoGrid";
-
 import { ResultsSection } from "@/components/homepage/ResultsSection";
 import { PricingSection } from "@/components/homepage/PricingSection";
 import { FloatingChatBubble } from "@/components/chat/FloatingChatBubble";
@@ -57,9 +56,7 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background">
-        <AccessibleLoadingIndicator message="Loading Caberu" size="lg" />
-      </div>;
+    return <HomepageSkeleton />;
   }
   return <div className="min-h-screen bg-background font-sans antialiased selection:bg-primary/20 selection:text-primary">
       {/* AI Context - Hidden */}
