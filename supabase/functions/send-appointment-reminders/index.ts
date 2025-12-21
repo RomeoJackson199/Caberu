@@ -187,15 +187,16 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error(`Error processing reminder ${reminder.id}:`, error);
+        const reminderErrorMessage = error instanceof Error ? error.message : 'Unknown error';
         await supabase
           .from("appointment_reminders")
           .update({ 
             status: "failed", 
-            error_message: error.message 
+            error_message: reminderErrorMessage 
           })
           .eq("id", reminder.id);
         results.failed++;
-        results.errors.push(`Reminder ${reminder.id}: ${error.message}`);
+        results.errors.push(`Reminder ${reminder.id}: ${reminderErrorMessage}`);
       }
     }
 
@@ -212,8 +213,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error in send-appointment-reminders:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

@@ -752,8 +752,8 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
             if (generalDentist) bestMatch = generalDentist;
           }
 
-          // Return full dentist object instead of just name
-          recommendedDentists.push(bestMatch);
+          // Return dentist name as string (recommendedDentists is string[])
+          recommendedDentists.push(`Dr. ${bestMatch.first_name || ''} ${bestMatch.last_name || ''}`.trim());
         }
       } catch (error) {
         console.error('Error fetching dentists:', error);

@@ -56,6 +56,7 @@ serve(async (req) => {
 
         // If fileId provided, get the storage path from database
         if (fileId) {
+            // Type the query result properly - single returns an object not array for the join
             const { data: file, error: fileError } = await adminClient
                 .from('imaging_files')
                 .select(`
@@ -65,7 +66,22 @@ serve(async (req) => {
           )
         `)
                 .eq('id', fileId)
-                .single();
+                .single() as { data: {
+                    id: string;
+                    storage_path: string;
+                    filename: string;
+                    mime_type: string;
+                    size_bytes: number;
+                    metadata: any;
+                    created_at: string;
+                    imaging_set: {
+                        id: string;
+                        business_id: string;
+                        patient_id: string;
+                        imaging_type: string;
+                        notes: string;
+                    };
+                } | null; error: any };
 
             if (fileError || !file) {
                 return new Response(
@@ -139,8 +155,9 @@ serve(async (req) => {
 
     } catch (error) {
         console.error('Error in get-imaging-url:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: errorMessage }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }
