@@ -31,7 +31,7 @@ serve(async (req) => {
     }
 
     // Get user by email
-    const { data: { user }, error: getUserError } = await supabaseAdmin.auth.admin.listUsers();
+    const { data: listData, error: getUserError } = await supabaseAdmin.auth.admin.listUsers();
 
     if (getUserError) {
       console.error('Error fetching users:', getUserError);
@@ -44,7 +44,7 @@ serve(async (req) => {
       );
     }
 
-    const targetUser = user?.users?.find((u: any) => u.email === email);
+    const targetUser = listData?.users?.find((u: any) => u.email === email);
 
     if (!targetUser) {
       return new Response(

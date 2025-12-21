@@ -60,9 +60,10 @@ serve(async (req) => {
       parsedBody = JSON.parse(requestBody);
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
+      const parseErrorMessage = parseError instanceof Error ? parseError.message : 'Unknown parse error';
       return new Response(JSON.stringify({ 
         error: 'Invalid JSON in request body',
-        details: parseError.message 
+        details: parseErrorMessage 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -304,9 +305,10 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error('Row processing error:', error);
+          const rowErrorMessage = error instanceof Error ? error.message : 'Unknown error';
           errors.push({
             row: i + 1,
-            error: error.message,
+            error: rowErrorMessage,
             data: rows[i]
           });
           failureCount++;

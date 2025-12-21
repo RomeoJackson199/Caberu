@@ -118,9 +118,10 @@ serve(async (req) => {
       console.error('Failed to mark bundle as failed:', e);
     }
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({
       error: 'Export generation failed',
-      details: error.message
+      details: errorMessage
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

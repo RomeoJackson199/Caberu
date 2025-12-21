@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -126,8 +125,7 @@ serve(async (req) => {
             callerPhone,
             startTime,
             endTime,
-            rawMetadata: data.metadata,
-            rawCall: data.call
+            rawMetadata: data.metadata
         });
         
         let businessId = data.metadata?.business_id || null;
