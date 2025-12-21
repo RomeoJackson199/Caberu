@@ -139,12 +139,6 @@ const Login = () => {
       }
 
       setAuthError(userFriendlyMessage);
-      toast({
-        title: "Sign in failed",
-        description: userFriendlyMessage,
-        variant: "destructive",
-        duration: 6000,
-      });
       setIsLoading(false);
     }
   };
