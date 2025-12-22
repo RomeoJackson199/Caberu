@@ -61,10 +61,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in test-email function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
-      stack: error.stack
+      error: errorMessage,
+      stack: errorStack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

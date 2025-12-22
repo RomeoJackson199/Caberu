@@ -493,8 +493,9 @@ Use the available tools to help patients with their requests.`;
 
   } catch (error) {
     console.error('Error in voice-call-ai function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -537,7 +538,8 @@ async function executeTool(toolCall: any, callerPhone: string, businessId?: stri
     }
   } catch (error) {
     console.error(`Error executing ${functionName}:`, error);
-    return { error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return { error: errorMessage };
   }
 }
 
