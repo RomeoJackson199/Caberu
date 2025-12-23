@@ -198,86 +198,16 @@ export const EnhancedAppointmentBooking = ({
 
   // Track last fetch to prevent duplicates
   const lastFetchRef = useRef<string>("");
+  const pollingEnabledRef = useRef(false);
 
-  // Real-time subscription for slot updates - refresh when someone else books
-  useEffect(() => {
-    if (!selectedDentist || !selectedDate) return;
-
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
-    const channel = supabase
-      .channel(`slots-${selectedDentist}-${dateStr}-${Date.now()}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'appointment_slots',
-          filter: `dentist_id=eq.${selectedDentist}`
-        },
-        (payload) => {
-          // Handle different date formats from realtime payload
-          const changedSlotDate = (payload.new as any)?.slot_date || (payload.old as any)?.slot_date;
-          // Normalize date - handle both date string and timestamp formats
-          const normalizedDate = changedSlotDate?.split('T')[0];
-          
-          if (normalizedDate === dateStr) {
-            console.log('Slot changed by another user, refreshing...', payload);
-            // Invalidate cache before fetching
-            invalidateAvailabilityCache(selectedDentist, dateStr);
-            fetchAvailability(selectedDate, selectedService?.duration_minutes ?? undefined);
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedDentist, selectedDate, selectedService?.duration_minutes]);
-
-  // Refresh availability when browser tab regains focus
-  useEffect(() => {
-    if (!selectedDentist || !selectedDate) return;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const fetchKey = `${selectedDentist}-${dateStr}`;
-        
-        // Prevent duplicate fetches within 2 seconds
-        if (lastFetchRef.current !== fetchKey) {
-          console.log('Tab became visible, refreshing availability...');
-          invalidateAvailabilityCache(selectedDentist, dateStr);
-          fetchAvailability(selectedDate, selectedService?.duration_minutes ?? undefined);
-          lastFetchRef.current = fetchKey;
-          
-          // Reset after 2 seconds to allow future refreshes
-          setTimeout(() => {
-            if (lastFetchRef.current === fetchKey) {
-              lastFetchRef.current = "";
-            }
-          }, 2000);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [selectedDentist, selectedDate, selectedService?.duration_minutes]);
-
-  const fetchAvailability = async (date: Date, serviceDurationMinutes?: number) => {
+  // Memoized fetch function with stable reference
+  const fetchAvailabilityCallback = useCallback(async (date: Date, serviceDurationMinutes?: number) => {
     if (!selectedDentist) return;
 
     setLoadingTimes(true);
     setSelectedTime("");
 
     try {
-      // Use format to preserve Brussels date without UTC conversion
       const dateStr = format(date, 'yyyy-MM-dd');
       const businessId = propBusinessId || await getCurrentBusinessId();
 
@@ -293,7 +223,6 @@ export const EnhancedAppointmentBooking = ({
           .maybeSingle();
 
         if (!availability || availability.is_available === false) {
-          // Clean up any stale slots for closed days
           try {
             await supabase.rpc('generate_daily_slots', {
               p_dentist_id: selectedDentist,
@@ -333,16 +262,12 @@ export const EnhancedAppointmentBooking = ({
 
       // Filter available slots based on service duration
       const duration = serviceDurationMinutes || selectedService?.duration_minutes || 30;
-      const slotsNeeded = Math.ceil(duration / 30); // Assuming 30-min base slots
+      const slotsNeeded = Math.ceil(duration / 30);
 
-      // For each slot, check if enough consecutive slots are available
       const availableSlotsData = allSlotsData.filter((slot, index) => {
         if (!slot.available) return false;
-        
-        // If duration is 30 min or less, single slot is enough
         if (slotsNeeded <= 1) return true;
         
-        // Check consecutive slots
         for (let i = 1; i < slotsNeeded; i++) {
           const nextSlot = allSlotsData[index + i];
           if (!nextSlot || !nextSlot.available) return false;
@@ -365,7 +290,95 @@ export const EnhancedAppointmentBooking = ({
     } finally {
       setLoadingTimes(false);
     }
-  };
+  }, [selectedDentist, propBusinessId, selectedService?.duration_minutes, toast]);
+
+  // Real-time subscription for slot updates with stable channel name
+  useEffect(() => {
+    if (!selectedDentist || !selectedDate) return;
+
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const channelName = `slots-${selectedDentist}-${dateStr}`;
+    
+    console.log('Setting up realtime subscription:', channelName);
+    
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointment_slots',
+          filter: `dentist_id=eq.${selectedDentist}`
+        },
+        (payload) => {
+          const changedSlotDate = (payload.new as any)?.slot_date || (payload.old as any)?.slot_date;
+          const normalizedDate = changedSlotDate?.split('T')[0];
+          
+          if (normalizedDate === dateStr) {
+            console.log('✅ Realtime: Slot changed, refreshing...', payload);
+            invalidateAvailabilityCache(selectedDentist, dateStr);
+            fetchAvailabilityCallback(selectedDate, selectedService?.duration_minutes ?? undefined);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+        // Enable polling fallback if realtime fails
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('Realtime failed, enabling polling fallback');
+          pollingEnabledRef.current = true;
+        } else if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime connected successfully');
+          pollingEnabledRef.current = false;
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDentist, selectedDate, selectedService?.duration_minutes, fetchAvailabilityCallback]);
+
+  // Polling fallback - refreshes every 10 seconds if realtime fails
+  useEffect(() => {
+    if (!selectedDentist || !selectedDate) return;
+
+    const pollInterval = setInterval(() => {
+      if (pollingEnabledRef.current) {
+        console.log('Polling: Refreshing availability...');
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        invalidateAvailabilityCache(selectedDentist, dateStr);
+        fetchAvailabilityCallback(selectedDate, selectedService?.duration_minutes ?? undefined);
+      }
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [selectedDentist, selectedDate, selectedService?.duration_minutes, fetchAvailabilityCallback]);
+
+  // Refresh availability when browser tab regains focus
+  useEffect(() => {
+    if (!selectedDentist || !selectedDate) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const fetchKey = `${selectedDentist}-${dateStr}-${Date.now()}`;
+        
+        console.log('Tab visible, refreshing availability...');
+        invalidateAvailabilityCache(selectedDentist, dateStr);
+        fetchAvailabilityCallback(selectedDate, selectedService?.duration_minutes ?? undefined);
+        lastFetchRef.current = fetchKey;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [selectedDentist, selectedDate, selectedService?.duration_minutes, fetchAvailabilityCallback]);
+
+  // Alias for backward compatibility with existing code
+  const fetchAvailability = fetchAvailabilityCallback;
 
   const handleBookAppointment = async () => {
     if (!selectedDentist || !selectedDate || !selectedTime) {
