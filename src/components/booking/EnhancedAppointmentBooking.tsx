@@ -195,6 +195,38 @@ export const EnhancedAppointmentBooking = ({
     }
   }, [availableSlots, selectedTime, toast]);
 
+  // Real-time subscription for slot updates - refresh when someone else books
+  useEffect(() => {
+    if (!selectedDentist || !selectedDate) return;
+
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    const channel = supabase
+      .channel(`slots-${selectedDentist}-${dateStr}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'appointment_slots',
+          filter: `dentist_id=eq.${selectedDentist}`
+        },
+        (payload) => {
+          // Only refresh if the change is for the date we're viewing
+          const changedSlotDate = payload.new?.slot_date;
+          if (changedSlotDate === dateStr) {
+            console.log('Slot updated by another user, refreshing...');
+            fetchAvailability(selectedDate, selectedService?.duration_minutes ?? undefined);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDentist, selectedDate, selectedService?.duration_minutes]);
+
   const fetchAvailability = async (date: Date, serviceDurationMinutes?: number) => {
     if (!selectedDentist) return;
 
