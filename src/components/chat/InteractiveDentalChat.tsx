@@ -982,10 +982,12 @@ Just type what you need! 😊
         // Don't throw - appointment was successful, linking is supplementary
       }
 
-      const { error: slotError } = await supabase.rpc('book_appointment_slot', {
+      // Book all required slots for appointment duration (default 30 min)
+      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
         p_dentist_id: bookingFlow.selectedDentist.id,
         p_slot_date: format(bookingFlow.selectedDate, 'yyyy-MM-dd'),
-        p_slot_time: bookingFlow.selectedTime,
+        p_start_time: bookingFlow.selectedTime,
+        p_duration_minutes: 30, // Default duration for chat bookings
         p_appointment_id: appointmentData.id
       });
 

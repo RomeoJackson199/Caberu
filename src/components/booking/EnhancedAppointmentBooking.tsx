@@ -334,20 +334,21 @@ export const EnhancedAppointmentBooking = ({
       // Parse date and time strings as Brussels timezone and convert to UTC
       const appointmentDateTime = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
 
-      // Book the slot first
-      const { error: slotBookingError } = await supabase.rpc('book_appointment_slot', {
+      // Calculate duration from selected service (default 30 min for single slot)
+      const appointmentDuration = selectedService?.duration_minutes || 30;
+
+      // Book all required slots for the duration
+      const { error: slotBookingError } = await supabase.rpc('book_appointment_slots_for_duration', {
         p_dentist_id: selectedDentist,
         p_slot_date: dateStr,
-        p_slot_time: selectedTime + ':00',
+        p_start_time: selectedTime + ':00',
+        p_duration_minutes: appointmentDuration,
         p_appointment_id: idempotencyKey // Use as temp ID
       });
 
       if (slotBookingError) {
         throw new Error("This time slot is no longer available");
       }
-
-      // Calculate duration from selected service
-      const appointmentDuration = selectedService?.duration_minutes || 60;
 
       // Create the appointment with full metadata
       const { data: appointmentData, error: appointmentError } = await supabase
@@ -368,20 +369,18 @@ export const EnhancedAppointmentBooking = ({
         .single();
 
       if (appointmentError) {
-        // Release slot if appointment creation fails
-        await supabase.rpc('release_appointment_slot', {
+        // Release all slots if appointment creation fails
+        await supabase.rpc('release_appointment_slots', {
           p_appointment_id: idempotencyKey
         });
         throw appointmentError;
       }
 
-      // Update slot with actual appointment ID
-      await supabase.rpc('book_appointment_slot', {
-        p_dentist_id: selectedDentist,
-        p_slot_date: dateStr,
-        p_slot_time: selectedTime + ':00',
-        p_appointment_id: appointmentData.id
-      });
+      // Update all booked slots with actual appointment ID
+      await supabase
+        .from('appointment_slots')
+        .update({ appointment_id: appointmentData.id })
+        .eq('appointment_id', idempotencyKey);
 
       const clinicDateTime = utcToClinicTime(new Date(appointmentData.appointment_date));
 

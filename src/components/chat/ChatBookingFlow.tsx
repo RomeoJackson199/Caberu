@@ -201,10 +201,12 @@ export const ChatBookingFlow = ({
 
       if (appointmentError) throw appointmentError;
 
-      const { error: slotError } = await supabase.rpc('book_appointment_slot', {
+      // Book all required slots for appointment duration (default 30 min)
+      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
         p_dentist_id: currentDentist.id,
         p_slot_date: dateStr,
-        p_slot_time: selectedTime,
+        p_start_time: selectedTime,
+        p_duration_minutes: 30, // Default duration for chat bookings
         p_appointment_id: appointmentData.id
       });
 

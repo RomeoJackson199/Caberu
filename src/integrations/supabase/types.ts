@@ -3654,6 +3654,16 @@ export type Database = {
             }
             Returns: boolean
           }
+      book_appointment_slots_for_duration: {
+        Args: {
+          p_appointment_id: string
+          p_dentist_id: string
+          p_duration_minutes: number
+          p_slot_date: string
+          p_start_time: string
+        }
+        Returns: boolean
+      }
       calculate_patient_preferences: {
         Args: { p_business_id: string; p_patient_id: string }
         Returns: undefined
@@ -3847,6 +3857,10 @@ export type Database = {
       }
       process_gdpr_deletion: { Args: { target_user_id: string }; Returns: Json }
       release_appointment_slot: {
+        Args: { p_appointment_id: string }
+        Returns: boolean
+      }
+      release_appointment_slots: {
         Args: { p_appointment_id: string }
         Returns: boolean
       }

@@ -482,12 +482,28 @@ export default function BookAppointment() {
         throw appointmentError;
       }
 
+      // Book all required slots for the appointment duration
+      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
+        p_dentist_id: selectedDentist.id,
+        p_slot_date: dateStr,
+        p_start_time: selectedTime + ':00',
+        p_duration_minutes: serviceDuration,
+        p_appointment_id: appointmentData.id
+      });
+
+      if (slotError) {
+        // Rollback appointment if slot booking fails
+        await supabase.from("appointments").delete().eq("id", appointmentData.id);
+        throw new Error("This time slot is no longer available. Please select another time.");
+      }
+
       logger.info("Appointment created:", {
         dentistId: selectedDentist.id,
         date: dateStr,
         time: selectedTime,
         appointmentId: appointmentData.id,
-        status: appointmentStatus
+        status: appointmentStatus,
+        slotsBooked: slotsNeeded
       });
 
       setSuccessDetails({

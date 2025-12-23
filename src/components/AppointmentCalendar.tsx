@@ -100,10 +100,15 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
 
       if (appointmentError) throw appointmentError;
 
-      const { error: slotError } = await supabase.rpc('book_appointment_slot', {
+      // Default duration is 30 minutes for this flow
+      const appointmentDuration = 30;
+
+      // Book all required slots for the duration
+      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
         p_dentist_id: selectedDentist.id,
         p_slot_date: dateStr,
-        p_slot_time: selectedTime + ':00',
+        p_start_time: selectedTime + ':00',
+        p_duration_minutes: appointmentDuration,
         p_appointment_id: appointmentData.id
       });
 
