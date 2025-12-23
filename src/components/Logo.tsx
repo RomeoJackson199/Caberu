@@ -10,6 +10,8 @@ interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   variant?: "full" | "icon";
   className?: string;
+  /** Set to true for LCP-critical logos (e.g., header) to disable lazy loading */
+  priority?: boolean;
 }
 
 const sizeMap = {
@@ -19,7 +21,7 @@ const sizeMap = {
   xl: { height: 96, width: 280 },
 };
 
-export function Logo({ size = "md", variant = "full", className = "" }: LogoProps) {
+export function Logo({ size = "md", variant = "full", className = "", priority = false }: LogoProps) {
   const logoSize = sizeMap[size];
   const logoSrc = getCaberuLogo(variant);
 
@@ -27,6 +29,8 @@ export function Logo({ size = "md", variant = "full", className = "" }: LogoProp
     <img
       src={logoSrc}
       alt={variant === "full" ? "Caberu Healthcare Solutions" : "Caberu"}
+      width={logoSize.width}
+      height={logoSize.height}
       style={{
         maxHeight: logoSize.height,
         maxWidth: logoSize.width,
@@ -34,8 +38,9 @@ export function Logo({ size = "md", variant = "full", className = "" }: LogoProp
         height: "auto",
       }}
       className={`object-contain ${className}`}
-      loading="lazy"
-      decoding="async"
+      loading={priority ? "eager" : "lazy"}
+      decoding={priority ? "sync" : "async"}
+      fetchPriority={priority ? "high" : "auto"}
       draggable={false}
     />
   );

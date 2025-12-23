@@ -58,11 +58,12 @@ export const Header = ({ user, minimal = false }: HeaderProps) => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            {/* Logo */}
+            {/* Logo - priority loading for LCP */}
             <Link to="/" className="flex items-center group relative z-10">
               <Logo
                 variant="full"
                 size="sm"
+                priority={true}
                 className="h-7 md:h-8 group-hover:scale-105 transition-transform duration-300"
               />
             </Link>
