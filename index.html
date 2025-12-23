@@ -7,6 +7,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#2563eb">
 
+  <!-- Preconnect FIRST for earliest connection establishment -->
+  <link rel="preconnect" href="https://gjvxcisbaxhhblhsytar.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://gjvxcisbaxhhblhsytar.supabase.co">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+
+  <!-- Preload LCP image for faster Largest Contentful Paint -->
+  <link rel="preload" as="image" fetchpriority="high"
+    href="https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-full.png">
+
   <!-- Critical inline CSS for FCP - renders immediately without blocking -->
   <style>
     :root{--background:222 14% 5%;--foreground:210 40% 98%;--primary:213 84% 38%;--primary-foreground:0 0% 100%;--card:222 14% 8%;--muted:220 14% 20%;--muted-foreground:220 12% 72%;--border:220 14% 28%}
@@ -17,16 +28,6 @@
     #root{min-height:100vh;display:flex;flex-direction:column}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   </style>
-
-  <!-- Preconnect for performance - early connection establishment -->
-  <link rel="preconnect" href="https://gjvxcisbaxhhblhsytar.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-
-  <!-- Preload LCP image for faster Largest Contentful Paint -->
-  <link rel="preload" as="image" fetchpriority="high"
-    href="https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-full.png">
 
   <!-- Critical inline script for custom elements and global error handling -->
   <script>
