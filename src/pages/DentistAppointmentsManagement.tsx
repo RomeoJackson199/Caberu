@@ -15,8 +15,9 @@ import { cn } from "@/lib/utils";
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AnimatedStatCard } from "@/components/ui/page-enhancements";
 
 export default function DentistAppointmentsManagement() {
   const { businessId } = useBusinessContext();

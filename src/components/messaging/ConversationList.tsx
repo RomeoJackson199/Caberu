@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,9 @@ import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import { AvatarWithInitials, DebouncedSearch, UnreadBadge } from '@/components/ui/page-enhancements';
+import { StaggeredList } from '@/components/ui/micro-interactions';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface Conversation {
   profileId: string;
