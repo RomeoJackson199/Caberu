@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 import { format, addMinutes, parse } from 'date-fns';
 import { handleEmailError } from '@/hooks/useEmailLimit';
+import { invalidateAvailabilityCache } from '@/lib/appointmentAvailability';
 
 interface EnhancedAppointmentBookingProps {
   user: User;
@@ -195,6 +196,9 @@ export const EnhancedAppointmentBooking = ({
     }
   }, [availableSlots, selectedTime, toast]);
 
+  // Track last fetch to prevent duplicates
+  const lastFetchRef = useRef<string>("");
+
   // Real-time subscription for slot updates - refresh when someone else books
   useEffect(() => {
     if (!selectedDentist || !selectedDate) return;
@@ -202,28 +206,67 @@ export const EnhancedAppointmentBooking = ({
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
     const channel = supabase
-      .channel(`slots-${selectedDentist}-${dateStr}`)
+      .channel(`slots-${selectedDentist}-${dateStr}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to INSERT, UPDATE, DELETE
           schema: 'public',
           table: 'appointment_slots',
           filter: `dentist_id=eq.${selectedDentist}`
         },
         (payload) => {
-          // Only refresh if the change is for the date we're viewing
-          const changedSlotDate = payload.new?.slot_date;
-          if (changedSlotDate === dateStr) {
-            console.log('Slot updated by another user, refreshing...');
+          // Handle different date formats from realtime payload
+          const changedSlotDate = (payload.new as any)?.slot_date || (payload.old as any)?.slot_date;
+          // Normalize date - handle both date string and timestamp formats
+          const normalizedDate = changedSlotDate?.split('T')[0];
+          
+          if (normalizedDate === dateStr) {
+            console.log('Slot changed by another user, refreshing...', payload);
+            // Invalidate cache before fetching
+            invalidateAvailabilityCache(selectedDentist, dateStr);
             fetchAvailability(selectedDate, selectedService?.duration_minutes ?? undefined);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
+    };
+  }, [selectedDentist, selectedDate, selectedService?.duration_minutes]);
+
+  // Refresh availability when browser tab regains focus
+  useEffect(() => {
+    if (!selectedDentist || !selectedDate) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const fetchKey = `${selectedDentist}-${dateStr}`;
+        
+        // Prevent duplicate fetches within 2 seconds
+        if (lastFetchRef.current !== fetchKey) {
+          console.log('Tab became visible, refreshing availability...');
+          invalidateAvailabilityCache(selectedDentist, dateStr);
+          fetchAvailability(selectedDate, selectedService?.duration_minutes ?? undefined);
+          lastFetchRef.current = fetchKey;
+          
+          // Reset after 2 seconds to allow future refreshes
+          setTimeout(() => {
+            if (lastFetchRef.current === fetchKey) {
+              lastFetchRef.current = "";
+            }
+          }, 2000);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [selectedDentist, selectedDate, selectedService?.duration_minutes]);
 
@@ -381,6 +424,9 @@ export const EnhancedAppointmentBooking = ({
       if (slotBookingError) {
         throw new Error("This time slot is no longer available");
       }
+
+      // Invalidate cache so other users see updated availability
+      invalidateAvailabilityCache(selectedDentist, dateStr);
 
       // Create the appointment with full metadata
       const { data: appointmentData, error: appointmentError } = await supabase
