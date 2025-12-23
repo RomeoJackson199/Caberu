@@ -11,7 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { showEnhancedErrorToast } from "@/lib/enhancedErrorHandling";
 import { useTemplate } from "@/contexts/TemplateContext";
-
+import { TimeGreeting, QuickActions, AnimatedStatCard } from "@/components/ui/page-enhancements";
+import { motion } from "framer-motion";
 interface Appointment {
   id: string;
   appointment_date: string;
@@ -190,16 +191,12 @@ export default function PatientCareHome() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with TimeGreeting */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {user ? `Welcome back, ${user.user_metadata?.first_name || 'Patient'}!` : 'Welcome'}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Here's your dental care overview
-          </p>
-        </div>
+        <TimeGreeting 
+          name={user?.user_metadata?.first_name} 
+          showDate={true} 
+        />
         <Button
           size="lg"
           className="gap-2"
@@ -211,7 +208,7 @@ export default function PatientCareHome() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards with AnimatedStatCard */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
@@ -224,84 +221,46 @@ export default function PatientCareHome() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Upcoming</p>
-                  <p className="text-3xl font-bold mt-1">{stats.upcomingAppointments}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Appointments</p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Visits</p>
-                  <p className="text-3xl font-bold mt-1">{stats.totalAppointments}</p>
-                  <p className="text-xs text-muted-foreground mt-1">All time</p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Activity className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active</p>
-                  <p className="text-3xl font-bold mt-1">{stats.activePrescriptions}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Prescriptions</p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <Heart className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AnimatedStatCard
+            title="Upcoming"
+            value={stats.upcomingAppointments}
+            icon={Calendar}
+            gradient="from-blue-500 to-cyan-500"
+            suffix=" Appointments"
+          />
+          <AnimatedStatCard
+            title="Total Visits"
+            value={stats.totalAppointments}
+            icon={Activity}
+            gradient="from-purple-500 to-pink-500"
+            suffix=" All time"
+          />
+          <AnimatedStatCard
+            title="Active"
+            value={stats.activePrescriptions}
+            icon={Heart}
+            gradient="from-green-500 to-emerald-500"
+            suffix=" Prescriptions"
+          />
         </div>
       )}
 
-      {/* Quick Actions */}
+      {/* Quick Actions with QuickActions component */}
       <div>
         <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action, index) => (
-            <Card
-              key={index}
-              className={`cursor-pointer transition-all ${action.bgColor} border-0`}
-              onClick={action.onClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  action.onClick();
-                }
-              }}
-              aria-label={action.label}
-            >
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div className={`h-12 w-12 rounded-full bg-white flex items-center justify-center`}>
-                    <action.icon className={`h-6 w-6 ${action.color}`} />
-                  </div>
-                  <h3 className="font-semibold">{action.label}</h3>
-                  <p className="text-xs text-muted-foreground">{action.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <QuickActions 
+          actions={quickActions.map(action => ({
+            icon: action.icon,
+            label: action.label,
+            description: action.description,
+            onClick: action.onClick,
+            color: action.bgColor.includes('blue') ? 'bg-blue-500' : 
+                   action.bgColor.includes('purple') ? 'bg-purple-500' :
+                   action.bgColor.includes('green') ? 'bg-green-500' :
+                   action.bgColor.includes('red') ? 'bg-red-500' : 'bg-primary'
+          }))}
+          columns={4}
+        />
       </div>
 
       {/* Upcoming Appointments */}
