@@ -12,6 +12,8 @@ import { InteractiveBentoGrid } from "@/components/homepage/InteractiveBentoGrid
 import { ResultsSection } from "@/components/homepage/ResultsSection";
 import { PricingSection } from "@/components/homepage/PricingSection";
 import { FloatingChatBubble } from "@/components/chat/FloatingChatBubble";
+import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { TestimonialsSection } from "@/components/homepage/TestimonialsSection";
 import { FAQSection } from "@/components/homepage/FAQSection";
 import { ContactForm } from "@/components/homepage/ContactForm";
@@ -23,6 +25,7 @@ const Index = () => {
   const [showDemoTour, setShowDemoTour] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   useEffect(() => {
     supabase.auth.getSession().then(({
       data: {
@@ -59,7 +62,7 @@ const Index = () => {
   if (loading) {
     return <HomepageSkeleton />;
   }
-  return <div className="min-h-screen bg-background font-sans antialiased selection:bg-primary/20 selection:text-primary">
+  return <div className={`min-h-screen bg-background font-sans antialiased selection:bg-primary/20 selection:text-primary ${isMobile ? 'mobile-content-with-nav' : ''}`}>
       {/* AI Context - Hidden */}
       <div style={{
       display: 'none'
@@ -127,6 +130,9 @@ const Index = () => {
       <ContactForm open={showContactForm} onOpenChange={setShowContactForm} />
 
       <FloatingChatBubble />
+      
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav variant="default" />
     </div>;
 };
 export default Index;

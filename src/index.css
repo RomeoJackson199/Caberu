@@ -1686,3 +1686,226 @@
     }
   }
 }
+
+/* ============================================================================
+   Enhanced Mobile-First Styles
+   ============================================================================ */
+@layer components {
+  /* Mobile Bottom Navigation Spacing */
+  .mobile-content-with-nav {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Safe area classes */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .h-safe-area-inset-bottom {
+    height: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Mobile optimized scrolling */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-behavior: smooth;
+  }
+
+  /* Mobile touch targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+    touch-action: manipulation;
+  }
+
+  /* Mobile-optimized cards */
+  .mobile-card-spacing {
+    @apply p-4 rounded-xl;
+  }
+
+  /* Mobile list items with proper touch feedback */
+  .mobile-list-item {
+    @apply flex items-center gap-3 p-4 rounded-xl;
+    @apply transition-colors duration-150;
+    @apply active:bg-muted/50;
+    touch-action: manipulation;
+  }
+
+  /* Swipe indicator */
+  .swipe-hint {
+    @apply relative;
+  }
+
+  .swipe-hint::after {
+    content: "";
+    @apply absolute right-0 top-1/2 -translate-y-1/2;
+    @apply w-1 h-8 bg-muted-foreground/20 rounded-full;
+    animation: swipeHint 2s ease-in-out infinite;
+  }
+
+  @keyframes swipeHint {
+    0%, 100% { opacity: 0.2; transform: translateY(-50%) translateX(0); }
+    50% { opacity: 0.5; transform: translateY(-50%) translateX(-4px); }
+  }
+
+  /* Mobile section headers */
+  .mobile-section-header {
+    @apply px-4 py-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider;
+    @apply bg-muted/30 sticky top-0 z-10 backdrop-blur-sm;
+  }
+
+  /* Pull to refresh indicator */
+  .pull-indicator {
+    @apply flex items-center justify-center py-4;
+    @apply text-muted-foreground text-sm;
+  }
+
+  /* Mobile action buttons */
+  .mobile-action-btn {
+    @apply flex flex-col items-center justify-center gap-1.5;
+    @apply p-4 rounded-2xl bg-muted/50;
+    @apply transition-all duration-200;
+    @apply active:scale-95 active:bg-muted;
+  }
+
+  .mobile-action-btn-icon {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center;
+    @apply bg-primary/10 text-primary;
+  }
+
+  .mobile-action-btn-label {
+    @apply text-xs font-medium text-muted-foreground;
+  }
+
+  /* Mobile quick actions grid */
+  .mobile-quick-actions {
+    @apply grid grid-cols-4 gap-3 p-4;
+  }
+
+  /* Mobile skeleton loaders */
+  .mobile-skeleton {
+    @apply animate-pulse bg-muted rounded-xl;
+  }
+
+  .mobile-skeleton-text {
+    @apply h-4 bg-muted rounded animate-pulse;
+  }
+
+  .mobile-skeleton-avatar {
+    @apply w-12 h-12 rounded-full bg-muted animate-pulse;
+  }
+
+  /* Mobile dialog/sheet animations */
+  .mobile-sheet-enter {
+    animation: sheetSlideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .mobile-sheet-exit {
+    animation: sheetSlideDown 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @keyframes sheetSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  @keyframes sheetSlideDown {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+
+  /* Floating Action Button positioning */
+  .fab-container {
+    @apply fixed z-40;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px) + 1rem);
+    right: 1rem;
+  }
+
+  /* Mobile empty state */
+  .mobile-empty-state {
+    @apply flex flex-col items-center justify-center py-16 px-8 text-center;
+  }
+
+  .mobile-empty-state-icon {
+    @apply w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6;
+    @apply text-muted-foreground;
+  }
+
+  /* Mobile status bar spacing */
+  .mobile-status-bar-safe {
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Mobile-specific media queries */
+@media (max-width: 767px) {
+  /* Ensure full-width containers on mobile */
+  .container {
+    @apply px-4;
+  }
+
+  /* Hide desktop-only elements */
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Full-width buttons on mobile */
+  .mobile-full-width {
+    @apply w-full;
+  }
+
+  /* Larger touch targets for mobile */
+  button, a, [role="button"], input, select, textarea {
+    min-height: 44px;
+  }
+
+  /* Mobile typography adjustments */
+  h1 { @apply text-2xl; }
+  h2 { @apply text-xl; }
+  h3 { @apply text-lg; }
+
+  /* Mobile card adjustments */
+  .card {
+    @apply rounded-xl;
+  }
+
+  /* Prevent text selection on UI elements */
+  nav, button, .mobile-nav {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Smooth momentum scrolling */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide scrollbars on mobile */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* Desktop - hide mobile elements */
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
