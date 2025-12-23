@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Download, 
   Bell, 
@@ -11,9 +12,16 @@ import {
   Smartphone,
   Share,
   Home,
-  Settings
+  Settings,
+  Zap,
+  Hand,
+  Layers,
+  RefreshCw,
+  Check
 } from 'lucide-react';
 import { modernToast } from '@/components/enhanced/ModernNotificationToast';
+import { PulseIndicator } from '@/components/ui/micro-interactions';
+import { AnimatedToggle } from '@/components/ui/page-enhancements';
 
 interface PWAFeaturesProps {
   className?: string;
@@ -272,25 +280,65 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
             Mobile Features
           </CardTitle>
         </CardHeader>
+        <CardContent className="space-y-4">
+          {[
+            { icon: Layers, label: 'Responsive Design', status: 'Active', active: true },
+            { icon: Hand, label: 'Touch Optimized', status: 'Active', active: true },
+            { icon: RefreshCw, label: 'Pull to Refresh', status: 'Active', active: true },
+            { icon: Zap, label: 'Swipe Actions', status: 'Active', active: true },
+            { icon: Wifi, label: 'Offline Support', status: isInstalled ? 'Available' : 'Install App', active: isInstalled },
+          ].map((feature, index) => (
+            <motion.div
+              key={feature.label}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${feature.active ? 'bg-success-600/10' : 'bg-muted'}`}>
+                  <feature.icon className={`h-4 w-4 ${feature.active ? 'text-success-600' : 'text-muted-foreground'}`} />
+                </div>
+                <span className="text-sm font-medium">{feature.label}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {feature.active && <PulseIndicator size="sm" color="success" />}
+                <Badge 
+                  variant={feature.active ? 'default' : 'outline'}
+                  className={feature.active ? 'bg-success-600' : ''}
+                >
+                  {feature.status}
+                </Badge>
+              </div>
+            </motion.div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Gesture Guide */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Hand className="h-5 w-5" />
+            Touch Gestures
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Responsive Design</span>
-            <Badge variant="default" className="bg-green-600">Active</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Touch Optimized</span>
-            <Badge variant="default" className="bg-green-600">Active</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Offline Support</span>
-            <Badge variant={isInstalled ? 'default' : 'outline'} 
-                   className={isInstalled ? 'bg-green-600' : ''}>
-              {isInstalled ? 'Available' : 'Install App'}
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Fast Loading</span>
-            <Badge variant="default" className="bg-green-600">Optimized</Badge>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { gesture: '← Swipe Left', action: 'Delete/Archive' },
+              { gesture: '→ Swipe Right', action: 'Complete/Pin' },
+              { gesture: '↓ Pull Down', action: 'Refresh' },
+              { gesture: 'Long Press', action: 'Quick Actions' },
+            ].map((item) => (
+              <div 
+                key={item.gesture}
+                className="p-3 rounded-lg bg-muted/50 text-center"
+              >
+                <span className="text-lg font-mono">{item.gesture}</span>
+                <p className="text-xs text-muted-foreground mt-1">{item.action}</p>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
