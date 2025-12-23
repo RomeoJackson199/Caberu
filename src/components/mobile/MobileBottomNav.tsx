@@ -1,4 +1,4 @@
-import { Home, Calendar, MessageCircle, User, Menu, Search, Bell } from "lucide-react";
+import { Home, Calendar, MessageCircle, User, Sparkles, Search, Plus } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -10,18 +10,21 @@ interface NavItem {
   label: string;
   path: string;
   badge?: number;
+  isCenter?: boolean;
 }
 
 interface MobileBottomNavProps {
   variant?: "default" | "patient" | "dentist";
   onSearchClick?: () => void;
   notificationCount?: number;
+  onCenterAction?: () => void;
 }
 
 export function MobileBottomNav({ 
   variant = "default", 
   onSearchClick,
-  notificationCount = 0 
+  notificationCount = 0,
+  onCenterAction
 }: MobileBottomNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,22 +35,24 @@ export function MobileBottomNav({
 
   const defaultItems: NavItem[] = [
     { icon: Home, label: "Home", path: "/" },
-    { icon: Calendar, label: "Book", path: "/book-appointment" },
+    { icon: Search, label: "Explore", path: "/dentists" },
+    { icon: Sparkles, label: "Book", path: "/book-appointment", isCenter: true },
     { icon: MessageCircle, label: "Chat", path: "/chat" },
     { icon: User, label: "Account", path: "/login" },
   ];
 
   const patientItems: NavItem[] = [
     { icon: Home, label: "Home", path: "/care" },
-    { icon: Calendar, label: "Appointments", path: "/care/appointments" },
-    { icon: MessageCircle, label: "Messages", path: "/messages" },
-    { icon: Bell, label: "Alerts", path: "/care", badge: notificationCount },
+    { icon: Calendar, label: "Visits", path: "/care/appointments" },
+    { icon: Plus, label: "Book", path: "/book-appointment", isCenter: true },
+    { icon: MessageCircle, label: "Chat", path: "/messages", badge: notificationCount },
     { icon: User, label: "Profile", path: "/account/profile" },
   ];
 
   const dentistItems: NavItem[] = [
-    { icon: Home, label: "Dashboard", path: "/dentist" },
+    { icon: Home, label: "Home", path: "/dentist" },
     { icon: Calendar, label: "Schedule", path: "/dentist/schedule" },
+    { icon: Plus, label: "New", path: "/dentist/patients", isCenter: true },
     { icon: MessageCircle, label: "Messages", path: "/messages" },
     { icon: User, label: "Settings", path: "/dentist/settings" },
   ];
@@ -66,24 +71,80 @@ export function MobileBottomNav({
     if (navigator.vibrate) {
       navigator.vibrate(10);
     }
-    
-    navigate(item.path);
+
+    if (item.isCenter && onCenterAction) {
+      onCenterAction();
+    } else {
+      navigate(item.path);
+    }
     
     setTimeout(() => setActiveIndex(null), 200);
   };
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 mobile-nav"
+      className="fixed bottom-0 left-0 right-0 z-50"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      <div className="flex items-center justify-around px-2 py-1">
+      {/* Gradient blur backdrop */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/98 to-background/90 backdrop-blur-xl" />
+      
+      {/* Top border glow */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      
+      <div className="relative flex items-end justify-around px-2 pt-2 pb-2">
         {items.map((item, index) => {
           const Icon = item.icon;
           const active = isActive(item.path);
           const tapped = activeIndex === index;
+          const isCenter = item.isCenter;
+
+          if (isCenter) {
+            return (
+              <motion.button
+                key={item.path}
+                onClick={() => handleNavClick(item, index)}
+                className="relative -mt-4"
+                whileTap={{ scale: 0.9 }}
+              >
+                {/* Center button glow */}
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-primary/30 blur-xl"
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    opacity: [0.5, 0.8, 0.5],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+                
+                {/* Center button */}
+                <motion.div
+                  className={cn(
+                    "relative flex items-center justify-center",
+                    "w-14 h-14 rounded-full",
+                    "bg-gradient-to-br from-primary via-primary to-primary-dark",
+                    "shadow-lg shadow-primary/30",
+                    "border-4 border-background"
+                  )}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Icon className="h-6 w-6 text-primary-foreground" strokeWidth={2.5} />
+                </motion.div>
+                
+                {/* Label for center */}
+                <span className="block text-[10px] font-semibold text-primary text-center mt-1">
+                  {item.label}
+                </span>
+              </motion.button>
+            );
+          }
 
           return (
             <motion.button
@@ -91,33 +152,39 @@ export function MobileBottomNav({
               onClick={() => handleNavClick(item, index)}
               className={cn(
                 "relative flex flex-col items-center justify-center",
-                "min-w-[64px] py-2 px-3 rounded-2xl",
-                "transition-all duration-200",
-                active ? "text-primary" : "text-muted-foreground"
+                "min-w-[56px] py-1.5 px-2",
+                "transition-all duration-200"
               )}
               whileTap={{ scale: 0.9 }}
-              animate={tapped ? { scale: 0.9 } : { scale: 1 }}
             >
-              {/* Active indicator background */}
+              {/* Active pill indicator */}
               <AnimatePresence>
                 {active && (
                   <motion.div
-                    className="absolute inset-0 bg-primary/10 rounded-2xl"
-                    layoutId="nav-indicator"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="absolute -top-1 w-8 h-1 rounded-full bg-primary"
+                    layoutId="nav-pill"
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    exit={{ opacity: 0, scaleX: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
               </AnimatePresence>
 
-              {/* Icon with badge */}
-              <div className="relative z-10">
+              {/* Icon container with subtle bg on active */}
+              <motion.div
+                className={cn(
+                  "relative flex items-center justify-center",
+                  "w-10 h-10 rounded-xl",
+                  "transition-all duration-200",
+                  active && "bg-primary/10"
+                )}
+                animate={tapped ? { scale: 0.85 } : { scale: 1 }}
+              >
                 <Icon 
                   className={cn(
                     "h-5 w-5 transition-all duration-200",
-                    active && "scale-110"
+                    active ? "text-primary" : "text-muted-foreground"
                   )} 
                   strokeWidth={active ? 2.5 : 2}
                 />
@@ -125,10 +192,11 @@ export function MobileBottomNav({
                 {/* Notification badge */}
                 {item.badge && item.badge > 0 && (
                   <motion.span
-                    className="absolute -top-1 -right-1 h-4 min-w-4 px-1 
+                    className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 
                                flex items-center justify-center
                                bg-destructive text-destructive-foreground 
-                               text-[10px] font-bold rounded-full"
+                               text-[9px] font-bold rounded-full
+                               shadow-sm"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -136,14 +204,14 @@ export function MobileBottomNav({
                     {item.badge > 99 ? "99+" : item.badge}
                   </motion.span>
                 )}
-              </div>
+              </motion.div>
 
               {/* Label */}
               <span 
                 className={cn(
-                  "relative z-10 text-[10px] font-medium mt-1",
+                  "text-[10px] font-medium mt-0.5",
                   "transition-all duration-200",
-                  active && "font-semibold"
+                  active ? "text-primary font-semibold" : "text-muted-foreground"
                 )}
               >
                 {item.label}
@@ -153,11 +221,11 @@ export function MobileBottomNav({
               <AnimatePresence>
                 {tapped && (
                   <motion.div
-                    className="absolute inset-0 bg-primary/20 rounded-2xl"
-                    initial={{ opacity: 0.5, scale: 1 }}
-                    animate={{ opacity: 0, scale: 1.5 }}
+                    className="absolute inset-0 bg-primary/10 rounded-xl"
+                    initial={{ opacity: 0.5, scale: 0.8 }}
+                    animate={{ opacity: 0, scale: 1.2 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4 }}
+                    transition={{ duration: 0.3 }}
                   />
                 )}
               </AnimatePresence>
@@ -167,7 +235,10 @@ export function MobileBottomNav({
       </div>
       
       {/* Safe area spacer */}
-      <div className="h-safe-area-inset-bottom" />
+      <div 
+        className="bg-background" 
+        style={{ height: 'env(safe-area-inset-bottom, 0px)' }} 
+      />
     </motion.nav>
   );
 }
