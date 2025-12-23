@@ -250,15 +250,18 @@ export function DebouncedSearch({
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
+  // Memoize the onSearch callback to prevent infinite re-renders
+  const stableOnSearch = useMemo(() => onSearch, []);
+
   useEffect(() => {
     setIsSearching(true);
     const timer = setTimeout(() => {
-      onSearch(query);
+      stableOnSearch(query);
       setIsSearching(false);
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [query, delay, onSearch]);
+  }, [query, delay, stableOnSearch]);
 
   return (
     <div className={cn("relative", className)}>

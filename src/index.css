@@ -81,14 +81,22 @@
     --input: 220 14% 28%;
     --ring: 213 84% 58%;
 
-    /* Semantic Status Colors */
+    /* Semantic Status Colors - Full Scale */
     --success: 142 71% 45%;
     --success-bg: 140 84% 92%;
     --success-foreground: 0 0% 100%;
+    --success-100: 142 76% 92%;
+    --success-300: 142 72% 60%;
+    --success-600: 142 71% 45%;
+    --success-800: 142 72% 29%;
 
     --warning: 38 92% 50%;
     --warning-bg: 48 96% 89%;
     --warning-foreground: 0 0% 100%;
+    --warning-100: 48 96% 89%;
+    --warning-300: 43 96% 56%;
+    --warning-600: 38 92% 50%;
+    --warning-800: 32 81% 35%;
 
     --error: 0 72% 51%;
     --error-bg: 0 93% 94%;
@@ -97,6 +105,12 @@
     --info: 217 91% 60%;
     --info-bg: 214 95% 93%;
     --info-foreground: 0 0% 100%;
+
+    /* Danger (alias for error, used in components) */
+    --danger-100: 0 86% 94%;
+    --danger-300: 0 78% 68%;
+    --danger-600: 0 72% 51%;
+    --danger-800: 0 70% 35%;
 
     /* Enhanced Border Radius System */
     --radius: 0.75rem;
@@ -214,14 +228,22 @@
     --input: 220 14% 88%;
     --ring: 213 84% 58%;
 
-    /* Semantic Status Colors */
+    /* Semantic Status Colors - Full Scale */
     --success: 142 71% 45%;
     --success-bg: 140 84% 92%;
     --success-foreground: 0 0% 100%;
+    --success-100: 142 76% 92%;
+    --success-300: 142 72% 60%;
+    --success-600: 142 71% 45%;
+    --success-800: 142 72% 29%;
 
     --warning: 38 92% 50%;
     --warning-bg: 48 96% 89%;
     --warning-foreground: 0 0% 100%;
+    --warning-100: 48 96% 89%;
+    --warning-300: 43 96% 56%;
+    --warning-600: 38 92% 50%;
+    --warning-800: 32 81% 35%;
 
     --error: 0 72% 51%;
     --error-bg: 0 93% 94%;
@@ -230,6 +252,12 @@
     --info: 217 91% 60%;
     --info-bg: 214 95% 93%;
     --info-foreground: 0 0% 100%;
+
+    /* Danger (alias for error, used in components) */
+    --danger-100: 0 86% 94%;
+    --danger-300: 0 78% 68%;
+    --danger-600: 0 72% 51%;
+    --danger-800: 0 70% 35%;
 
     /* Enhanced Border Radius System */
     --radius: 0.75rem;
