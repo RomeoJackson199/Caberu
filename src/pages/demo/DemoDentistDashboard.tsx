@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
 
-// Import demo components with fake data
-import { DemoClinicalToday } from "@/components/demo/DemoClinicalToday";
+// Import ENHANCED demo components with fake data
+import { DemoClinicalTodayEnhanced } from "@/components/demo/DemoClinicalTodayEnhanced";
 import { DemoPatientManagement } from "@/components/demo/DemoPatientManagement";
 import { DemoAppointments } from "@/components/demo/DemoAppointments";
 import { DemoStaff } from "@/components/demo/DemoStaff";
@@ -33,7 +33,7 @@ export default function DemoDentistDashboard() {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <DemoClinicalToday />;
+        return <DemoClinicalTodayEnhanced />;
       case 'patients':
         return <DemoPatientManagement />;
       case 'appointments':
@@ -43,7 +43,7 @@ export default function DemoDentistDashboard() {
       case 'messages':
         return <DemoMessages />;
       default:
-        return <DemoClinicalToday />;
+        return <DemoClinicalTodayEnhanced />;
     }
   };
 
