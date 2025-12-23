@@ -3,17 +3,18 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User as UserIcon, CheckCircle, Plus } from "lucide-react";
+import { Calendar, Clock, User as UserIcon, CheckCircle, Plus, Users, FileText, CreditCard, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { NextAppointmentWidget } from "@/components/NextAppointmentWidget";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { logger } from '@/lib/logger';
-import { AnimatedBackground, StatCard, EmptyState } from "@/components/ui/polished-components";
+import { AnimatedBackground, EmptyState } from "@/components/ui/polished-components";
 import { useLanguage } from "@/hooks/useLanguage";
 import { PendingApprovalCard } from "@/components/PendingApprovalCard";
 import { DashboardSkeleton } from "@/components/ui/page-skeletons";
-
+import { TimeGreeting, QuickActions, AnimatedStatCard, AvatarWithInitials } from "@/components/ui/page-enhancements";
+import { StaggeredList } from "@/components/ui/micro-interactions";
 interface ClinicalTodayProps {
 	user: User;
 	dentistId: string;
@@ -147,27 +148,52 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 		return <DashboardSkeleton />;
 	}
 
+	// Quick actions for the dashboard
+	const quickActions = [
+		{
+			icon: Plus,
+			label: t.newAppointment || "New Appointment",
+			onClick: () => onOpenAppointmentsTab?.(),
+			color: "bg-primary"
+		},
+		{
+			icon: Users,
+			label: businessT('customerPlural') || "Patients",
+			onClick: () => onOpenPatientsTab?.(),
+			color: "bg-purple-500"
+		},
+		{
+			icon: Calendar,
+			label: t.schedule || "Schedule",
+			onClick: () => onOpenAppointmentsTab?.(),
+			color: "bg-emerald-500"
+		},
+		{
+			icon: FileText,
+			label: "Records",
+			onClick: () => onOpenPatientsTab?.(),
+			color: "bg-orange-500"
+		},
+	];
+
 	return (
 		<div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
-			{/* Enhanced Welcome Header with Animated Background */}
+			{/* Enhanced Welcome Header with Time Greeting */}
 			<div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20 rounded-2xl p-4 sm:p-6 shadow-sm">
 				<AnimatedBackground />
-
-				<div className="relative z-10 space-y-1">
-					<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-						{today.getHours() < 12 ? t.goodMorning : today.getHours() < 18 ? t.goodAfternoon : t.goodEvening}
-					</h1>
-					<p className="text-sm sm:text-base text-muted-foreground font-medium">
-						{format(today, 'EEEE, MMMM d, yyyy')}
-					</p>
+				<div className="relative z-10">
+					<TimeGreeting showDate={true} />
 				</div>
 			</div>
 
-			{/* Quick Stats with Polished Components */}
+			{/* Quick Actions */}
+			<QuickActions actions={quickActions} columns={4} />
+
+			{/* Quick Stats with Animated Cards */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-tour="stats-cards">
-				<StatCard
-					title={t.todaysAppointments}
-					value={stats.todayCount.toString()}
+				<AnimatedStatCard
+					title={t.todaysAppointments || "Today's Appointments"}
+					value={stats.todayCount}
 					icon={Calendar}
 					gradient="from-blue-500 to-cyan-500"
 				/>
@@ -175,16 +201,16 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				{/* Show PendingApprovalCard for dentists with require_appointment_approval */}
 				<PendingApprovalCard dentistId={dentistId} />
 
-				<StatCard
+				<AnimatedStatCard
 					title={t.completedThisWeek || "Completed This Week"}
-					value={stats.weekCompleted.toString()}
+					value={stats.weekCompleted}
 					icon={CheckCircle}
 					gradient="from-green-500 to-emerald-500"
 				/>
 
-				<StatCard
-					title={businessT('customerPlural')}
-					value={stats.totalPatients.toString()}
+				<AnimatedStatCard
+					title={businessT('customerPlural') || "Patients"}
+					value={stats.totalPatients}
 					icon={UserIcon}
 					gradient="from-indigo-500 to-blue-500"
 				/>

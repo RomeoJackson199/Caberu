@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -39,6 +38,8 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
+import { TimeGreeting, AvatarWithInitials, AnimatedStatCard } from "@/components/ui/page-enhancements";
+import { StaggeredList } from "@/components/ui/micro-interactions";
 
 export interface HomeTabProps {
   userId: string;
@@ -141,25 +142,21 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   return (
     <div className="px-4 md:px-6 py-4 space-y-6 max-w-7xl mx-auto">
-      {/* Welcome Header */}
+      {/* Welcome Header with Enhanced Components */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-between"
       >
         <div className="flex items-center space-x-4">
-          <Avatar className="h-12 w-12 md:h-14 md:w-14">
-            <AvatarImage src={profileImageUrl || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {firstName?.[0]?.toUpperCase() || 'P'}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">
-              {greeting}, {firstName || 'Patient'}!
-            </h1>
-            <p className="text-muted-foreground">{t.hereIsYourHealthOverview}</p>
-          </div>
+          <AvatarWithInitials
+            name={firstName || 'Patient'}
+            imageUrl={profileImageUrl || undefined}
+            size="lg"
+            showStatus
+            status="online"
+          />
+          <TimeGreeting name={firstName || undefined} showDate={true} />
         </div>
       </motion.div>
 
