@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { beasties } from "vite-plugin-beasties";
 
 // Performance-optimized Vite configuration
 export default defineConfig(({ mode }) => ({
@@ -12,6 +13,20 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
+    mode === 'production' && beasties({
+      options: {
+        // Use media swap to defer non-critical CSS loading
+        preload: 'swap',
+        // Don't remove unused CSS from source (keep all for SPA)
+        pruneSource: false,
+        // Reduce blocking by deferring non-critical CSS
+        reduceInlineStyles: true,
+        // Don't inline fonts - let browser handle font loading
+        inlineFonts: false,
+        // Add noscript fallback for non-JS users
+        noscriptFallback: true,
+      },
+    }),
   ].filter(Boolean),
   resolve: {
     alias: {
