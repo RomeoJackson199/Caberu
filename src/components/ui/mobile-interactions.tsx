@@ -240,7 +240,31 @@ export function BottomSheet({
   className,
 }: BottomSheetProps) {
   const [currentSnap, setCurrentSnap] = useState(0);
+  const [sheetHeight, setSheetHeight] = useState(400);
   const y = useMotionValue(0);
+
+  // Debounced window resize handler for height stabilization
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const updateHeight = () => {
+      setSheetHeight(window.innerHeight * snapPoints[currentSnap]);
+    };
+    
+    updateHeight();
+    
+    let resizeTimeout: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(updateHeight, 150);
+    };
+    
+    window.addEventListener('resize', debouncedResize);
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimeout);
+    };
+  }, [currentSnap, snapPoints]);
 
   const handleDragEnd = (event: any, info: PanInfo) => {
     const velocity = info.velocity.y;
@@ -252,10 +276,6 @@ export function BottomSheet({
       setCurrentSnap(Math.min(currentSnap + 1, snapPoints.length - 1));
     }
   };
-
-  const sheetHeight = typeof window !== 'undefined' 
-    ? window.innerHeight * snapPoints[currentSnap] 
-    : 400;
 
   return (
     <AnimatePresence>

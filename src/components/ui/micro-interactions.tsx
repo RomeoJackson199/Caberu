@@ -338,12 +338,13 @@ interface StaggeredListProps {
 
 export function StaggeredList({ children, className, staggerDelay = 0.05 }: StaggeredListProps) {
   return (
-    <div className={className}>
+    <div className={cn(className, "min-h-[50px]")} style={{ contain: 'layout' }}>
       {React.Children.map(children, (child, index) => (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * staggerDelay, duration: 0.3 }}
+          style={{ minHeight: '1px' }}
         >
           {child}
         </motion.div>
