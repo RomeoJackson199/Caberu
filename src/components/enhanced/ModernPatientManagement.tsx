@@ -41,7 +41,8 @@ import {
   Send,
   Bell,
   BellOff,
-  Zap
+  Zap,
+  MessageSquare
 } from "lucide-react";
 import { format } from "date-fns";
 import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
@@ -87,6 +88,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { DebouncedSearch, AvatarWithInitials, LastVisit, AnimatedStatCard } from "@/components/ui/page-enhancements";
 import { StaggeredList } from "@/components/ui/micro-interactions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// New patient management components
+import { MedicalAlertsBanner } from "@/components/patient/MedicalAlertsBanner";
+import { PatientTagsManager } from "@/components/patient/PatientTagsManager";
+import { PatientTimeline } from "@/components/patient/PatientTimeline";
+import { QuickActionsToolbar } from "@/components/patient/QuickActionsToolbar";
+import { CommunicationHistory } from "@/components/patient/CommunicationHistory";
+import { PatientStatusBadges } from "@/components/patient/PatientStatusBadges";
 
 // Generate unique gradient based on name
 const generateGradient = (name: string): string => {
