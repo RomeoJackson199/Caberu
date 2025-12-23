@@ -50,7 +50,6 @@ import { AppointmentCompletionDialog } from "@/components/appointment/Appointmen
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
 import { AppointmentDetailsSidebar } from "@/components/appointments/AppointmentDetailsSidebar";
 import { useImaging, ImagingFile } from "@/hooks/useImaging";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { sanitizeText } from '@/utils/sanitize';
 import { cn } from "@/lib/utils";
@@ -85,6 +84,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DebouncedSearch, AvatarWithInitials, LastVisit, AnimatedStatCard } from "@/components/ui/page-enhancements";
+import { StaggeredList } from "@/components/ui/micro-interactions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Generate unique gradient based on name
 const generateGradient = (name: string): string => {
