@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, useMotionValue, AnimatePresence } from "framer-motion";
+import { motion, useMotionValue } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -12,6 +12,7 @@ import {
   CreditCard,
   Bell
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Floating orb component for visual interest
 const FloatingOrb = ({ 
@@ -85,7 +86,7 @@ const FloatingFeatureCard = ({
 );
 
 // Trust badges component
-const TrustBadges = () => {
+const TrustBadges = ({ isMobile }: { isMobile: boolean }) => {
   const badges = [
     { text: "HIPAA Compliant", icon: "🔒" },
     { text: "SOC 2 Certified", icon: "✓" },
@@ -94,7 +95,7 @@ const TrustBadges = () => {
 
   return (
     <motion.div
-      className="flex flex-wrap gap-4 mt-8"
+      className={`flex flex-wrap gap-3 ${isMobile ? 'justify-center mt-6' : 'mt-8'}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.6 }}
@@ -102,7 +103,7 @@ const TrustBadges = () => {
       {badges.map((badge, i) => (
         <motion.div
           key={badge.text}
-          className="flex items-center gap-2 text-slate-400 text-sm"
+          className={`flex items-center gap-1.5 text-slate-400 ${isMobile ? 'text-xs' : 'text-sm'}`}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.7 + i * 0.1 }}
@@ -116,7 +117,7 @@ const TrustBadges = () => {
 };
 
 // Animated counter for social proof
-const AnimatedCounter = ({ end, suffix, label }: { end: number; suffix: string; label: string }) => {
+const AnimatedCounter = ({ end, suffix, label, isMobile }: { end: number; suffix: string; label: string; isMobile: boolean }) => {
   const [count, setCount] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
 
@@ -144,10 +145,10 @@ const AnimatedCounter = ({ end, suffix, label }: { end: number; suffix: string; 
 
   return (
     <div className="text-center">
-      <div className="text-2xl md:text-3xl font-bold text-white">
+      <div className={`font-bold text-white ${isMobile ? 'text-xl' : 'text-2xl md:text-3xl'}`}>
         {count.toLocaleString()}{suffix}
       </div>
-      <div className="text-slate-400 text-sm mt-1">{label}</div>
+      <div className={`text-slate-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>{label}</div>
     </div>
   );
 };
@@ -157,9 +158,11 @@ export function PremiumHeroSection() {
   const [isHovering, setIsHovering] = useState(false);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const isMobile = useIsMobile();
 
   // Parallax effect for mouse movement
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (isMobile) return;
     const { clientX, clientY, currentTarget } = e;
     const { width, height, left, top } = currentTarget.getBoundingClientRect();
     mouseX.set((clientX - left - width / 2) / 50);
@@ -173,6 +176,138 @@ export function PremiumHeroSection() {
     { icon: Bell, label: "Follow-up Set", position: { bottom: '15%', right: '8%' } },
   ];
 
+  // Mobile Hero Layout
+  if (isMobile) {
+    return (
+      <section className="relative min-h-[100svh] flex flex-col justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-16 pb-24">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+        </div>
+
+        {/* Smaller floating orbs for mobile */}
+        <FloatingOrb delay={0} duration={8} size={150} color="#3b82f6" top="5%" left="-10%" />
+        <FloatingOrb delay={2} duration={10} size={100} color="#8b5cf6" top="70%" left="80%" />
+
+        <div className="relative z-10 px-5 flex-1 flex flex-col justify-center">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-6"
+          >
+            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-full px-3 py-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-blue-300 text-xs font-medium">AI-Powered Practice Management</span>
+            </div>
+          </motion.div>
+
+          {/* Main headline */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-center"
+          >
+            <h1 className="text-3xl font-bold leading-[1.15] tracking-tight">
+              <span className="text-white">Every appointment</span>
+              <br />
+              <span className="text-white">ends </span>
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                cleanly.
+              </span>
+            </h1>
+          </motion.div>
+
+          {/* Subheadline */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-base text-slate-300 leading-relaxed max-w-sm mx-auto text-center mt-4"
+          >
+            Notes done. Payments sent. Follow-ups scheduled.
+            <span className="block text-slate-400 mt-1 text-sm">Automatically — after each appointment.</span>
+          </motion.p>
+
+          {/* Mobile Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-8"
+          >
+            <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
+              <div className="grid grid-cols-3 gap-2">
+                <AnimatedCounter end={500} suffix="+" label="Practices" isMobile={true} />
+                <AnimatedCounter end={50} suffix="k+" label="Appointments" isMobile={true} />
+                <AnimatedCounter end={98} suffix="%" label="Satisfaction" isMobile={true} />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="flex flex-col gap-3 mt-8"
+          >
+            <Button
+              size="lg"
+              onClick={() => {
+                sessionStorage.setItem('demo_business_name', 'Demo Practice');
+                sessionStorage.setItem('demo_template', 'healthcare');
+                navigate('/demo/dentist');
+              }}
+              className="w-full h-14 text-base font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-2xl shadow-lg shadow-blue-500/30"
+            >
+              <span className="flex items-center gap-2">
+                See how it works
+                <ArrowRight className="w-5 h-5" />
+              </span>
+            </Button>
+
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => navigate('/demo/dentist')}
+              className="w-full h-14 text-base font-medium border-slate-600 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 rounded-2xl"
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Watch Demo
+            </Button>
+          </motion.div>
+
+          {/* Trust badges */}
+          <TrustBadges isMobile={true} />
+        </div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          className="absolute bottom-6 left-1/2 -translate-x-1/2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 8, 0] }}
+          transition={{ 
+            opacity: { delay: 1 },
+            y: { duration: 1.5, repeat: Infinity }
+          }}
+        >
+          <div className="w-6 h-10 border-2 border-slate-600 rounded-full flex justify-center pt-2">
+            <motion.div
+              className="w-1 h-1 bg-slate-400 rounded-full"
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          </div>
+        </motion.div>
+      </section>
+    );
+  }
+
+  // Desktop Hero Layout
   return (
     <section 
       className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"
@@ -300,7 +435,7 @@ export function PremiumHeroSection() {
             </motion.div>
 
             {/* Trust badges */}
-            <TrustBadges />
+            <TrustBadges isMobile={false} />
           </div>
 
           {/* Right side - Stats */}
@@ -319,9 +454,9 @@ export function PremiumHeroSection() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-6">
-                  <AnimatedCounter end={500} suffix="+" label="Practices" />
-                  <AnimatedCounter end={50} suffix="k+" label="Appointments" />
-                  <AnimatedCounter end={98} suffix="%" label="Satisfaction" />
+                  <AnimatedCounter end={500} suffix="+" label="Practices" isMobile={false} />
+                  <AnimatedCounter end={50} suffix="k+" label="Appointments" isMobile={false} />
+                  <AnimatedCounter end={98} suffix="%" label="Satisfaction" isMobile={false} />
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-white/10">
