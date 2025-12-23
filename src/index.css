@@ -1477,4 +1477,184 @@
       backdrop-filter: none;
     }
   }
+
+  /* ============================================================================
+     Enhanced Visual Polish System
+     Micro-interactions, transitions, and focus states
+     ============================================================================ */
+
+  /* Smooth page transitions */
+  .page-transition {
+    animation: pageEnter 0.3s ease-out;
+  }
+
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Interactive element transitions */
+  .interactive {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .interactive:hover {
+    @apply transform -translate-y-0.5;
+  }
+
+  .interactive:active {
+    @apply transform translate-y-0 scale-[0.98];
+  }
+
+  /* Enhanced focus visibility for keyboard navigation */
+  body.keyboard-navigation *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Button press effect */
+  .press-effect {
+    @apply transition-transform duration-100 active:scale-[0.97];
+  }
+
+  /* Subtle hover glow */
+  .hover-glow {
+    @apply transition-shadow duration-300;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.15);
+  }
+
+  /* Link underline animation */
+  .link-underline {
+    @apply relative;
+  }
+
+  .link-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300;
+  }
+
+  .link-underline:hover::after {
+    @apply w-full;
+  }
+
+  /* Stagger animation for lists */
+  .stagger-item {
+    opacity: 0;
+    animation: staggerIn 0.4s ease-out forwards;
+  }
+
+  .stagger-item:nth-child(1) { animation-delay: 0ms; }
+  .stagger-item:nth-child(2) { animation-delay: 50ms; }
+  .stagger-item:nth-child(3) { animation-delay: 100ms; }
+  .stagger-item:nth-child(4) { animation-delay: 150ms; }
+  .stagger-item:nth-child(5) { animation-delay: 200ms; }
+  .stagger-item:nth-child(6) { animation-delay: 250ms; }
+  .stagger-item:nth-child(7) { animation-delay: 300ms; }
+  .stagger-item:nth-child(8) { animation-delay: 350ms; }
+
+  @keyframes staggerIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Smooth number transitions */
+  .number-transition {
+    @apply tabular-nums transition-all duration-300;
+  }
+
+  /* Card entrance animation */
+  .card-enter {
+    animation: cardEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes cardEnter {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Skeleton pulse enhancement */
+  .skeleton-pulse {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  /* Success checkmark animation */
+  .success-check {
+    animation: successCheck 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  @keyframes successCheck {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Error shake animation */
+  .error-shake {
+    animation: errorShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+
+  @keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  /* Smooth collapse/expand */
+  .collapse-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+  }
+
+  .collapse-content.open {
+    grid-template-rows: 1fr;
+  }
+
+  .collapse-content > div {
+    overflow: hidden;
+  }
+
+  /* Reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .page-transition,
+    .card-enter,
+    .stagger-item,
+    .interactive,
+    .hover-lift,
+    .card-hover {
+      animation: none !important;
+      transition: none !important;
+      transform: none !important;
+    }
+  }
 }
