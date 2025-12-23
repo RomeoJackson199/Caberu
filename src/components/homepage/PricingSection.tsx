@@ -161,7 +161,7 @@ export const PricingSection = () => {
               onClick={() => setBillingCycle('yearly')}
               className={`flex-1 rounded-lg ${billingCycle === 'yearly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
             >
-              Yearly <span className="ml-1 text-xs text-green-600 dark:text-green-400 font-medium">(Save 17%)</span>
+              Yearly <span className="ml-1 text-xs text-green-700 dark:text-green-400 font-medium">(Save 17%)</span>
             </Button>
           </div>
 
