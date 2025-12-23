@@ -1413,6 +1413,41 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                         </CardContent>
                       </Card>
 
+                      {/* NEW: Medical Alerts Banner */}
+                      {businessId && (
+                        <MedicalAlertsBanner 
+                          patientId={selectedPatient.id} 
+                          businessId={businessId} 
+                        />
+                      )}
+
+                      {/* NEW: Quick Actions Toolbar & Patient Tags */}
+                      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white rounded-2xl p-4 border border-slate-200/60 shadow-sm">
+                        <div className="flex-1">
+                          {businessId && (
+                            <PatientTagsManager 
+                              patientId={selectedPatient.id} 
+                              businessId={businessId}
+                              compact={false}
+                            />
+                          )}
+                        </div>
+                        {businessId && (
+                          <QuickActionsToolbar
+                            patient={selectedPatient}
+                            businessId={businessId}
+                            onBookAppointment={() => setBookingDialogOpen(true)}
+                            onSendPaymentRequest={() => setActiveTab('financial')}
+                          />
+                        )}
+                      </div>
+
+                      {/* NEW: Patient Status Badges */}
+                      <PatientStatusBadges 
+                        patient={selectedPatient as any}
+                        flags={patientFlags[selectedPatient.id]}
+                      />
+
                       {/* Patient Health Score & Treatment Progress Row */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Patient Engagement Score */}
@@ -2024,6 +2059,55 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
                           </div>
                         </CardContent>
                       </Card>
+
+                      {/* NEW: Timeline & Communication History Row */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Activity Timeline */}
+                        <Card className="border-0 bg-white shadow-sm overflow-hidden">
+                          <CardContent className="p-0">
+                            <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-violet-50 to-white">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                                  <Calendar className="h-4 w-4 text-violet-600" />
+                                </div>
+                                <span className="font-semibold text-slate-800 text-sm">{t.appointmentHistory || 'Appointment History'}</span>
+                              </div>
+                            </div>
+                            <div className="p-4">
+                              <PatientTimeline 
+                                appointments={appointments}
+                                onAppointmentClick={(apt) => {
+                                  setSelectedAppointment(apt as Appointment);
+                                  setAppointmentDetailOpen(true);
+                                }}
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Communication History */}
+                        <Card className="border-0 bg-white shadow-sm overflow-hidden">
+                          <CardContent className="p-0">
+                            <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                                  <MessageSquare className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <span className="font-semibold text-slate-800 text-sm">Communication History</span>
+                              </div>
+                            </div>
+                            <div className="p-4 max-h-80 overflow-y-auto">
+                              {businessId && (
+                                <CommunicationHistory 
+                                  patientId={selectedPatient.id}
+                                  businessId={businessId}
+                                  limit={10}
+                                />
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
                     </motion.div>
                   )}
 
