@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface PullToRefreshProps {
   onRefresh: () => Promise<void>;
@@ -295,18 +297,153 @@ export function RefreshButton({
   };
 
   return (
-    <button
+    <motion.button
       onClick={handleClick}
       disabled={isRefreshing}
-      className={`inline-flex items-center gap-2 text-gray-600 hover:text-gray-900
-                 hover:bg-gray-100 rounded-lg transition-colors duration-200
-                 disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${className}`}
+      className={cn(
+        "inline-flex items-center gap-2 text-muted-foreground hover:text-foreground",
+        "hover:bg-muted rounded-lg transition-colors duration-200",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        sizeClasses[size],
+        className
+      )}
       aria-label="Refresh"
+      whileTap={{ scale: 0.95 }}
     >
-      <RefreshCw
-        className={`${iconSizes[size]} ${isRefreshing ? "animate-spin" : ""}`}
-      />
+      <motion.div
+        animate={isRefreshing ? { rotate: 360 } : { rotate: 0 }}
+        transition={isRefreshing ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}
+      >
+        <RefreshCw className={iconSizes[size]} />
+      </motion.div>
       {label && <span className="text-sm font-medium">{label}</span>}
-    </button>
+    </motion.button>
+  );
+}
+
+/**
+ * Enhanced Pull to Refresh with visual feedback
+ */
+interface EnhancedPullToRefreshProps {
+  onRefresh: () => Promise<void>;
+  children: ReactNode;
+  disabled?: boolean;
+  className?: string;
+}
+
+export function EnhancedPullToRefresh({
+  onRefresh,
+  children,
+  disabled = false,
+  className,
+}: EnhancedPullToRefreshProps) {
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const startY = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const threshold = 80;
+  const maxPull = 120;
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (disabled || isRefreshing) return;
+      if (window.scrollY === 0) {
+        startY.current = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (disabled || isRefreshing || startY.current === 0) return;
+      
+      const distance = e.touches[0].clientY - startY.current;
+      if (distance > 0) {
+        setIsPulling(true);
+        const dampedDistance = Math.min(distance * 0.5, maxPull);
+        setPullDistance(dampedDistance);
+        
+        if (distance > 10) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const handleTouchEnd = async () => {
+      if (disabled || isRefreshing) return;
+      
+      setIsPulling(false);
+      startY.current = 0;
+
+      if (pullDistance >= threshold) {
+        setIsRefreshing(true);
+        try {
+          await onRefresh();
+        } finally {
+          setIsRefreshing(false);
+        }
+      }
+      setPullDistance(0);
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [disabled, isRefreshing, pullDistance, onRefresh]);
+
+  const progress = Math.min(pullDistance / threshold, 1);
+  const isReady = pullDistance >= threshold;
+
+  return (
+    <div ref={containerRef} className={cn("relative overflow-hidden", className)}>
+      {/* Pull indicator */}
+      <AnimatePresence>
+        {(isPulling || isRefreshing) && (
+          <motion.div
+            className="absolute top-0 left-0 right-0 flex justify-center items-center z-20 bg-background"
+            initial={{ height: 0 }}
+            animate={{ height: isRefreshing ? 60 : pullDistance }}
+            exit={{ height: 0 }}
+            transition={{ type: "spring", damping: 20 }}
+          >
+            <motion.div
+              className={cn(
+                "flex flex-col items-center gap-1",
+                isReady && !isRefreshing && "text-primary"
+              )}
+              animate={{ 
+                rotate: isRefreshing ? 360 : progress * 360,
+                scale: isReady ? 1.1 : 1 
+              }}
+              transition={isRefreshing ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}
+            >
+              <RefreshCw className="h-6 w-6" />
+              <span className="text-xs font-medium">
+                {isRefreshing ? "Refreshing..." : isReady ? "Release" : "Pull down"}
+              </span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Content */}
+      <motion.div
+        animate={{ 
+          y: isPulling || isRefreshing ? pullDistance : 0 
+        }}
+        transition={!isPulling ? { type: "spring", damping: 20 } : { duration: 0 }}
+      >
+        {children}
+      </motion.div>
+    </div>
   );
 }
