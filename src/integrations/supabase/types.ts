@@ -770,6 +770,74 @@ export type Database = {
           },
         ]
       }
+      communication_logs: {
+        Row: {
+          business_id: string
+          channel: string
+          content: string | null
+          created_at: string
+          direction: string
+          id: string
+          patient_id: string
+          sent_by: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          business_id: string
+          channel: string
+          content?: string | null
+          created_at?: string
+          direction: string
+          id?: string
+          patient_id: string
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          business_id?: string
+          channel?: string
+          content?: string | null
+          created_at?: string
+          direction?: string
+          id?: string
+          patient_id?: string
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dentist_availability: {
         Row: {
           break_end_time: string | null
@@ -1800,6 +1868,71 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_allergies: {
+        Row: {
+          allergy_name: string
+          business_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          allergy_name: string
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          allergy_name?: string
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_allergies_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_consents: {
         Row: {
           consent_date: string
@@ -1850,6 +1983,77 @@ export type Database = {
           {
             foreignKeyName: "patient_consents_patient_id_fkey"
             columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_documents: {
+        Row: {
+          business_id: string
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size_bytes: number | null
+          id: string
+          mime_type: string | null
+          patient_id: string
+          title: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          document_type?: string
+          file_name: string
+          file_path: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type?: string | null
+          patient_id: string
+          title: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type?: string | null
+          patient_id?: string
+          title?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2006,6 +2210,97 @@ export type Database = {
             columns: ["preferred_dentist_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_tag_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          patient_id: string
+          tag_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          patient_id: string
+          tag_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          patient_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_tag_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_tag_assignments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_tag_assignments_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "patient_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_tags: {
+        Row: {
+          business_id: string
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_tags_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_tags_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
@@ -2332,9 +2627,13 @@ export type Database = {
           google_calendar_refresh_token: string | null
           id: string
           import_session_id: string | null
+          is_vip: boolean | null
+          last_contact_at: string | null
           last_name: string | null
           medical_history: string | null
+          next_recall_date: string | null
           onboarding_completed: boolean | null
+          patient_status: string | null
           phone: string | null
           profile_completion_status: string
           profile_picture_url: string | null
@@ -2357,9 +2656,13 @@ export type Database = {
           google_calendar_refresh_token?: string | null
           id?: string
           import_session_id?: string | null
+          is_vip?: boolean | null
+          last_contact_at?: string | null
           last_name?: string | null
           medical_history?: string | null
+          next_recall_date?: string | null
           onboarding_completed?: boolean | null
+          patient_status?: string | null
           phone?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
@@ -2382,9 +2685,13 @@ export type Database = {
           google_calendar_refresh_token?: string | null
           id?: string
           import_session_id?: string | null
+          is_vip?: boolean | null
+          last_contact_at?: string | null
           last_name?: string | null
           medical_history?: string | null
+          next_recall_date?: string | null
           onboarding_completed?: boolean | null
+          patient_status?: string | null
           phone?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
