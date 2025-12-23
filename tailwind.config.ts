@@ -316,6 +316,14 @@ export default {
 				'marquee': {
 					'0%': { transform: 'translateX(0%)' },
 					'100%': { transform: 'translateX(-100%)' }
+				},
+				'shimmer': {
+					'0%': { transform: 'translateX(-100%)' },
+					'100%': { transform: 'translateX(100%)' }
+				},
+				'pulse-subtle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' }
 				}
 			},
 			animation: {
@@ -330,6 +338,7 @@ export default {
 				'mobile-scale': 'mobile-scale 0.2s ease-out',
 				'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
 				'marquee': 'marquee 10s linear infinite',
+				'shimmer': 'shimmer 2s infinite',
 			},
 			// Touch-friendly sizing
 			minHeight: {
