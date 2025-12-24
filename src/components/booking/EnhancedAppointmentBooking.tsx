@@ -811,6 +811,11 @@ export const EnhancedAppointmentBooking = ({
                             <CheckCircle className="h-5 w-5" />
                             Available Time Slots ({availableSlots.length})
                           </CardTitle>
+                          {selectedService && (selectedService.duration_minutes ?? 30) > 30 && (
+                            <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                              Showing slots with {selectedService.duration_minutes} min available (for {selectedService.name})
+                            </p>
+                          )}
                         </CardHeader>
                         <CardContent className="pt-4">
                           {availableSlots.length > 0 ? (
