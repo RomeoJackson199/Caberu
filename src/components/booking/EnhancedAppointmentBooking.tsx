@@ -238,22 +238,30 @@ export const EnhancedAppointmentBooking = ({
         console.warn('Availability check failed:', e);
       }
 
-      // Generate slots for the date
+      // Generate slots for the date (with business_id for proper filtering)
       await supabase.rpc('generate_daily_slots', {
         p_dentist_id: selectedDentist,
-        p_date: dateStr
+        p_date: dateStr,
+        p_business_id: businessId
       });
 
       // Fetch ALL slots for comprehensive view
       const { data: slots, error } = await supabase
         .from('appointment_slots')
-        .select('slot_time, is_available')
+        .select('slot_time, is_available, appointment_id')
         .eq('dentist_id', selectedDentist)
         .eq('slot_date', dateStr)
         .eq('business_id', businessId)
         .order('slot_time');
 
       if (error) throw error;
+
+      // Debug logging
+      console.log('[Slots Debug] Raw slots from DB:', slots?.map(s => ({
+        time: s.slot_time,
+        available: s.is_available,
+        hasAppointment: !!s.appointment_id
+      })));
 
       const allSlotsData = (slots || []).map(slot => ({
         time: slot.slot_time.substring(0, 5),
@@ -263,6 +271,8 @@ export const EnhancedAppointmentBooking = ({
       // Filter available slots based on service duration
       const duration = serviceDurationMinutes || selectedService?.duration_minutes || 30;
       const slotsNeeded = Math.ceil(duration / 30);
+
+      console.log('[Slots Debug] Duration:', duration, 'minutes, Slots needed:', slotsNeeded);
 
       const availableSlotsData = allSlotsData.filter((slot, index) => {
         if (!slot.available) return false;
@@ -274,6 +284,10 @@ export const EnhancedAppointmentBooking = ({
         }
         return true;
       });
+
+      console.log('[Slots Debug] All slots count:', allSlotsData.length, 
+        'Available (raw):', allSlotsData.filter(s => s.available).length,
+        'Available (for duration):', availableSlotsData.length);
 
       setAllSlots(allSlotsData);
       setAvailableSlots(availableSlotsData);
