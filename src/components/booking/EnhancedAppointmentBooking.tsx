@@ -272,31 +272,15 @@ export const EnhancedAppointmentBooking = ({
       const duration = serviceDurationMinutes || selectedService?.duration_minutes || 30;
       const slotsNeeded = Math.ceil(duration / 30);
 
-      console.log('[Slots Debug] Duration:', duration, 'minutes, Slots needed:', slotsNeeded);
-
       const availableSlotsData = allSlotsData.filter((slot, index) => {
-        if (!slot.available) {
-          console.log(`[Filter] ${slot.time}: BLOCKED (slot unavailable in DB)`);
-          return false;
-        }
-        if (slotsNeeded <= 1) {
-          console.log(`[Filter] ${slot.time}: AVAILABLE (single slot needed)`);
-          return true;
-        }
+        if (!slot.available) return false;
+        if (slotsNeeded <= 1) return true;
         
         // Check if we have enough consecutive available slots for the service duration
         for (let i = 1; i < slotsNeeded; i++) {
           const nextSlot = allSlotsData[index + i];
-          if (!nextSlot) {
-            console.log(`[Filter] ${slot.time}: BLOCKED (no slot at index+${i})`);
-            return false;
-          }
-          if (!nextSlot.available) {
-            console.log(`[Filter] ${slot.time}: BLOCKED (slot ${nextSlot.time} at index+${i} is unavailable)`);
-            return false;
-          }
+          if (!nextSlot || !nextSlot.available) return false;
         }
-        console.log(`[Filter] ${slot.time}: AVAILABLE (all ${slotsNeeded} consecutive slots available)`);
         return true;
       });
 
