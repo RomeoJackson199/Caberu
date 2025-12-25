@@ -68,7 +68,7 @@ const UnifiedDashboard = lazy(() => import("./components/UnifiedDashboard"));
 const LanguageTest = lazy(() => import("./components/LanguageTest").then(module => ({ default: module.LanguageTest })));
 const About = lazy(() => import("./pages/About"));
 const Claim = lazy(() => import("./pages/Claim"));
-const PublicBooking = lazy(() => import("./pages/PublicBooking"));
+// PublicBooking removed - unused
 const BookAppointmentAI = lazy(() => import("./pages/BookAppointmentAI"));
 const BusinessPortal = lazy(() => import("./pages/BusinessPortal"));
 import { BookingRouteHandler } from "./components/booking/BookingRouteHandler";
@@ -84,7 +84,7 @@ const PatientAccountInsurancePage = lazy(() => import("./pages/PatientAccountIns
 const PatientAccountPrivacyPage = lazy(() => import("./pages/PatientAccountPrivacyPage"));
 const PatientAccountHelpPage = lazy(() => import("./pages/PatientAccountHelpPage"));
 const PatientSettingsPage = lazy(() => import("./pages/PatientSettingsPage"));
-const SmartBookAppointment = lazy(() => import("./pages/SmartBookAppointment"));
+// SmartBookAppointment removed - unused
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
