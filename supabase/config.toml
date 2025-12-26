@@ -15,9 +15,6 @@ verify_jwt = true
 [functions.create-payment-request]
 verify_jwt = true
 
-[functions.generate-emergency-slots]
-verify_jwt = true
-
 [functions.voice-to-text]
 verify_jwt = true
 
@@ -75,9 +72,6 @@ verify_jwt = true
 [functions.create-business-payment]
 verify_jwt = false
 
-[functions.calculate-order-total]
-verify_jwt = false
-
 [functions.confirm-restaurant-order]
 verify_jwt = true
 
@@ -113,6 +107,3 @@ verify_jwt = true
 
 [functions.cancel-vacation-appointments]
 verify_jwt = true
-
-[functions.message-notification-check]
-verify_jwt = false
