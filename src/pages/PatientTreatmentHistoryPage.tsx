@@ -1,8 +1,8 @@
 import React from "react";
-import { FileText, Activity } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
-import { TreatmentRecordsTable } from "@/components/TreatmentRecordsTable";
+import { PatientRecordsTimeline } from "@/components/patient/PatientRecordsTimeline";
 import { AnimatedBackground, SectionHeader, LoadingCard } from "@/components/ui/polished-components";
 
 export default function PatientTreatmentHistoryPage() {
@@ -26,21 +26,21 @@ export default function PatientTreatmentHistoryPage() {
   return (
     <div className="space-y-6">
       {/* Enhanced Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/20 dark:via-purple-950/20 dark:to-pink-950/20 rounded-2xl p-6">
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/20 dark:via-teal-950/20 dark:to-cyan-950/20 rounded-2xl p-6">
         <AnimatedBackground />
 
         <div className="relative z-10">
           <SectionHeader
-            icon={Activity}
-            title={t.pnav.care.history}
-            description="View your complete treatment and dental care history"
-            gradient="from-indigo-600 to-purple-600"
+            icon={FileText}
+            title="Records"
+            description="Your finalized medical records from completed appointments"
+            gradient="from-emerald-600 to-teal-600"
           />
         </div>
       </div>
 
       {patientId ? (
-        <TreatmentRecordsTable patientId={patientId} />
+        <PatientRecordsTimeline patientId={patientId} />
       ) : (
         <LoadingCard />
       )}
