@@ -10,8 +10,8 @@
 
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,10 +53,11 @@ interface TimelineRecord {
 
 export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProps) {
   const { t } = useLanguage();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterClinic, setFilterClinic] = useState<string>("all");
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   // Fetch completed appointments with business info
   const { data: appointments, isLoading: loadingAppointments } = useQuery({
@@ -224,8 +225,9 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
 
   const handleRecordClick = (record: TimelineRecord) => {
     if (record.linkedAppointmentId) {
-      // Navigate to appointment detail
-      navigate(`/care/appointments?id=${record.linkedAppointmentId}`);
+      // Open appointment detail dialog
+      setSelectedAppointmentId(record.linkedAppointmentId);
+      setDetailOpen(true);
     } else if (record.documentPath) {
       // Open document in new tab (read-only preview)
       window.open(record.documentPath, '_blank', 'noopener,noreferrer');
@@ -456,6 +458,16 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           </div>
         </div>
       )}
+
+      {/* Appointment Detail Dialog */}
+      <PatientAppointmentDetail
+        appointmentId={selectedAppointmentId}
+        open={detailOpen}
+        onOpenChange={(open) => {
+          setDetailOpen(open);
+          if (!open) setSelectedAppointmentId(null);
+        }}
+      />
     </div>
   );
 }

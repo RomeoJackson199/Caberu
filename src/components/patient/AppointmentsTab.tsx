@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, isPast, isFuture } from "date-fns";
 import { RecallBanner } from "@/components/patient/RecallBanner";
 import { getPatientActiveRecall, RecallRecord } from "@/lib/recalls";
-import { AppointmentDetailsDialog } from "@/components/AppointmentDetailsDialog";
+import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
 import { useLanguage } from "@/hooks/useLanguage";
 import { TimelineAppointmentCard } from "@/components/patient/TimelineAppointmentCard";
 import { AppointmentStatusBadge } from "@/components/patient/AppointmentStatusBadge";
@@ -569,8 +569,17 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({
         }}
       />
 
-      {/* Appointment Details Dialog */}
-      {selectedAppointmentId && <AppointmentDetailsDialog appointmentId={selectedAppointmentId} open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen} />}
+      {/* Appointment Details */}
+      <PatientAppointmentDetail 
+        appointmentId={selectedAppointmentId} 
+        open={detailsDialogOpen} 
+        onOpenChange={(open) => {
+          setDetailsDialogOpen(open);
+          if (!open) setSelectedAppointmentId(null);
+        }}
+        onReschedule={handleRescheduleAppointment}
+        onCancel={handleCancelAppointment}
+      />
 
       {/* Cancel Appointment Confirmation */}
       <AlertDialog open={!!cancelAppointmentId} onOpenChange={(open) => !open && setCancelAppointmentId(null)}>
