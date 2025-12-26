@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { PatientAppShell, PatientSection } from "@/components/patient/PatientAppShell";
 import { HomeTab } from "@/components/patient/HomeTab";
-import { CareTab, CareItem } from "@/components/patient/CareTab";
+import { PatientRecordsTimeline } from "@/components/patient/PatientRecordsTimeline";
 import { AppointmentsTab } from "@/components/patient/AppointmentsTab";
 import { PaymentsTab } from "@/components/patient/PaymentsTab";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -490,42 +490,7 @@ export const PatientDashboard = ({
     const next = filtered[0] || null;
     return next;
   })();
-  const carePlans: CareItem[] = treatmentPlans.map(tp => ({
-    id: tp.id,
-    type: 'plan',
-    title: tp.title || 'Treatment Plan',
-    subtitle: tp.description || undefined,
-    date: tp.start_date,
-    status: tp.status,
-    data: tp
-  }));
-  const carePrescriptions: CareItem[] = prescriptions.map(p => ({
-    id: p.id,
-    type: 'prescription',
-    title: p.medication_name,
-    subtitle: `${p.dosage} • ${p.frequency}`,
-    date: p.prescribed_date,
-    status: p.status,
-    data: p
-  }));
-  const careVisits: CareItem[] = recentAppointments.map(a => ({
-    id: a.id,
-    type: 'visit',
-    title: a.reason || 'Visit',
-    subtitle: a.status,
-    date: a.appointment_date,
-    status: a.status,
-    data: a
-  }));
-  const careRecords: CareItem[] = medicalRecords.map(r => ({
-    id: r.id,
-    type: 'record',
-    title: r.title,
-    subtitle: r.record_type,
-    date: r.record_date,
-    status: undefined,
-    data: r
-  }));
+  // Care items no longer needed - using PatientRecordsTimeline directly
   const badges = {
     home: false,
     assistant: false,
@@ -586,7 +551,11 @@ export const PatientDashboard = ({
       </Suspense>
     )}
 
-    {activeSection === 'care' && <CareTab plans={carePlans} prescriptions={carePrescriptions} visits={careVisits} records={careRecords} user={user} patientId={userProfile?.id || null} onReschedule={() => setActiveSection('assistant')} />}
+    {activeSection === 'care' && userProfile?.id && (
+      <div className="px-4 md:px-6 py-4">
+        <PatientRecordsTimeline patientId={userProfile.id} />
+      </div>
+    )}
 
     {activeSection === 'appointments' && <AppointmentsTab user={user} onOpenAssistant={() => setActiveSection('assistant')} />}
 
