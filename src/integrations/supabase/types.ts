@@ -2755,59 +2755,6 @@ export type Database = {
         }
         Relationships: []
       }
-      providers_backup: {
-        Row: {
-          average_rating: number
-          communication_score: number
-          created_at: string
-          expertise_score: number
-          id: string
-          is_active: boolean
-          license_number: string | null
-          profile_id: string
-          specialization: string | null
-          total_ratings: number
-          updated_at: string
-          wait_time_score: number
-        }
-        Insert: {
-          average_rating?: number
-          communication_score?: number
-          created_at?: string
-          expertise_score?: number
-          id?: string
-          is_active?: boolean
-          license_number?: string | null
-          profile_id: string
-          specialization?: string | null
-          total_ratings?: number
-          updated_at?: string
-          wait_time_score?: number
-        }
-        Update: {
-          average_rating?: number
-          communication_score?: number
-          created_at?: string
-          expertise_score?: number
-          id?: string
-          is_active?: boolean
-          license_number?: string | null
-          profile_id?: string
-          specialization?: string | null
-          total_ratings?: number
-          updated_at?: string
-          wait_time_score?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "providers_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       reschedule_suggestions: {
         Row: {
           accepted_at: string | null
@@ -3191,45 +3138,6 @@ export type Database = {
           },
           {
             foreignKeyName: "system_errors_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "public_businesses_view"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      template_change_history: {
-        Row: {
-          business_id: string
-          changed_at: string
-          from_template: string | null
-          id: string
-          to_template: string
-        }
-        Insert: {
-          business_id: string
-          changed_at?: string
-          from_template?: string | null
-          id?: string
-          to_template: string
-        }
-        Update: {
-          business_id?: string
-          changed_at?: string
-          from_template?: string | null
-          id?: string
-          to_template?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "template_change_history_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "template_change_history_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "public_businesses_view"
