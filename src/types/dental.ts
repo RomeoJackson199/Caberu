@@ -115,7 +115,7 @@ export interface EnhancedPatient extends Patient {
   prescriptions: Prescription[];
   treatment_plans: TreatmentPlan[];
   medical_records: MedicalRecord[];
-  patient_notes: PatientNote[];
+  notes: PatientNote[];
   follow_ups: AppointmentFollowUp[];
 }
 

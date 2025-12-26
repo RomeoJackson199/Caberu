@@ -763,7 +763,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const fetchPatientNotes = async (patientId: string) => {
     try {
       const { data, error } = await supabase
-        .from('patient_notes')
+        .from('notes')
         .select('id, title, content, created_at, note_type')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId)
@@ -779,7 +779,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const addQuickNote = async () => {
     if (!selectedPatient || !quickNote.trim()) return;
     try {
-      const { error } = await supabase.from('patient_notes').insert({
+      const { error } = await supabase.from('notes').insert({
         patient_id: selectedPatient.id,
         dentist_id: dentistId,
         title: 'Quick Note',
@@ -799,7 +799,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
   const deleteNote = async (noteId: string) => {
     const noteToDelete = patientNotes.find(n => n.id === noteId);
     try {
-      const { error } = await supabase.from('patient_notes').delete().eq('id', noteId);
+      const { error } = await supabase.from('notes').delete().eq('id', noteId);
       if (error) throw error;
       if (selectedPatient) fetchPatientNotes(selectedPatient.id);
       toast({
@@ -820,7 +820,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
     if (!note || !selectedPatient) return;
     try {
       const { id, ...rest } = note;
-      const { error } = await supabase.from('patient_notes').insert({ ...rest, patient_id: selectedPatient.id, dentist_id: dentistId });
+      const { error } = await supabase.from('notes').insert({ ...rest, patient_id: selectedPatient.id, dentist_id: dentistId });
       if (error) throw error;
       toast({ title: 'Note restored' });
       fetchPatientNotes(selectedPatient.id);

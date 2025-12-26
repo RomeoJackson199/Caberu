@@ -2060,64 +2060,6 @@ export type Database = {
           },
         ]
       }
-      patient_notes: {
-        Row: {
-          content: string
-          created_at: string | null
-          dentist_id: string
-          id: string
-          is_private: boolean | null
-          note_type: string | null
-          patient_id: string
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          dentist_id: string
-          id?: string
-          is_private?: boolean | null
-          note_type?: string | null
-          patient_id: string
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          dentist_id?: string
-          id?: string
-          is_private?: boolean | null
-          note_type?: string | null
-          patient_id?: string
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "patient_notes_dentist_id_fkey"
-            columns: ["dentist_id"]
-            isOneToOne: false
-            referencedRelation: "dentists"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "patient_notes_dentist_id_fkey"
-            columns: ["dentist_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "patient_notes_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       patient_preferences: {
         Row: {
           average_booking_lead_time_days: number | null
@@ -3583,10 +3525,6 @@ export type Database = {
       can_view_profile_in_user_business_norec: {
         Args: { _target_profile_id: string; _viewer_user_id: string }
         Returns: boolean
-      }
-      check_clinic_registration: {
-        Args: { business_slug: string }
-        Returns: Json
       }
       check_imaging_workflow_flags: {
         Args: { p_appointment_id: string }
