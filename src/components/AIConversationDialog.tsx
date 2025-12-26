@@ -158,7 +158,7 @@ export function AIConversationDialog({
       if (suggestion.type === 'note') {
         const data = suggestion.data as NewPatientNoteForm;
         await supabase
-          .from('patient_notes')
+          .from('notes')
           .insert({
             patient_id: patientId,
             dentist_id: dentistId,

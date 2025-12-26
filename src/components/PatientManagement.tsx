@@ -328,7 +328,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
 
       // Fetch notes
       const { data: notesData, error: notesError } = await supabase
-        .from('patient_notes')
+        .from('notes')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId)
@@ -607,7 +607,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
     try {
       if (editingNoteId) {
         const { error } = await supabase
-          .from('patient_notes')
+          .from('notes')
           .update({
             title: noteForm.title,
             content: noteForm.content,
@@ -618,7 +618,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('patient_notes')
+          .from('notes')
           .insert({
             patient_id: selectedPatient.id,
             dentist_id: dentistId,
@@ -677,7 +677,7 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
 
   const handleDeleteNote = async (id: string) => {
     try {
-      const { error } = await supabase.from('patient_notes').delete().eq('id', id);
+      const { error } = await supabase.from('notes').delete().eq('id', id);
       if (error) throw error;
       toast({ title: 'Deleted', description: 'Note deleted' });
       if (selectedPatient) fetchPatientData(selectedPatient.id);

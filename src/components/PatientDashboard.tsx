@@ -299,7 +299,7 @@ export const PatientDashboard = ({
       // Fetch patient notes
       const {
         data: notesData
-      } = await supabase.from('patient_notes').select('*').eq('patient_id', profileId);
+      } = await supabase.from('notes').select('*').eq('patient_id', profileId);
       setPatientStats({
         upcomingAppointments,
         completedAppointments,
@@ -386,7 +386,7 @@ export const PatientDashboard = ({
       // Fetch patient notes
       const {
         data: notesData
-      } = await supabase.from('patient_notes').select('*').eq('patient_id', profileId).order('created_at', {
+      } = await supabase.from('notes').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
       setPatientNotes(notesData || []);

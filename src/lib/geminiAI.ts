@@ -309,7 +309,7 @@ async function logAIRecommendation(
 
   try {
     const { data, error } = await supabase
-      .from('ai_slot_recommendations')
+      .from('slot_recommendations')
       .insert({
         business_id: businessId,
         patient_id: patientId,
@@ -345,7 +345,7 @@ export async function updateAIRecommendationSelection(
 ): Promise<void> {
   try {
     await supabase
-      .from('ai_slot_recommendations')
+      .from('slot_recommendations')
       .update({
         selected_slot: selectedTime,
         appointment_id: appointmentId,
@@ -373,7 +373,7 @@ export async function getAIRecommendationSuccessRate(
 
   try {
     const { data, error } = await supabase
-      .from('ai_slot_recommendations')
+      .from('slot_recommendations')
       .select('was_ai_recommended, appointment_completed')
       .eq('business_id', businessId)
       .eq('dentist_id', dentistId);
