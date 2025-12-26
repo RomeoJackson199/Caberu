@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -28,7 +28,12 @@ import {
   Pill,
   Receipt,
   ClipboardCheck,
-  User
+  User,
+  List,
+  CalendarDays,
+  Activity,
+  Eye,
+  Share2
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { format, parseISO } from "date-fns";
@@ -49,19 +54,24 @@ interface TimelineRecord {
   dentistName?: string;
   linkedAppointmentId?: string;
   documentPath?: string;
+  status?: string;
 }
+
+type CategoryFilter = 'visits' | 'treatments' | 'medications' | 'documents';
+type StatusFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
 
 export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProps) {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<string>("all");
-  const [filterClinic, setFilterClinic] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [activeCategory, setActiveCategory] = useState<CategoryFilter | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // Fetch completed appointments with business info
+  // Fetch all appointments with business info (for records view)
   const { data: appointments, isLoading: loadingAppointments } = useQuery({
-    queryKey: ["patient-completed-appointments", patientId],
+    queryKey: ["patient-all-appointments", patientId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
@@ -73,6 +83,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           ai_summary,
           completed_at,
           duration_minutes,
+          status,
           dentist_id,
           business_id,
           businesses!inner (
@@ -86,8 +97,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           )
         `)
         .eq("patient_id", patientId)
-        .eq("status", "completed")
-        .order("completed_at", { ascending: false });
+        .order("appointment_date", { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -120,32 +130,43 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
     }
   });
 
+  // Calculate category counts
+  const categoryCounts = useMemo(() => {
+    const visits = appointments?.length || 0;
+    const treatments = appointments?.filter((apt: any) => 
+      apt.status === 'completed' && (apt.consultation_notes || apt.ai_summary)
+    ).length || 0;
+    const medications = documents?.filter((doc: any) => 
+      doc.document_type === 'prescription'
+    ).length || 0;
+    const docs = documents?.length || 0;
+
+    return { visits, treatments, medications, documents: docs };
+  }, [appointments, documents]);
+
   // Combine and sort all records into a unified timeline
   const timelineRecords = useMemo(() => {
     const records: TimelineRecord[] = [];
 
-    // Add completed appointments
+    // Add appointments
     if (appointments) {
       appointments.forEach((apt: any) => {
         const dentistName = apt.dentists 
           ? `Dr. ${apt.dentists.first_name || ''} ${apt.dentists.last_name || ''}`.trim()
           : undefined;
         
-        // Only include if there's meaningful finalized content
-        const hasContent = apt.consultation_notes || apt.ai_summary || apt.reason;
-        if (hasContent) {
-          records.push({
-            id: apt.id,
-            type: 'appointment',
-            title: apt.reason || 'Completed visit',
-            description: apt.consultation_notes || apt.ai_summary || 'Visit completed',
-            date: apt.completed_at || apt.appointment_date,
-            clinicName: apt.businesses?.name || 'Clinic',
-            clinicId: apt.business_id,
-            dentistName,
-            linkedAppointmentId: apt.id,
-          });
-        }
+        records.push({
+          id: apt.id,
+          type: 'appointment',
+          title: apt.reason || 'Visit',
+          description: apt.consultation_notes || apt.ai_summary || apt.reason || 'Scheduled visit',
+          date: apt.appointment_date,
+          clinicName: apt.businesses?.name || 'Clinic',
+          clinicId: apt.business_id,
+          dentistName,
+          linkedAppointmentId: apt.id,
+          status: apt.status,
+        });
       });
     }
 
@@ -172,6 +193,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           clinicName: doc.businesses?.name || 'Clinic',
           clinicId: doc.business_id,
           documentPath: doc.file_path,
+          status: 'completed',
         });
       });
     }
@@ -182,28 +204,39 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
     );
   }, [appointments, documents]);
 
-  // Get unique clinics for filter
-  const clinics = useMemo(() => {
-    const uniqueClinics = new Map<string, string>();
-    timelineRecords.forEach(record => {
-      if (!uniqueClinics.has(record.clinicId)) {
-        uniqueClinics.set(record.clinicId, record.clinicName);
-      }
-    });
-    return Array.from(uniqueClinics.entries()).map(([id, name]) => ({ id, name }));
-  }, [timelineRecords]);
-
   // Apply filters
   const filteredRecords = useMemo(() => {
     return timelineRecords.filter(record => {
-      // Type filter
-      if (filterType !== "all" && record.type !== filterType) {
-        return false;
+      // Category filter
+      if (activeCategory) {
+        switch (activeCategory) {
+          case 'visits':
+            if (record.type !== 'appointment') return false;
+            break;
+          case 'treatments':
+            if (record.type !== 'appointment' || record.status !== 'completed') return false;
+            break;
+          case 'medications':
+            if (record.type !== 'prescription') return false;
+            break;
+          case 'documents':
+            if (!['document', 'invoice', 'prescription'].includes(record.type)) return false;
+            break;
+        }
       }
 
-      // Clinic filter
-      if (filterClinic !== "all" && record.clinicId !== filterClinic) {
-        return false;
+      // Status filter
+      if (statusFilter !== 'all') {
+        const recordStatus = record.status || 'completed';
+        if (statusFilter === 'upcoming' && !['scheduled', 'confirmed', 'pending'].includes(recordStatus)) {
+          return false;
+        }
+        if (statusFilter === 'completed' && recordStatus !== 'completed') {
+          return false;
+        }
+        if (statusFilter === 'cancelled' && recordStatus !== 'cancelled') {
+          return false;
+        }
       }
 
       // Search filter
@@ -213,138 +246,192 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           record.title.toLowerCase().includes(query) ||
           record.description.toLowerCase().includes(query) ||
           record.clinicName.toLowerCase().includes(query) ||
-          (record.dentistName?.toLowerCase().includes(query) ?? false)
+          (record.dentistName?.toLowerCase().includes(query) ?? false) ||
+          format(parseISO(record.date), "MMM d, yyyy").toLowerCase().includes(query)
         );
       }
 
       return true;
     });
-  }, [timelineRecords, filterType, filterClinic, searchQuery]);
+  }, [timelineRecords, activeCategory, statusFilter, searchQuery]);
 
   const isLoading = loadingAppointments || loadingDocuments;
 
   const handleRecordClick = (record: TimelineRecord) => {
     if (record.linkedAppointmentId) {
-      // Open appointment detail dialog
       setSelectedAppointmentId(record.linkedAppointmentId);
       setDetailOpen(true);
     } else if (record.documentPath) {
-      // Open document in new tab (read-only preview)
       window.open(record.documentPath, '_blank', 'noopener,noreferrer');
     }
   };
 
-  const getRecordIcon = (type: TimelineRecord['type']) => {
-    switch (type) {
-      case 'appointment':
-        return Stethoscope;
-      case 'prescription':
-        return Pill;
-      case 'invoice':
-        return Receipt;
-      case 'document':
-      default:
-        return FileText;
-    }
-  };
-
-  const getRecordBadge = (type: TimelineRecord['type']) => {
-    const configs: Record<string, { label: string; className: string }> = {
-      appointment: { 
-        label: 'Completed visit', 
-        className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200' 
+  const getStatusBadge = (status?: string) => {
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      scheduled: { 
+        label: 'scheduled', 
+        className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
       },
-      prescription: { 
-        label: 'Issued prescription', 
-        className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200' 
+      confirmed: { 
+        label: 'confirmed', 
+        className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
       },
-      invoice: { 
-        label: 'Final invoice', 
-        className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200' 
+      pending: { 
+        label: 'pending', 
+        className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' 
       },
-      document: { 
-        label: 'Document', 
-        className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200' 
+      completed: { 
+        label: 'completed', 
+        className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' 
+      },
+      cancelled: { 
+        label: 'cancelled', 
+        className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' 
       },
     };
-    return configs[type] || configs.document;
+    return statusConfig[status || 'scheduled'] || statusConfig.scheduled;
   };
 
   if (isLoading) {
     return (
       <div className="space-y-4">
+        <Skeleton className="h-12 w-full rounded-xl" />
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-10 w-full rounded-xl" />
         {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <div className="flex gap-4">
-                <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-1/3" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Skeleton key={i} className="h-32 rounded-xl" />
         ))}
       </div>
     );
   }
 
+  const categories: { key: CategoryFilter; icon: React.ElementType; label: string; count: number }[] = [
+    { key: 'visits', icon: Calendar, label: 'Visits', count: categoryCounts.visits },
+    { key: 'treatments', icon: Activity, label: 'Treatments', count: categoryCounts.treatments },
+    { key: 'medications', icon: Pill, label: 'Medications', count: categoryCounts.medications },
+    { key: 'documents', icon: FolderOpen, label: 'Documents', count: categoryCounts.documents },
+  ];
+
+  const statusFilters: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
+
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <Card>
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <Input
+          placeholder="Search by treatment, medication, or date"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-12 h-12 rounded-xl border-border bg-background"
+        />
+      </div>
+
+      {/* View Toggle */}
+      <div className="flex gap-2">
+        <Button
+          variant={viewMode === 'list' ? 'default' : 'outline'}
+          className={cn(
+            "flex-1 h-12 rounded-xl gap-2",
+            viewMode === 'list' && "bg-primary text-primary-foreground"
+          )}
+          onClick={() => setViewMode('list')}
+        >
+          <List className="h-5 w-5" />
+        </Button>
+        <Button
+          variant={viewMode === 'calendar' ? 'default' : 'outline'}
+          className={cn(
+            "flex-1 h-12 rounded-xl gap-2",
+            viewMode === 'calendar' && "bg-primary text-primary-foreground"
+          )}
+          onClick={() => setViewMode('calendar')}
+        >
+          <CalendarDays className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Category Tiles */}
+      <Card className="rounded-xl border-border">
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search records..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-
-            {/* Type filter */}
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="sm:w-44">
-                <SelectValue placeholder="All types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="appointment">Visits</SelectItem>
-                <SelectItem value="document">Documents</SelectItem>
-                <SelectItem value="prescription">Prescriptions</SelectItem>
-                <SelectItem value="invoice">Invoices</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Clinic filter (only show if multiple clinics) */}
-            {clinics.length > 1 && (
-              <Select value={filterClinic} onValueChange={setFilterClinic}>
-                <SelectTrigger className="sm:w-48">
-                  <SelectValue placeholder="All clinics" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All clinics</SelectItem>
-                  {clinics.map((clinic) => (
-                    <SelectItem key={clinic.id} value={clinic.id}>
-                      {clinic.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+          <div className="grid grid-cols-2 gap-3">
+            {categories.map((category) => {
+              const Icon = category.icon;
+              const isActive = activeCategory === category.key;
+              
+              return (
+                <button
+                  key={category.key}
+                  onClick={() => setActiveCategory(isActive ? null : category.key)}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200",
+                    isActive 
+                      ? "border-primary bg-primary/5" 
+                      : "border-transparent bg-muted/50 hover:bg-muted"
+                  )}
+                >
+                  <Icon className={cn(
+                    "h-6 w-6 mb-1",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )} />
+                  <span className={cn(
+                    "text-sm font-medium",
+                    isActive ? "text-primary" : "text-foreground"
+                  )}>
+                    {category.label}
+                  </span>
+                  {category.count > 0 && (
+                    <Badge 
+                      variant="secondary" 
+                      className={cn(
+                        "mt-1 h-5 min-w-5 text-xs",
+                        isActive 
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-primary/10 text-primary"
+                      )}
+                    >
+                      {category.count}
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
-      {/* Timeline */}
+      {/* Status Filters */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {statusFilters.map((filter) => (
+          <Button
+            key={filter.key}
+            variant={statusFilter === filter.key ? 'default' : 'outline'}
+            size="sm"
+            className={cn(
+              "rounded-full px-4 whitespace-nowrap",
+              statusFilter === filter.key 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-background"
+            )}
+            onClick={() => setStatusFilter(filter.key)}
+          >
+            {filter.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* Timeline Records */}
       {filteredRecords.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed rounded-xl">
           <CardContent className="py-16">
             <div className="flex flex-col items-center text-center space-y-4">
               <div className="p-4 rounded-full bg-muted">
@@ -362,100 +449,85 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           </CardContent>
         </Card>
       ) : (
-        <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border hidden sm:block" />
+        <div className="space-y-3">
+          {filteredRecords.map((record) => {
+            const statusBadge = getStatusBadge(record.status);
+            const isClickable = record.linkedAppointmentId || record.documentPath;
 
-          <div className="space-y-3">
-            {filteredRecords.map((record, index) => {
-              const Icon = getRecordIcon(record.type);
-              const badge = getRecordBadge(record.type);
-              const isClickable = record.linkedAppointmentId || record.documentPath;
-
-              return (
-                <Card 
-                  key={`${record.type}-${record.id}`}
-                  className={cn(
-                    "relative transition-all duration-200",
-                    isClickable && "cursor-pointer hover:shadow-md hover:border-primary/30"
-                  )}
-                  onClick={() => isClickable && handleRecordClick(record)}
-                  role={isClickable ? "button" : undefined}
-                  tabIndex={isClickable ? 0 : undefined}
-                  onKeyDown={(e) => {
-                    if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
-                      e.preventDefault();
-                      handleRecordClick(record);
-                    }
-                  }}
-                >
-                  <CardContent className="p-4">
+            return (
+              <Card 
+                key={`${record.type}-${record.id}`}
+                className={cn(
+                  "rounded-xl transition-all duration-200 overflow-hidden",
+                  isClickable && "cursor-pointer hover:shadow-md hover:border-primary/30"
+                )}
+                onClick={() => isClickable && handleRecordClick(record)}
+              >
+                {/* Left accent bar */}
+                <div className="flex">
+                  <div className={cn(
+                    "w-1 flex-shrink-0",
+                    record.status === 'completed' && "bg-emerald-500",
+                    record.status === 'scheduled' && "bg-blue-500",
+                    record.status === 'confirmed' && "bg-green-500",
+                    record.status === 'pending' && "bg-yellow-500",
+                    record.status === 'cancelled' && "bg-red-500",
+                    !record.status && "bg-primary"
+                  )} />
+                  
+                  <CardContent className="flex-1 p-4">
                     <div className="flex gap-4">
                       {/* Icon */}
-                      <div className="relative flex-shrink-0">
-                        <div className={cn(
-                          "h-12 w-12 rounded-full flex items-center justify-center",
-                          record.type === 'appointment' && "bg-emerald-100 dark:bg-emerald-900/30",
-                          record.type === 'prescription' && "bg-blue-100 dark:bg-blue-900/30",
-                          record.type === 'invoice' && "bg-amber-100 dark:bg-amber-900/30",
-                          record.type === 'document' && "bg-purple-100 dark:bg-purple-900/30"
-                        )}>
-                          <Icon className={cn(
-                            "h-5 w-5",
-                            record.type === 'appointment' && "text-emerald-600 dark:text-emerald-400",
-                            record.type === 'prescription' && "text-blue-600 dark:text-blue-400",
-                            record.type === 'invoice' && "text-amber-600 dark:text-amber-400",
-                            record.type === 'document' && "text-purple-600 dark:text-purple-400"
-                          )} />
+                      <div className="flex-shrink-0">
+                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Calendar className="h-5 w-5 text-primary" />
                         </div>
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 min-w-0">
-                            <h4 className="font-medium text-foreground truncate">
-                              {record.title}
-                            </h4>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {record.description}
-                            </p>
-                          </div>
-                          {isClickable && (
-                            <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                          )}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 mt-3">
-                          <Badge variant="outline" className={badge.className}>
-                            <ClipboardCheck className="h-3 w-3 mr-1" />
-                            {badge.label}
+                        <h4 className="font-semibold text-foreground truncate">
+                          {record.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {record.status}
+                        </p>
+                        
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <Badge 
+                            variant="secondary" 
+                            className={cn("text-xs rounded-full", statusBadge.className)}
+                          >
+                            {statusBadge.label}
                           </Badge>
-
+                          
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Building2 className="h-3 w-3" />
-                            <span>{record.clinicName}</span>
-                          </div>
-
-                          {record.dentistName && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              <span>{record.dentistName}</span>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
                             <Calendar className="h-3 w-3" />
                             <span>{format(parseISO(record.date), "MMM d, yyyy")}</span>
                           </div>
                         </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+                          <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                            <Share2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Chevron */}
+                      {isClickable && (
+                        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 self-center" />
+                      )}
                     </div>
                   </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 

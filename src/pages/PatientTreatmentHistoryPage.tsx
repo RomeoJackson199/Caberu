@@ -1,9 +1,9 @@
 import React from "react";
-import { FileText } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientRecordsTimeline } from "@/components/patient/PatientRecordsTimeline";
-import { AnimatedBackground, SectionHeader, LoadingCard } from "@/components/ui/polished-components";
+import { LoadingCard } from "@/components/ui/polished-components";
 
 export default function PatientTreatmentHistoryPage() {
   const { t } = useLanguage();
@@ -25,18 +25,13 @@ export default function PatientTreatmentHistoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/20 dark:via-teal-950/20 dark:to-cyan-950/20 rounded-2xl p-6">
-        <AnimatedBackground />
-
-        <div className="relative z-10">
-          <SectionHeader
-            icon={FileText}
-            title="Records"
-            description="Your finalized medical records from completed appointments"
-            gradient="from-emerald-600 to-teal-600"
-          />
+      {/* Header */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-3">
+          <FolderOpen className="h-7 w-7 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">Treatment Records</h1>
         </div>
+        <p className="text-muted-foreground">View and manage your dental history</p>
       </div>
 
       {patientId ? (
