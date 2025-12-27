@@ -105,7 +105,7 @@ export const STATE_CONFIG: Record<AppointmentState, StateConfig> = {
   },
   COMPLETED_DRAFT: {
     label: 'Completed',
-    description: 'Appointment completed, details pending',
+    description: 'Your dentist is finalizing the details',
     badgeVariant: 'outline',
     badgeClassName: 'bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300 border-slate-200',
   },
@@ -116,7 +116,7 @@ export const STATE_CONFIG: Record<AppointmentState, StateConfig> = {
     badgeClassName: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200',
   },
   COMPLETED_FINAL_PAID: {
-    label: 'Completed',
+    label: 'Paid',
     description: 'Fully closed',
     badgeVariant: 'outline',
     badgeClassName: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200',
