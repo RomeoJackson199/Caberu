@@ -1,8 +1,10 @@
 /**
  * PatientAppointmentDetail - State-based appointment detail view
  * 
- * Uses centralized appointment state machine as single source of truth.
- * All visibility and actions are derived from the appointment state.
+ * Single source of truth for everything related to one appointment.
+ * All visibility and actions are derived from the appointment state machine.
+ * 
+ * This view REFLECTS appointment state; it never overrides or infers it.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -12,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,17 +26,17 @@ import {
   MapPin,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   CalendarX,
   RefreshCw,
   Download,
   CreditCard,
-  Receipt,
-  ChevronRight,
+  FileText,
   Stethoscope,
   ClipboardList,
   Ban,
   Timer,
+  AlertCircle,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -50,6 +53,8 @@ interface PatientAppointmentDetailProps {
   onOpenChange: (open: boolean) => void;
   onReschedule?: (appointmentId: string) => void;
   onCancel?: (appointmentId: string) => void;
+  /** Optional: auto-scroll to a specific section */
+  scrollTo?: 'payment' | 'documents' | null;
 }
 
 interface AppointmentData {
@@ -89,6 +94,7 @@ export function PatientAppointmentDetail({
   onOpenChange,
   onReschedule,
   onCancel,
+  scrollTo,
 }: PatientAppointmentDetailProps) {
   const isMobile = useIsMobile();
   const [appointment, setAppointment] = useState<AppointmentData | null>(null);
@@ -142,7 +148,6 @@ export function PatientAppointmentDetail({
 
       if (error) throw error;
 
-      // Handle potential array responses from Supabase joins
       const businessData = Array.isArray(data.businesses) ? data.businesses[0] : data.businesses;
       const dentistData = Array.isArray(data.dentists) ? data.dentists[0] : data.dentists;
       const serviceData = Array.isArray(data.business_services) ? data.business_services[0] : data.business_services;
@@ -184,7 +189,7 @@ export function PatientAppointmentDetail({
     }
   };
 
-  // Determine appointment state using the state machine
+  // Derive state using the state machine
   const appointmentState = useMemo((): AppointmentState => {
     if (!appointment) return 'UPCOMING';
 
@@ -202,281 +207,349 @@ export function PatientAppointmentDetail({
 
   // Get permissions from state machine
   const permissions = useMemo(() => getStatePermissions(appointmentState), [appointmentState]);
-
-  const getStatusBadge = () => {
-    const stateConfig = getStateConfig(appointmentState);
-    
-    // Map states to icons
-    const iconMap: Record<AppointmentState, React.ElementType> = {
-      UPCOMING: Calendar,
-      COMPLETED_DRAFT: Clock,
-      COMPLETED_FINAL_UNPAID: CreditCard,
-      COMPLETED_FINAL_PAID: CheckCircle2,
-      CANCELLED: XCircle,
-    };
-
-    const Icon = iconMap[appointmentState];
-
-    return (
-      <Badge variant="outline" className={cn("gap-1.5 font-medium border", stateConfig.badgeClassName)}>
-        <Icon className="h-3 w-3" />
-        {stateConfig.label}
-      </Badge>
-    );
-  };
+  const stateConfig = useMemo(() => getStateConfig(appointmentState), [appointmentState]);
 
   const dentistName = appointment?.dentist
     ? `Dr. ${appointment.dentist.first_name} ${appointment.dentist.last_name}`.trim()
     : 'Your dentist';
 
+  // Status badge with icon
+  const StatusBadge = () => {
+    const iconMap: Record<AppointmentState, React.ElementType> = {
+      UPCOMING: Calendar,
+      COMPLETED_DRAFT: Clock,
+      COMPLETED_FINAL_UNPAID: AlertCircle,
+      COMPLETED_FINAL_PAID: CheckCircle2,
+      CANCELLED: XCircle,
+    };
+    const Icon = iconMap[appointmentState];
+
+    return (
+      <Badge 
+        variant="outline" 
+        className={cn("gap-1.5 font-medium text-sm px-3 py-1", stateConfig.badgeClassName)}
+      >
+        <Icon className="h-3.5 w-3.5" />
+        {stateConfig.label}
+      </Badge>
+    );
+  };
+
+  // Loading skeleton
+  const LoadingSkeleton = () => (
+    <div className="p-6 space-y-6">
+      <div className="space-y-3">
+        <Skeleton className="h-7 w-28" />
+        <Skeleton className="h-6 w-56" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <Separator />
+      <div className="space-y-3">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-full" />
+      </div>
+      <Skeleton className="h-32 w-full rounded-lg" />
+    </div>
+  );
+
   const content = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {loading ? (
-        <div className="p-6 space-y-6">
-          <div className="space-y-3">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-4 w-40" />
-          </div>
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
+        <LoadingSkeleton />
       ) : appointment ? (
         <>
-          {/* 1. HEADER - Always visible */}
-          <div className="p-6 border-b bg-muted/30">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-2">
-                {getStatusBadge()}
-                <h2 className="text-lg font-semibold text-foreground">
-                  {format(parseISO(appointment.appointment_date), 'EEEE, MMMM d, yyyy')}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {format(parseISO(appointment.appointment_date), 'h:mm a')}
-                </p>
+          {/* ============================================ */}
+          {/* 1. HEADER - Always visible, state dominant */}
+          {/* ============================================ */}
+          <div className="p-6 border-b bg-muted/30 flex-shrink-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-3">
+                {/* State badge - visually dominant */}
+                <StatusBadge />
+                
+                {/* Date & time */}
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {format(parseISO(appointment.appointment_date), 'EEEE, MMMM d, yyyy')}
+                  </h2>
+                  <p className="text-base text-muted-foreground mt-0.5">
+                    {format(parseISO(appointment.appointment_date), 'h:mm a')}
+                  </p>
+                </div>
               </div>
+
+              {/* Clinic logo */}
               {appointment.business?.logo_url && (
                 <img 
                   src={appointment.business.logo_url} 
-                  alt="" 
-                  className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+                  alt={appointment.business.name}
+                  className="h-14 w-14 rounded-xl object-cover flex-shrink-0 border"
                 />
               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            {/* Clinic & dentist info */}
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <Building2 className="h-4 w-4" />
+                <Building2 className="h-4 w-4 flex-shrink-0" />
                 <span>{appointment.business?.name || 'Clinic'}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <User className="h-4 w-4" />
+                <User className="h-4 w-4 flex-shrink-0" />
                 <span>{dentistName}</span>
               </div>
             </div>
           </div>
 
-          {/* 2. APPOINTMENT SUMMARY - Compact */}
-          <div className="p-6 border-b">
+          {/* ============================================ */}
+          {/* 2. APPOINTMENT SUMMARY - Compact orientation */}
+          {/* ============================================ */}
+          <div className="px-6 py-4 border-b flex-shrink-0">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+              <div className="p-2.5 rounded-lg bg-primary/10 flex-shrink-0">
                 <Stethoscope className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-foreground">
                   {appointment.service?.name || appointment.reason || 'Appointment'}
                 </h3>
-                {appointment.notes && (
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {appointment.notes}
+                {appointment.duration_minutes && (
+                  <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
+                    <Timer className="h-3.5 w-3.5" />
+                    {appointment.duration_minutes} minutes
                   </p>
                 )}
-                <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                  {appointment.duration_minutes && (
-                    <div className="flex items-center gap-1">
-                      <Timer className="h-3 w-3" />
-                      <span>{appointment.duration_minutes} min</span>
-                    </div>
-                  )}
-                  {appointment.business?.address && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      <span className="truncate">{appointment.business.address}</span>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
 
-          {/* 3. STATE-SPECIFIC SECTIONS */}
-          <div className="flex-1 overflow-auto p-6 space-y-6">
-            
-            {/* A. UPCOMING APPOINTMENT */}
-            {appointmentState === 'UPCOMING' && (
-              <>
-                <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-                  <CardContent className="p-4">
-                    <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                      <Calendar className="h-4 w-4 text-blue-600" />
-                      Scheduled Details
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date</span>
-                        <span className="font-medium">{format(parseISO(appointment.appointment_date), 'MMMM d, yyyy')}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time</span>
-                        <span className="font-medium">{format(parseISO(appointment.appointment_date), 'h:mm a')}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Dentist</span>
-                        <span className="font-medium">{dentistName}</span>
-                      </div>
-                      {appointment.business?.address && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Location</span>
-                          <span className="font-medium text-right max-w-[60%]">{appointment.business.address}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-
-            {/* B. COMPLETED (no payment yet) */}
-            {appointmentState === 'COMPLETED_DRAFT' && (
-              <>
-                {(appointment.consultation_notes || appointment.ai_summary) && (
-                  <Card>
-                    <CardContent className="p-4">
-                      <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                        <ClipboardList className="h-4 w-4 text-emerald-600" />
-                        Treatment Summary
+          {/* ============================================ */}
+          {/* 3. STATE-DRIVEN CONTENT (conditional) */}
+          {/* ============================================ */}
+          <div className="flex-1 overflow-auto">
+            <div className="p-6 space-y-5">
+              
+              {/* -------- UPCOMING -------- */}
+              {appointmentState === 'UPCOMING' && (
+                <>
+                  {/* Scheduled details card */}
+                  <Card className="border-blue-200/50 dark:border-blue-800/50 bg-blue-50/30 dark:bg-blue-950/20">
+                    <CardContent className="p-4 space-y-3">
+                      <h4 className="font-medium text-foreground flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                        Appointment Details
                       </h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {appointment.consultation_notes || appointment.ai_summary}
-                      </p>
+                      <div className="space-y-2.5 text-sm">
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Date</span>
+                          <span className="font-medium">{format(parseISO(appointment.appointment_date), 'MMMM d, yyyy')}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Time</span>
+                          <span className="font-medium">{format(parseISO(appointment.appointment_date), 'h:mm a')}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Dentist</span>
+                          <span className="font-medium">{dentistName}</span>
+                        </div>
+                        {appointment.business?.address && (
+                          <div className="flex justify-between items-start gap-4 pt-1">
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <MapPin className="h-3.5 w-3.5" />
+                              Location
+                            </span>
+                            <span className="font-medium text-right">{appointment.business.address}</span>
+                          </div>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
-                )}
 
-                <Card className="border-muted">
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground text-center">
-                      Payment will become available shortly.
+                  {/* Preparation notes (if any) */}
+                  {appointment.notes && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-2">
+                          <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                          Notes
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{appointment.notes}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* -------- COMPLETED_DRAFT -------- */}
+              {appointmentState === 'COMPLETED_DRAFT' && (
+                <Card className="border-slate-200 dark:border-slate-700">
+                  <CardContent className="p-6 text-center">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                      <Clock className="h-6 w-6 text-slate-500" />
+                    </div>
+                    <p className="text-foreground font-medium">Your appointment has been completed</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Your dentist is finalizing the details.
                     </p>
                   </CardContent>
                 </Card>
-              </>
-            )}
+              )}
 
-            {/* C. COMPLETED (payment required) */}
-            {appointmentState === 'COMPLETED_FINAL_UNPAID' && (
-              <>
-                {(appointment.consultation_notes || appointment.ai_summary) && (
-                  <Card>
-                    <CardContent className="p-4">
-                      <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                        <ClipboardList className="h-4 w-4 text-emerald-600" />
-                        Treatment Summary
-                      </h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {appointment.consultation_notes || appointment.ai_summary}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
-                  <CardContent className="p-4">
-                    <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                      <Receipt className="h-4 w-4 text-orange-600" />
-                      Payment Due
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status</span>
-                        <Badge variant="outline" className="bg-orange-100 text-orange-800">Unpaid</Badge>
-                      </div>
-                      {appointment.amount_paid_cents !== null && appointment.amount_paid_cents > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Amount due</span>
-                          <span className="font-semibold text-lg">€{(appointment.amount_paid_cents / 100).toFixed(2)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-
-            {/* D. FULLY CLOSED (paid) */}
-            {appointmentState === 'COMPLETED_FINAL_PAID' && (
-              <>
-                {(appointment.consultation_notes || appointment.ai_summary) && (
-                  <Card>
-                    <CardContent className="p-4">
-                      <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                        <ClipboardList className="h-4 w-4 text-emerald-600" />
-                        Treatment Summary
-                      </h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {appointment.consultation_notes || appointment.ai_summary}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">Payment complete</p>
-                        <p className="text-sm text-muted-foreground">
-                          Paid on {appointment.completed_at 
-                            ? format(parseISO(appointment.completed_at), 'MMM d, yyyy')
-                            : 'N/A'}
+              {/* -------- COMPLETED_FINAL_UNPAID -------- */}
+              {appointmentState === 'COMPLETED_FINAL_UNPAID' && (
+                <>
+                  {/* Treatment summary */}
+                  {permissions.treatmentSummaryVisible && (appointment.consultation_notes || appointment.ai_summary) && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                          <ClipboardList className="h-4 w-4 text-emerald-600" />
+                          Treatment Summary
+                        </h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                          {appointment.consultation_notes || appointment.ai_summary}
                         </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Documents section */}
+                  {permissions.canDownloadDocuments && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          Documents
+                        </h4>
+                        <div className="space-y-2">
+                          <button className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left">
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm font-medium">Invoice</p>
+                                <p className="text-xs text-muted-foreground">{appointment.business?.name}</p>
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Payment section - highlighted */}
+                  <Card className="border-orange-200 dark:border-orange-800/50 bg-orange-50/50 dark:bg-orange-950/20">
+                    <CardContent className="p-4">
+                      <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                        <CreditCard className="h-4 w-4 text-orange-600" />
+                        Payment Due
+                      </h4>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Badge variant="outline" className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200">
+                            Unpaid
+                          </Badge>
+                        </div>
+                        {appointment.amount_paid_cents !== null && appointment.amount_paid_cents > 0 && (
+                          <span className="text-2xl font-semibold text-foreground">
+                            €{(appointment.amount_paid_cents / 100).toFixed(2)}
+                          </span>
+                        )}
                       </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+
+              {/* -------- COMPLETED_FINAL_PAID -------- */}
+              {appointmentState === 'COMPLETED_FINAL_PAID' && (
+                <>
+                  {/* Treatment summary */}
+                  {permissions.treatmentSummaryVisible && (appointment.consultation_notes || appointment.ai_summary) && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                          <ClipboardList className="h-4 w-4 text-emerald-600" />
+                          Treatment Summary
+                        </h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                          {appointment.consultation_notes || appointment.ai_summary}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Documents section */}
+                  {permissions.canDownloadDocuments && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          Documents
+                        </h4>
+                        <div className="space-y-2">
+                          <button className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left">
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm font-medium">Invoice</p>
+                                <p className="text-xs text-muted-foreground">{appointment.business?.name}</p>
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Payment complete */}
+                  <Card className="border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">Payment complete</p>
+                          <p className="text-sm text-muted-foreground">
+                            Paid on {appointment.completed_at 
+                              ? format(parseISO(appointment.completed_at), 'MMMM d, yyyy')
+                              : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+
+              {/* -------- CANCELLED -------- */}
+              {appointmentState === 'CANCELLED' && (
+                <Card className="border-red-200 dark:border-red-800/50 bg-red-50/50 dark:bg-red-950/20">
+                  <CardContent className="p-6 text-center">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
+                      <Ban className="h-6 w-6 text-red-600" />
                     </div>
+                    <p className="text-foreground font-medium">Appointment cancelled</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      This appointment did not take place.
+                    </p>
                   </CardContent>
                 </Card>
-              </>
-            )}
+              )}
 
-            {/* E. CANCELLED */}
-            {appointmentState === 'CANCELLED' && (
-              <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-red-100 dark:bg-red-900/50">
-                      <Ban className="h-5 w-5 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Appointment cancelled</p>
-                      <p className="text-sm text-muted-foreground">
-                        This appointment was cancelled.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
+            </div>
           </div>
 
+          {/* ============================================ */}
           {/* 4. ACTIONS - Bottom (derived from permissions) */}
-          <div className="p-6 border-t bg-muted/30">
-            {/* A. Upcoming - Reschedule / Cancel */}
-            {permissions.canReschedule && (
+          {/* ============================================ */}
+          <div className="p-6 border-t bg-muted/30 flex-shrink-0">
+            {/* UPCOMING: Reschedule / Cancel */}
+            {appointmentState === 'UPCOMING' && (permissions.canReschedule || permissions.canCancel) && (
               <div className="flex gap-3">
-                {onReschedule && (
+                {permissions.canReschedule && onReschedule && (
                   <Button 
                     variant="outline" 
                     className="flex-1 gap-2"
@@ -489,7 +562,7 @@ export function PatientAppointmentDetail({
                 {permissions.canCancel && onCancel && (
                   <Button 
                     variant="outline" 
-                    className="flex-1 gap-2 text-destructive hover:text-destructive"
+                    className="flex-1 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => onCancel(appointment.id)}
                   >
                     <CalendarX className="h-4 w-4" />
@@ -499,8 +572,15 @@ export function PatientAppointmentDetail({
               </div>
             )}
 
-            {/* Payment required - Pay button */}
-            {permissions.canPay && (
+            {/* COMPLETED_DRAFT: No actions */}
+            {appointmentState === 'COMPLETED_DRAFT' && (
+              <p className="text-sm text-muted-foreground text-center">
+                No actions available at this time.
+              </p>
+            )}
+
+            {/* COMPLETED_FINAL_UNPAID: Pay button */}
+            {appointmentState === 'COMPLETED_FINAL_UNPAID' && permissions.canPay && (
               <div className="space-y-3">
                 <Button className="w-full gap-2" size="lg">
                   <CreditCard className="h-4 w-4" />
@@ -508,24 +588,18 @@ export function PatientAppointmentDetail({
                     ? `€${(appointment.amount_paid_cents / 100).toFixed(2)}`
                     : ''}
                 </Button>
-                {permissions.canDownloadDocuments && (
-                  <Button variant="outline" className="w-full gap-2">
-                    <Download className="h-4 w-4" />
-                    Download invoice
-                  </Button>
-                )}
               </div>
             )}
 
-            {/* Fully closed - Download only */}
-            {!permissions.canPay && permissions.canDownloadDocuments && (
+            {/* COMPLETED_FINAL_PAID: Download only */}
+            {appointmentState === 'COMPLETED_FINAL_PAID' && permissions.canDownloadDocuments && (
               <Button variant="outline" className="w-full gap-2">
                 <Download className="h-4 w-4" />
                 Download documents
               </Button>
             )}
 
-            {/* Cancelled - Rebook shortcut */}
+            {/* CANCELLED: Rebook option */}
             {appointmentState === 'CANCELLED' && (
               <Button className="w-full gap-2" onClick={() => onOpenChange(false)}>
                 Book new appointment
@@ -535,7 +609,7 @@ export function PatientAppointmentDetail({
           </div>
         </>
       ) : (
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-64 p-6">
           <p className="text-muted-foreground">Failed to load appointment details</p>
         </div>
       )}
