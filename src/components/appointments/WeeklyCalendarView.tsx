@@ -5,16 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { AppointmentCompletionDialog } from "../appointment/AppointmentCompletionDialog";
+import { ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
 import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useNavigate } from "react-router-dom";
-import { logger } from '@/lib/logger';
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface WeeklyCalendarViewProps {
@@ -73,15 +69,11 @@ export function WeeklyCalendarView({
   selectedAppointmentId,
   googleCalendarEvents = []
 }: WeeklyCalendarViewProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const { t } = useLanguage();
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
-  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [mobileCurrentDay, setMobileCurrentDay] = useState(0);
   const [quickAppointmentOpen, setQuickAppointmentOpen] = useState(false);
   const [quickAppointmentDate, setQuickAppointmentDate] = useState<Date>(new Date());
@@ -281,40 +273,6 @@ export function WeeklyCalendarView({
     setQuickAppointmentOpen(true);
   };
 
-  const handleCompleteAppointment = (apt: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedAppointment(apt);
-    setCompletionDialogOpen(true);
-  };
-
-  const handleCancelAppointment = async (appointmentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    // Optimistically update UI immediately
-    const previousData = queryClient.getQueryData<any[]>(["appointments-calendar", dentistId, format(weekStart, "yyyy-MM-dd")]);
-
-    queryClient.setQueryData(
-      ["appointments-calendar", dentistId, format(weekStart, "yyyy-MM-dd")],
-      (old: any[] | undefined) =>
-        old?.map(apt => apt.id === appointmentId ? { ...apt, status: "cancelled" } : apt) || []
-    );
-
-    toast({ title: "Appointment cancelled" });
-
-    try {
-      const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", appointmentId);
-      if (error) throw error;
-      // Refresh from server to ensure sync
-      queryClient.invalidateQueries({ queryKey: ["appointments-calendar"] });
-    } catch (error) {
-      // Rollback on error
-      queryClient.setQueryData(
-        ["appointments-calendar", dentistId, format(weekStart, "yyyy-MM-dd")],
-        previousData
-      );
-      toast({ title: "Error", description: "Failed to cancel appointment.", variant: "destructive" });
-    }
-  };
 
   // Helper to calculate position styles
   const getEventStyle = (event: any) => {
@@ -551,15 +509,18 @@ export function WeeklyCalendarView({
                                   )}
                                 </div>
 
-                                {!['completed', 'cancelled', 'google-calendar'].includes(event.status) && (
-                                  <div className="flex gap-2 pt-1">
-                                    <Button size="sm" className="flex-1 h-8 text-xs" onClick={(e) => handleCompleteAppointment(event, e)}>
-                                      <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
-                                    </Button>
-                                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30" onClick={(e) => handleCancelAppointment(event.id, e)}>
-                                      <XCircle className="h-3 w-3 mr-1" /> Cancel
-                                    </Button>
-                                  </div>
+                                {!['google-calendar'].includes(event.status) && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    className="w-full h-8 text-xs" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onAppointmentClick(event);
+                                    }}
+                                  >
+                                    View Details
+                                  </Button>
                                 )}
                               </div>
                             </Card>
@@ -575,18 +536,6 @@ export function WeeklyCalendarView({
         </div>
       </div>
 
-      {selectedAppointment && (
-        <AppointmentCompletionDialog
-          appointment={selectedAppointment}
-          open={completionDialogOpen}
-          onOpenChange={setCompletionDialogOpen}
-          onCompleted={() => {
-            setCompletionDialogOpen(false);
-            setSelectedAppointment(null);
-            queryClient.invalidateQueries({ queryKey: ["appointments-calendar"] });
-          }}
-        />
-      )}
 
       <QuickAppointmentDialog
         open={quickAppointmentOpen}

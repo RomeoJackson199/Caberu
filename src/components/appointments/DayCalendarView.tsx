@@ -5,14 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { AppointmentCompletionDialog } from "../appointment/AppointmentCompletionDialog";
+import { Clock } from "lucide-react";
 import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
-import { logger } from '@/lib/logger';
 
 interface DayCalendarViewProps {
   dentistId: string;
@@ -42,11 +39,6 @@ export function DayCalendarView({
   selectedAppointmentId,
   googleCalendarEvents = []
 }: DayCalendarViewProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [quickAppointmentOpen, setQuickAppointmentOpen] = useState(false);
   const [quickAppointmentDate, setQuickAppointmentDate] = useState<Date>(new Date());
   const [quickAppointmentTime, setQuickAppointmentTime] = useState<string>("");
@@ -122,23 +114,6 @@ export function DayCalendarView({
     setQuickAppointmentOpen(true);
   };
 
-  const handleCompleteAppointment = (apt: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedAppointment(apt);
-    setCompletionDialogOpen(true);
-  };
-
-  const handleCancelAppointment = async (appointmentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await supabase.from("appointments").update({ status: "cancelled" }).eq("id", appointmentId);
-      queryClient.invalidateQueries({ queryKey: ["appointments-day"] });
-      queryClient.invalidateQueries({ queryKey: ["appointments-calendar"] });
-      toast({ title: "Appointment cancelled" });
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to cancel appointment.", variant: "destructive" });
-    }
-  };
 
   const getEventStyle = (event: any) => {
     const startDate = parseISO(event.appointment_date);
@@ -308,15 +283,18 @@ export function DayCalendarView({
                             </div>
                           </div>
 
-                          {!['completed', 'cancelled', 'google-calendar'].includes(event.status) && (
-                            <div className="flex gap-2 pt-2">
-                              <Button size="sm" className="flex-1" onClick={(e) => handleCompleteAppointment(event, e)}>
-                                <CheckCircle2 className="h-4 w-4 mr-2" /> Complete
-                              </Button>
-                              <Button size="sm" variant="outline" className="flex-1 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30" onClick={(e) => handleCancelAppointment(event.id, e)}>
-                                <XCircle className="h-4 w-4 mr-2" /> Cancel
-                              </Button>
-                            </div>
+                          {!['google-calendar'].includes(event.status) && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="w-full" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAppointmentClick(event);
+                              }}
+                            >
+                              View Details
+                            </Button>
                           )}
                         </div>
                       </Card>
@@ -329,19 +307,6 @@ export function DayCalendarView({
         </div>
       </div>
 
-      {selectedAppointment && (
-        <AppointmentCompletionDialog
-          appointment={selectedAppointment}
-          open={completionDialogOpen}
-          onOpenChange={setCompletionDialogOpen}
-          onCompleted={() => {
-            setCompletionDialogOpen(false);
-            setSelectedAppointment(null);
-            queryClient.invalidateQueries({ queryKey: ["appointments-day"] });
-            queryClient.invalidateQueries({ queryKey: ["appointments-calendar"] });
-          }}
-        />
-      )}
 
       <QuickAppointmentDialog
         open={quickAppointmentOpen}
