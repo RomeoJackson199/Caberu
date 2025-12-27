@@ -4,12 +4,21 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, Building2, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { 
+  deriveAppointmentState, 
+  getStateConfig, 
+  getAppointmentGroup,
+  AppointmentState,
+  AppointmentStateInput 
+} from "@/lib/appointmentStateMachine";
 
 interface AppointmentIndexCardProps {
   appointment: {
     id: string;
     appointment_date: string;
     status: string;
+    payment_status?: string | null;
+    completed_at?: string | null;
     reason?: string;
     dentist?: {
       first_name: string;
@@ -21,51 +30,27 @@ interface AppointmentIndexCardProps {
 }
 
 /**
- * Normalize status to one of: upcoming, completed, action_required, cancelled
+ * Map AppointmentState to display badge using state machine
  */
-function getDisplayStatus(status: string, appointmentDate: string): 'upcoming' | 'completed' | 'action_required' | 'cancelled' {
-  const isPast = new Date(appointmentDate) < new Date();
+function getStatusBadge(state: AppointmentState) {
+  const config = getStateConfig(state);
   
-  if (status === 'cancelled') return 'cancelled';
-  if (status === 'completed') return 'completed';
-  if (status === 'action_required' || status === 'pending_payment') return 'action_required';
-  
-  // For confirmed/pending appointments
-  if (isPast) return 'completed'; // Past non-cancelled = completed
-  return 'upcoming';
-}
-
-function getStatusBadge(displayStatus: 'upcoming' | 'completed' | 'action_required' | 'cancelled') {
-  switch (displayStatus) {
-    case 'upcoming':
-      return (
-        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20">
-          Upcoming
-        </Badge>
-      );
-    case 'completed':
-      return (
-        <Badge className="bg-sky-500/10 text-sky-600 border-sky-500/20 hover:bg-sky-500/20">
-          Completed
-        </Badge>
-      );
-    case 'action_required':
-      return (
-        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/20">
-          Action required
-        </Badge>
-      );
-    case 'cancelled':
-      return (
-        <Badge className="bg-rose-500/10 text-rose-600 border-rose-500/20 hover:bg-rose-500/20">
-          Cancelled
-        </Badge>
-      );
-  }
+  return (
+    <Badge className={cn("border", config.badgeClassName)}>
+      {config.label}
+    </Badge>
+  );
 }
 
 export function AppointmentIndexCard({ appointment, onClick }: AppointmentIndexCardProps) {
-  const displayStatus = getDisplayStatus(appointment.status, appointment.appointment_date);
+  // Derive state using the centralized state machine
+  const stateInput: AppointmentStateInput = {
+    status: appointment.status,
+    payment_status: appointment.payment_status ?? null,
+    appointment_date: appointment.appointment_date,
+    completed_at: appointment.completed_at ?? null,
+  };
+  const appointmentState = deriveAppointmentState(stateInput);
   const appointmentDate = new Date(appointment.appointment_date);
   
   return (
@@ -112,7 +97,7 @@ export function AppointmentIndexCard({ appointment, onClick }: AppointmentIndexC
           
           {/* Status and chevron */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {getStatusBadge(displayStatus)}
+            {getStatusBadge(appointmentState)}
             <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
           </div>
         </div>
