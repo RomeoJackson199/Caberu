@@ -49,7 +49,7 @@ import { NewPatientDialog } from "@/components/patient/NewPatientDialog";
 import { QuickAppointmentDialog } from "@/components/appointments/QuickAppointmentDialog";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
-import { AppointmentDetailsSidebar } from "@/components/appointments/AppointmentDetailsSidebar";
+import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { useImaging, ImagingFile } from "@/hooks/useImaging";
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { sanitizeText } from '@/utils/sanitize';
@@ -3169,7 +3169,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
       <Sheet open={appointmentDetailOpen} onOpenChange={setAppointmentDetailOpen}>
         <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto" side="right">
           {selectedAppointment && (
-            <AppointmentDetailsSidebar
+            <DentistAppointmentDetail
               appointment={selectedAppointment}
               onClose={() => setAppointmentDetailOpen(false)}
               onStatusChange={async (id, status) => {
