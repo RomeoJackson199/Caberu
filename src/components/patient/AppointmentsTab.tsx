@@ -28,6 +28,11 @@ import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmen
 import { useLanguage } from "@/hooks/useLanguage";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { AppointmentIndexCard, AppointmentIndexCardSkeleton } from "@/components/patient/AppointmentIndexCard";
+import { 
+  deriveAppointmentState, 
+  getAppointmentGroup,
+  AppointmentStateInput 
+} from "@/lib/appointmentStateMachine";
 
 export interface AppointmentsTabProps {
   user: User;
@@ -38,6 +43,8 @@ interface Appointment {
   id: string;
   appointment_date: string;
   status: string;
+  payment_status?: string | null;
+  completed_at?: string | null;
   reason?: string;
   dentist?: {
     first_name: string;
@@ -259,6 +266,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user }) => {
           id,
           appointment_date,
           status,
+          payment_status,
+          completed_at,
           reason,
           dentists:dentists!appointments_dentist_id_fkey(
             profiles:profile_id(first_name, last_name)
@@ -279,6 +288,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user }) => {
           id: apt.id,
           appointment_date: apt.appointment_date,
           status: apt.status,
+          payment_status: apt.payment_status,
+          completed_at: apt.completed_at,
           reason: apt.reason,
           dentist: profile ? {
             first_name: profile.first_name,
@@ -297,23 +308,33 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user }) => {
     }
   };
   
-  // Group appointments by status
+  // Group appointments using state machine
   const groupedAppointments = useMemo(() => {
-    const now = new Date();
-    
     const upcoming: Appointment[] = [];
     const completed: Appointment[] = [];
     const cancelled: Appointment[] = [];
     
     appointments.forEach(apt => {
-      const isPast = new Date(apt.appointment_date) < now;
+      const stateInput: AppointmentStateInput = {
+        status: apt.status,
+        payment_status: apt.payment_status ?? null,
+        appointment_date: apt.appointment_date,
+        completed_at: apt.completed_at ?? null,
+      };
       
-      if (apt.status === 'cancelled') {
-        cancelled.push(apt);
-      } else if (apt.status === 'completed' || (isPast && apt.status !== 'cancelled')) {
-        completed.push(apt);
-      } else {
-        upcoming.push(apt);
+      const state = deriveAppointmentState(stateInput);
+      const group = getAppointmentGroup(state);
+      
+      switch (group) {
+        case 'upcoming':
+          upcoming.push(apt);
+          break;
+        case 'completed':
+          completed.push(apt);
+          break;
+        case 'cancelled':
+          cancelled.push(apt);
+          break;
       }
     });
     

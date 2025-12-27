@@ -1,14 +1,8 @@
 /**
  * PatientAppointmentDetail - State-based appointment detail view
  * 
- * Core rule: Same structure, content/actions change based on state
- * 
- * States:
- * - Upcoming: prepare, not overwhelm
- * - Completed (no payment): explain outcome
- * - Completed (payment required): close the loop
- * - Fully closed (paid): reassurance
- * - Cancelled: clarity
+ * Uses centralized appointment state machine as single source of truth.
+ * All visibility and actions are derived from the appointment state.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -17,10 +11,9 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, isPast, isFuture } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Calendar,
@@ -28,7 +21,6 @@ import {
   User,
   Building2,
   MapPin,
-  FileText,
   CheckCircle2,
   XCircle,
   AlertTriangle,
@@ -44,6 +36,13 @@ import {
   Timer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  deriveAppointmentState,
+  getStateConfig,
+  getStatePermissions,
+  AppointmentState,
+  AppointmentStateInput,
+} from "@/lib/appointmentStateMachine";
 
 interface PatientAppointmentDetailProps {
   appointmentId: string | null;
@@ -83,14 +82,6 @@ interface AppointmentData {
     price_cents: number;
   } | null;
 }
-
-type AppointmentState = 
-  | 'upcoming' 
-  | 'action_required'
-  | 'completed_no_payment' 
-  | 'completed_payment_required' 
-  | 'fully_closed' 
-  | 'cancelled';
 
 export function PatientAppointmentDetail({
   appointmentId,
@@ -193,73 +184,43 @@ export function PatientAppointmentDetail({
     }
   };
 
-  // Determine appointment state
+  // Determine appointment state using the state machine
   const appointmentState = useMemo((): AppointmentState => {
-    if (!appointment) return 'upcoming';
+    if (!appointment) return 'UPCOMING';
 
-    const { status, payment_status, appointment_date } = appointment;
-
-    if (status === 'cancelled') return 'cancelled';
-    
-    if (status === 'pending') return 'action_required';
-
-    if (status === 'completed') {
-      if (payment_status === 'paid') return 'fully_closed';
-      if (payment_status === 'pending' || payment_status === 'unpaid') {
-        return 'completed_payment_required';
-      }
-      return 'completed_no_payment';
-    }
-
-    // Upcoming (confirmed or any future appointment)
-    if (isFuture(parseISO(appointment_date))) {
-      return 'upcoming';
-    }
-
-    return 'upcoming';
-  }, [appointment]);
-
-  const getStatusBadge = () => {
-    const configs: Record<AppointmentState, { label: string; className: string; icon: React.ElementType }> = {
-      upcoming: {
-        label: 'Upcoming',
-        className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-        icon: Calendar,
-      },
-      action_required: {
-        label: 'Action required',
-        className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-        icon: AlertTriangle,
-      },
-      completed_no_payment: {
-        label: 'Completed',
-        className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-        icon: CheckCircle2,
-      },
-      completed_payment_required: {
-        label: 'Payment due',
-        className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-        icon: CreditCard,
-      },
-      fully_closed: {
-        label: 'Completed',
-        className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-        icon: CheckCircle2,
-      },
-      cancelled: {
-        label: 'Cancelled',
-        className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-        icon: XCircle,
-      },
+    const stateInput: AppointmentStateInput = {
+      status: appointment.status,
+      payment_status: appointment.payment_status,
+      appointment_date: appointment.appointment_date,
+      completed_at: appointment.completed_at,
+      is_finalized: !!(appointment.consultation_notes || appointment.ai_summary),
+      amount_due_cents: appointment.amount_paid_cents,
     };
 
-    const config = configs[appointmentState];
-    const Icon = config.icon;
+    return deriveAppointmentState(stateInput);
+  }, [appointment]);
+
+  // Get permissions from state machine
+  const permissions = useMemo(() => getStatePermissions(appointmentState), [appointmentState]);
+
+  const getStatusBadge = () => {
+    const stateConfig = getStateConfig(appointmentState);
+    
+    // Map states to icons
+    const iconMap: Record<AppointmentState, React.ElementType> = {
+      UPCOMING: Calendar,
+      COMPLETED_DRAFT: Clock,
+      COMPLETED_FINAL_UNPAID: CreditCard,
+      COMPLETED_FINAL_PAID: CheckCircle2,
+      CANCELLED: XCircle,
+    };
+
+    const Icon = iconMap[appointmentState];
 
     return (
-      <Badge variant="outline" className={cn("gap-1.5 font-medium", config.className)}>
+      <Badge variant="outline" className={cn("gap-1.5 font-medium border", stateConfig.badgeClassName)}>
         <Icon className="h-3 w-3" />
-        {config.label}
+        {stateConfig.label}
       </Badge>
     );
   };
@@ -352,7 +313,7 @@ export function PatientAppointmentDetail({
           <div className="flex-1 overflow-auto p-6 space-y-6">
             
             {/* A. UPCOMING APPOINTMENT */}
-            {appointmentState === 'upcoming' && (
+            {appointmentState === 'UPCOMING' && (
               <>
                 <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
                   <CardContent className="p-4">
@@ -386,7 +347,7 @@ export function PatientAppointmentDetail({
             )}
 
             {/* B. COMPLETED (no payment yet) */}
-            {appointmentState === 'completed_no_payment' && (
+            {appointmentState === 'COMPLETED_DRAFT' && (
               <>
                 {(appointment.consultation_notes || appointment.ai_summary) && (
                   <Card>
@@ -413,7 +374,7 @@ export function PatientAppointmentDetail({
             )}
 
             {/* C. COMPLETED (payment required) */}
-            {appointmentState === 'completed_payment_required' && (
+            {appointmentState === 'COMPLETED_FINAL_UNPAID' && (
               <>
                 {(appointment.consultation_notes || appointment.ai_summary) && (
                   <Card>
@@ -453,7 +414,7 @@ export function PatientAppointmentDetail({
             )}
 
             {/* D. FULLY CLOSED (paid) */}
-            {appointmentState === 'fully_closed' && (
+            {appointmentState === 'COMPLETED_FINAL_PAID' && (
               <>
                 {(appointment.consultation_notes || appointment.ai_summary) && (
                   <Card>
@@ -490,7 +451,7 @@ export function PatientAppointmentDetail({
             )}
 
             {/* E. CANCELLED */}
-            {appointmentState === 'cancelled' && (
+            {appointmentState === 'CANCELLED' && (
               <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
@@ -508,30 +469,12 @@ export function PatientAppointmentDetail({
               </Card>
             )}
 
-            {/* Action required (pending) */}
-            {appointmentState === 'action_required' && (
-              <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/50">
-                      <AlertTriangle className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Awaiting confirmation</p>
-                      <p className="text-sm text-muted-foreground">
-                        This appointment is pending approval from the clinic.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
-          {/* 4. ACTIONS - Bottom */}
+          {/* 4. ACTIONS - Bottom (derived from permissions) */}
           <div className="p-6 border-t bg-muted/30">
             {/* A. Upcoming - Reschedule / Cancel */}
-            {(appointmentState === 'upcoming' || appointmentState === 'action_required') && (
+            {permissions.canReschedule && (
               <div className="flex gap-3">
                 {onReschedule && (
                   <Button 
@@ -543,7 +486,7 @@ export function PatientAppointmentDetail({
                     Reschedule
                   </Button>
                 )}
-                {onCancel && (
+                {permissions.canCancel && onCancel && (
                   <Button 
                     variant="outline" 
                     className="flex-1 gap-2 text-destructive hover:text-destructive"
@@ -556,8 +499,8 @@ export function PatientAppointmentDetail({
               </div>
             )}
 
-            {/* C. Payment required - Pay button */}
-            {appointmentState === 'completed_payment_required' && (
+            {/* Payment required - Pay button */}
+            {permissions.canPay && (
               <div className="space-y-3">
                 <Button className="w-full gap-2" size="lg">
                   <CreditCard className="h-4 w-4" />
@@ -565,23 +508,25 @@ export function PatientAppointmentDetail({
                     ? `€${(appointment.amount_paid_cents / 100).toFixed(2)}`
                     : ''}
                 </Button>
-                <Button variant="outline" className="w-full gap-2">
-                  <Download className="h-4 w-4" />
-                  Download invoice
-                </Button>
+                {permissions.canDownloadDocuments && (
+                  <Button variant="outline" className="w-full gap-2">
+                    <Download className="h-4 w-4" />
+                    Download invoice
+                  </Button>
+                )}
               </div>
             )}
 
-            {/* D. Fully closed - Download only */}
-            {appointmentState === 'fully_closed' && (
+            {/* Fully closed - Download only */}
+            {!permissions.canPay && permissions.canDownloadDocuments && (
               <Button variant="outline" className="w-full gap-2">
                 <Download className="h-4 w-4" />
                 Download documents
               </Button>
             )}
 
-            {/* E. Cancelled - Rebook shortcut */}
-            {appointmentState === 'cancelled' && (
+            {/* Cancelled - Rebook shortcut */}
+            {appointmentState === 'CANCELLED' && (
               <Button className="w-full gap-2" onClick={() => onOpenChange(false)}>
                 Book new appointment
                 <ChevronRight className="h-4 w-4" />
