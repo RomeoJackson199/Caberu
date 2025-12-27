@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { WeeklyCalendarView } from "@/components/appointments/WeeklyCalendarView";
 import { DayCalendarView } from "@/components/appointments/DayCalendarView";
-import { AppointmentDetailsSidebar } from "@/components/appointments/AppointmentDetailsSidebar";
+import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { MonthlyOverview } from "@/components/appointments/MonthlyOverview";
 import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
@@ -456,7 +456,7 @@ export default function DentistAppointmentsManagement() {
           <div className={cn(
             "w-full md:w-[35%] border-l bg-white dark:bg-gray-900 transition-all duration-300 shadow-lg"
           )}>
-            <AppointmentDetailsSidebar
+            <DentistAppointmentDetail
               appointment={selectedAppointment}
               onClose={handleBackToWeek}
               onStatusChange={handleStatusChange}
