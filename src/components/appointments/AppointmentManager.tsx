@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Calendar as CalendarIcon, Clock, User as UserIcon, Search, Filter, MoreHorizontal, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { AppointmentList } from './AppointmentList';
 import { AppointmentStats } from './AppointmentStats';
 import { BulkActions } from './BulkActions';
 import { AppointmentDialog } from './AppointmentDialog';
+import { DentistAppointmentDetail } from './DentistAppointmentDetail';
 import { formatClinicTime } from '@/lib/timezone';
 import { emitAnalyticsEvent } from '@/lib/analyticsEvents';
 import { cn } from '@/lib/utils';
@@ -55,6 +57,7 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
   const [activeTab, setActiveTab] = useState<'upcoming' | 'today' | 'completed' | 'cancelled'>('upcoming');
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
+  const [showDetailSheet, setShowDetailSheet] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -448,28 +451,48 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
             onStatusChange={handleAppointmentStatusChange}
             onViewDetails={(appointment) => {
               setSelectedAppointment(appointment);
-              setShowAppointmentDialog(true);
+              setShowDetailSheet(true);
             }}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Appointment Dialog */}
+      {/* Appointment Dialog - for creating new appointments */}
       <AppointmentDialog
         open={showAppointmentDialog}
         onOpenChange={setShowAppointmentDialog}
-        appointment={selectedAppointment}
+        appointment={null}
         dentistId={dentistId}
         onSave={() => {
           fetchAppointments();
           setShowAppointmentDialog(false);
-          setSelectedAppointment(null);
         }}
         onCancel={() => {
           setShowAppointmentDialog(false);
-          setSelectedAppointment(null);
         }}
       />
+
+      {/* Appointment Detail Sheet */}
+      <Sheet open={showDetailSheet} onOpenChange={setShowDetailSheet}>
+        <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto" side="right">
+          {selectedAppointment && (
+            <DentistAppointmentDetail
+              appointment={selectedAppointment}
+              onClose={() => {
+                setShowDetailSheet(false);
+                setSelectedAppointment(null);
+              }}
+              onStatusChange={(id, status) => {
+                handleAppointmentStatusChange(id, status as Appointment['status']);
+                if (status === 'cancelled' || status === 'completed') {
+                  setShowDetailSheet(false);
+                  setSelectedAppointment(null);
+                }
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

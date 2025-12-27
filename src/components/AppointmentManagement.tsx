@@ -8,11 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { AIWritingAssistant } from "@/components/AIWritingAssistant";
 import { PrescriptionManager } from "@/components/PrescriptionManager";
 import { TreatmentPlanManager } from "@/components/TreatmentPlanManager";
 import { AppointmentConfirmationWidget } from "@/components/AppointmentConfirmationWidget";
+import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { 
   Search, 
   Calendar, 
@@ -71,6 +73,7 @@ export function AppointmentManagement({ dentistId }: AppointmentManagementProps)
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [consultationNotes, setConsultationNotes] = useState("");
   const [showCompletion, setShowCompletion] = useState(false);
@@ -411,6 +414,7 @@ export function AppointmentManagement({ dentistId }: AppointmentManagementProps)
           }}
           onViewDetails={(appointment) => {
             setSelectedAppointment(appointment);
+            setShowDetailSheet(true);
           }}
           onComplete={(appointment) => {
             setSelectedAppointment(appointment);
@@ -418,6 +422,33 @@ export function AppointmentManagement({ dentistId }: AppointmentManagementProps)
           }}
         />
       </div>
+
+      {/* Appointment Detail Sheet */}
+      <Sheet open={showDetailSheet} onOpenChange={setShowDetailSheet}>
+        <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto" side="right">
+          {selectedAppointment && (
+            <DentistAppointmentDetail
+              appointment={selectedAppointment}
+              onClose={() => {
+                setShowDetailSheet(false);
+                setSelectedAppointment(null);
+              }}
+              onStatusChange={async (id, status) => {
+                await supabase
+                  .from('appointments')
+                  .update({ status })
+                  .eq('id', id);
+                fetchAppointments();
+                if (status === 'cancelled' || status === 'completed') {
+                  setShowDetailSheet(false);
+                  setSelectedAppointment(null);
+                }
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
       {selectedAppointment && (
         <CompletionSheet
           open={showCompletion}
