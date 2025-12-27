@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedStatCard } from "@/components/ui/page-enhancements";
@@ -451,19 +452,20 @@ export default function DentistAppointmentsManagement() {
           )}
         </div>
 
-        {/* Sidebar */}
-        {selectedAppointment && (
-          <div className={cn(
-            "w-full md:w-[35%] border-l bg-white dark:bg-gray-900 transition-all duration-300 shadow-lg"
-          )}>
+      </div>
+
+      {/* Appointment Detail Sheet */}
+      <Sheet open={!!selectedAppointment} onOpenChange={(open) => !open && handleBackToWeek()}>
+        <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto" side="right">
+          {selectedAppointment && (
             <DentistAppointmentDetail
               appointment={selectedAppointment}
               onClose={handleBackToWeek}
               onStatusChange={handleStatusChange}
             />
-          </div>
-        )}
-      </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
