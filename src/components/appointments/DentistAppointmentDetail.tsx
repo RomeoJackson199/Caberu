@@ -1,15 +1,15 @@
 import { useState, useMemo, useEffect } from "react";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { 
-  X, Calendar, Clock, User, MapPin, Phone, Mail,
+  Calendar, Clock, User, MapPin, Phone, Mail,
   CheckCircle, AlertCircle, ClipboardCheck, 
-  Eye, Sparkles, XCircle, Loader2, ExternalLink, FileText
+  Eye, Sparkles, XCircle, Loader2, ExternalLink, 
+  Stethoscope, Timer, FileText, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { RescheduleAssistant } from "@/components/RescheduleAssistant";
@@ -17,8 +17,8 @@ import { AppointmentImagingTab } from "@/components/imaging";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-// Dentist-specific state derivation
 type DentistAppointmentState = 
   | 'PENDING'
   | 'UPCOMING' 
@@ -34,50 +34,32 @@ interface DentistAppointmentDetailProps {
 
 const STATE_CONFIG: Record<DentistAppointmentState, { 
   label: string; 
-  description: string;
-  bgClass: string;
-  textClass: string;
-  borderClass: string;
+  badgeClassName: string;
   icon: typeof CheckCircle;
 }> = {
   PENDING: {
     label: 'Pending Approval',
-    description: 'This appointment is awaiting your approval.',
-    bgClass: 'bg-amber-50 dark:bg-amber-950/40',
-    textClass: 'text-amber-700 dark:text-amber-300',
-    borderClass: 'border-amber-200 dark:border-amber-800',
+    badgeClassName: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
     icon: Clock
   },
   UPCOMING: {
     label: 'Upcoming',
-    description: 'This appointment has not happened yet.',
-    bgClass: 'bg-blue-50 dark:bg-blue-950/40',
-    textClass: 'text-blue-700 dark:text-blue-300',
-    borderClass: 'border-blue-200 dark:border-blue-800',
+    badgeClassName: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
     icon: Calendar
   },
   NEEDS_COMPLETION: {
     label: 'Needs Completion',
-    description: 'This appointment has been completed but not finalized.',
-    bgClass: 'bg-orange-50 dark:bg-orange-950/40',
-    textClass: 'text-orange-700 dark:text-orange-300',
-    borderClass: 'border-orange-200 dark:border-orange-800',
+    badgeClassName: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
     icon: AlertCircle
   },
   FINALIZED: {
     label: 'Finalized',
-    description: 'This appointment has been finalized.',
-    bgClass: 'bg-emerald-50 dark:bg-emerald-950/40',
-    textClass: 'text-emerald-700 dark:text-emerald-300',
-    borderClass: 'border-emerald-200 dark:border-emerald-800',
+    badgeClassName: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
     icon: CheckCircle
   },
   CANCELLED: {
     label: 'Cancelled',
-    description: 'This appointment was cancelled.',
-    bgClass: 'bg-muted/50',
-    textClass: 'text-muted-foreground',
-    borderClass: 'border-border',
+    badgeClassName: 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
     icon: XCircle
   }
 };
@@ -215,162 +197,189 @@ export function DentistAppointmentDetail({
   };
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b bg-muted/30">
-        <span className="text-sm font-medium text-muted-foreground">Appointment Details</span>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+    <div className="flex flex-col h-full overflow-hidden bg-background">
+      {/* Header */}
+      <div className="p-6 border-b bg-muted/30 flex-shrink-0">
+        <SheetHeader className="space-y-0 mb-4">
+          <SheetTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            Appointment Details
+          </SheetTitle>
+        </SheetHeader>
+
+        {/* Status Badge */}
+        <Badge 
+          variant="outline" 
+          className={cn("gap-1.5 font-medium text-sm px-3 py-1 mb-4", stateConfig.badgeClassName)}
+        >
+          <StateIcon className="h-3.5 w-3.5" />
+          {stateConfig.label}
+        </Badge>
+
+        {/* Date & Time */}
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-foreground">
+            {format(appointmentDate, 'EEEE, MMMM d, yyyy')}
+          </h2>
+          <p className="text-base text-muted-foreground mt-0.5">
+            {format(appointmentDate, 'h:mm a')}
+            {appointment.duration_minutes && ` (${appointment.duration_minutes} min)`}
+          </p>
+        </div>
+
+        {/* Dentist & Clinic Info */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <User className="h-4 w-4 flex-shrink-0" />
+            <span>{dentistName}</span>
+          </div>
+          {dentist?.specialization && (
+            <div className="flex items-center gap-1.5">
+              <Stethoscope className="h-4 w-4 flex-shrink-0" />
+              <span>{dentist.specialization}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span>{business?.address || business?.name || 'Clinic'}</span>
+          </div>
+        </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-5 space-y-5">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-6 space-y-5">
           
           {/* Patient Card */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-14 w-14 ring-2 ring-primary/10">
-              <AvatarFallback className="bg-primary/5 text-primary font-semibold text-lg">
-                {appointment.patient?.first_name?.[0]}{appointment.patient?.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-semibold text-foreground truncate">{patientName}</h2>
-              <p className="text-sm text-muted-foreground">
-                {patientAge ? `${patientAge} years` : ''}{patientAge && appointment.reason ? ' • ' : ''}
-                {appointment.reason || 'General consultation'}
-              </p>
-            </div>
-          </div>
-
-          {/* Status Banner */}
-          <div className={cn(
-            "rounded-xl p-4 border flex items-start gap-3",
-            stateConfig.bgClass,
-            stateConfig.borderClass
-          )}>
-            <StateIcon className={cn("h-5 w-5 mt-0.5 shrink-0", stateConfig.textClass)} />
-            <div>
-              <p className={cn("font-medium text-sm", stateConfig.textClass)}>
-                {stateConfig.label}
-              </p>
-              <p className={cn("text-xs mt-0.5 opacity-80", stateConfig.textClass)}>
-                {stateConfig.description}
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Info Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <InfoCard 
-              icon={Calendar} 
-              label="Date" 
-              value={format(appointmentDate, "EEE, MMM d")} 
-            />
-            <InfoCard 
-              icon={Clock} 
-              label="Time" 
-              value={format(appointmentDate, "h:mm a")} 
-            />
-            <InfoCard 
-              icon={User} 
-              label="Provider" 
-              value={dentistName} 
-            />
-            <InfoCard 
-              icon={MapPin} 
-              label="Clinic" 
-              value={business?.name || 'Clinic'} 
-            />
-          </div>
-
-          {/* Duration & Urgency */}
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="font-normal">
-              {appointment.duration_minutes || 30} min
-            </Badge>
-            {appointment.urgency && appointment.urgency !== 'normal' && (
-              <Badge 
-                variant="outline" 
-                className={cn(
-                  "font-normal capitalize",
-                  appointment.urgency === "high" && "border-red-300 text-red-700 bg-red-50",
-                  appointment.urgency === "medium" && "border-orange-300 text-orange-700 bg-orange-50"
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 ring-2 ring-primary/10">
+                  <AvatarFallback className="bg-primary/5 text-primary font-semibold">
+                    {appointment.patient?.first_name?.[0]}{appointment.patient?.last_name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground truncate">{patientName}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {patientAge ? `${patientAge} years` : 'Patient'}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate(`/dentist/patients?patient=${appointment.patient_id}`)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {/* Contact Info */}
+              <div className="mt-4 pt-4 border-t space-y-2">
+                {appointment.patient?.email && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="truncate">{appointment.patient.email}</span>
+                  </div>
                 )}
-              >
-                {appointment.urgency} priority
-              </Badge>
-            )}
-          </div>
-
-          <Separator />
-
-          {/* Summary / Notes */}
-          <Section title={hasPatientSymptoms ? "Patient Notes" : "Summary"}>
-            {loadingSummaries && !hasPatientSymptoms ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                {appointment.patient?.phone && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span>{appointment.patient.phone}</span>
+                  </div>
+                )}
               </div>
-            ) : hasPatientSymptoms ? (
-              <div className="bg-blue-50/80 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-100 dark:border-blue-900">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400">AI Chat Booking</span>
+            </CardContent>
+          </Card>
+
+          {/* Reason for Visit Card */}
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Reason for Visit
+              </h4>
+              {loadingSummaries && !hasPatientSymptoms ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-                <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
-                  {appointment.notes}
+              ) : hasPatientSymptoms ? (
+                <div className="bg-blue-50/80 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-100 dark:border-blue-900">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">From AI Chat</span>
+                  </div>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                    {appointment.notes}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {summaries?.short || appointment.reason || "No treatments listed"}
                 </p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {summaries?.short || "No additional notes"}
-              </p>
-            )}
-          </Section>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* Contact Info */}
-          <Section title="Contact">
-            <div className="space-y-2">
-              {appointment.patient?.phone && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{appointment.patient.phone}</span>
-                </div>
-              )}
-              {appointment.patient?.email && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{appointment.patient.email}</span>
-                </div>
-              )}
-              {!appointment.patient?.phone && !appointment.patient?.email && (
-                <p className="text-sm text-muted-foreground">No contact info available</p>
-              )}
-            </div>
-          </Section>
+          {/* Service Card */}
+          {appointment.reason && (
+            <Card>
+              <CardContent className="p-4">
+                <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                  <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                  Service
+                </h4>
+                <p className="text-sm">{appointment.reason}</p>
+                {appointment.urgency && appointment.urgency !== 'normal' && (
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "mt-2 capitalize",
+                      appointment.urgency === "high" && "border-red-300 text-red-700 bg-red-50",
+                      appointment.urgency === "medium" && "border-orange-300 text-orange-700 bg-orange-50"
+                    )}
+                  >
+                    {appointment.urgency} priority
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Finalized Treatment Summary */}
           {state === 'FINALIZED' && appointment.consultation_notes && (
-            <Section title="Treatment Summary">
-              <div className="bg-muted/50 rounded-lg p-4">
-                <p className="text-sm whitespace-pre-wrap">{appointment.consultation_notes}</p>
-              </div>
-            </Section>
+            <Card className="border-emerald-200/50 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-950/20">
+              <CardContent className="p-4">
+                <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                  <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  Treatment Summary
+                </h4>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {appointment.consultation_notes}
+                </p>
+              </CardContent>
+            </Card>
           )}
 
           {/* Imaging */}
-          <Section title="Imaging">
-            <AppointmentImagingTab
-              patientId={appointment.patient_id}
-              appointmentId={appointment.id}
-            />
-          </Section>
+          <Card>
+            <CardContent className="p-4">
+              <AppointmentImagingTab
+                patientId={appointment.patient_id}
+                appointmentId={appointment.id}
+              />
+            </CardContent>
+          </Card>
 
           {/* Next Appointment */}
           {nextAppointment && (
-            <Section title="Next Appointment">
-              <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                <div className="flex items-center justify-between mb-1">
+            <Card>
+              <CardContent className="p-4">
+                <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  Next Appointment
+                </h4>
+                <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">
                     {format(parseISO(nextAppointment.appointment_date), "MMM d 'at' h:mm a")}
                   </p>
@@ -378,29 +387,29 @@ export function DentistAppointmentDetail({
                     {nextAppointment.status}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">{nextAppointment.reason}</p>
-              </div>
-            </Section>
+                <p className="text-xs text-muted-foreground mt-1">{nextAppointment.reason}</p>
+              </CardContent>
+            </Card>
           )}
 
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Actions Footer */}
-      <div className="border-t p-4 space-y-2 bg-muted/20">
+      <div className="border-t p-4 space-y-2 bg-background flex-shrink-0">
         {state === 'PENDING' && (
           <>
             <Button className="w-full" size="lg" onClick={() => onStatusChange?.(appointment.id, "confirmed")}>
               <CheckCircle className="h-4 w-4 mr-2" />
-              Approve
+              Approve Appointment
             </Button>
             <Button 
               variant="outline" 
-              className="w-full text-destructive hover:text-destructive" 
+              className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" 
               onClick={() => onStatusChange?.(appointment.id, "cancelled")}
             >
               <XCircle className="h-4 w-4 mr-2" />
-              Reject
+              Reject Appointment
             </Button>
           </>
         )}
@@ -411,17 +420,16 @@ export function DentistAppointmentDetail({
               <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
               Reschedule
             </Button>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button 
                 variant="ghost" 
-                className="flex-1 text-destructive hover:text-destructive" 
+                className="text-destructive hover:text-destructive hover:bg-destructive/10" 
                 onClick={() => onStatusChange?.(appointment.id, "cancelled")}
               >
                 Cancel
               </Button>
               <Button 
                 variant="ghost" 
-                className="flex-1" 
                 onClick={() => navigate(`/dentist/patients?patient=${appointment.patient_id}`)}
               >
                 <Eye className="h-4 w-4 mr-1" />
@@ -479,30 +487,6 @@ export function DentistAppointmentDetail({
         }}
         reason="patient_requested"
       />
-    </div>
-  );
-}
-
-// Helper Components
-function InfoCard({ icon: Icon, label, value }: { icon: typeof Calendar; label: string; value: string }) {
-  return (
-    <div className="bg-muted/40 rounded-lg p-3">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">{label}</span>
-      </div>
-      <p className="text-sm font-medium truncate">{value}</p>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-3">
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        {title}
-      </h3>
-      {children}
     </div>
   );
 }
