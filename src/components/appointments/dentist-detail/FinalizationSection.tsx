@@ -141,6 +141,13 @@ export function FinalizationSection({
   const handleFinalize = async () => {
     setIsLoading(true);
     
+    console.log('🏁 Starting finalization...', { 
+      appointmentId, 
+      chargesCount: charges.length, 
+      totalCents,
+      notes: notes?.slice(0, 50) 
+    });
+    
     try {
       // 1. Update appointment with completed_at timestamp
       const { error: updateError } = await supabase
@@ -155,15 +162,20 @@ export function FinalizationSection({
         .eq('id', appointmentId);
 
       if (updateError) throw updateError;
+      console.log('✅ Appointment updated to completed');
 
       // 2. Create payment request if there are charges
       if (totalCents > 0) {
+        console.log('💰 Creating payment request for', totalCents, 'cents');
+        
         // Get patient email for payment request
         const { data: patientData } = await supabase
           .from('profiles')
           .select('email, first_name, last_name')
           .eq('id', patientId)
           .single();
+
+        console.log('👤 Patient data:', patientData);
 
         if (patientData?.email) {
           const formattedDate = appointmentDate 
@@ -172,6 +184,18 @@ export function FinalizationSection({
           
           const description = `Appointment on ${formattedDate}${charges.length > 0 ? ' - ' + charges.map(c => c.description).join(', ') : ''}`;
           const patientName = [patientData.first_name, patientData.last_name].filter(Boolean).join(' ') || 'Patient';
+
+          console.log('📧 Calling create-payment-request edge function...', {
+            patient_id: patientId,
+            amount: totalCents,
+            patient_email: patientData.email,
+            send_now: true,
+            items: charges.map(c => ({
+              description: c.description,
+              unit_price_cents: c.amount_cents,
+              quantity: 1,
+            })),
+          });
 
           // Create payment request via edge function (sends email automatically)
           const { data: paymentResult, error: paymentError } = await supabase.functions.invoke('create-payment-request', {
@@ -193,12 +217,16 @@ export function FinalizationSection({
           });
 
           if (paymentError) {
-            console.error('Payment request error:', paymentError);
+            console.error('❌ Payment request error:', paymentError);
             // Don't fail finalization if payment request fails
           } else {
             console.log('✅ Payment request created:', paymentResult);
           }
+        } else {
+          console.warn('⚠️ No patient email found, skipping payment request');
         }
+      } else {
+        console.log('ℹ️ No charges, skipping payment request');
       }
 
       // 3. Create clinical notes record
@@ -211,6 +239,7 @@ export function FinalizationSection({
           note_type: 'consultation',
           created_by: dentistId,
         });
+        console.log('✅ Clinical notes saved');
       }
 
       // 4. Send email notification to patient

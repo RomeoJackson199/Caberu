@@ -213,6 +213,7 @@ export function DentistAppointmentDetail({
               <div className="flex justify-end">
                 <DraftSaveButton
                   appointmentId={appointment.id}
+                  dentistId={appointment.dentist_id}
                   notes={notes}
                   charges={charges}
                 />

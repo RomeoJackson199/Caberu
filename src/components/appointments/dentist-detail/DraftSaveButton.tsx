@@ -13,6 +13,7 @@ interface ChargeItem {
 
 interface DraftSaveButtonProps {
   appointmentId: string;
+  dentistId: string;
   notes: string;
   charges?: ChargeItem[];
   onSaved?: () => void;
@@ -24,6 +25,7 @@ interface DraftSaveButtonProps {
  */
 export function DraftSaveButton({
   appointmentId,
+  dentistId,
   notes,
   charges = [],
   onSaved,
@@ -76,6 +78,8 @@ export function DraftSaveButton({
           .from('notes')
           .insert({
             appointment_id: appointmentId,
+            dentist_id: dentistId,
+            created_by: dentistId,
             note_type: 'draft_charges',
             content: chargesJson,
             is_private: true,
