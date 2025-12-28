@@ -60,19 +60,16 @@ export function getAppointmentGroup(appointment: PatientAppointment): Appointmen
     return 'finalized';
   }
   
-  if (appointment.status === 'completed' && appointment.completed_at) {
+  // Completed appointments go to finalized (with or without completed_at)
+  if (appointment.status === 'completed') {
     return 'finalized';
   }
   
   // Past but not completed = needs completion
-  if (appointmentDate < now && appointment.status !== 'completed') {
+  if (appointmentDate < now) {
     return 'needs_completion';
   }
   
   // Future = upcoming
-  if (appointmentDate >= now) {
-    return 'upcoming';
-  }
-  
-  return 'finalized';
+  return 'upcoming';
 }

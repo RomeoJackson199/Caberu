@@ -171,6 +171,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             onStartConsultation={handleStartConsultation}
             onAppointmentClick={handleAppointmentClick}
             onBack={() => setSelectedPatient(null)}
+            onAppointmentUpdated={handleAppointmentUpdated}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground">
