@@ -87,14 +87,14 @@ export function DentistAppointmentDetail({
     enabled: !!appointment?.business_id,
   });
 
-  // Fetch dentist info
+  // Fetch dentist info (including approval settings)
   const { data: dentist } = useQuery({
     queryKey: ['dentist', appointment?.dentist_id],
     queryFn: async () => {
       if (!appointment?.dentist_id) return null;
       const { data } = await supabase
         .from('dentists')
-        .select('first_name, last_name, specialization')
+        .select('first_name, last_name, specialization, require_appointment_approval')
         .eq('id', appointment.dentist_id)
         .single();
       return data;
@@ -109,6 +109,11 @@ export function DentistAppointmentDetail({
   const handleFinalized = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['appointments'] });
     onStatusChange?.(appointment.id, 'completed');
+  }, [queryClient, onStatusChange, appointment?.id]);
+
+  const handleAppointmentStatusChange = useCallback((status: string) => {
+    queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    onStatusChange?.(appointment.id, status);
   }, [queryClient, onStatusChange, appointment?.id]);
 
   const handleCancel = useCallback(() => {
@@ -183,7 +188,11 @@ export function DentistAppointmentDetail({
             charges={charges}
             completedAt={appointment.completed_at}
             completedByName={dentistName}
+            appointmentDate={appointment.appointment_date}
+            requiresApproval={dentist?.require_appointment_approval ?? false}
+            currentStatus={appointment.status}
             onFinalized={handleFinalized}
+            onStatusChange={handleAppointmentStatusChange}
           />
         </div>
       </ScrollArea>

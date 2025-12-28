@@ -12,10 +12,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, Lock, Loader2, Save, User } from "lucide-react";
+import { CheckCircle, Lock, Loader2, XCircle, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DentistAppointmentState } from "@/lib/dentistAppointmentState";
+import { NotificationService } from "@/lib/notificationService";
 
 interface ChargeItem {
   id: string;
@@ -33,7 +34,11 @@ interface FinalizationSectionProps {
   charges: ChargeItem[];
   completedAt?: string | null;
   completedByName?: string;
+  appointmentDate?: string;
+  requiresApproval?: boolean;
+  currentStatus?: string;
   onFinalized: () => void;
+  onStatusChange?: (status: string) => void;
 }
 
 /**
@@ -51,13 +56,55 @@ export function FinalizationSection({
   charges,
   completedAt,
   completedByName,
+  appointmentDate,
+  requiresApproval,
+  currentStatus,
   onFinalized,
+  onStatusChange,
 }: FinalizationSectionProps) {
   const { toast } = useToast();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState<'confirm' | 'cancel' | null>(null);
 
   const totalCents = charges.reduce((sum, c) => sum + c.amount_cents, 0);
+
+  // Send email notification to patient
+  const sendFinalizationEmail = async () => {
+    try {
+      // Get patient's user_id for notification
+      const { data: patient } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, email')
+        .eq('id', patientId)
+        .single();
+
+      if (patient?.user_id) {
+        const formattedDate = appointmentDate 
+          ? format(new Date(appointmentDate), 'MMMM d, yyyy')
+          : 'your recent visit';
+        
+        await NotificationService.createNotification(
+          patient.user_id,
+          'Appointment Completed',
+          `Your appointment on ${formattedDate} has been finalized. ${totalCents > 0 ? `An invoice for $${(totalCents / 100).toFixed(2)} has been generated.` : ''} Thank you for your visit!`,
+          'appointment',
+          'info',
+          `/patient/appointments`,
+          { 
+            appointmentId, 
+            dentistId,
+            appointmentDate: formattedDate,
+          },
+          undefined,
+          true // sendEmail
+        );
+      }
+    } catch (error) {
+      console.error('Error sending finalization email:', error);
+      // Don't fail the finalization if email fails
+    }
+  };
 
   const handleFinalize = async () => {
     setIsLoading(true);
@@ -124,9 +171,12 @@ export function FinalizationSection({
         });
       }
 
+      // 4. Send email notification to patient
+      await sendFinalizationEmail();
+
       toast({
         title: "Appointment finalized",
-        description: "All records have been locked and saved.",
+        description: "All records have been locked and the patient has been notified.",
       });
 
       onFinalized();
@@ -140,6 +190,73 @@ export function FinalizationSection({
     } finally {
       setIsLoading(false);
       setShowConfirmDialog(false);
+    }
+  };
+
+  // Handle appointment confirmation (for dentists with approval required)
+  const handleApprovalAction = async (action: 'confirm' | 'cancel') => {
+    setApprovalLoading(action);
+    
+    try {
+      const newStatus = action === 'confirm' ? 'confirmed' : 'cancelled';
+      
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: newStatus })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      // Notify patient about the decision
+      const { data: patient } = await supabase
+        .from('profiles')
+        .select('user_id, first_name')
+        .eq('id', patientId)
+        .single();
+
+      if (patient?.user_id) {
+        const formattedDate = appointmentDate 
+          ? format(new Date(appointmentDate), 'MMMM d, yyyy \'at\' h:mm a')
+          : 'your requested appointment';
+
+        const title = action === 'confirm' 
+          ? 'Appointment Confirmed' 
+          : 'Appointment Cancelled';
+        
+        const message = action === 'confirm'
+          ? `Your appointment on ${formattedDate} has been confirmed by your dentist.`
+          : `Your appointment request for ${formattedDate} could not be accommodated. Please book a new appointment.`;
+
+        await NotificationService.createNotification(
+          patient.user_id,
+          title,
+          message,
+          'appointment',
+          action === 'confirm' ? 'info' : 'warning',
+          `/patient/appointments`,
+          { appointmentId, dentistId, appointmentDate: formattedDate },
+          undefined,
+          true // sendEmail
+        );
+      }
+
+      toast({
+        title: action === 'confirm' ? 'Appointment confirmed' : 'Appointment cancelled',
+        description: action === 'confirm' 
+          ? 'The patient has been notified.' 
+          : 'The patient has been notified of the cancellation.',
+      });
+
+      onStatusChange?.(newStatus);
+    } catch (error) {
+      console.error('Approval action error:', error);
+      toast({
+        title: "Error updating appointment",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setApprovalLoading(null);
     }
   };
 
@@ -219,6 +336,54 @@ export function FinalizationSection({
     );
   }
 
-  // UPCOMING state - no finalization section
+  // UPCOMING state - show approval actions if required
+  if (state === 'UPCOMING' && requiresApproval && currentStatus === 'pending') {
+    return (
+      <Card className="border-amber-200/50 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/20">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+              <CheckCircle className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Awaiting Your Approval</p>
+              <p className="text-sm text-muted-foreground">
+                This appointment requires your confirmation
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="text-destructive border-destructive/30 hover:bg-destructive/10"
+              onClick={() => handleApprovalAction('cancel')}
+              disabled={approvalLoading !== null}
+            >
+              {approvalLoading === 'cancel' ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              Decline
+            </Button>
+            <Button
+              onClick={() => handleApprovalAction('confirm')}
+              disabled={approvalLoading !== null}
+            >
+              {approvalLoading === 'confirm' ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4 mr-2" />
+              )}
+              Confirm
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // UPCOMING state (no approval needed or already confirmed) - no finalization section
   return null;
 }
