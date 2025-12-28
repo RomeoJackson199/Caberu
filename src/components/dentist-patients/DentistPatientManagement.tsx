@@ -42,6 +42,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
 
   // Initial fetch
   useEffect(() => {
+    console.log('[DentistPatientManagement] Fetching patients, dentistId:', dentistId, 'businessId:', businessId);
     fetchPatients();
   }, [fetchPatients]);
 
@@ -135,10 +136,15 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     }
   }
 
+  console.log('[DentistPatientManagement] Render - patients:', patients.length, 'selectedPatient:', selectedPatient?.id);
+
   return (
-    <div className="h-[calc(100vh-120px)] flex gap-6">
-      {/* Patient List */}
-      <div className="w-80 flex-shrink-0 hidden lg:block">
+    <div className="h-[calc(100vh-80px)] flex flex-col lg:flex-row gap-4 p-4">
+      {/* Patient List - full width on mobile, sidebar on desktop */}
+      <div className={cn(
+        "lg:w-80 lg:flex-shrink-0 h-full",
+        selectedPatient ? "hidden lg:block" : "block"
+      )}>
         <PatientListView
           patients={patients}
           patientFlags={patientFlags}
@@ -150,8 +156,11 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
         />
       </div>
 
-      {/* Patient Profile */}
-      <div className="flex-1 bg-card rounded-xl border overflow-hidden">
+      {/* Patient Profile - full width on mobile when selected */}
+      <div className={cn(
+        "flex-1 bg-card rounded-xl border overflow-hidden",
+        selectedPatient ? "block" : "hidden lg:block"
+      )}>
         {selectedPatient ? (
           <PatientProfileView
             patient={selectedPatient}
@@ -161,6 +170,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             loadingAppointments={loadingAppointments}
             onStartConsultation={handleStartConsultation}
             onAppointmentClick={handleAppointmentClick}
+            onBack={() => setSelectedPatient(null)}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -170,11 +180,6 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             </div>
           </div>
         )}
-      </div>
-
-      {/* Mobile Patient List (as drawer) */}
-      <div className="lg:hidden">
-        {/* Would add mobile drawer here */}
       </div>
 
       {/* Consultation Entry Dialog */}
