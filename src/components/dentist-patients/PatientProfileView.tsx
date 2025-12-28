@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { format, differenceInYears } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import {
   User,
   Phone,
@@ -18,15 +18,21 @@ import {
   CreditCard,
   Stethoscope,
   ChevronRight,
-  ClipboardCheck,
   AlertCircle,
   CheckCircle2,
   XCircle,
-  ArrowLeft
+  ArrowLeft,
+  Search,
+  Pencil,
+  Check,
+  X,
+  Loader2
 } from 'lucide-react';
 import { DentistPatient, PatientFlags, PatientAppointment, getAppointmentGroup } from './types';
 import { MedicalAlertsBanner } from '@/components/patient/MedicalAlertsBanner';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface PatientProfileViewProps {
   patient: DentistPatient;
@@ -37,6 +43,7 @@ interface PatientProfileViewProps {
   onStartConsultation: (appointmentId?: string) => void;
   onAppointmentClick: (appointment: PatientAppointment) => void;
   onBack?: () => void;
+  onAppointmentUpdated?: () => void;
 }
 
 export function PatientProfileView({
@@ -47,21 +54,31 @@ export function PatientProfileView({
   loadingAppointments = false,
   onStartConsultation,
   onAppointmentClick,
-  onBack
+  onBack,
+  onAppointmentUpdated
 }: PatientProfileViewProps) {
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
   const age = patient.date_of_birth 
     ? differenceInYears(new Date(), new Date(patient.date_of_birth))
     : null;
 
-  // Group appointments
-  const groupedAppointments = useMemo(() => {
+  // Filter and group appointments
+  const filteredAndGroupedAppointments = useMemo(() => {
+    const filtered = appointments.filter(apt => {
+      if (!searchTerm.trim()) return true;
+      const searchLower = searchTerm.toLowerCase();
+      return (apt.reason || '').toLowerCase().includes(searchLower) ||
+             format(new Date(apt.appointment_date), 'MMM d, yyyy').toLowerCase().includes(searchLower);
+    });
+
     const groups = {
       upcoming: [] as PatientAppointment[],
       needs_completion: [] as PatientAppointment[],
       finalized: [] as PatientAppointment[]
     };
 
-    appointments.forEach(apt => {
+    filtered.forEach(apt => {
       const group = getAppointmentGroup(apt);
       groups[group].push(apt);
     });
@@ -80,7 +97,7 @@ export function PatientProfileView({
     );
 
     return groups;
-  }, [appointments]);
+  }, [appointments, searchTerm]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -196,10 +213,21 @@ export function PatientProfileView({
           {/* Appointment Timeline - PRIMARY */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Appointments
-              </CardTitle>
+              <div className="flex items-center justify-between gap-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Appointments
+                </CardTitle>
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search appointments..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-8 text-sm"
+                  />
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {loadingAppointments ? (
@@ -222,19 +250,20 @@ export function PatientProfileView({
               ) : (
                 <>
                   {/* Upcoming */}
-                  {groupedAppointments.upcoming.length > 0 && (
+                  {filteredAndGroupedAppointments.upcoming.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Upcoming
                       </h4>
                       <div className="space-y-2">
-                        {groupedAppointments.upcoming.map(apt => (
+                        {filteredAndGroupedAppointments.upcoming.map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
                             onClick={() => onAppointmentClick(apt)}
                             getStatusIcon={getStatusIcon}
                             getStatusBadge={getStatusBadge}
+                            onReasonUpdated={onAppointmentUpdated}
                           />
                         ))}
                       </div>
@@ -242,14 +271,14 @@ export function PatientProfileView({
                   )}
 
                   {/* Needs Completion */}
-                  {groupedAppointments.needs_completion.length > 0 && (
+                  {filteredAndGroupedAppointments.needs_completion.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
                         Needs Completion
                       </h4>
                       <div className="space-y-2">
-                        {groupedAppointments.needs_completion.map(apt => (
+                        {filteredAndGroupedAppointments.needs_completion.map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -257,6 +286,7 @@ export function PatientProfileView({
                             getStatusIcon={getStatusIcon}
                             getStatusBadge={getStatusBadge}
                             highlight
+                            onReasonUpdated={onAppointmentUpdated}
                           />
                         ))}
                       </div>
@@ -264,27 +294,39 @@ export function PatientProfileView({
                   )}
 
                   {/* Finalized */}
-                  {groupedAppointments.finalized.length > 0 && (
+                  {filteredAndGroupedAppointments.finalized.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                         Completed
                       </h4>
                       <div className="space-y-2">
-                        {groupedAppointments.finalized.slice(0, 5).map(apt => (
+                        {filteredAndGroupedAppointments.finalized.slice(0, 5).map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
                             onClick={() => onAppointmentClick(apt)}
                             getStatusIcon={getStatusIcon}
                             getStatusBadge={getStatusBadge}
+                            onReasonUpdated={onAppointmentUpdated}
                           />
                         ))}
-                        {groupedAppointments.finalized.length > 5 && (
+                        {filteredAndGroupedAppointments.finalized.length > 5 && (
                           <p className="text-xs text-muted-foreground text-center py-2">
-                            +{groupedAppointments.finalized.length - 5} more completed appointments
+                            +{filteredAndGroupedAppointments.finalized.length - 5} more completed appointments
                           </p>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {/* No results from search */}
+                  {searchTerm && 
+                    filteredAndGroupedAppointments.upcoming.length === 0 && 
+                    filteredAndGroupedAppointments.needs_completion.length === 0 && 
+                    filteredAndGroupedAppointments.finalized.length === 0 && (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">No appointments match "{searchTerm}"</p>
                     </div>
                   )}
                 </>
@@ -325,32 +367,82 @@ export function PatientProfileView({
   );
 }
 
-// Appointment row component
+// Appointment row component with editable reason
 function AppointmentRow({ 
   appointment, 
   onClick, 
   getStatusIcon,
   getStatusBadge,
-  highlight = false 
+  highlight = false,
+  onReasonUpdated
 }: { 
   appointment: PatientAppointment;
   onClick: () => void;
   getStatusIcon: (status: string) => React.ReactNode;
   getStatusBadge: (status: string) => string;
   highlight?: boolean;
+  onReasonUpdated?: () => void;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedReason, setEditedReason] = useState(appointment.reason || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditedReason(appointment.reason || '');
+    setIsEditing(true);
+  };
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(false);
+    setEditedReason(appointment.reason || '');
+  };
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editedReason.trim()) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ reason: editedReason.trim() })
+        .eq('id', appointment.id);
+      
+      if (error) throw error;
+      
+      setIsEditing(false);
+      onReasonUpdated?.();
+    } catch (error) {
+      console.error('Error updating appointment reason:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      handleSave(e as unknown as React.MouseEvent);
+    } else if (e.key === 'Escape') {
+      handleCancel(e as unknown as React.MouseEvent);
+    }
+  };
+
   return (
-    <button
-      onClick={onClick}
+    <div
+      onClick={isEditing ? undefined : onClick}
       className={cn(
-        "w-full text-left p-3 rounded-lg border transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
-        highlight && "border-amber-300 bg-amber-50/50"
+        "w-full text-left p-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20",
+        highlight && "border-amber-300 bg-amber-50/50",
+        !isEditing && "cursor-pointer hover:bg-muted/50"
       )}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center",
+            "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
             appointment.status === 'completed' ? "bg-emerald-100" :
             appointment.status === 'confirmed' ? "bg-primary/10" :
             appointment.status === 'pending' ? "bg-amber-100" :
@@ -358,23 +450,64 @@ function AppointmentRow({
           )}>
             {getStatusIcon(appointment.status)}
           </div>
-          <div>
-            <p className="text-sm font-medium">
-              {appointment.reason || 'General consultation'}
-            </p>
+          <div className="flex-1 min-w-0">
+            {isEditing ? (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <Input
+                  value={editedReason}
+                  onChange={(e) => setEditedReason(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="h-7 text-sm"
+                  autoFocus
+                  disabled={isSaving}
+                />
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                  onClick={handleSave}
+                  disabled={isSaving || !editedReason.trim()}
+                >
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 group">
+                <p className="text-sm font-medium truncate">
+                  {appointment.reason || 'General consultation'}
+                </p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handleEditClick}
+                >
+                  <Pencil className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               {format(new Date(appointment.appointment_date), 'MMM d, yyyy')} at {format(new Date(appointment.appointment_date), 'h:mm a')}
               {appointment.duration_minutes && ` · ${appointment.duration_minutes} min`}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Badge variant="outline" className={cn("text-xs capitalize", getStatusBadge(appointment.status))}>
             {appointment.status}
           </Badge>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          {!isEditing && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
