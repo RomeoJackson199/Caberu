@@ -179,8 +179,8 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
             {outstandingPayments.map((payment) => (
               <Card 
                 key={payment.id} 
-                className={`border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 transition-shadow ${payment.appointment_id ? 'cursor-pointer hover:shadow-md' : ''}`}
-                onClick={() => payment.appointment_id && openAppointmentDetail(payment.appointment_id, 'payment')}
+                className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
               >
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -267,8 +267,8 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
                 {paidPayments.map((payment) => (
                   <Card 
                     key={payment.id} 
-                    className={`bg-muted/30 transition-colors ${payment.appointment_id ? 'cursor-pointer hover:bg-muted/50' : ''}`}
-                    onClick={() => payment.appointment_id && openAppointmentDetail(payment.appointment_id)}
+                    className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => openAppointmentDetail(payment.appointment_id)}
                   >
                     <CardContent className="p-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
