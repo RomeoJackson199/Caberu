@@ -98,31 +98,31 @@ export interface StateConfig {
 
 export const STATE_CONFIG: Record<AppointmentState, StateConfig> = {
   UPCOMING: {
-    label: 'Upcoming',
+    label: 'Upcoming appointment',
     description: 'Appointment is scheduled',
     badgeVariant: 'outline',
     badgeClassName: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200',
   },
   COMPLETED_DRAFT: {
-    label: 'Completed',
-    description: 'Your dentist is finalizing the details',
+    label: 'Appointment completed',
+    description: 'Paperwork in progress',
     badgeVariant: 'outline',
     badgeClassName: 'bg-slate-100 text-slate-700 dark:bg-slate-800/50 dark:text-slate-300 border-slate-200',
   },
   COMPLETED_FINAL_UNPAID: {
-    label: 'Action required',
-    description: 'Payment pending',
+    label: 'Payment required',
+    description: 'Appointment completed',
     badgeVariant: 'outline',
     badgeClassName: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200',
   },
   COMPLETED_FINAL_PAID: {
-    label: 'Paid',
+    label: 'Appointment completed',
     description: 'Fully closed',
     badgeVariant: 'outline',
     badgeClassName: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200',
   },
   CANCELLED: {
-    label: 'Cancelled',
+    label: 'Appointment cancelled',
     description: 'Appointment did not take place',
     badgeVariant: 'outline',
     badgeClassName: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200',
