@@ -97,13 +97,17 @@ export function FinalizationSection({
         ? format(new Date(appointmentDate), 'MMMM d, yyyy')
         : 'your recent visit';
       
-      // Call edge function directly with all required data for email sending
+      // Call edge function directly - use 'system' type to avoid using confirmation template
+      const invoiceText = totalCents > 0 
+        ? `An invoice for $${(totalCents / 100).toFixed(2)} has been generated.` 
+        : '';
+      
       const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
         body: {
           to: patient.email,
-          subject: 'Appointment Completed',
-          message: `Your appointment on ${formattedDate} has been finalized. ${totalCents > 0 ? `An invoice for $${(totalCents / 100).toFixed(2)} has been generated.` : ''} Thank you for your visit!`,
-          messageType: 'appointment_confirmation',
+          subject: 'Your Appointment Has Been Completed',
+          message: `Dear ${patient.first_name || 'Patient'},\n\nYour appointment on ${formattedDate} has been successfully completed and finalized. ${invoiceText}\n\nThank you for visiting us! If you have any questions about your visit, please don't hesitate to contact us.\n\nBest regards,\nYour Dental Team`,
+          messageType: 'system', // Use system to avoid confirmation template
           patientId: patientId,
           dentistId: dentistId,
           appointmentDate: formattedDate,
