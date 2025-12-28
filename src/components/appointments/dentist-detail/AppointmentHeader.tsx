@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { format, parseISO, differenceInYears } from "date-fns";
-import { Calendar, Clock, User, MapPin, Stethoscope } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Stethoscope, Pencil, Check, X, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { 
   DentistAppointmentState, 
   DENTIST_STATE_CONFIG 
@@ -10,6 +15,7 @@ import {
 
 interface AppointmentHeaderProps {
   appointment: {
+    id: string;
     appointment_date: string;
     duration_minutes?: number;
     reason?: string;
@@ -29,7 +35,7 @@ interface AppointmentHeaderProps {
 /**
  * Appointment Header - Context & State (always visible)
  * Shows patient, date/time, status badge, clinic/dentist info
- * No actions in header - purely informational
+ * Reason is editable
  */
 export function AppointmentHeader({
   appointment,
@@ -38,7 +44,12 @@ export function AppointmentHeader({
   dentistSpecialization,
   clinicName,
 }: AppointmentHeaderProps) {
+  const queryClient = useQueryClient();
   const stateConfig = DENTIST_STATE_CONFIG[state];
+  
+  const [isEditingReason, setIsEditingReason] = useState(false);
+  const [editedReason, setEditedReason] = useState(appointment.reason || '');
+  const [isSaving, setIsSaving] = useState(false);
   
   const patientName = `${appointment.patient?.first_name || ""} ${appointment.patient?.last_name || ""}`.trim() 
     || appointment.patient_name 
@@ -52,6 +63,45 @@ export function AppointmentHeader({
     : null;
   
   const appointmentDate = parseISO(appointment.appointment_date);
+
+  const handleEditReason = () => {
+    setEditedReason(appointment.reason || '');
+    setIsEditingReason(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingReason(false);
+    setEditedReason(appointment.reason || '');
+  };
+
+  const handleSaveReason = async () => {
+    if (!editedReason.trim()) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ reason: editedReason.trim() })
+        .eq('id', appointment.id);
+      
+      if (error) throw error;
+      
+      setIsEditingReason(false);
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    } catch (error) {
+      console.error('Error updating appointment reason:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveReason();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 border-b bg-muted/30 flex-shrink-0 space-y-4">
@@ -77,10 +127,65 @@ export function AppointmentHeader({
           <h2 className="text-lg font-semibold text-foreground truncate">
             {patientName}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
             {patientAge ? `${patientAge} years` : 'Patient'}
-            {appointment.reason && ` • ${appointment.reason}`}
-          </p>
+            {appointment.reason && !isEditingReason && (
+              <>
+                <span className="mx-1">•</span>
+                <span className="truncate">{appointment.reason}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 ml-1"
+                  onClick={handleEditReason}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+            {!appointment.reason && !isEditingReason && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-2 ml-1 text-xs"
+                onClick={handleEditReason}
+              >
+                <Pencil className="h-3 w-3 mr-1" />
+                Add reason
+              </Button>
+            )}
+          </div>
+          {isEditingReason && (
+            <div className="flex items-center gap-2 mt-1">
+              <Input
+                value={editedReason}
+                onChange={(e) => setEditedReason(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Appointment reason..."
+                className="h-7 text-sm flex-1"
+                autoFocus
+                disabled={isSaving}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-primary"
+                onClick={handleSaveReason}
+                disabled={isSaving || !editedReason.trim()}
+              >
+                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

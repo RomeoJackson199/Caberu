@@ -50,19 +50,19 @@ export interface ConsultationContext {
 }
 
 // Appointment grouping for timeline
-export type AppointmentGroup = 'upcoming' | 'needs_completion' | 'finalized';
+export type AppointmentGroup = 'upcoming' | 'needs_completion' | 'completed' | 'cancelled';
 
 export function getAppointmentGroup(appointment: PatientAppointment): AppointmentGroup {
   const now = new Date();
   const appointmentDate = new Date(appointment.appointment_date);
   
   if (appointment.status === 'cancelled') {
-    return 'finalized';
+    return 'cancelled';
   }
   
-  // Completed appointments go to finalized (with or without completed_at)
+  // Completed appointments go to completed
   if (appointment.status === 'completed') {
-    return 'finalized';
+    return 'completed';
   }
   
   // Past but not completed = needs completion

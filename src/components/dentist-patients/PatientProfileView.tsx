@@ -75,7 +75,8 @@ export function PatientProfileView({
     const groups = {
       upcoming: [] as PatientAppointment[],
       needs_completion: [] as PatientAppointment[],
-      finalized: [] as PatientAppointment[]
+      completed: [] as PatientAppointment[],
+      cancelled: [] as PatientAppointment[]
     };
 
     filtered.forEach(apt => {
@@ -92,7 +93,10 @@ export function PatientProfileView({
     groups.needs_completion.sort((a, b) => 
       new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
     );
-    groups.finalized.sort((a, b) => 
+    groups.completed.sort((a, b) => 
+      new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
+    );
+    groups.cancelled.sort((a, b) => 
       new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
     );
 
@@ -293,14 +297,15 @@ export function PatientProfileView({
                     </div>
                   )}
 
-                  {/* Finalized */}
-                  {filteredAndGroupedAppointments.finalized.length > 0 && (
+                  {/* Completed */}
+                  {filteredAndGroupedAppointments.completed.length > 0 && (
                     <div>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Completed
+                      <h4 className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Completed ({filteredAndGroupedAppointments.completed.length})
                       </h4>
                       <div className="space-y-2">
-                        {filteredAndGroupedAppointments.finalized.slice(0, 5).map((apt: PatientAppointment) => (
+                        {filteredAndGroupedAppointments.completed.slice(0, 5).map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -310,9 +315,36 @@ export function PatientProfileView({
                             onReasonUpdated={onAppointmentUpdated}
                           />
                         ))}
-                        {filteredAndGroupedAppointments.finalized.length > 5 && (
+                        {filteredAndGroupedAppointments.completed.length > 5 && (
                           <p className="text-xs text-muted-foreground text-center py-2">
-                            +{filteredAndGroupedAppointments.finalized.length - 5} more completed appointments
+                            +{filteredAndGroupedAppointments.completed.length - 5} more completed appointments
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cancelled */}
+                  {filteredAndGroupedAppointments.cancelled.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-semibold text-destructive uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <XCircle className="h-3 w-3" />
+                        Cancelled ({filteredAndGroupedAppointments.cancelled.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {filteredAndGroupedAppointments.cancelled.slice(0, 3).map((apt: PatientAppointment) => (
+                          <AppointmentRow 
+                            key={apt.id} 
+                            appointment={apt} 
+                            onClick={() => onAppointmentClick(apt)}
+                            getStatusIcon={getStatusIcon}
+                            getStatusBadge={getStatusBadge}
+                            onReasonUpdated={onAppointmentUpdated}
+                          />
+                        ))}
+                        {filteredAndGroupedAppointments.cancelled.length > 3 && (
+                          <p className="text-xs text-muted-foreground text-center py-2">
+                            +{filteredAndGroupedAppointments.cancelled.length - 3} more cancelled appointments
                           </p>
                         )}
                       </div>
@@ -323,7 +355,8 @@ export function PatientProfileView({
                   {searchTerm && 
                     filteredAndGroupedAppointments.upcoming.length === 0 && 
                     filteredAndGroupedAppointments.needs_completion.length === 0 && 
-                    filteredAndGroupedAppointments.finalized.length === 0 && (
+                    filteredAndGroupedAppointments.completed.length === 0 &&
+                    filteredAndGroupedAppointments.cancelled.length === 0 && (
                     <div className="text-center py-6 text-muted-foreground">
                       <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
                       <p className="text-sm">No appointments match "{searchTerm}"</p>
