@@ -61,13 +61,14 @@ export function DentistAppointmentDetail({
   const [showReschedule, setShowReschedule] = useState(false);
   const [notes, setNotes] = useState(appointment?.consultation_notes || "");
   const [charges, setCharges] = useState<ChargeItem[]>([]);
+  const [chargesKey, setChargesKey] = useState(0); // Force reload trigger
 
   // Sync notes when appointment changes
   useEffect(() => {
     setNotes(appointment?.consultation_notes || "");
   }, [appointment?.consultation_notes]);
 
-  // Load saved draft charges
+  // Load saved draft charges - now also triggers on chargesKey change
   useEffect(() => {
     const loadDraftCharges = async () => {
       if (!appointment?.id) return;
@@ -98,11 +99,18 @@ export function DentistAppointmentDetail({
         }
       } else {
         console.log('ℹ️ No draft charges found');
+        setCharges([]);
       }
     };
     
     loadDraftCharges();
-  }, [appointment?.id]);
+  }, [appointment?.id, chargesKey]);
+
+  // Callback to reload draft data after save
+  const handleDraftSaved = useCallback(() => {
+    console.log('🔄 Draft saved, triggering reload...');
+    setChargesKey(prev => prev + 1);
+  }, []);
 
   // Derive state from appointment data
   const state = useMemo<DentistAppointmentState>(() => 
@@ -228,6 +236,7 @@ export function DentistAppointmentDetail({
                   dentistId={appointment.dentist_id}
                   notes={notes}
                   charges={charges}
+                  onSaved={handleDraftSaved}
                 />
               </div>
             </>
