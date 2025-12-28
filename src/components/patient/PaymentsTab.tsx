@@ -6,8 +6,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { DollarSign, CheckCircle, ChevronDown, ChevronUp, Loader2, ExternalLink, Calendar, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
 
 interface PaymentWithDetails {
   id: string;
@@ -37,8 +37,10 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
   const [paidExpanded, setPaidExpanded] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [scrollToSection, setScrollToSection] = useState<'payment' | 'documents' | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPayments();
@@ -125,9 +127,11 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
     }
   };
 
-  const navigateToAppointment = (appointmentId: string | null, scrollTo?: string) => {
+  const openAppointmentDetail = (appointmentId: string | null, scrollTo?: 'payment' | 'documents' | null) => {
     if (!appointmentId) return;
-    navigate(`/patient/appointments/${appointmentId}${scrollTo ? `?scrollTo=${scrollTo}` : ''}`);
+    setSelectedAppointmentId(appointmentId);
+    setScrollToSection(scrollTo || null);
+    setDetailDialogOpen(true);
   };
 
   const formatAmount = (amount: number) => `€${(amount / 100).toFixed(2)}`;
@@ -182,7 +186,7 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
                     {/* Payment Info */}
                     <div 
                       className="flex-1 cursor-pointer"
-                      onClick={() => navigateToAppointment(payment.appointment_id, 'payment')}
+                      onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
                     >
                       {/* Amount - Prominent */}
                       <p className="text-2xl font-bold text-foreground mb-1">
@@ -234,7 +238,7 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigateToAppointment(payment.appointment_id, 'payment')}
+                          onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
                           className="text-muted-foreground"
                         >
                           View appointment →
@@ -273,7 +277,7 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
                   <Card 
                     key={payment.id} 
                     className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => navigateToAppointment(payment.appointment_id)}
+                    onClick={() => openAppointmentDetail(payment.appointment_id)}
                   >
                     <CardContent className="p-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -323,6 +327,7 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
       )}
 
       {/* Empty State */}
+      {/* Empty State */}
       {payments.length === 0 && (
         <div className="text-center py-12">
           <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
@@ -332,6 +337,22 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
           </p>
         </div>
       )}
+
+      {/* Appointment Detail Dialog */}
+      <PatientAppointmentDetail 
+        appointmentId={selectedAppointmentId} 
+        open={detailDialogOpen} 
+        onOpenChange={(open) => {
+          setDetailDialogOpen(open);
+          if (!open) {
+            setSelectedAppointmentId(null);
+            setScrollToSection(null);
+            // Refresh payments in case status changed
+            fetchPayments();
+          }
+        }}
+        scrollTo={scrollToSection}
+      />
     </div>
   );
 };
