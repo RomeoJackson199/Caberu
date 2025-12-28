@@ -179,15 +179,13 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
             {outstandingPayments.map((payment) => (
               <Card 
                 key={payment.id} 
-                className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 hover:shadow-md transition-shadow"
+                className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
               >
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     {/* Payment Info */}
-                    <div 
-                      className="flex-1 cursor-pointer"
-                      onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
-                    >
+                    <div className="flex-1">
                       {/* Amount - Prominent */}
                       <p className="text-2xl font-bold text-foreground mb-1">
                         {formatAmount(payment.amount)}
@@ -218,7 +216,10 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
                     {/* Actions */}
                     <div className="flex flex-col gap-2 sm:items-end">
                       <Button
-                        onClick={() => handlePayNow(payment.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePayNow(payment.id);
+                        }}
                         disabled={processingPayment === payment.id}
                         className="w-full sm:w-auto"
                       >
@@ -234,16 +235,6 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
                           </>
                         )}
                       </Button>
-                      {payment.appointment_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
-                          className="text-muted-foreground"
-                        >
-                          View appointment →
-                        </Button>
-                      )}
                     </div>
                   </div>
                 </CardContent>
