@@ -65,13 +65,21 @@ export function ConsultationModeView({
       {/* Completion Dialog */}
       {showCompletionDialog && (
         <AppointmentCompletionDialog
-          appointmentId={appointment.id}
-          patientId={patient.id}
-          dentistId={dentistId}
-          patientName={`${patient.first_name} ${patient.last_name}`}
           open={showCompletionDialog}
           onOpenChange={setShowCompletionDialog}
-          onSuccess={() => {
+          appointment={{
+            id: appointment.id,
+            patient_id: patient.id,
+            dentist_id: dentistId,
+            appointment_date: appointment.appointment_date,
+            reason: appointment.reason,
+            patient: {
+              first_name: patient.first_name,
+              last_name: patient.last_name,
+              email: patient.email
+            }
+          }}
+          onCompleted={() => {
             setShowCompletionDialog(false);
             onAppointmentUpdated();
             onExit();
