@@ -30,6 +30,8 @@ interface DentistAppointmentDetailProps {
   appointment: any;
   onClose: () => void;
   onStatusChange?: (appointmentId: string, status: string) => void;
+  /** When true, skips SheetHeader/SheetTitle (use when not inside a Sheet) */
+  standalone?: boolean;
 }
 
 const STATE_CONFIG: Record<DentistAppointmentState, { 
@@ -88,7 +90,8 @@ function deriveDentistAppointmentState(appointment: any): DentistAppointmentStat
 export function DentistAppointmentDetail({
   appointment,
   onClose,
-  onStatusChange
+  onStatusChange,
+  standalone = false
 }: DentistAppointmentDetailProps) {
   const navigate = useNavigate();
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
@@ -200,12 +203,19 @@ export function DentistAppointmentDetail({
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
       <div className="p-6 border-b bg-muted/30 flex-shrink-0">
-        <SheetHeader className="space-y-0 mb-4">
-          <SheetTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+        {standalone ? (
+          <div className="flex items-center gap-2 text-base font-medium text-muted-foreground mb-4">
             <Calendar className="h-4 w-4" />
             Appointment Details
-          </SheetTitle>
-        </SheetHeader>
+          </div>
+        ) : (
+          <SheetHeader className="space-y-0 mb-4">
+            <SheetTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              Appointment Details
+            </SheetTitle>
+          </SheetHeader>
+        )}
 
         {/* Status Badge */}
         <Badge 
