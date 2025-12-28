@@ -1,13 +1,13 @@
 /**
- * PatientAppointmentDetail - State-based appointment detail view
+ * PatientAppointmentDetail - Patient-facing appointment detail view
  * 
- * Single source of truth for everything related to one appointment.
- * All visibility and actions are derived from the appointment state machine.
+ * Answers: What happened (or will happen)? What do I need to do? 
+ * What documents or payments exist?
  * 
- * This view REFLECTS appointment state; it never overrides or infers it.
+ * Structure: Header → Status sentence → Summary → Documents → Payment → Actions
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +39,7 @@ import {
   ChevronRight,
   Loader2,
   FolderOpen,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -122,6 +123,9 @@ export function PatientAppointmentDetail({
   const [loading, setLoading] = useState(false);
   const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null);
 
+  const paymentRef = useRef<HTMLDivElement>(null);
+  const documentsRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (open && appointmentId) {
       fetchAppointmentDetails();
@@ -135,6 +139,19 @@ export function PatientAppointmentDetail({
       fetchAddendumNotes();
     }
   }, [appointment?.patient_id, appointment?.business?.id, appointmentId]);
+
+  // Auto-scroll to section when navigation context provided
+  useEffect(() => {
+    if (!loading && appointment && scrollTo) {
+      setTimeout(() => {
+        if (scrollTo === 'payment' && paymentRef.current) {
+          paymentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (scrollTo === 'documents' && documentsRef.current) {
+          documentsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  }, [loading, appointment, scrollTo]);
 
   const fetchDocuments = async () => {
     if (!appointment?.patient_id) return;
@@ -183,20 +200,16 @@ export function PatientAppointmentDetail({
   const handleDownloadDocument = async (doc: DocumentData) => {
     setDownloadingDoc(doc.id);
     try {
-      // If file_path is a full URL, open it directly
       if (doc.file_path.startsWith('http')) {
         window.open(doc.file_path, '_blank', 'noopener,noreferrer');
         return;
       }
 
-      // Otherwise, get a signed URL from Supabase storage
       const { data, error } = await supabase.storage
         .from('patient-documents')
-        .createSignedUrl(doc.file_path, 3600); // 1 hour expiry
+        .createSignedUrl(doc.file_path, 3600);
 
       if (error) {
-        console.error('Error creating signed URL:', error);
-        // Try the documents bucket as fallback
         const { data: fallbackData, error: fallbackError } = await supabase.storage
           .from('documents')
           .createSignedUrl(doc.file_path, 3600);
@@ -331,6 +344,29 @@ export function PatientAppointmentDetail({
     ? `Dr. ${appointment.dentist.first_name} ${appointment.dentist.last_name}`.trim()
     : 'Your dentist';
 
+  // Generate patient-friendly status sentence
+  const getStatusSentence = (): string => {
+    if (!appointment) return '';
+    
+    const dateStr = format(parseISO(appointment.appointment_date), 'MMMM d');
+    const timeStr = format(parseISO(appointment.appointment_date), 'h:mm a');
+    
+    switch (appointmentState) {
+      case 'UPCOMING':
+        return `This appointment is scheduled for ${dateStr} at ${timeStr}.`;
+      case 'COMPLETED_DRAFT':
+        return 'Your dentist has completed the visit and is finalizing the details.';
+      case 'COMPLETED_FINAL_UNPAID':
+        return 'This appointment is completed. Payment is required.';
+      case 'COMPLETED_FINAL_PAID':
+        return 'This appointment is completed and closed.';
+      case 'CANCELLED':
+        return 'This appointment was cancelled and did not take place.';
+      default:
+        return '';
+    }
+  };
+
   // Status badge with icon
   const StatusBadge = () => {
     const iconMap: Record<AppointmentState, React.ElementType> = {
@@ -370,6 +406,18 @@ export function PatientAppointmentDetail({
     </div>
   );
 
+  // Document type to icon mapping
+  const getDocumentIcon = (type: string) => {
+    const lowerType = type.toLowerCase();
+    if (lowerType.includes('invoice') || lowerType.includes('receipt')) {
+      return <CreditCard className="h-4 w-4 text-muted-foreground" />;
+    }
+    if (lowerType.includes('xray') || lowerType.includes('x-ray') || lowerType.includes('scan')) {
+      return <Stethoscope className="h-4 w-4 text-muted-foreground" />;
+    }
+    return <FileText className="h-4 w-4 text-muted-foreground" />;
+  };
+
   const content = (
     <div className="flex flex-col h-full overflow-hidden">
       {loading ? (
@@ -377,7 +425,7 @@ export function PatientAppointmentDetail({
       ) : appointment ? (
         <>
           {/* ============================================ */}
-          {/* 1. HEADER - Always visible, state dominant */}
+          {/* 1. HEADER - Orientation (always visible) */}
           {/* ============================================ */}
           <div className="p-6 border-b bg-muted/30 flex-shrink-0">
             <div className="flex items-start justify-between gap-4">
@@ -392,6 +440,7 @@ export function PatientAppointmentDetail({
                   </h2>
                   <p className="text-base text-muted-foreground mt-0.5">
                     {format(parseISO(appointment.appointment_date), 'h:mm a')}
+                    {appointment.duration_minutes && ` · ${appointment.duration_minutes} min`}
                   </p>
                 </div>
               </div>
@@ -406,43 +455,39 @@ export function PatientAppointmentDetail({
               )}
             </div>
 
-            {/* Clinic & dentist info */}
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <Building2 className="h-4 w-4 flex-shrink-0" />
+            {/* Clinic, Dentist & Appointment type info */}
+            <div className="mt-4 space-y-1.5 text-sm">
+              <div className="flex items-center gap-1.5 text-foreground font-medium">
+                <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <span>{appointment.business?.name || 'Clinic'}</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <User className="h-4 w-4 flex-shrink-0" />
                 <span>{dentistName}</span>
               </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Stethoscope className="h-4 w-4 flex-shrink-0" />
+                <span>{appointment.service?.name || appointment.reason || 'Appointment'}</span>
+              </div>
             </div>
           </div>
 
           {/* ============================================ */}
-          {/* 2. APPOINTMENT SUMMARY - Compact orientation */}
+          {/* 2. "WHAT'S HAPPENING NOW?" - Status sentence */}
           {/* ============================================ */}
-          <div className="px-6 py-4 border-b flex-shrink-0">
+          <div className="px-6 py-4 border-b bg-background flex-shrink-0">
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-lg bg-primary/10 flex-shrink-0">
-                <Stethoscope className="h-5 w-5 text-primary" />
+              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0 mt-0.5">
+                <Info className="h-4 w-4 text-primary" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-foreground">
-                  {appointment.service?.name || appointment.reason || 'Appointment'}
-                </h3>
-                {appointment.duration_minutes && (
-                  <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
-                    <Timer className="h-3.5 w-3.5" />
-                    {appointment.duration_minutes} minutes
-                  </p>
-                )}
-              </div>
+              <p className="text-sm text-foreground leading-relaxed">
+                {getStatusSentence()}
+              </p>
             </div>
           </div>
 
           {/* ============================================ */}
-          {/* 3. STATE-DRIVEN CONTENT (conditional) */}
+          {/* 3. STATE-DRIVEN CONTENT (scrollable) */}
           {/* ============================================ */}
           <div className="flex-1 overflow-auto">
             <div className="p-6 space-y-5">
@@ -450,40 +495,18 @@ export function PatientAppointmentDetail({
               {/* -------- UPCOMING -------- */}
               {appointmentState === 'UPCOMING' && (
                 <>
-                  {/* Scheduled details card */}
-                  <Card className="border-blue-200/50 dark:border-blue-800/50 bg-blue-50/30 dark:bg-blue-950/20">
-                    <CardContent className="p-4 space-y-3">
-                      <h4 className="font-medium text-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-blue-600" />
-                        Appointment Details
-                      </h4>
-                      <div className="space-y-2.5 text-sm">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Date</span>
-                          <span className="font-medium">{format(parseISO(appointment.appointment_date), 'MMMM d, yyyy')}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Time</span>
-                          <span className="font-medium">{format(parseISO(appointment.appointment_date), 'h:mm a')}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Dentist</span>
-                          <span className="font-medium">{dentistName}</span>
-                        </div>
-                        {appointment.business?.address && (
-                          <div className="flex justify-between items-start gap-4 pt-1">
-                            <span className="text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3.5 w-3.5" />
-                              Location
-                            </span>
-                            <span className="font-medium text-right">{appointment.business.address}</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {appointment.business?.address && (
+                    <Card>
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          Location
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{appointment.business.address}</p>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                  {/* Preparation notes (if any) */}
                   {appointment.notes && (
                     <Card>
                       <CardContent className="p-4">
@@ -505,18 +528,18 @@ export function PatientAppointmentDetail({
                     <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
                       <Clock className="h-6 w-6 text-slate-500" />
                     </div>
-                    <p className="text-foreground font-medium">Your appointment has been completed</p>
+                    <p className="text-foreground font-medium">Visit completed</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Your dentist is finalizing the details.
+                      Details and documents will appear here once finalized.
                     </p>
                   </CardContent>
                 </Card>
               )}
 
-              {/* -------- COMPLETED_FINAL_UNPAID -------- */}
-              {appointmentState === 'COMPLETED_FINAL_UNPAID' && (
+              {/* -------- COMPLETED_FINAL (UNPAID & PAID) -------- */}
+              {(appointmentState === 'COMPLETED_FINAL_UNPAID' || appointmentState === 'COMPLETED_FINAL_PAID') && (
                 <>
-                  {/* Treatment summary */}
+                  {/* 3. Appointment Summary (read-only) */}
                   {permissions.treatmentSummaryVisible && (appointment.consultation_notes || appointment.ai_summary) && (
                     <Card>
                       <CardContent className="p-4">
@@ -531,32 +554,26 @@ export function PatientAppointmentDetail({
                     </Card>
                   )}
 
-                  {/* Addendum Notes - clearly marked as NEW */}
+                  {/* Follow-up notes */}
                   {addendumNotes.length > 0 && (
-                    <Card className="border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/10">
+                    <Card>
                       <CardContent className="p-4">
                         <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                          <ClipboardList className="h-4 w-4 text-amber-600" />
+                          <ClipboardList className="h-4 w-4 text-muted-foreground" />
                           Follow-up Notes
-                          <Badge className="ml-1 bg-amber-500 text-white text-xs px-1.5 py-0.5">
-                            NEW
-                          </Badge>
                         </h4>
                         <div className="space-y-3">
                           {addendumNotes.map((note) => (
                             <div 
                               key={note.id}
-                              className="p-3 bg-white dark:bg-background rounded-md border border-amber-200/50 dark:border-amber-800/30"
+                              className="p-3 bg-muted/50 rounded-md"
                             >
                               <div className="flex items-center justify-between mb-1">
-                                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200">
-                                  Added by your dentist
-                                </Badge>
                                 <span className="text-xs text-muted-foreground">
                                   {format(parseISO(note.created_at), 'MMM d, yyyy')}
                                 </span>
                               </div>
-                              <p className="text-sm whitespace-pre-wrap mt-2">{note.content}</p>
+                              <p className="text-sm whitespace-pre-wrap">{note.content}</p>
                             </div>
                           ))}
                         </div>
@@ -564,183 +581,96 @@ export function PatientAppointmentDetail({
                     </Card>
                   )}
 
-                  {/* Documents section */}
+                  {/* 4. Documents (read-only, after finalization) */}
                   {permissions.canDownloadDocuments && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          Documents
-                        </h4>
-                        {documents.length === 0 ? (
-                          <div className="text-center py-4">
-                            <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                            <p className="text-sm text-muted-foreground">No documents available yet</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {documents.map((doc) => (
-                              <button 
-                                key={doc.id}
-                                onClick={() => handleDownloadDocument(doc)}
-                                disabled={downloadingDoc === doc.id}
-                                className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <FileText className="h-4 w-4 text-muted-foreground" />
-                                  <div>
-                                    <p className="text-sm font-medium">{doc.title}</p>
-                                    <p className="text-xs text-muted-foreground capitalize">{doc.document_type.replace(/_/g, ' ')}</p>
-                                  </div>
-                                </div>
-                                {downloadingDoc === doc.id ? (
-                                  <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
-                                ) : (
-                                  <Download className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Payment section - highlighted */}
-                  <Card className="border-orange-200 dark:border-orange-800/50 bg-orange-50/50 dark:bg-orange-950/20">
-                    <CardContent className="p-4">
-                      <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                        <CreditCard className="h-4 w-4 text-orange-600" />
-                        Payment Due
-                      </h4>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Badge variant="outline" className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200">
-                            Unpaid
-                          </Badge>
-                        </div>
-                        {appointment.amount_paid_cents !== null && appointment.amount_paid_cents > 0 && (
-                          <span className="text-2xl font-semibold text-foreground">
-                            €{(appointment.amount_paid_cents / 100).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </>
-              )}
-
-              {/* -------- COMPLETED_FINAL_PAID -------- */}
-              {appointmentState === 'COMPLETED_FINAL_PAID' && (
-                <>
-                  {/* Treatment summary */}
-                  {permissions.treatmentSummaryVisible && (appointment.consultation_notes || appointment.ai_summary) && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                          <ClipboardList className="h-4 w-4 text-emerald-600" />
-                          Treatment Summary
-                        </h4>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                          {appointment.consultation_notes || appointment.ai_summary}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Addendum Notes - clearly marked as NEW */}
-                  {addendumNotes.length > 0 && (
-                    <Card className="border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/10">
-                      <CardContent className="p-4">
-                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                          <ClipboardList className="h-4 w-4 text-amber-600" />
-                          Follow-up Notes
-                          <Badge className="ml-1 bg-amber-500 text-white text-xs px-1.5 py-0.5">
-                            NEW
-                          </Badge>
-                        </h4>
-                        <div className="space-y-3">
-                          {addendumNotes.map((note) => (
-                            <div 
-                              key={note.id}
-                              className="p-3 bg-white dark:bg-background rounded-md border border-amber-200/50 dark:border-amber-800/30"
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200">
-                                  Added by your dentist
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {format(parseISO(note.created_at), 'MMM d, yyyy')}
-                                </span>
-                              </div>
-                              <p className="text-sm whitespace-pre-wrap mt-2">{note.content}</p>
+                    <div ref={documentsRef}>
+                      <Card>
+                        <CardContent className="p-4">
+                          <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            Documents
+                          </h4>
+                          {documents.length === 0 ? (
+                            <div className="text-center py-4">
+                              <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                              <p className="text-sm text-muted-foreground">
+                                Documents will appear here once available.
+                              </p>
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Documents section */}
-                  {permissions.canDownloadDocuments && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          Documents
-                        </h4>
-                        {documents.length === 0 ? (
-                          <div className="text-center py-4">
-                            <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                            <p className="text-sm text-muted-foreground">No documents available yet</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {documents.map((doc) => (
-                              <button 
-                                key={doc.id}
-                                onClick={() => handleDownloadDocument(doc)}
-                                disabled={downloadingDoc === doc.id}
-                                className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <FileText className="h-4 w-4 text-muted-foreground" />
-                                  <div>
-                                    <p className="text-sm font-medium">{doc.title}</p>
-                                    <p className="text-xs text-muted-foreground capitalize">{doc.document_type.replace(/_/g, ' ')}</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {documents.map((doc) => (
+                                <button 
+                                  key={doc.id}
+                                  onClick={() => handleDownloadDocument(doc)}
+                                  disabled={downloadingDoc === doc.id}
+                                  className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    {getDocumentIcon(doc.document_type)}
+                                    <div>
+                                      <p className="text-sm font-medium">{doc.title}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {appointment.business?.name} · {format(parseISO(doc.created_at), 'MMM d, yyyy')}
+                                      </p>
+                                    </div>
                                   </div>
-                                </div>
-                                {downloadingDoc === doc.id ? (
-                                  <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
-                                ) : (
-                                  <Download className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                                  {downloadingDoc === doc.id ? (
+                                    <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
                   )}
 
-                  {/* Payment complete */}
-                  <Card className="border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/20">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">Payment complete</p>
-                          <p className="text-sm text-muted-foreground">
-                            Paid on {appointment.completed_at 
-                              ? format(parseISO(appointment.completed_at), 'MMMM d, yyyy')
-                              : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* 5. Payment Section (conditional) */}
+                  <div ref={paymentRef}>
+                    {appointmentState === 'COMPLETED_FINAL_UNPAID' ? (
+                      <Card className="border-orange-200 dark:border-orange-800/50 bg-orange-50/50 dark:bg-orange-950/20">
+                        <CardContent className="p-4">
+                          <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                            <CreditCard className="h-4 w-4 text-orange-600" />
+                            Payment Required
+                          </h4>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                              Payment for this appointment
+                            </p>
+                            {appointment.amount_paid_cents !== null && appointment.amount_paid_cents > 0 && (
+                              <span className="text-xl font-semibold text-foreground">
+                                €{(appointment.amount_paid_cents / 100).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card className="border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/20">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+                              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">Payment complete</p>
+                              {appointment.amount_paid_cents !== null && appointment.amount_paid_cents > 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                  €{(appointment.amount_paid_cents / 100).toFixed(2)} paid
+                                  {appointment.completed_at && ` on ${format(parseISO(appointment.completed_at), 'MMM d, yyyy')}`}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </>
               )}
 
@@ -763,7 +693,7 @@ export function PatientAppointmentDetail({
           </div>
 
           {/* ============================================ */}
-          {/* 4. ACTIONS - Bottom (derived from permissions) */}
+          {/* 6. ACTIONS - Limited by state */}
           {/* ============================================ */}
           <div className="p-6 border-t bg-muted/30 flex-shrink-0">
             {/* UPCOMING: Reschedule / Cancel */}
@@ -801,21 +731,24 @@ export function PatientAppointmentDetail({
 
             {/* COMPLETED_FINAL_UNPAID: Pay button */}
             {appointmentState === 'COMPLETED_FINAL_UNPAID' && permissions.canPay && (
-              <div className="space-y-3">
-                <Button className="w-full gap-2" size="lg">
-                  <CreditCard className="h-4 w-4" />
-                  Pay {appointment.amount_paid_cents 
-                    ? `€${(appointment.amount_paid_cents / 100).toFixed(2)}`
-                    : ''}
-                </Button>
-              </div>
+              <Button className="w-full gap-2" size="lg">
+                <CreditCard className="h-4 w-4" />
+                Pay now
+                {appointment.amount_paid_cents 
+                  ? ` · €${(appointment.amount_paid_cents / 100).toFixed(2)}`
+                  : ''}
+              </Button>
             )}
 
-            {/* COMPLETED_FINAL_PAID: Download only */}
-            {appointmentState === 'COMPLETED_FINAL_PAID' && permissions.canDownloadDocuments && (
-              <Button variant="outline" className="w-full gap-2">
+            {/* COMPLETED_FINAL_PAID: Download documents */}
+            {appointmentState === 'COMPLETED_FINAL_PAID' && permissions.canDownloadDocuments && documents.length > 0 && (
+              <Button 
+                variant="outline" 
+                className="w-full gap-2"
+                onClick={() => documentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+              >
                 <Download className="h-4 w-4" />
-                Download documents
+                View documents
               </Button>
             )}
 
