@@ -54,11 +54,12 @@ export function ConsultationModeView({
       />
 
       {/* Appointment Detail - with full editing capabilities */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-auto">
         <DentistAppointmentDetail
           appointment={enrichedAppointment}
           onClose={onExit}
           onStatusChange={handleStatusChange}
+          standalone
         />
       </div>
 
