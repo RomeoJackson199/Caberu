@@ -89,9 +89,9 @@ export function AppointmentCompletionDialog({
   // Safely extract template data - template might be a string or object
   const templateObj = typeof template === 'object' && template !== null ? template : null;
   
+  // Removed 'overview' step - the wizard assumes the dentist already knows which appointment they're completing
   const steps = useMemo(() => {
-    const defs = (templateObj as any)?.completionSteps?.filter((s: any) => s.enabled) ?? [
-      { id: 'overview', title: 'Overview' },
+    const defs = (templateObj as any)?.completionSteps?.filter((s: any) => s.enabled && s.id !== 'overview') ?? [
       { id: 'treatments', title: 'Treatments' },
       { id: 'notes', title: 'Notes' },
       { id: 'imaging', title: 'Imaging' },
@@ -99,7 +99,8 @@ export function AppointmentCompletionDialog({
       { id: 'billing', title: 'Billing' },
       { id: 'complete', title: 'Complete' },
     ];
-    return defs.map((d: any) => ({ id: d.id as any, title: (allStepMeta[d.id]?.title ?? d.title), icon: (allStepMeta[d.id]?.icon ?? FileText) }));
+    // Filter out 'overview' in case it comes from template config
+    return defs.filter((d: any) => d.id !== 'overview').map((d: any) => ({ id: d.id as any, title: (allStepMeta[d.id]?.title ?? d.title), icon: (allStepMeta[d.id]?.icon ?? FileText) }));
   }, [templateObj]);
   const showToothInput = (templateObj as any)?.id === 'healthcare' || !!(templateObj as any)?.features?.medicalRecords;
   const serviceLabel = (templateObj as any)?.terminology?.service || 'Treatment';
