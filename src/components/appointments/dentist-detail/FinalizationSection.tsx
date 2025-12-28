@@ -72,34 +72,49 @@ export function FinalizationSection({
   // Send email notification to patient
   const sendFinalizationEmail = async () => {
     try {
+      console.log('📧 Sending finalization email for patient:', patientId);
+      
       // Get patient's user_id for notification
-      const { data: patient } = await supabase
+      const { data: patient, error: patientError } = await supabase
         .from('profiles')
         .select('user_id, first_name, email')
         .eq('id', patientId)
         .single();
 
-      if (patient?.user_id) {
-        const formattedDate = appointmentDate 
-          ? format(new Date(appointmentDate), 'MMMM d, yyyy')
-          : 'your recent visit';
-        
-        await NotificationService.createNotification(
-          patient.user_id,
-          'Appointment Completed',
-          `Your appointment on ${formattedDate} has been finalized. ${totalCents > 0 ? `An invoice for $${(totalCents / 100).toFixed(2)} has been generated.` : ''} Thank you for your visit!`,
-          'appointment',
-          'info',
-          `/patient/appointments`,
-          { 
-            appointmentId, 
-            dentistId,
-            appointmentDate: formattedDate,
-          },
-          undefined,
-          true // sendEmail
-        );
+      if (patientError) {
+        console.error('Error fetching patient profile:', patientError);
+        return;
       }
+
+      if (!patient?.user_id) {
+        console.error('No user_id found for patient:', patientId);
+        return;
+      }
+
+      console.log('📧 Patient found:', { email: patient.email, firstName: patient.first_name });
+
+      const formattedDate = appointmentDate 
+        ? format(new Date(appointmentDate), 'MMMM d, yyyy')
+        : 'your recent visit';
+      
+      await NotificationService.createNotification(
+        patient.user_id,
+        'Appointment Completed',
+        `Your appointment on ${formattedDate} has been finalized. ${totalCents > 0 ? `An invoice for $${(totalCents / 100).toFixed(2)} has been generated.` : ''} Thank you for your visit!`,
+        'appointment',
+        'info',
+        `/patient/appointments`,
+        { 
+          appointmentId, 
+          dentistId,
+          appointmentDate: formattedDate,
+          email: patient.email,
+        },
+        undefined,
+        true // sendEmail
+      );
+      
+      console.log('✅ Finalization notification sent successfully');
     } catch (error) {
       console.error('Error sending finalization email:', error);
       // Don't fail the finalization if email fails
