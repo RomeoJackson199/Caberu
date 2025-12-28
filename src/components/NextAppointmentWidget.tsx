@@ -3,12 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
-import { AppointmentDetailsDialog } from "@/components/AppointmentDetailsDialog";
+import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import {
   Calendar,
   Clock,
@@ -16,32 +15,25 @@ import {
   Phone,
   Mail,
   AlertTriangle,
-  MapPin,
   FileText,
-  CheckCircle2,
   Eye
 } from "lucide-react";
 import { format } from "date-fns";
-import { utcToClinicTime, formatClinicTime } from "@/lib/timezone";
-import { logger } from '@/lib/logger';
 import { useLanguage } from "@/hooks/useLanguage";
-import {
-  getStatusClasses,
-  getUrgencyClasses,
-  canCompleteAppointment,
-  formatAppointmentDate,
-  getAppointmentDate
-} from "@/lib/appointmentUtils";
+import { getAppointmentDate } from "@/lib/appointmentUtils";
 
 interface NextAppointment {
   id: string;
   patient_id: string;
+  dentist_id: string;
+  business_id: string;
   appointment_date: string;
   duration_minutes: number | null;
   status: string;
   reason: string | null;
   urgency: string | null;
   consultation_notes: string | null;
+  notes: string | null;
   patient_name: string | null;
   profiles: {
     first_name: string;
@@ -59,7 +51,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
   const [nextAppointment, setNextAppointment] = useState<NextAppointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showDetailsSheet, setShowDetailsSheet] = useState(false);
   const { toast } = useToast();
   const { businessId } = useBusinessContext();
   const { t } = useLanguage();
@@ -77,12 +69,15 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
           .select(`
             id,
             patient_id,
+            dentist_id,
+            business_id,
             appointment_date,
             duration_minutes,
             status,
             reason,
             urgency,
             consultation_notes,
+            notes,
             patient_name,
             profiles!appointments_patient_id_fkey (
               first_name,
@@ -307,7 +302,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
         {/* Action Button */}
         <Button 
           className="w-full rounded-full" 
-          onClick={() => setShowDetailsDialog(true)}
+          onClick={() => setShowDetailsSheet(true)}
         >
           <Eye className="h-4 w-4 mr-2" />
           {t.viewDetails || 'View Details'}
@@ -334,14 +329,29 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
           />
         )}
 
-        {/* Details Dialog with AI */}
-        {nextAppointment && (
-          <AppointmentDetailsDialog
-            appointmentId={nextAppointment.id}
-            open={showDetailsDialog}
-            onOpenChange={setShowDetailsDialog}
-          />
-        )}
+        {/* Appointment Details Sheet */}
+        <Sheet open={showDetailsSheet} onOpenChange={setShowDetailsSheet}>
+          <SheetContent side="right" className="w-full sm:max-w-lg p-0">
+            {nextAppointment && (
+              <DentistAppointmentDetail
+                appointment={{
+                  ...nextAppointment,
+                  patient: nextAppointment.profiles ? {
+                    first_name: nextAppointment.profiles.first_name,
+                    last_name: nextAppointment.profiles.last_name,
+                    email: nextAppointment.profiles.email,
+                    phone: nextAppointment.profiles.phone
+                  } : undefined
+                }}
+                onClose={() => setShowDetailsSheet(false)}
+                onStatusChange={(appointmentId, status) => {
+                  handleCompletionSuccess();
+                  setShowDetailsSheet(false);
+                }}
+              />
+            )}
+          </SheetContent>
+        </Sheet>
       </CardContent>
     </Card>
   );
