@@ -14,7 +14,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
-import { ModernPatientManagement } from "@/components/enhanced/ModernPatientManagement";
+import { DentistPatientManagement } from "@/components/dentist-patients";
 import { EnhancedAvailabilitySettings } from "@/components/enhanced/EnhancedAvailabilitySettings";
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
 // Lazy load analytics (includes heavy chart library ~400KB)
@@ -329,7 +329,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       case 'dashboard':
         return <ClinicalToday dentistId={dentistId} user={user} onOpenPatientsTab={() => setActiveSection('patients')} onOpenAppointmentsTab={() => setActiveSection('appointments')} />;
       case 'patients':
-        return <ModernPatientManagement dentistId={dentistId} />;
+        return <DentistPatientManagement dentistId={dentistId} />;
       case 'appointments':
         return <DentistAppointmentsManagement />;
       case 'employees':
