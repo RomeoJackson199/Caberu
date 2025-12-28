@@ -5,9 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
+interface ChargeItem {
+  id: string;
+  description: string;
+  amount_cents: number;
+}
+
 interface DraftSaveButtonProps {
   appointmentId: string;
   notes: string;
+  charges?: ChargeItem[];
   onSaved?: () => void;
 }
 
@@ -18,6 +25,7 @@ interface DraftSaveButtonProps {
 export function DraftSaveButton({
   appointmentId,
   notes,
+  charges = [],
   onSaved,
 }: DraftSaveButtonProps) {
   const { toast } = useToast();
@@ -30,7 +38,8 @@ export function DraftSaveButton({
     setSaving(true);
     
     try {
-      const { error } = await supabase
+      // Save notes to appointments table
+      const { error: notesError } = await supabase
         .from('appointments')
         .update({ 
           consultation_notes: notes,
@@ -38,7 +47,46 @@ export function DraftSaveButton({
         })
         .eq('id', appointmentId);
 
-      if (error) throw error;
+      if (notesError) throw notesError;
+
+      // Save charges to notes table as JSON for draft persistence
+      if (charges.length > 0) {
+        // Store charges as a draft note with special type
+        const chargesJson = JSON.stringify(charges);
+        
+        // Upsert draft charges note
+        const { error: chargesError } = await supabase
+          .from('notes')
+          .upsert({
+            appointment_id: appointmentId,
+            note_type: 'draft_charges',
+            content: chargesJson,
+            is_private: true,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'appointment_id,note_type',
+            ignoreDuplicates: false,
+          });
+
+        // If upsert fails due to constraint, try insert then update
+        if (chargesError) {
+          // Delete existing and insert new
+          await supabase
+            .from('notes')
+            .delete()
+            .eq('appointment_id', appointmentId)
+            .eq('note_type', 'draft_charges');
+            
+          await supabase
+            .from('notes')
+            .insert({
+              appointment_id: appointmentId,
+              note_type: 'draft_charges',
+              content: chargesJson,
+              is_private: true,
+            });
+        }
+      }
 
       setSaved(true);
       
@@ -49,7 +97,7 @@ export function DraftSaveButton({
       
       toast({
         title: "Draft saved",
-        description: "Your notes have been saved. Patient will not see this until finalized.",
+        description: "Your notes and charges have been saved. Patient will not see this until finalized.",
       });
 
       setTimeout(() => setSaved(false), 2000);
@@ -67,7 +115,7 @@ export function DraftSaveButton({
 
   return (
     <Button
-      variant="outline"
+      variant="default"
       size="sm"
       onClick={handleSave}
       disabled={saving}
@@ -76,11 +124,11 @@ export function DraftSaveButton({
       {saving ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
       ) : saved ? (
-        <Check className="h-3.5 w-3.5 text-emerald-600" />
+        <Check className="h-3.5 w-3.5" />
       ) : (
         <Save className="h-3.5 w-3.5" />
       )}
-      {saved ? "Saved" : "Save Draft"}
+      {saved ? "Saved!" : "Save Draft"}
     </Button>
   );
 }
