@@ -37,55 +37,56 @@ export function DraftSaveButton({
     if (saving) return;
     setSaving(true);
     
+    console.log('💾 Saving draft...', { appointmentId, notes: notes?.slice(0, 50), chargesCount: charges.length });
+    
     try {
       // Save notes to appointments table
-      const { error: notesError } = await supabase
+      const { data: notesData, error: notesError } = await supabase
         .from('appointments')
         .update({ 
           consultation_notes: notes,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', appointmentId);
+        .eq('id', appointmentId)
+        .select('id, consultation_notes');
 
-      if (notesError) throw notesError;
+      if (notesError) {
+        console.error('❌ Error saving notes:', notesError);
+        throw notesError;
+      }
+      console.log('✅ Notes saved:', notesData);
 
       // Save charges to notes table as JSON for draft persistence
+      // First delete any existing draft_charges, then insert new
+      const { error: deleteError } = await supabase
+        .from('notes')
+        .delete()
+        .eq('appointment_id', appointmentId)
+        .eq('note_type', 'draft_charges');
+      
+      if (deleteError) {
+        console.warn('⚠️ Delete draft_charges warning:', deleteError);
+      }
+      
       if (charges.length > 0) {
-        // Store charges as a draft note with special type
         const chargesJson = JSON.stringify(charges);
+        console.log('💰 Saving charges:', chargesJson);
         
-        // Upsert draft charges note
-        const { error: chargesError } = await supabase
+        const { data: chargesData, error: chargesError } = await supabase
           .from('notes')
-          .upsert({
+          .insert({
             appointment_id: appointmentId,
             note_type: 'draft_charges',
             content: chargesJson,
             is_private: true,
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'appointment_id,note_type',
-            ignoreDuplicates: false,
-          });
+          })
+          .select('id');
 
-        // If upsert fails due to constraint, try insert then update
         if (chargesError) {
-          // Delete existing and insert new
-          await supabase
-            .from('notes')
-            .delete()
-            .eq('appointment_id', appointmentId)
-            .eq('note_type', 'draft_charges');
-            
-          await supabase
-            .from('notes')
-            .insert({
-              appointment_id: appointmentId,
-              note_type: 'draft_charges',
-              content: chargesJson,
-              is_private: true,
-            });
+          console.error('❌ Error saving charges:', chargesError);
+          throw chargesError;
         }
+        console.log('✅ Charges saved:', chargesData);
       }
 
       setSaved(true);
