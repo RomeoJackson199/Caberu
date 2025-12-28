@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -61,6 +61,36 @@ export function DentistAppointmentDetail({
   const [showReschedule, setShowReschedule] = useState(false);
   const [notes, setNotes] = useState(appointment?.consultation_notes || "");
   const [charges, setCharges] = useState<ChargeItem[]>([]);
+
+  // Sync notes when appointment changes
+  useEffect(() => {
+    setNotes(appointment?.consultation_notes || "");
+  }, [appointment?.consultation_notes]);
+
+  // Load saved draft charges
+  useEffect(() => {
+    const loadDraftCharges = async () => {
+      if (!appointment?.id) return;
+      
+      const { data } = await supabase
+        .from('notes')
+        .select('content')
+        .eq('appointment_id', appointment.id)
+        .eq('note_type', 'draft_charges')
+        .single();
+      
+      if (data?.content) {
+        try {
+          const parsedCharges = JSON.parse(data.content);
+          setCharges(parsedCharges);
+        } catch (e) {
+          console.error('Error parsing draft charges:', e);
+        }
+      }
+    };
+    
+    loadDraftCharges();
+  }, [appointment?.id]);
 
   // Derive state from appointment data
   const state = useMemo<DentistAppointmentState>(() => 
@@ -184,6 +214,7 @@ export function DentistAppointmentDetail({
                 <DraftSaveButton
                   appointmentId={appointment.id}
                   notes={notes}
+                  charges={charges}
                 />
               </div>
             </>
