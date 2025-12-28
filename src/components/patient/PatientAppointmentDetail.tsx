@@ -100,6 +100,13 @@ interface DocumentData {
   created_at: string;
 }
 
+interface AddendumNote {
+  id: string;
+  content: string;
+  created_at: string;
+  title: string | null;
+}
+
 export function PatientAppointmentDetail({
   appointmentId,
   open,
@@ -111,6 +118,7 @@ export function PatientAppointmentDetail({
   const isMobile = useIsMobile();
   const [appointment, setAppointment] = useState<AppointmentData | null>(null);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const [addendumNotes, setAddendumNotes] = useState<AddendumNote[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null);
 
@@ -120,12 +128,13 @@ export function PatientAppointmentDetail({
     }
   }, [open, appointmentId]);
 
-  // Fetch documents when we have the patient_id
+  // Fetch documents and addendum notes when we have the patient_id
   useEffect(() => {
     if (appointment?.patient_id && appointment?.business?.id) {
       fetchDocuments();
+      fetchAddendumNotes();
     }
-  }, [appointment?.patient_id, appointment?.business?.id]);
+  }, [appointment?.patient_id, appointment?.business?.id, appointmentId]);
 
   const fetchDocuments = async () => {
     if (!appointment?.patient_id) return;
@@ -146,6 +155,28 @@ export function PatientAppointmentDetail({
       setDocuments(data || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
+    }
+  };
+
+  const fetchAddendumNotes = async () => {
+    if (!appointmentId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('id, content, created_at, title')
+        .eq('appointment_id', appointmentId)
+        .eq('note_type', 'addendum')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching addendum notes:', error);
+        return;
+      }
+      
+      setAddendumNotes(data || []);
+    } catch (error) {
+      console.error('Error fetching addendum notes:', error);
     }
   };
 
@@ -500,6 +531,39 @@ export function PatientAppointmentDetail({
                     </Card>
                   )}
 
+                  {/* Addendum Notes - clearly marked as NEW */}
+                  {addendumNotes.length > 0 && (
+                    <Card className="border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/10">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                          <ClipboardList className="h-4 w-4 text-amber-600" />
+                          Follow-up Notes
+                          <Badge className="ml-1 bg-amber-500 text-white text-xs px-1.5 py-0.5">
+                            NEW
+                          </Badge>
+                        </h4>
+                        <div className="space-y-3">
+                          {addendumNotes.map((note) => (
+                            <div 
+                              key={note.id}
+                              className="p-3 bg-white dark:bg-background rounded-md border border-amber-200/50 dark:border-amber-800/30"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200">
+                                  Added by your dentist
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(parseISO(note.created_at), 'MMM d, yyyy')}
+                                </span>
+                              </div>
+                              <p className="text-sm whitespace-pre-wrap mt-2">{note.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Documents section */}
                   {permissions.canDownloadDocuments && (
                     <Card>
@@ -580,6 +644,39 @@ export function PatientAppointmentDetail({
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
                           {appointment.consultation_notes || appointment.ai_summary}
                         </p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Addendum Notes - clearly marked as NEW */}
+                  {addendumNotes.length > 0 && (
+                    <Card className="border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-950/10">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
+                          <ClipboardList className="h-4 w-4 text-amber-600" />
+                          Follow-up Notes
+                          <Badge className="ml-1 bg-amber-500 text-white text-xs px-1.5 py-0.5">
+                            NEW
+                          </Badge>
+                        </h4>
+                        <div className="space-y-3">
+                          {addendumNotes.map((note) => (
+                            <div 
+                              key={note.id}
+                              className="p-3 bg-white dark:bg-background rounded-md border border-amber-200/50 dark:border-amber-800/30"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200">
+                                  Added by your dentist
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(parseISO(note.created_at), 'MMM d, yyyy')}
+                                </span>
+                              </div>
+                              <p className="text-sm whitespace-pre-wrap mt-2">{note.content}</p>
+                            </div>
+                          ))}
+                        </div>
                       </CardContent>
                     </Card>
                   )}

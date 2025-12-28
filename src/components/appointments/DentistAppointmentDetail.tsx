@@ -19,6 +19,8 @@ import {
   PatientSafetySnapshot,
   ConsultationWorkspace,
   FinalizationSection,
+  DraftSaveButton,
+  FinalizedAddendum,
 } from "./dentist-detail";
 
 interface ChargeItem {
@@ -162,18 +164,40 @@ export function DentistAppointmentDetail({
           {/* Section 2: Patient Safety Snapshot (read-only, always visible) */}
           <PatientSafetySnapshot patientId={appointment.patient_id} />
 
-          {/* Section 3: Consultation Workspace (state-dependent visibility) */}
-          {permissions.showWorkspace && (
-            <ConsultationWorkspace
+          {/* Section 3a: Consultation Workspace (COMPLETED_DRAFT - editable) */}
+          {state === 'COMPLETED_DRAFT' && (
+            <>
+              <ConsultationWorkspace
+                appointmentId={appointment.id}
+                patientId={appointment.patient_id}
+                dentistId={appointment.dentist_id}
+                businessId={appointment.business_id}
+                isEditable={true}
+                existingNotes={notes}
+                existingCharges={charges}
+                onNotesChange={setNotes}
+                onChargesChange={setCharges}
+              />
+              
+              {/* Draft Save Button - visible for dentist, does not notify patient */}
+              <div className="flex justify-end">
+                <DraftSaveButton
+                  appointmentId={appointment.id}
+                  notes={notes}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Section 3b: Finalized Addendum (FINALIZED - add-only) */}
+          {state === 'FINALIZED' && (
+            <FinalizedAddendum
               appointmentId={appointment.id}
               patientId={appointment.patient_id}
               dentistId={appointment.dentist_id}
               businessId={appointment.business_id}
-              isEditable={permissions.canEditNotes}
-              existingNotes={notes}
-              existingCharges={charges}
-              onNotesChange={setNotes}
-              onChargesChange={setCharges}
+              originalNotes={appointment.consultation_notes}
+              originalCompletedAt={appointment.completed_at}
             />
           )}
 
