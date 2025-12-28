@@ -37,6 +37,8 @@ import {
   Timer,
   AlertCircle,
   ChevronRight,
+  Loader2,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -71,6 +73,7 @@ interface AppointmentData {
   amount_paid_cents: number | null;
   completed_at: string | null;
   created_at: string;
+  patient_id: string;
   business: {
     id: string;
     name: string;
@@ -88,6 +91,15 @@ interface AppointmentData {
   } | null;
 }
 
+interface DocumentData {
+  id: string;
+  title: string;
+  document_type: string;
+  file_path: string;
+  file_name: string;
+  created_at: string;
+}
+
 export function PatientAppointmentDetail({
   appointmentId,
   open,
@@ -98,13 +110,86 @@ export function PatientAppointmentDetail({
 }: PatientAppointmentDetailProps) {
   const isMobile = useIsMobile();
   const [appointment, setAppointment] = useState<AppointmentData | null>(null);
+  const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && appointmentId) {
       fetchAppointmentDetails();
     }
   }, [open, appointmentId]);
+
+  // Fetch documents when we have the patient_id
+  useEffect(() => {
+    if (appointment?.patient_id && appointment?.business?.id) {
+      fetchDocuments();
+    }
+  }, [appointment?.patient_id, appointment?.business?.id]);
+
+  const fetchDocuments = async () => {
+    if (!appointment?.patient_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('patient_documents')
+        .select('id, title, document_type, file_path, file_name, created_at')
+        .eq('patient_id', appointment.patient_id)
+        .eq('business_id', appointment.business?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        return;
+      }
+      
+      setDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    }
+  };
+
+  const handleDownloadDocument = async (doc: DocumentData) => {
+    setDownloadingDoc(doc.id);
+    try {
+      // If file_path is a full URL, open it directly
+      if (doc.file_path.startsWith('http')) {
+        window.open(doc.file_path, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      // Otherwise, get a signed URL from Supabase storage
+      const { data, error } = await supabase.storage
+        .from('patient-documents')
+        .createSignedUrl(doc.file_path, 3600); // 1 hour expiry
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        // Try the documents bucket as fallback
+        const { data: fallbackData, error: fallbackError } = await supabase.storage
+          .from('documents')
+          .createSignedUrl(doc.file_path, 3600);
+        
+        if (fallbackError) {
+          console.error('Fallback error:', fallbackError);
+          return;
+        }
+        
+        if (fallbackData?.signedUrl) {
+          window.open(fallbackData.signedUrl, '_blank', 'noopener,noreferrer');
+        }
+        return;
+      }
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error);
+    } finally {
+      setDownloadingDoc(null);
+    }
+  };
 
   const fetchAppointmentDetails = async () => {
     if (!appointmentId) return;
@@ -127,6 +212,7 @@ export function PatientAppointmentDetail({
           amount_paid_cents,
           completed_at,
           created_at,
+          patient_id,
           businesses!inner (
             id,
             name,
@@ -166,6 +252,7 @@ export function PatientAppointmentDetail({
         amount_paid_cents: data.amount_paid_cents,
         completed_at: data.completed_at,
         created_at: data.created_at,
+        patient_id: data.patient_id,
         business: businessData ? {
           id: businessData.id,
           name: businessData.name,
@@ -421,18 +508,36 @@ export function PatientAppointmentDetail({
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           Documents
                         </h4>
-                        <div className="space-y-2">
-                          <button className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left">
-                            <div className="flex items-center gap-3">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <p className="text-sm font-medium">Invoice</p>
-                                <p className="text-xs text-muted-foreground">{appointment.business?.name}</p>
-                              </div>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          </button>
-                        </div>
+                        {documents.length === 0 ? (
+                          <div className="text-center py-4">
+                            <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">No documents available yet</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {documents.map((doc) => (
+                              <button 
+                                key={doc.id}
+                                onClick={() => handleDownloadDocument(doc)}
+                                disabled={downloadingDoc === doc.id}
+                                className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">{doc.title}</p>
+                                    <p className="text-xs text-muted-foreground capitalize">{doc.document_type.replace(/_/g, ' ')}</p>
+                                  </div>
+                                </div>
+                                {downloadingDoc === doc.id ? (
+                                  <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                                ) : (
+                                  <Download className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}
@@ -487,18 +592,36 @@ export function PatientAppointmentDetail({
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           Documents
                         </h4>
-                        <div className="space-y-2">
-                          <button className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left">
-                            <div className="flex items-center gap-3">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <p className="text-sm font-medium">Invoice</p>
-                                <p className="text-xs text-muted-foreground">{appointment.business?.name}</p>
-                              </div>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          </button>
-                        </div>
+                        {documents.length === 0 ? (
+                          <div className="text-center py-4">
+                            <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground">No documents available yet</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {documents.map((doc) => (
+                              <button 
+                                key={doc.id}
+                                onClick={() => handleDownloadDocument(doc)}
+                                disabled={downloadingDoc === doc.id}
+                                className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm font-medium">{doc.title}</p>
+                                    <p className="text-xs text-muted-foreground capitalize">{doc.document_type.replace(/_/g, ' ')}</p>
+                                  </div>
+                                </div>
+                                {downloadingDoc === doc.id ? (
+                                  <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                                ) : (
+                                  <Download className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}

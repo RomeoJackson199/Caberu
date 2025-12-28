@@ -156,38 +156,48 @@ export function FinalizationSection({
 
       if (updateError) throw updateError;
 
-      // 2. Create invoice if there are charges
+      // 2. Create payment request if there are charges
       if (totalCents > 0) {
-        const { data: invoice, error: invoiceError } = await supabase
-          .from('invoices')
-          .insert({
-            appointment_id: appointmentId,
-            patient_id: patientId,
-            dentist_id: dentistId,
-            total_amount_cents: totalCents,
-            patient_amount_cents: totalCents,
-            mutuality_amount_cents: 0,
-            vat_amount_cents: 0,
-            status: 'pending',
-            claim_status: 'to_be_submitted',
-          })
-          .select()
+        // Get patient email for payment request
+        const { data: patientData } = await supabase
+          .from('profiles')
+          .select('email, first_name, last_name')
+          .eq('id', patientId)
           .single();
 
-        if (!invoiceError && invoice) {
-          // Add invoice items
-          const invoiceItems = charges.map(charge => ({
-            invoice_id: invoice.id,
-            code: `SERV-${Date.now()}`,
-            description: charge.description,
-            quantity: 1,
-            tariff_cents: charge.amount_cents,
-            mutuality_cents: 0,
-            patient_cents: charge.amount_cents,
-            vat_cents: 0,
-          }));
+        if (patientData?.email) {
+          const formattedDate = appointmentDate 
+            ? format(new Date(appointmentDate), 'MMMM d, yyyy')
+            : format(new Date(), 'MMMM d, yyyy');
+          
+          const description = `Appointment on ${formattedDate}${charges.length > 0 ? ' - ' + charges.map(c => c.description).join(', ') : ''}`;
+          const patientName = [patientData.first_name, patientData.last_name].filter(Boolean).join(' ') || 'Patient';
 
-          await supabase.from('invoice_items').insert(invoiceItems);
+          // Create payment request via edge function (sends email automatically)
+          const { data: paymentResult, error: paymentError } = await supabase.functions.invoke('create-payment-request', {
+            body: {
+              patient_id: patientId,
+              dentist_id: dentistId,
+              amount: totalCents,
+              description,
+              patient_email: patientData.email,
+              patient_name: patientName,
+              appointment_id: appointmentId,
+              send_now: true, // This will send the payment email immediately
+              items: charges.map(c => ({
+                description: c.description,
+                unit_price_cents: c.amount_cents,
+                quantity: 1,
+              })),
+            }
+          });
+
+          if (paymentError) {
+            console.error('Payment request error:', paymentError);
+            // Don't fail finalization if payment request fails
+          } else {
+            console.log('✅ Payment request created:', paymentResult);
+          }
         }
       }
 
