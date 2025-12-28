@@ -14,6 +14,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle } from "lucide-react";
@@ -28,7 +29,7 @@ export default function DentistAppointmentsManagement() {
   } = useCurrentDentist(businessId);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<"week" | "day">("week");
+  const [viewMode, setViewMode] = useState<"week" | "day" | "completed">("week");
   const [showStats, setShowStats] = useState(false);
   const lastScrollY = useRef(0);
   const {
@@ -60,6 +61,30 @@ export default function DentistAppointmentsManagement() {
       return data || [];
     },
     enabled: !!dentistId,
+  });
+
+  // Fetch completed appointments (for "Completed" view)
+  const {
+    data: completedAppointments = []
+  } = useQuery({
+    queryKey: ['completed-appointments', dentistId],
+    queryFn: async () => {
+      if (!dentistId) return [];
+      const { data, error } = await supabase
+        .from("appointments")
+        .select(`
+          *,
+          patient:profiles!appointments_patient_id_fkey(id, first_name, last_name, email)
+        `)
+        .eq("dentist_id", dentistId)
+        .eq("status", "completed")
+        .order("appointment_date", { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!dentistId && viewMode === 'completed',
   });
 
   // Fetch monthly appointments for overview
@@ -300,6 +325,20 @@ export default function DentistAppointmentsManagement() {
                 <CalendarDays className="h-4 w-4 mr-2" />
                 Day
               </Button>
+              <Button
+                variant={viewMode === "completed" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("completed")}
+                className={cn(
+                  "h-9 px-3 rounded-lg transition-all",
+                  viewMode === "completed"
+                    ? "bg-white dark:bg-gray-900 shadow-sm"
+                    : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                )}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Completed
+              </Button>
             </div>
 
             {/* Stats Toggle */}
@@ -441,7 +480,7 @@ export default function DentistAppointmentsManagement() {
               selectedAppointmentId={selectedAppointment?.id}
               googleCalendarEvents={googleCalendarEvents}
             />
-          ) : (
+          ) : viewMode === "day" ? (
             <DayCalendarView
               dentistId={dentistId}
               currentDate={currentDate}
@@ -449,6 +488,56 @@ export default function DentistAppointmentsManagement() {
               selectedAppointmentId={selectedAppointment?.id}
               googleCalendarEvents={googleCalendarEvents}
             />
+          ) : (
+            // Completed appointments list view
+            <div className="space-y-4 max-w-4xl">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+                Completed Appointments
+              </h2>
+              {completedAppointments.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No completed appointments found.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  {completedAppointments.map((apt: any) => (
+                    <Card 
+                      key={apt.id} 
+                      className={cn(
+                        "cursor-pointer hover:border-emerald-300 transition-colors",
+                        selectedAppointment?.id === apt.id && "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20"
+                      )}
+                      onClick={() => setSelectedAppointment(apt)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="font-medium">
+                              {apt.patient?.first_name} {apt.patient?.last_name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{apt.reason}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(parseISO(apt.appointment_date), "EEEE, MMM d, yyyy 'at' h:mm a")}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                              Completed
+                            </Badge>
+                            {apt.completed_at && (
+                              <span className="text-xs text-muted-foreground">Finalized</span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 

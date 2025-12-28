@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Save, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DraftSaveButtonProps {
   appointmentId: string;
@@ -20,11 +21,14 @@ export function DraftSaveButton({
   onSaved,
 }: DraftSaveButtonProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const handleSave = async () => {
+    if (saving) return;
     setSaving(true);
+    
     try {
       const { error } = await supabase
         .from('appointments')
@@ -37,6 +41,10 @@ export function DraftSaveButton({
       if (error) throw error;
 
       setSaved(true);
+      
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      
       onSaved?.();
       
       toast({
