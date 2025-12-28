@@ -72,6 +72,7 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
         `)
         .eq('patient_id', patientId)
         .neq('status', 'draft')
+        .not('appointment_id', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
