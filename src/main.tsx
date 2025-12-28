@@ -6,6 +6,15 @@ import { notify } from './lib/notify'
 import { logger } from '@/lib/logger';
 import { initPerformanceMonitoring } from '@/lib/performance';
 
+// Suppress ResizeObserver loop errors (benign browser warning)
+const resizeObserverErr = (e: ErrorEvent) => {
+  if (e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
+      e.message === 'ResizeObserver loop limit exceeded') {
+    e.stopImmediatePropagation();
+  }
+};
+window.addEventListener('error', resizeObserverErr);
+
 // Initialize comprehensive performance monitoring
 if (process.env.NODE_ENV === 'development') {
   performanceTracker.monitorMemory();
