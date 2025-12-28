@@ -45,18 +45,32 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
 
   const addAllergy = async (allergy: Omit<PatientAllergy, 'id' | 'created_at'>) => {
     try {
+      // Get the user's profile_id for created_by field
       const { data: user } = await supabase.auth.getUser();
+      if (!user?.user?.id) throw new Error('Not authenticated');
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.user.id)
+        .single();
+        
       const { error } = await supabase
         .from('patient_allergies')
         .insert({
-          ...allergy,
-          created_by: user?.user?.id,
+          patient_id: allergy.patient_id,
+          business_id: allergy.business_id,
+          allergy_name: allergy.allergy_name,
+          severity: allergy.severity,
+          notes: allergy.notes,
+          created_by: profile?.id || null,
         });
 
       if (error) throw error;
       toast({ title: 'Allergy added' });
       fetchAllergies();
     } catch (err: any) {
+      console.error('Error adding allergy:', err);
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };

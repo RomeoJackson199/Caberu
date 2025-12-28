@@ -200,44 +200,54 @@ export function FinalizationSection({
     try {
       const newStatus = action === 'confirm' ? 'confirmed' : 'cancelled';
       
+      // Use business_id filter to satisfy RLS policy
       const { error } = await supabase
         .from('appointments')
-        .update({ status: newStatus })
-        .eq('id', appointmentId);
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', appointmentId)
+        .eq('business_id', businessId);
 
       if (error) throw error;
 
       // Notify patient about the decision
-      const { data: patient } = await supabase
-        .from('profiles')
-        .select('user_id, first_name')
-        .eq('id', patientId)
-        .single();
+      try {
+        const { data: patient } = await supabase
+          .from('profiles')
+          .select('user_id, first_name')
+          .eq('id', patientId)
+          .single();
 
-      if (patient?.user_id) {
-        const formattedDate = appointmentDate 
-          ? format(new Date(appointmentDate), 'MMMM d, yyyy \'at\' h:mm a')
-          : 'your requested appointment';
+        if (patient?.user_id) {
+          const formattedDate = appointmentDate 
+            ? format(new Date(appointmentDate), 'MMMM d, yyyy \'at\' h:mm a')
+            : 'your requested appointment';
 
-        const title = action === 'confirm' 
-          ? 'Appointment Confirmed' 
-          : 'Appointment Cancelled';
-        
-        const message = action === 'confirm'
-          ? `Your appointment on ${formattedDate} has been confirmed by your dentist.`
-          : `Your appointment request for ${formattedDate} could not be accommodated. Please book a new appointment.`;
+          const title = action === 'confirm' 
+            ? 'Appointment Confirmed' 
+            : 'Appointment Cancelled';
+          
+          const message = action === 'confirm'
+            ? `Your appointment on ${formattedDate} has been confirmed by your dentist.`
+            : `Your appointment request for ${formattedDate} could not be accommodated. Please book a new appointment.`;
 
-        await NotificationService.createNotification(
-          patient.user_id,
-          title,
-          message,
-          'appointment',
-          action === 'confirm' ? 'info' : 'warning',
-          `/patient/appointments`,
-          { appointmentId, dentistId, appointmentDate: formattedDate },
-          undefined,
-          true // sendEmail
-        );
+          await NotificationService.createNotification(
+            patient.user_id,
+            title,
+            message,
+            'appointment',
+            action === 'confirm' ? 'info' : 'warning',
+            `/patient/appointments`,
+            { appointmentId, dentistId, appointmentDate: formattedDate },
+            undefined,
+            true // sendEmail
+          );
+        }
+      } catch (notifyError) {
+        console.error('Error notifying patient:', notifyError);
+        // Don't fail the approval if notification fails
       }
 
       toast({
