@@ -226,110 +226,83 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
     : nextAppointment.patient_name || 'Unknown Patient';
 
   return (
-    <Card className="glass-card">
-      <CardHeader className="pb-3 sm:pb-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-dental-primary flex-shrink-0" />
-            {t.nextAppointment || 'Next Appointment'}
-          </CardTitle>
-          <div className="flex gap-2 flex-wrap">
-            <Badge className={`${getStatusClasses(nextAppointment.status)} text-xs`}>
-              {nextAppointment.status}
-            </Badge>
-            {nextAppointment.urgency && (
-              <Badge className={`${getUrgencyClasses(nextAppointment.urgency)} text-xs`}>
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {nextAppointment.urgency}
-              </Badge>
-            )}
-          </div>
-        </div>
+    <Card className="border rounded-2xl shadow-sm bg-card">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+          <Calendar className="h-4 w-4" />
+          Your next appointment is:
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 sm:space-y-4">
+      <CardContent className="space-y-4">
+        {/* Status badges */}
+        <div className="flex gap-2 flex-wrap">
+          <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-medium">
+            {nextAppointment.status}
+          </Badge>
+          {nextAppointment.urgency && (
+            <Badge variant="outline" className="rounded-full px-3 py-1 text-xs font-medium border-green-200 text-green-700 bg-green-50 dark:border-green-800 dark:text-green-400 dark:bg-green-950">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {nextAppointment.urgency}
+            </Badge>
+          )}
+        </div>
+
         {/* Patient Info */}
-        <div className="flex items-start sm:items-center gap-3">
-          <div className="flex-shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-dental-primary/20 flex items-center justify-center">
-              <User className="h-4 w-4 sm:h-5 sm:w-5 text-dental-primary" />
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <User className="h-5 w-5 text-primary" />
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base sm:text-lg truncate">{patientName}</h3>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-              {nextAppointment.profiles?.email && (
-                <div className="flex items-center gap-1 truncate">
-                  <Mail className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{nextAppointment.profiles.email}</span>
-                </div>
-              )}
-              {nextAppointment.profiles?.phone && (
-                <div className="flex items-center gap-1">
-                  <Phone className="h-3 w-3 flex-shrink-0" />
-                  {nextAppointment.profiles.phone}
-                </div>
-              )}
-            </div>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-lg truncate">{patientName}</h3>
+            {nextAppointment.profiles?.email && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground truncate">
+                <Mail className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{nextAppointment.profiles.email}</span>
+              </div>
+            )}
+            {nextAppointment.profiles?.phone && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Phone className="h-3 w-3 flex-shrink-0" />
+                {nextAppointment.profiles.phone}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Appointment Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-xs sm:text-sm">
-              {format(appointmentDate, 'MMM dd, yyyy')}
-            </span>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span>{format(appointmentDate, 'MMM dd, yyyy')}</span>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-xs sm:text-sm">
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span>
               {format(appointmentDate, 'HH:mm')}
               {nextAppointment.duration_minutes && (
-                <span className="text-muted-foreground">
-                  {' '}({nextAppointment.duration_minutes} min)
-                </span>
+                <span className="text-muted-foreground"> ({nextAppointment.duration_minutes} min)</span>
               )}
             </span>
           </div>
         </div>
 
         {/* Reason */}
-        {nextAppointment.reason && (
-          <div className="flex items-start gap-2">
-            <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium">{t.reason || 'Reason'}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{nextAppointment.reason}</p>
-            </div>
+        <div className="flex items-start gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium">{t.reason || 'Reason'}:</p>
+            <p className="text-sm text-muted-foreground">{nextAppointment.reason || 'No treatments listed'}</p>
           </div>
-        )}
-
-        {/* Notes */}
-        {nextAppointment.consultation_notes && (
-          <div className="flex items-start gap-2">
-            <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-medium">{t.notes || 'Notes'}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{nextAppointment.consultation_notes}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
-          <Button size="sm" className="flex-1 text-xs sm:text-sm" onClick={() => setShowDetailsDialog(true)}>
-            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-            {t.viewDetails || 'View Details'}
-          </Button>
-          {canCompleteAppointment(nextAppointment.status) && (
-            <Button size="sm" variant="outline" className="flex-1 text-xs sm:text-sm" onClick={() => setShowCompleteDialog(true)}>
-              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              {t.complete || 'Complete'}
-            </Button>
-          )}
         </div>
+
+        {/* Action Button */}
+        <Button 
+          className="w-full rounded-full" 
+          onClick={() => setShowDetailsDialog(true)}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          {t.viewDetails || 'View Details'}
+        </Button>
 
         {/* Complete Appointment Dialog */}
         {nextAppointment && (
