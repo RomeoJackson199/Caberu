@@ -51,15 +51,26 @@ export function ConsultationWorkspace({
 }: ConsultationWorkspaceProps) {
   const { toast } = useToast();
   
-  // Clinical Notes
+  // Clinical Notes - sync with external changes
   const [notes, setNotes] = useState(existingNotes);
   const [notesSaving, setNotesSaving] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
   
-  // Charges
+  // Charges - sync with external changes
   const [charges, setCharges] = useState<ChargeItem[]>(existingCharges);
   const [newChargeDesc, setNewChargeDesc] = useState("");
   const [newChargeAmount, setNewChargeAmount] = useState("");
+
+  // Sync notes when external prop changes
+  useEffect(() => {
+    setNotes(existingNotes);
+  }, [existingNotes]);
+
+  // Sync charges when external prop changes
+  useEffect(() => {
+    console.log('🔄 ConsultationWorkspace: syncing charges from props', existingCharges);
+    setCharges(existingCharges);
+  }, [existingCharges]);
 
   // Auto-save notes with debounce
   useEffect(() => {
