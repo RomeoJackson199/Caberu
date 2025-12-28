@@ -97,6 +97,24 @@ export function FinalizationSection({
         ? format(new Date(appointmentDate), 'MMMM d, yyyy')
         : 'your recent visit';
       
+      // Call edge function directly with all required data for email sending
+      const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
+        body: {
+          to: patient.email,
+          subject: 'Appointment Completed',
+          message: `Your appointment on ${formattedDate} has been finalized. ${totalCents > 0 ? `An invoice for $${(totalCents / 100).toFixed(2)} has been generated.` : ''} Thank you for your visit!`,
+          messageType: 'appointment_confirmation',
+          patientId: patientId,
+          dentistId: dentistId,
+          appointmentDate: formattedDate,
+        }
+      });
+
+      if (emailError) {
+        console.error('❌ Email notification error:', emailError);
+      }
+
+      // Also create an in-app notification
       await NotificationService.createNotification(
         patient.user_id,
         'Appointment Completed',
@@ -104,14 +122,9 @@ export function FinalizationSection({
         'appointment',
         'info',
         `/patient/appointments`,
-        { 
-          appointmentId, 
-          dentistId,
-          appointmentDate: formattedDate,
-          email: patient.email,
-        },
+        { appointmentId, dentistId, appointmentDate: formattedDate },
         undefined,
-        true // sendEmail
+        false // Don't send email again, we already did it directly
       );
       
       console.log('✅ Finalization notification sent successfully');
