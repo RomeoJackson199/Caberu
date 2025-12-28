@@ -11,6 +11,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Stethoscope,
   Calendar,
@@ -64,8 +65,8 @@ export function ConsultationModeEntry({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-primary" />
             Start Consultation
@@ -75,7 +76,7 @@ export function ConsultationModeEntry({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
+        <div className="flex-1 overflow-hidden py-4">
           {eligibleAppointments.length === 0 ? (
             <div className="text-center py-6">
               <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
@@ -84,55 +85,60 @@ export function ConsultationModeEntry({
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <RadioGroup 
-                value={selectedAppointmentId || ''} 
-                onValueChange={setSelectedAppointmentId}
-                className="space-y-2"
-              >
-                {eligibleAppointments.map(apt => {
-                  const group = getAppointmentGroupLocal(apt);
-                  const isNeedsCompletion = group === 'needs_completion';
-                  
-                  return (
-                    <div key={apt.id}>
-                      <Label
-                        htmlFor={apt.id}
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                          selectedAppointmentId === apt.id 
-                            ? "border-primary bg-primary/5" 
-                            : "hover:bg-muted/50",
-                          isNeedsCompletion && "border-amber-300"
-                        )}
-                      >
-                        <RadioGroupItem value={apt.id} id={apt.id} />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">
-                              {apt.reason || 'General consultation'}
-                            </span>
-                            {isNeedsCompletion && (
-                              <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                Needs completion
-                              </Badge>
-                            )}
+            <ScrollArea className="h-full max-h-[50vh]">
+              <div className="space-y-4 pr-4">
+                <RadioGroup 
+                  value={selectedAppointmentId || ''} 
+                  onValueChange={(value) => {
+                    console.log('[ConsultationModeEntry] Selected appointment:', value);
+                    setSelectedAppointmentId(value);
+                  }}
+                  className="space-y-2"
+                >
+                  {eligibleAppointments.map(apt => {
+                    const group = getAppointmentGroupLocal(apt);
+                    const isNeedsCompletion = group === 'needs_completion';
+                    
+                    return (
+                      <div key={apt.id}>
+                        <Label
+                          htmlFor={apt.id}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                            selectedAppointmentId === apt.id 
+                              ? "border-primary bg-primary/5" 
+                              : "hover:bg-muted/50",
+                            isNeedsCompletion && "border-amber-300"
+                          )}
+                        >
+                          <RadioGroupItem value={apt.id} id={apt.id} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">
+                                {apt.reason || 'General consultation'}
+                              </span>
+                              {isNeedsCompletion && (
+                                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                  Needs completion
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {format(new Date(apt.appointment_date), 'MMM d, yyyy')} at {format(new Date(apt.appointment_date), 'h:mm a')}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(new Date(apt.appointment_date), 'MMM d, yyyy')} at {format(new Date(apt.appointment_date), 'h:mm a')}
-                          </p>
-                        </div>
-                      </Label>
-                    </div>
-                  );
-                })}
-              </RadioGroup>
-            </div>
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+            </ScrollArea>
           )}
         </div>
 
         {eligibleAppointments.length > 0 && (
-          <div className="flex justify-end gap-2">
+          <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
