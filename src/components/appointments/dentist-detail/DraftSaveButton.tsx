@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,7 @@ export function DraftSaveButton({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (saving) return;
     setSaving(true);
     
@@ -95,9 +95,11 @@ export function DraftSaveButton({
 
       setSaved(true);
       
-      // Invalidate queries to refresh data
+      // Invalidate queries to refresh data immediately
       await queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      await queryClient.invalidateQueries({ queryKey: ['draft-charges', appointmentId] });
       
+      // Call the onSaved callback to trigger parent refresh
       onSaved?.();
       
       toast({
@@ -116,7 +118,7 @@ export function DraftSaveButton({
     } finally {
       setSaving(false);
     }
-  };
+  }, [saving, appointmentId, dentistId, notes, charges, queryClient, onSaved, toast]);
 
   return (
     <Button
