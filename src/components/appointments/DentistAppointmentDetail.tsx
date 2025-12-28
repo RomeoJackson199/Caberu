@@ -72,20 +72,32 @@ export function DentistAppointmentDetail({
     const loadDraftCharges = async () => {
       if (!appointment?.id) return;
       
-      const { data } = await supabase
+      console.log('📥 Loading draft charges for appointment:', appointment.id);
+      
+      const { data, error } = await supabase
         .from('notes')
         .select('content')
         .eq('appointment_id', appointment.id)
         .eq('note_type', 'draft_charges')
-        .single();
+        .maybeSingle();
+      
+      if (error) {
+        console.error('❌ Error loading draft charges:', error);
+        return;
+      }
+      
+      console.log('📥 Draft charges data:', data);
       
       if (data?.content) {
         try {
           const parsedCharges = JSON.parse(data.content);
+          console.log('✅ Parsed draft charges:', parsedCharges);
           setCharges(parsedCharges);
         } catch (e) {
           console.error('Error parsing draft charges:', e);
         }
+      } else {
+        console.log('ℹ️ No draft charges found');
       }
     };
     
