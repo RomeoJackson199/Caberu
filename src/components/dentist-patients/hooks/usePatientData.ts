@@ -15,6 +15,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('[usePatientData] Fetching patients for dentist:', dentistId, 'business:', businessId);
 
       let appointmentQuery = supabase
         .from('appointments')
@@ -32,9 +33,12 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       }
 
       const { data: appointmentData, error: appointmentError } = await appointmentQuery;
+      
+      console.log('[usePatientData] Appointment data:', appointmentData, 'Error:', appointmentError);
+      
       if (appointmentError) throw appointmentError;
 
-      const patientsFromAppointments = appointmentData
+      const patientsFromAppointments = (appointmentData || [])
         .map(apt => Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles)
         .filter(Boolean) as DentistPatient[];
 
@@ -43,6 +47,8 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
         patient && self.findIndex(p => p?.id === patient.id) === index
       );
 
+      console.log('[usePatientData] Unique patients:', uniquePatients.length);
+      
       setPatients(uniquePatients);
       
       // Fetch flags for all patients
@@ -50,7 +56,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       
       return uniquePatients;
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error('[usePatientData] Error fetching patients:', error);
       return [];
     } finally {
       setLoading(false);
