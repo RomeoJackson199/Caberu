@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Search, AlertTriangle, Calendar, Clock } from 'lucide-react';
 import { DentistPatient, PatientFlags } from './types';
 import { cn } from '@/lib/utils';
+import { AddPatientDialog } from './AddPatientDialog';
 
 interface PatientListViewProps {
   patients: DentistPatient[];
@@ -17,6 +18,9 @@ interface PatientListViewProps {
   selectedPatientId?: string;
   onSelectPatient: (patient: DentistPatient) => void;
   loading?: boolean;
+  businessId?: string;
+  dentistId?: string;
+  onPatientAdded?: () => void;
 }
 
 export function PatientListView({
@@ -26,7 +30,10 @@ export function PatientListView({
   onSearchChange,
   selectedPatientId,
   onSelectPatient,
-  loading = false
+  loading = false,
+  businessId,
+  dentistId,
+  onPatientAdded
 }: PatientListViewProps) {
   // Filter patients based on search
   const filteredPatients = useMemo(() => {
@@ -85,9 +92,18 @@ export function PatientListView({
             <Users className="h-5 w-5 text-primary" />
             <span>Patients</span>
           </div>
-          <Badge variant="secondary" className="font-normal">
-            {patients.length}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {businessId && dentistId && onPatientAdded && (
+              <AddPatientDialog
+                businessId={businessId}
+                dentistId={dentistId}
+                onPatientAdded={onPatientAdded}
+              />
+            )}
+            <Badge variant="secondary" className="font-normal">
+              {patients.length}
+            </Badge>
+          </div>
         </CardTitle>
         
         {/* Search */}

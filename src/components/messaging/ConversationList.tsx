@@ -22,6 +22,7 @@ interface Conversation {
   lastMessageTime: string;
   unreadCount: number;
   businessId: string;
+  businessName?: string;
 }
 
 interface ConversationListProps {
@@ -121,10 +122,27 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         return;
       }
 
+      // Fetch profiles
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, first_name, last_name')
         .in('id', partnerIds);
+
+      // Fetch business names
+      const businessIds = Array.from(new Set(
+        Array.from(conversationMap.values())
+          .map(c => c.businessId)
+          .filter(Boolean)
+      ));
+      
+      let businessNameMap = new Map<string, string>();
+      if (businessIds.length > 0) {
+        const { data: businesses } = await supabase
+          .from('businesses')
+          .select('id, name')
+          .in('id', businessIds);
+        businesses?.forEach(b => businessNameMap.set(b.id, b.name));
+      }
 
       const convos = profiles?.map(p => {
         const conv = conversationMap.get(p.id);
@@ -134,7 +152,8 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
           lastMessage: conv.lastMessage,
           lastMessageTime: conv.lastMessageTime,
           unreadCount: conv.unreadCount,
-          businessId: conv.businessId
+          businessId: conv.businessId,
+          businessName: businessNameMap.get(conv.businessId) || undefined
         };
       }) || [];
 
@@ -150,6 +169,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
       setBusinessError(null);
 
       if (!isDentistUser) {
+        // Patients should see all dentists they've had appointments with
         const { data: appointments } = await supabase
           .from('appointments')
           .select('dentist_id, business_id')
@@ -160,12 +180,27 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         const dentistIds = Array.from(new Set(appointments.map(a => a.dentist_id).filter(Boolean)));
         if (dentistIds.length === 0) return;
 
+        // Map dentist -> business and get business names
         const dentistBusinessMap = new Map<string, string>();
+        const businessIds = new Set<string>();
         appointments.forEach(a => {
-          if (a.dentist_id && a.business_id && !dentistBusinessMap.has(a.dentist_id)) {
-            dentistBusinessMap.set(a.dentist_id, a.business_id);
+          if (a.dentist_id && a.business_id) {
+            if (!dentistBusinessMap.has(a.dentist_id)) {
+              dentistBusinessMap.set(a.dentist_id, a.business_id);
+            }
+            businessIds.add(a.business_id);
           }
         });
+
+        // Get business names
+        const businessNameMap = new Map<string, string>();
+        if (businessIds.size > 0) {
+          const { data: businesses } = await supabase
+            .from('businesses')
+            .select('id, name')
+            .in('id', Array.from(businessIds));
+          businesses?.forEach(b => businessNameMap.set(b.id, b.name));
+        }
 
         const { data: dentists } = await supabase
           .from('dentists')
@@ -186,13 +221,28 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
           profileNameMap.set(p.id, name);
         });
 
+        // Get the current selected business (if any)
+        const currentBusinessId = sessionStorage.getItem('selected_business_id');
+
         const contacts = dentists
-          .map(d => ({
-            id: d.profile_id,
-            name: profileNameMap.get(d.profile_id) || 'Dentist',
-            businessId: dentistBusinessMap.get(d.id) || ''
-          }))
-          .filter(c => !!c.id && !!c.businessId);
+          .map(d => {
+            const businessId = dentistBusinessMap.get(d.id) || '';
+            return {
+              id: d.profile_id,
+              name: profileNameMap.get(d.profile_id) || 'Dentist',
+              businessId,
+              businessName: businessNameMap.get(businessId) || ''
+            };
+          })
+          .filter(c => !!c.id && !!c.businessId)
+          // Sort: current business dentists first, then by name
+          .sort((a, b) => {
+            if (currentBusinessId) {
+              if (a.businessId === currentBusinessId && b.businessId !== currentBusinessId) return -1;
+              if (b.businessId === currentBusinessId && a.businessId !== currentBusinessId) return 1;
+            }
+            return a.name.localeCompare(b.name);
+          });
 
         setAvailableContacts(contacts);
 
@@ -437,7 +487,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between gap-2 mb-1">
+                      <div className="flex items-baseline justify-between gap-2 mb-0.5">
                         <span className="font-bold truncate group-hover:text-primary transition-colors">
                           {conv.name}
                         </span>
@@ -445,6 +495,11 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                           {formatDistanceToNow(new Date(conv.lastMessageTime), { addSuffix: true })}
                         </span>
                       </div>
+                      {conv.businessName && (
+                        <p className="text-xs text-muted-foreground mb-0.5 truncate">
+                          {conv.businessName}
+                        </p>
+                      )}
                       <p
                         className={cn(
                           "text-sm truncate",

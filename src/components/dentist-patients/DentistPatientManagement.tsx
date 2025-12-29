@@ -153,6 +153,9 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
           selectedPatientId={selectedPatient?.id}
           onSelectPatient={handleSelectPatient}
           loading={loading}
+          businessId={businessId || undefined}
+          dentistId={dentistId}
+          onPatientAdded={fetchPatients}
         />
       </div>
 
