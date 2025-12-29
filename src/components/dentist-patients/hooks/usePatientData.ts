@@ -7,7 +7,7 @@ interface UsePatientDataOptions {
   businessId?: string;
 }
 
-const APPOINTMENTS_PAGE_SIZE = 10;
+const APPOINTMENTS_PAGE_SIZE = 50; // Fetch more to ensure all status groups are populated
 
 export function usePatientData({ dentistId, businessId }: UsePatientDataOptions) {
   const [patients, setPatients] = useState<DentistPatient[]>([]);
