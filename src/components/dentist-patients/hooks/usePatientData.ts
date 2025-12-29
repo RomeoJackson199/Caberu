@@ -137,31 +137,22 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
 
   const fetchPatientAppointments = useCallback(async (
     patientId: string, 
-    loadMore: boolean = false
+    _loadMore: boolean = false // kept for API compatibility
   ): Promise<{ appointments: PatientAppointment[]; hasMore: boolean }> => {
     try {
-      // Use functional state update to avoid stale closure with appointmentsCache
-      let offset = 0;
-      
-      if (loadMore) {
-        // Get current offset from state
-        const currentCacheSnap = appointmentsCache[patientId];
-        offset = currentCacheSnap?.appointments?.length || 0;
-      }
-      
       // Set loading state
       setAppointmentsCache(prev => ({
         ...prev,
         [patientId]: {
-          appointments: loadMore ? (prev[patientId]?.appointments || []) : [],
-          hasMore: prev[patientId]?.hasMore ?? true,
+          appointments: prev[patientId]?.appointments || [],
+          hasMore: false,
           loading: true
         }
       }));
 
       let query = supabase
         .from('appointments')
-        .select('*', { count: 'exact' })
+        .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
 
@@ -169,35 +160,22 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
         query = query.eq('business_id', businessId);
       }
 
-      const { data, error, count } = await query
-        .order('appointment_date', { ascending: false })
-        .range(offset, offset + APPOINTMENTS_PAGE_SIZE - 1);
+      const { data, error } = await query.order('appointment_date', { ascending: false });
       
       if (error) throw error;
       
-      const newAppointments = (data || []) as PatientAppointment[];
+      const appointments = (data || []) as PatientAppointment[];
       
-      // Use functional update to get latest state
-      let result = { appointments: [] as PatientAppointment[], hasMore: false };
-      
-      setAppointmentsCache(prev => {
-        const existingAppointments = loadMore && prev[patientId] ? prev[patientId].appointments : [];
-        const allAppointments = [...existingAppointments, ...newAppointments];
-        const hasMore = count ? allAppointments.length < count : false;
-        
-        result = { appointments: allAppointments, hasMore };
-        
-        return {
-          ...prev,
-          [patientId]: {
-            appointments: allAppointments,
-            hasMore,
-            loading: false
-          }
-        };
-      });
+      setAppointmentsCache(prev => ({
+        ...prev,
+        [patientId]: {
+          appointments,
+          hasMore: false,
+          loading: false
+        }
+      }));
 
-      return result;
+      return { appointments, hasMore: false };
     } catch (error) {
       console.error('Error fetching appointments:', error);
       setAppointmentsCache(prev => ({
@@ -210,7 +188,6 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       }));
       return { appointments: [], hasMore: false };
     }
-  // Remove appointmentsCache from dependencies to avoid infinite loop
   }, [dentistId, businessId]);
 
   // Optimistic update for appointment status
