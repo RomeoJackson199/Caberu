@@ -67,6 +67,9 @@ export function PatientProfileView({
 }: PatientProfileViewProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const INITIAL_VISIBLE = 5; // Show 5 items per group initially
+  
   const age = patient.date_of_birth 
     ? differenceInYears(new Date(), new Date(patient.date_of_birth))
     : null;
@@ -110,6 +113,18 @@ export function PatientProfileView({
 
     return groups;
   }, [appointments, searchTerm]);
+
+  // Helper to get visible items for a group
+  const getVisibleItems = (groupKey: string, items: PatientAppointment[]) => {
+    if (expandedGroups[groupKey] || searchTerm) {
+      return items;
+    }
+    return items.slice(0, INITIAL_VISIBLE);
+  };
+
+  const toggleGroupExpansion = (groupKey: string) => {
+    setExpandedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }));
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -265,10 +280,10 @@ export function PatientProfileView({
                   {filteredAndGroupedAppointments.upcoming.length > 0 && (
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                        Upcoming
+                        Upcoming ({filteredAndGroupedAppointments.upcoming.length})
                       </h4>
                       <div className="space-y-2">
-                        {filteredAndGroupedAppointments.upcoming.map((apt: PatientAppointment) => (
+                        {getVisibleItems('upcoming', filteredAndGroupedAppointments.upcoming).map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -279,6 +294,18 @@ export function PatientProfileView({
                           />
                         ))}
                       </div>
+                      {filteredAndGroupedAppointments.upcoming.length > INITIAL_VISIBLE && !searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full mt-2 text-xs"
+                          onClick={() => toggleGroupExpansion('upcoming')}
+                        >
+                          {expandedGroups['upcoming'] 
+                            ? 'Show Less' 
+                            : `Show ${filteredAndGroupedAppointments.upcoming.length - INITIAL_VISIBLE} More`}
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -287,10 +314,10 @@ export function PatientProfileView({
                     <div>
                       <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        Needs Completion
+                        Action Required ({filteredAndGroupedAppointments.needs_completion.length})
                       </h4>
                       <div className="space-y-2">
-                        {filteredAndGroupedAppointments.needs_completion.map((apt: PatientAppointment) => (
+                        {getVisibleItems('needs_completion', filteredAndGroupedAppointments.needs_completion).map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -302,6 +329,18 @@ export function PatientProfileView({
                           />
                         ))}
                       </div>
+                      {filteredAndGroupedAppointments.needs_completion.length > INITIAL_VISIBLE && !searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full mt-2 text-xs"
+                          onClick={() => toggleGroupExpansion('needs_completion')}
+                        >
+                          {expandedGroups['needs_completion'] 
+                            ? 'Show Less' 
+                            : `Show ${filteredAndGroupedAppointments.needs_completion.length - INITIAL_VISIBLE} More`}
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -313,7 +352,7 @@ export function PatientProfileView({
                         Completed ({filteredAndGroupedAppointments.completed.length})
                       </h4>
                       <div className="space-y-2">
-                        {filteredAndGroupedAppointments.completed.map((apt: PatientAppointment) => (
+                        {getVisibleItems('completed', filteredAndGroupedAppointments.completed).map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -324,6 +363,18 @@ export function PatientProfileView({
                           />
                         ))}
                       </div>
+                      {filteredAndGroupedAppointments.completed.length > INITIAL_VISIBLE && !searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full mt-2 text-xs"
+                          onClick={() => toggleGroupExpansion('completed')}
+                        >
+                          {expandedGroups['completed'] 
+                            ? 'Show Less' 
+                            : `Show ${filteredAndGroupedAppointments.completed.length - INITIAL_VISIBLE} More`}
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -335,7 +386,7 @@ export function PatientProfileView({
                         Cancelled ({filteredAndGroupedAppointments.cancelled.length})
                       </h4>
                       <div className="space-y-2">
-                        {filteredAndGroupedAppointments.cancelled.map((apt: PatientAppointment) => (
+                        {getVisibleItems('cancelled', filteredAndGroupedAppointments.cancelled).map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -346,6 +397,18 @@ export function PatientProfileView({
                           />
                         ))}
                       </div>
+                      {filteredAndGroupedAppointments.cancelled.length > INITIAL_VISIBLE && !searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full mt-2 text-xs"
+                          onClick={() => toggleGroupExpansion('cancelled')}
+                        >
+                          {expandedGroups['cancelled'] 
+                            ? 'Show Less' 
+                            : `Show ${filteredAndGroupedAppointments.cancelled.length - INITIAL_VISIBLE} More`}
+                        </Button>
+                      )}
                     </div>
                   )}
 
