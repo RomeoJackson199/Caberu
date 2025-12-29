@@ -7,10 +7,17 @@ interface UsePatientDataOptions {
   businessId?: string;
 }
 
+const APPOINTMENTS_PAGE_SIZE = 10;
+
 export function usePatientData({ dentistId, businessId }: UsePatientDataOptions) {
   const [patients, setPatients] = useState<DentistPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [patientFlags, setPatientFlags] = useState<Record<string, PatientFlags>>({});
+  const [appointmentsCache, setAppointmentsCache] = useState<Record<string, {
+    appointments: PatientAppointment[];
+    hasMore: boolean;
+    loading: boolean;
+  }>>({});
 
   const fetchPatients = useCallback(async () => {
     try {
@@ -128,11 +135,27 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
     }
   }, [dentistId]);
 
-  const fetchPatientAppointments = useCallback(async (patientId: string): Promise<PatientAppointment[]> => {
+  const fetchPatientAppointments = useCallback(async (
+    patientId: string, 
+    loadMore: boolean = false
+  ): Promise<{ appointments: PatientAppointment[]; hasMore: boolean }> => {
     try {
+      const currentCache = appointmentsCache[patientId];
+      const offset = loadMore && currentCache ? currentCache.appointments.length : 0;
+      
+      // Set loading state
+      setAppointmentsCache(prev => ({
+        ...prev,
+        [patientId]: {
+          appointments: loadMore ? (prev[patientId]?.appointments || []) : [],
+          hasMore: prev[patientId]?.hasMore ?? true,
+          loading: true
+        }
+      }));
+
       let query = supabase
         .from('appointments')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
 
@@ -140,14 +163,88 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
         query = query.eq('business_id', businessId);
       }
 
-      const { data, error } = await query.order('appointment_date', { ascending: false });
+      const { data, error, count } = await query
+        .order('appointment_date', { ascending: false })
+        .range(offset, offset + APPOINTMENTS_PAGE_SIZE - 1);
+      
       if (error) throw error;
-      return (data || []) as PatientAppointment[];
+      
+      const newAppointments = (data || []) as PatientAppointment[];
+      const existingAppointments = loadMore && currentCache ? currentCache.appointments : [];
+      const allAppointments = [...existingAppointments, ...newAppointments];
+      const hasMore = count ? allAppointments.length < count : false;
+
+      setAppointmentsCache(prev => ({
+        ...prev,
+        [patientId]: {
+          appointments: allAppointments,
+          hasMore,
+          loading: false
+        }
+      }));
+
+      return { appointments: allAppointments, hasMore };
     } catch (error) {
       console.error('Error fetching appointments:', error);
-      return [];
+      setAppointmentsCache(prev => ({
+        ...prev,
+        [patientId]: {
+          appointments: prev[patientId]?.appointments || [],
+          hasMore: false,
+          loading: false
+        }
+      }));
+      return { appointments: [], hasMore: false };
     }
-  }, [dentistId, businessId]);
+  }, [dentistId, businessId, appointmentsCache]);
+
+  // Optimistic update for appointment status
+  const updateAppointmentOptimistically = useCallback((
+    patientId: string,
+    appointmentId: string,
+    updates: Partial<PatientAppointment>
+  ) => {
+    setAppointmentsCache(prev => {
+      const cache = prev[patientId];
+      if (!cache) return prev;
+      
+      return {
+        ...prev,
+        [patientId]: {
+          ...cache,
+          appointments: cache.appointments.map(apt =>
+            apt.id === appointmentId ? { ...apt, ...updates } : apt
+          )
+        }
+      };
+    });
+  }, []);
+
+  // Rollback optimistic update
+  const rollbackAppointmentUpdate = useCallback((
+    patientId: string,
+    appointmentId: string,
+    originalAppointment: PatientAppointment
+  ) => {
+    setAppointmentsCache(prev => {
+      const cache = prev[patientId];
+      if (!cache) return prev;
+      
+      return {
+        ...prev,
+        [patientId]: {
+          ...cache,
+          appointments: cache.appointments.map(apt =>
+            apt.id === appointmentId ? originalAppointment : apt
+          )
+        }
+      };
+    });
+  }, []);
+
+  const getPatientAppointmentsCache = useCallback((patientId: string) => {
+    return appointmentsCache[patientId] || { appointments: [], hasMore: true, loading: false };
+  }, [appointmentsCache]);
 
   return {
     patients,
@@ -155,6 +252,9 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
     patientFlags,
     fetchPatients,
     fetchPatientFlags,
-    fetchPatientAppointments
+    fetchPatientAppointments,
+    getPatientAppointmentsCache,
+    updateAppointmentOptimistically,
+    rollbackAppointmentUpdate
   };
 }

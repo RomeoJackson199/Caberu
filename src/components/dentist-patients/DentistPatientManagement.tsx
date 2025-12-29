@@ -22,8 +22,6 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
   // State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<DentistPatient | null>(null);
-  const [patientAppointments, setPatientAppointments] = useState<PatientAppointment[]>([]);
-  const [loadingAppointments, setLoadingAppointments] = useState(false);
   
   // Mode states
   const [showConsultationEntry, setShowConsultationEntry] = useState(false);
@@ -37,8 +35,19 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     loading,
     patientFlags,
     fetchPatients,
-    fetchPatientAppointments
+    fetchPatientAppointments,
+    getPatientAppointmentsCache,
+    updateAppointmentOptimistically,
+    rollbackAppointmentUpdate
   } = usePatientData({ dentistId, businessId: businessId || undefined });
+
+  // Get current patient's appointments from cache
+  const patientAppointmentsCache = selectedPatient 
+    ? getPatientAppointmentsCache(selectedPatient.id)
+    : { appointments: [], hasMore: false, loading: false };
+  const patientAppointments = patientAppointmentsCache.appointments;
+  const loadingAppointments = patientAppointmentsCache.loading;
+  const hasMoreAppointments = patientAppointmentsCache.hasMore;
 
   // Initial fetch
   useEffect(() => {
@@ -60,16 +69,15 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
   // Fetch appointments when patient changes
   useEffect(() => {
     if (selectedPatient) {
-      loadPatientAppointments(selectedPatient.id);
+      fetchPatientAppointments(selectedPatient.id, false);
     }
-  }, [selectedPatient?.id]);
+  }, [selectedPatient?.id, fetchPatientAppointments]);
 
-  const loadPatientAppointments = async (patientId: string) => {
-    setLoadingAppointments(true);
-    const appointments = await fetchPatientAppointments(patientId);
-    setPatientAppointments(appointments);
-    setLoadingAppointments(false);
-  };
+  const handleLoadMoreAppointments = useCallback(() => {
+    if (selectedPatient && hasMoreAppointments && !loadingAppointments) {
+      fetchPatientAppointments(selectedPatient.id, true);
+    }
+  }, [selectedPatient, hasMoreAppointments, loadingAppointments, fetchPatientAppointments]);
 
   const handleSelectPatient = (patient: DentistPatient) => {
     setSelectedPatient(patient);
@@ -84,7 +92,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
   const handleEnterConsultation = (appointmentId: string) => {
     if (!selectedPatient) return;
     
-    const appointment = patientAppointments.find(a => a.id === appointmentId);
+    const appointment = patientAppointments.find((a: PatientAppointment) => a.id === appointmentId);
     if (!appointment) return;
 
     setConsultationContext({
@@ -100,7 +108,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     setConsultationContext(null);
     // Refresh appointments
     if (selectedPatient) {
-      loadPatientAppointments(selectedPatient.id);
+      fetchPatientAppointments(selectedPatient.id, false);
     }
   };
 
@@ -109,17 +117,54 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     setShowAppointmentDetail(true);
   };
 
-  const handleAppointmentUpdated = () => {
+  const handleAppointmentUpdated = useCallback(() => {
     if (selectedPatient) {
-      loadPatientAppointments(selectedPatient.id);
+      fetchPatientAppointments(selectedPatient.id, false);
     }
     fetchPatients();
-  };
+  }, [selectedPatient, fetchPatientAppointments, fetchPatients]);
+
+  // Optimistic status change handler - updates UI immediately
+  const handleOptimisticStatusChange = useCallback((appointmentId: string, newStatus: string) => {
+    if (!selectedPatient) return;
+    
+    // Cast status to valid type
+    const validStatus = newStatus as PatientAppointment['status'];
+    
+    // Find the current appointment to store original state
+    const currentAppointment = patientAppointments.find((a: PatientAppointment) => a.id === appointmentId);
+    if (!currentAppointment) return;
+    
+    // Optimistically update the UI
+    updateAppointmentOptimistically(selectedPatient.id, appointmentId, { 
+      status: validStatus,
+      ...(validStatus === 'completed' ? { completed_at: new Date().toISOString() } : {})
+    });
+    
+    // Update the selected appointment in view if it's the same one
+    if (selectedAppointmentForView?.id === appointmentId) {
+      setSelectedAppointmentForView(prev => prev ? { 
+        ...prev, 
+        status: validStatus,
+        ...(validStatus === 'completed' ? { completed_at: new Date().toISOString() } : {})
+      } : null);
+    }
+    
+    // Close the detail sheet for cancelled/completed
+    if (validStatus === 'cancelled' || validStatus === 'completed') {
+      setShowAppointmentDetail(false);
+    }
+    
+    // Background sync - refetch to ensure consistency
+    setTimeout(() => {
+      handleAppointmentUpdated();
+    }, 500);
+  }, [selectedPatient, patientAppointments, updateAppointmentOptimistically, selectedAppointmentForView, handleAppointmentUpdated]);
 
   // If in consultation mode, show full-screen consultation view
   if (consultationContext && selectedPatient) {
     const activeAppointment = patientAppointments.find(
-      a => a.id === consultationContext.appointmentId
+      (a: PatientAppointment) => a.id === consultationContext.appointmentId
     );
 
     if (activeAppointment) {
@@ -171,10 +216,18 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             appointments={patientAppointments}
             businessId={businessId || ''}
             loadingAppointments={loadingAppointments}
+            hasMoreAppointments={hasMoreAppointments}
+            onLoadMoreAppointments={handleLoadMoreAppointments}
             onStartConsultation={handleStartConsultation}
             onAppointmentClick={handleAppointmentClick}
             onBack={() => setSelectedPatient(null)}
             onAppointmentUpdated={handleAppointmentUpdated}
+            updateAppointmentOptimistically={(appointmentId: string, updates: Partial<PatientAppointment>) => 
+              updateAppointmentOptimistically(selectedPatient.id, appointmentId, updates)
+            }
+            rollbackAppointmentUpdate={(appointmentId: string, original: PatientAppointment) =>
+              rollbackAppointmentUpdate(selectedPatient.id, appointmentId, original)
+            }
           />
         ) : (
           <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -214,10 +267,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
                 }
               }}
               onClose={() => setShowAppointmentDetail(false)}
-              onStatusChange={(id, status) => {
-                handleAppointmentUpdated();
-                setShowAppointmentDetail(false);
-              }}
+              onStatusChange={handleOptimisticStatusChange}
             />
           )}
         </SheetContent>
