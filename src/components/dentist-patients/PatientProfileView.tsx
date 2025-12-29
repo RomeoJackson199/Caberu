@@ -40,10 +40,14 @@ interface PatientProfileViewProps {
   appointments: PatientAppointment[];
   businessId: string;
   loadingAppointments?: boolean;
+  hasMoreAppointments?: boolean;
+  onLoadMoreAppointments?: () => void;
   onStartConsultation: (appointmentId?: string) => void;
   onAppointmentClick: (appointment: PatientAppointment) => void;
   onBack?: () => void;
   onAppointmentUpdated?: () => void;
+  updateAppointmentOptimistically?: (appointmentId: string, updates: Partial<PatientAppointment>) => void;
+  rollbackAppointmentUpdate?: (appointmentId: string, original: PatientAppointment) => void;
 }
 
 export function PatientProfileView({
@@ -52,10 +56,14 @@ export function PatientProfileView({
   appointments,
   businessId,
   loadingAppointments = false,
+  hasMoreAppointments = false,
+  onLoadMoreAppointments,
   onStartConsultation,
   onAppointmentClick,
   onBack,
-  onAppointmentUpdated
+  onAppointmentUpdated,
+  updateAppointmentOptimistically,
+  rollbackAppointmentUpdate
 }: PatientProfileViewProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -305,7 +313,7 @@ export function PatientProfileView({
                         Completed ({filteredAndGroupedAppointments.completed.length})
                       </h4>
                       <div className="space-y-2">
-                        {filteredAndGroupedAppointments.completed.slice(0, 5).map((apt: PatientAppointment) => (
+                        {filteredAndGroupedAppointments.completed.map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -315,11 +323,6 @@ export function PatientProfileView({
                             onReasonUpdated={onAppointmentUpdated}
                           />
                         ))}
-                        {filteredAndGroupedAppointments.completed.length > 5 && (
-                          <p className="text-xs text-muted-foreground text-center py-2">
-                            +{filteredAndGroupedAppointments.completed.length - 5} more completed appointments
-                          </p>
-                        )}
                       </div>
                     </div>
                   )}
@@ -332,7 +335,7 @@ export function PatientProfileView({
                         Cancelled ({filteredAndGroupedAppointments.cancelled.length})
                       </h4>
                       <div className="space-y-2">
-                        {filteredAndGroupedAppointments.cancelled.slice(0, 3).map((apt: PatientAppointment) => (
+                        {filteredAndGroupedAppointments.cancelled.map((apt: PatientAppointment) => (
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
@@ -342,13 +345,27 @@ export function PatientProfileView({
                             onReasonUpdated={onAppointmentUpdated}
                           />
                         ))}
-                        {filteredAndGroupedAppointments.cancelled.length > 3 && (
-                          <p className="text-xs text-muted-foreground text-center py-2">
-                            +{filteredAndGroupedAppointments.cancelled.length - 3} more cancelled appointments
-                          </p>
-                        )}
                       </div>
                     </div>
+                  )}
+
+                  {/* Load More Button */}
+                  {hasMoreAppointments && !searchTerm && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full mt-4" 
+                      onClick={onLoadMoreAppointments}
+                      disabled={loadingAppointments}
+                    >
+                      {loadingAppointments ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        'Load More Appointments'
+                      )}
+                    </Button>
                   )}
 
                   {/* No results from search */}
