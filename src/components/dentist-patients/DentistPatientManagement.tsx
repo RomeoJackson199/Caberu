@@ -253,8 +253,17 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
       )}
 
       {/* Appointment Detail Sheet (read-only view from profile) */}
-      <Sheet open={showAppointmentDetail} onOpenChange={setShowAppointmentDetail}>
-        <SheetContent side="right" className="w-full sm:max-w-lg p-0">
+      <Sheet 
+        open={showAppointmentDetail} 
+        onOpenChange={(open) => {
+          setShowAppointmentDetail(open);
+          // Refresh appointment data when closing to show any saved drafts
+          if (!open && selectedPatient) {
+            fetchPatientAppointments(selectedPatient.id, false);
+          }
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-lg p-0 overflow-hidden">
           {selectedAppointmentForView && selectedPatient && (
             <DentistAppointmentDetail
               appointment={{

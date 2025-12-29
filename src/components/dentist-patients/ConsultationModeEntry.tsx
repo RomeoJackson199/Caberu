@@ -65,7 +65,7 @@ export function ConsultationModeEntry({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-primary" />
@@ -76,7 +76,7 @@ export function ConsultationModeEntry({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden py-4">
+        <div className="flex-1 min-h-0 py-4">
           {eligibleAppointments.length === 0 ? (
             <div className="text-center py-6">
               <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
@@ -85,7 +85,7 @@ export function ConsultationModeEntry({
               </p>
             </div>
           ) : (
-            <ScrollArea className="h-full max-h-[50vh]">
+            <ScrollArea className="h-full">
               <div className="space-y-4 pr-4">
                 <RadioGroup 
                   value={selectedAppointmentId || ''} 
