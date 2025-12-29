@@ -65,7 +65,7 @@ export function ConsultationModeEntry({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-md flex flex-col" style={{ maxHeight: '85vh' }}>
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-primary" />
@@ -76,7 +76,7 @@ export function ConsultationModeEntry({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 py-4">
+        <div className="flex-1 overflow-hidden py-4" style={{ minHeight: 0 }}>
           {eligibleAppointments.length === 0 ? (
             <div className="text-center py-6">
               <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
@@ -85,55 +85,53 @@ export function ConsultationModeEntry({
               </p>
             </div>
           ) : (
-            <ScrollArea className="h-full">
-              <div className="space-y-4 pr-4">
-                <RadioGroup 
-                  value={selectedAppointmentId || ''} 
-                  onValueChange={(value) => {
-                    console.log('[ConsultationModeEntry] Selected appointment:', value);
-                    setSelectedAppointmentId(value);
-                  }}
-                  className="space-y-2"
-                >
-                  {eligibleAppointments.map(apt => {
-                    const group = getAppointmentGroupLocal(apt);
-                    const isNeedsCompletion = group === 'needs_completion';
-                    
-                    return (
-                      <div key={apt.id}>
-                        <Label
-                          htmlFor={apt.id}
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                            selectedAppointmentId === apt.id 
-                              ? "border-primary bg-primary/5" 
-                              : "hover:bg-muted/50",
-                            isNeedsCompletion && "border-amber-300"
-                          )}
-                        >
-                          <RadioGroupItem value={apt.id} id={apt.id} />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">
-                                {apt.reason || 'General consultation'}
-                              </span>
-                              {isNeedsCompletion && (
-                                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
-                                  Needs completion
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {format(new Date(apt.appointment_date), 'MMM d, yyyy')} at {format(new Date(apt.appointment_date), 'h:mm a')}
-                            </p>
+            <div className="h-full overflow-y-auto pr-2">
+              <RadioGroup 
+                value={selectedAppointmentId || ''} 
+                onValueChange={(value) => {
+                  console.log('[ConsultationModeEntry] Selected appointment:', value);
+                  setSelectedAppointmentId(value);
+                }}
+                className="space-y-2"
+              >
+                {eligibleAppointments.map(apt => {
+                  const group = getAppointmentGroupLocal(apt);
+                  const isNeedsCompletion = group === 'needs_completion';
+                  
+                  return (
+                    <div key={apt.id}>
+                      <Label
+                        htmlFor={apt.id}
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                          selectedAppointmentId === apt.id 
+                            ? "border-primary bg-primary/5" 
+                            : "hover:bg-muted/50",
+                          isNeedsCompletion && "border-amber-300"
+                        )}
+                      >
+                        <RadioGroupItem value={apt.id} id={apt.id} />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {apt.reason || 'General consultation'}
+                            </span>
+                            {isNeedsCompletion && (
+                              <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                                Needs completion
+                              </Badge>
+                            )}
                           </div>
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </RadioGroup>
-              </div>
-            </ScrollArea>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(apt.appointment_date), 'MMM d, yyyy')} at {format(new Date(apt.appointment_date), 'h:mm a')}
+                          </p>
+                        </div>
+                      </Label>
+                    </div>
+                  );
+                })}
+              </RadioGroup>
+            </div>
           )}
         </div>
 
