@@ -63,10 +63,13 @@ export function DentistAppointmentDetail({
   const [charges, setCharges] = useState<ChargeItem[]>([]);
   const [chargesKey, setChargesKey] = useState(0); // Force reload trigger
 
-  // Sync notes when appointment changes
+  // Sync notes when appointment changes or component mounts with fresh data
   useEffect(() => {
+    console.log('📝 Syncing notes from appointment:', appointment?.id, appointment?.consultation_notes?.slice(0, 50));
     setNotes(appointment?.consultation_notes || "");
-  }, [appointment?.consultation_notes]);
+    // Also trigger charges reload when appointment changes
+    setChargesKey(prev => prev + 1);
+  }, [appointment?.id, appointment?.consultation_notes]);
 
   // Load saved draft charges - now also triggers on chargesKey change
   useEffect(() => {

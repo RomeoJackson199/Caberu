@@ -140,8 +140,14 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
     loadMore: boolean = false
   ): Promise<{ appointments: PatientAppointment[]; hasMore: boolean }> => {
     try {
-      const currentCache = appointmentsCache[patientId];
-      const offset = loadMore && currentCache ? currentCache.appointments.length : 0;
+      // Use functional state update to avoid stale closure with appointmentsCache
+      let offset = 0;
+      
+      if (loadMore) {
+        // Get current offset from state
+        const currentCacheSnap = appointmentsCache[patientId];
+        offset = currentCacheSnap?.appointments?.length || 0;
+      }
       
       // Set loading state
       setAppointmentsCache(prev => ({
@@ -170,20 +176,28 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       if (error) throw error;
       
       const newAppointments = (data || []) as PatientAppointment[];
-      const existingAppointments = loadMore && currentCache ? currentCache.appointments : [];
-      const allAppointments = [...existingAppointments, ...newAppointments];
-      const hasMore = count ? allAppointments.length < count : false;
+      
+      // Use functional update to get latest state
+      let result = { appointments: [] as PatientAppointment[], hasMore: false };
+      
+      setAppointmentsCache(prev => {
+        const existingAppointments = loadMore && prev[patientId] ? prev[patientId].appointments : [];
+        const allAppointments = [...existingAppointments, ...newAppointments];
+        const hasMore = count ? allAppointments.length < count : false;
+        
+        result = { appointments: allAppointments, hasMore };
+        
+        return {
+          ...prev,
+          [patientId]: {
+            appointments: allAppointments,
+            hasMore,
+            loading: false
+          }
+        };
+      });
 
-      setAppointmentsCache(prev => ({
-        ...prev,
-        [patientId]: {
-          appointments: allAppointments,
-          hasMore,
-          loading: false
-        }
-      }));
-
-      return { appointments: allAppointments, hasMore };
+      return result;
     } catch (error) {
       console.error('Error fetching appointments:', error);
       setAppointmentsCache(prev => ({
@@ -196,7 +210,8 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       }));
       return { appointments: [], hasMore: false };
     }
-  }, [dentistId, businessId, appointmentsCache]);
+  // Remove appointmentsCache from dependencies to avoid infinite loop
+  }, [dentistId, businessId]);
 
   // Optimistic update for appointment status
   const updateAppointmentOptimistically = useCallback((
