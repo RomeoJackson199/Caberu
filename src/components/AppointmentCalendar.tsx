@@ -25,7 +25,7 @@ interface AppointmentCalendarProps {
 }
 
 export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentist }: AppointmentCalendarProps) => {
-  const [step, setStep] = useState<'patient' | 'dentist' | 'datetime' | 'details'>('datetime'); // Start directly at datetime
+  const [step, setStep] = useState<'patient' | 'dentist' | 'symptoms' | 'datetime' | 'details'>('symptoms'); // Start at symptoms (dentist already selected)
   const [selectedDentist, setSelectedDentist] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState("");
@@ -185,43 +185,30 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
           <DentistSelection
             onSelectDentist={(dentist: any) => {
               setSelectedDentist(dentist);
-              setStep('datetime');
+              setStep('symptoms');
             }}
             selectedDentistId={selectedDentist?.id}
           />
         );
 
-      case 'datetime':
-        return (
-          <div className="space-y-4">
-            {/* Back Button */}
-            <Button
-              variant="outline"
-              onClick={onBackToDentist}
-              className="flex items-center gap-2 mb-4"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Retour à la sélection du dentiste
-            </Button>
-            
-            {selectedDentist ? (
-              <SimpleCalendar
-                selectedDentist={selectedDentist.id}
-                onDateTimeSelect={handleDateTimeSelect}
-                isEmergency={isEmergency}
-              />
-            ) : null}
-          </div>
-        );
-
-      case 'details':
+      case 'symptoms':
         return (
           <Card className="w-full max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle>Détails du rendez-vous</CardTitle>
+              <CardTitle>Décrivez votre besoin</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Symptoms First - What's happening */}
+              {/* Back Button */}
+              <Button
+                variant="outline"
+                onClick={onBackToDentist}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour à la sélection du dentiste
+              </Button>
+
+              {/* Symptoms/Reason Input */}
               <IntakeSummaryInput
                 value={intakeSummary}
                 onChange={setIntakeSummary}
@@ -229,7 +216,7 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
                 aiSuggested={!!intakeSummary && intakeSummary.length > 10}
               />
 
-              {/* Reason Selection - Treatment type */}
+              {/* Treatment Type Selection */}
               <div className="space-y-3">
                 <Label>Type de consultation</Label>
                 <Select value={reasonType} onValueChange={(value: 'checkup' | 'custom') => setReasonType(value)}>
@@ -252,6 +239,50 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
                 )}
               </div>
 
+              {/* Next Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => setStep('datetime')}
+                  className="flex items-center gap-2"
+                >
+                  Suivant
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 'datetime':
+        return (
+          <div className="space-y-4">
+            {/* Back Button */}
+            <Button
+              variant="outline"
+              onClick={() => setStep('symptoms')}
+              className="flex items-center gap-2 mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour aux symptômes
+            </Button>
+            
+            {selectedDentist ? (
+              <SimpleCalendar
+                selectedDentist={selectedDentist.id}
+                onDateTimeSelect={handleDateTimeSelect}
+                isEmergency={isEmergency}
+              />
+            ) : null}
+          </div>
+        );
+
+      case 'details':
+        return (
+          <Card className="w-full max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle>Confirmation du rendez-vous</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Résumé du rendez-vous</h4>
                 <div className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
@@ -261,7 +292,7 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
                   <p><strong>Heure:</strong> {selectedTime}</p>
                   <p><strong>Motif:</strong> {reason || "Contrôle de routine"}</p>
                   {intakeSummary && (
-                    <p><strong>Notes:</strong> {intakeSummary}</p>
+                    <p><strong>Symptômes:</strong> {intakeSummary}</p>
                   )}
                 </div>
               </div>
@@ -277,9 +308,11 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
   const canGoNext = () => {
     switch (step) {
       case 'patient':
-        return true; // PatientSelection handles its own validation
+        return true;
       case 'dentist':
         return selectedDentist !== null;
+      case 'symptoms':
+        return true; // Symptoms are optional
       case 'datetime':
         return selectedDate && selectedTime;
       case 'details':
@@ -289,51 +322,41 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
     }
   };
 
-  const handleNext = () => {
-    if (step === 'patient') return; // Handled by PatientSelection
-    if (step === 'dentist') return; // Handled by DentistSelection
-    if (step === 'datetime') setStep('details');
-    if (step === 'details') handleBookAppointment();
-  };
-
   const handlePrevious = () => {
     if (step === 'dentist') setStep('patient');
-    if (step === 'datetime') setStep('dentist');
+    if (step === 'symptoms') setStep('dentist');
+    if (step === 'datetime') setStep('symptoms');
     if (step === 'details') setStep('datetime');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Progress Indicator - Skip for datetime step */}
-        {step !== 'datetime' && (
+        {/* Progress Indicator - Only show for details step */}
+        {step === 'details' && (
           <div className="mb-8">
             <div className="flex items-center justify-center space-x-4">
-              {['patient', 'dentist', 'datetime', 'details'].map((stepName, index) => (
+              {['symptoms', 'datetime', 'details'].map((stepName, index) => (
                 <div key={stepName} className="flex items-center">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                     step === stepName 
                       ? 'bg-blue-600 text-white' 
-                      : index < ['patient', 'dentist', 'datetime', 'details'].indexOf(step)
+                      : index < ['symptoms', 'datetime', 'details'].indexOf(step)
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-500'
                   }`}>
-                    {index < ['patient', 'dentist', 'datetime', 'details'].indexOf(step) ? (
+                    {index < ['symptoms', 'datetime', 'details'].indexOf(step) ? (
                       <CheckCircle className="h-4 w-4" />
                     ) : (
                       index + 1
                     )}
                   </div>
-                  {index < 3 && <div className="w-8 h-0.5 bg-gray-200 mx-2" />}
+                  {index < 2 && <div className="w-8 h-0.5 bg-gray-200 mx-2" />}
                 </div>
               ))}
             </div>
             <div className="text-center mt-2 text-sm text-gray-600">
-              Étape {['patient', 'dentist', 'datetime', 'details'].indexOf(step) + 1}/4: {
-                step === 'details' ? 'Détails' : 
-                step === 'patient' ? 'Patient' : 
-                'Dentiste'
-              }
+              Étape 3/3: Confirmation
             </div>
           </div>
         )}
@@ -343,8 +366,8 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
           {renderStepContent()}
         </div>
 
-        {/* Navigation Buttons - Hide for datetime step since it has its own back button */}
-        {step !== 'patient' && step !== 'dentist' && step !== 'datetime' && (
+        {/* Navigation Buttons - Only show for details step */}
+        {step === 'details' && (
           <div className="flex justify-between max-w-2xl mx-auto">
             <Button
               variant="outline"
@@ -356,7 +379,7 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
             </Button>
 
             <Button
-              onClick={step === 'details' ? handleBookAppointment : handleNext}
+              onClick={handleBookAppointment}
               disabled={!canGoNext() || isLoading}
               className="flex items-center gap-2"
             >
@@ -365,13 +388,8 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   Confirmation...
                 </>
-              ) : step === 'details' ? (
-                'Confirmer le rendez-vous'
               ) : (
-                <>
-                  Suivant
-                  <ArrowRight className="h-4 w-4" />
-                </>
+                'Confirmer le rendez-vous'
               )}
             </Button>
           </div>
