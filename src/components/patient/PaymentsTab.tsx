@@ -253,8 +253,8 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId, filter }) =
         </section>
       )}
 
-      {/* Paid Payments - Section (auto-expanded when filter is 'paid') */}
-      {(filter === 'paid' || paidPayments.length > 0) && (
+      {/* Paid Payments - Section (always visible when filter is 'paid') */}
+      {(filter === 'paid' || filter !== 'unpaid') && (
         <section>
           {filter === 'paid' ? (
             // When viewing paid-only, show directly without collapsible

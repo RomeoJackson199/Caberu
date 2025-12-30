@@ -633,29 +633,64 @@ export const EnhancedAppointmentBooking = ({
             <CardContent className="space-y-8 p-6 md:p-10">
               {/* Step Indicator */}
               <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${selectedDentist ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
-                  <span className="font-semibold">1. Dentist</span>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${(notes || reason) ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                  <span className="font-semibold">1. Symptoms</span>
+                  {(notes || reason) && <CheckCircle className="h-4 w-4" />}
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${selectedDentist ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
+                  <span className="font-semibold">2. Dentist</span>
                   {selectedDentist && <CheckCircle className="h-4 w-4" />}
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${selectedService ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                  <span className="font-semibold">2. Service</span>
+                  <span className="font-semibold">3. Service</span>
                   {selectedService && <CheckCircle className="h-4 w-4" />}
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${selectedDate && selectedTime ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                  <span className="font-semibold">3. Date & Time</span>
+                  <span className="font-semibold">4. Date & Time</span>
                   {selectedDate && selectedTime && <CheckCircle className="h-4 w-4" />}
                 </div>
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${reason ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>
-                  <span className="font-semibold">4. Details</span>
-                  {reason && <CheckCircle className="h-4 w-4" />}
+              </div>
+
+              {/* Step 1: Symptoms/Reason - FIRST */}
+              <div className="space-y-4">
+                <Label className="text-lg font-bold text-foreground flex items-center">
+                  <Package className="h-5 w-5 mr-2 text-pink-600" />
+                  Step 1: Tell us what's happening
+                </Label>
+                
+                <IntakeSummaryInput
+                  value={notes}
+                  onChange={setNotes}
+                  placeholder="Please describe your symptoms in detail. For example: Where does it hurt? How long have you had this issue? Any triggers? This helps your dentist prepare for your visit."
+                  aiSuggested={!!chatNotes}
+                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Brief reason for visit</Label>
+                  <Textarea
+                    id="reason"
+                    placeholder="Brief reason (e.g., Routine checkup, Tooth pain)"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="min-h-[60px]"
+                  />
                 </div>
+
+                {chatNotes && (
+                  <div className="space-y-2">
+                    <Label>AI Chat Summary</Label>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">{chatNotes}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Dentist Selection */}
               <div className="space-y-4">
                 <Label className="text-lg font-bold text-foreground flex items-center">
                   <UserIcon className="h-5 w-5 mr-2 text-blue-600" />
-                  Step 1: Choose Your Dentist
+                  Step 2: Choose Your Dentist
                 </Label>
                 <Select value={selectedDentist} onValueChange={setSelectedDentist}>
                   <SelectTrigger className="h-14 border-2 border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-400 dark:hover:border-blue-700 transition-colors text-base">
@@ -687,7 +722,7 @@ export const EnhancedAppointmentBooking = ({
               <div className="space-y-4">
                 <Label className="text-lg font-bold text-foreground flex items-center">
                   <Package className="h-5 w-5 mr-2 text-indigo-600" />
-                  Step 2: Select a Service
+                  Step 3: Select a Service
                 </Label>
                 {loadingServices ? (
                   <div className="flex justify-center py-4">
@@ -758,7 +793,7 @@ export const EnhancedAppointmentBooking = ({
               <div className="space-y-4">
                 <Label className="text-lg font-bold text-foreground flex items-center">
                   <CalendarDays className="h-5 w-5 mr-2 text-purple-600" />
-                  Step 3: Pick a Date
+                  Step 4: Pick a Date & Time
                 </Label>
                 <div className="flex justify-center">
                   <Calendar
@@ -877,43 +912,6 @@ export const EnhancedAppointmentBooking = ({
                   )}
                 </div>
               )}
-
-              {/* Step 4: Details & Summary */}
-              <div className="space-y-4">
-                <Label className="text-lg font-bold text-foreground flex items-center">
-                  <Package className="h-5 w-5 mr-2 text-pink-600" />
-                  Step 4: Appointment Details
-                </Label>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="reason">Reason for Visit</Label>
-                  <Textarea
-                    id="reason"
-                    placeholder="Brief reason (e.g., Routine checkup, Tooth pain)"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    className="min-h-[60px]"
-                  />
-                </div>
-
-                {/* Intake Summary - Using component */}
-                <IntakeSummaryInput
-                  value={notes}
-                  onChange={setNotes}
-                  placeholder="Please describe your symptoms in detail. For example: Where does it hurt? How long have you had this issue? Any triggers? This helps your dentist prepare for your visit."
-                  aiSuggested={!!chatNotes}
-                />
-
-                {chatNotes && (
-                  <div className="space-y-2">
-                    <Label>AI Chat Summary</Label>
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800">{chatNotes}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* Action Buttons */}
               <div className="flex gap-4 pt-4">
                 <Button
