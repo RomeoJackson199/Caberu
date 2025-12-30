@@ -30,13 +30,15 @@ interface PaymentWithDetails {
 export interface PaymentsTabProps {
   patientId: string;
   totalDueCents?: number;
+  /** Filter to show only 'unpaid' or 'paid' payments - if not set, shows both */
+  filter?: 'unpaid' | 'paid';
 }
 
-export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
+export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId, filter }) => {
   const [payments, setPayments] = useState<PaymentWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
-  const [paidExpanded, setPaidExpanded] = useState(false);
+  const [paidExpanded, setPaidExpanded] = useState(filter === 'paid');
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [scrollToSection, setScrollToSection] = useState<'payment' | 'documents' | null>(null);
@@ -136,8 +138,13 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
 
   const formatAmount = (amount: number) => `€${(amount / 100).toFixed(2)}`;
 
-  const outstandingPayments = payments.filter(p => p.status !== 'paid' && p.status !== 'cancelled');
-  const paidPayments = payments.filter(p => p.status === 'paid');
+  // Apply filter if provided
+  const outstandingPayments = filter === 'paid' 
+    ? [] 
+    : payments.filter(p => p.status !== 'paid' && p.status !== 'cancelled');
+  const paidPayments = filter === 'unpaid' 
+    ? [] 
+    : payments.filter(p => p.status === 'paid');
 
   if (loading) {
     return (
@@ -151,175 +158,227 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
 
   return (
     <div className="px-4 md:px-6 py-6 space-y-8">
-      {/* Outstanding Payments - Primary Section */}
-      <section>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-orange-500" />
-          Outstanding Payments
-        </h2>
-
-        {outstandingPayments.length === 0 ? (
-          <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium text-green-900 dark:text-green-100">
-                    All caught up!
-                  </p>
-                  <p className="text-sm text-green-700 dark:text-green-200">
-                    You have no outstanding payments.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {outstandingPayments.map((payment) => (
-              <Card 
-                key={payment.id} 
-                className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Payment Info */}
-                    <div className="flex-1">
-                      {/* Amount - Prominent */}
-                      <p className="text-2xl font-bold text-foreground mb-1">
-                        {formatAmount(payment.amount)}
-                      </p>
-                      
-                      {/* Status */}
-                      <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 mb-2">
-                        Payment required
-                      </Badge>
-                      
-                      {/* Appointment Date */}
-                      {payment.appointment && (
-                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
-                        </p>
-                      )}
-                      
-                      {/* Clinic Name - Very Visible */}
-                      {payment.business && (
-                        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                          <Building2 className="h-3.5 w-3.5 text-primary" />
-                          {payment.business.name}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-2 sm:items-end">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePayNow(payment.id);
-                        }}
-                        disabled={processingPayment === payment.id}
-                        className="w-full sm:w-auto"
-                      >
-                        {processingPayment === payment.id ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Pay Now
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Paid Payments - Secondary Section (Collapsed by default) */}
-      {paidPayments.length > 0 && (
+      {/* Outstanding Payments - Primary Section (hidden when filter is 'paid') */}
+      {filter !== 'paid' && (
         <section>
-          <Collapsible open={paidExpanded} onOpenChange={setPaidExpanded}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  Paid ({paidPayments.length})
-                </h2>
-                {paidExpanded ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-orange-500" />
+            Outstanding Payments
+          </h2>
 
-            <CollapsibleContent className="mt-4">
-              <div className="space-y-3">
-                {paidPayments.map((payment) => (
-                  <Card 
-                    key={payment.id} 
-                    className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => openAppointmentDetail(payment.appointment_id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        {/* Payment Info */}
-                        <div className="flex-1">
-                          {/* Amount */}
-                          <p className="text-xl font-semibold text-foreground mb-1">
-                            {formatAmount(payment.amount)}
-                          </p>
-                          
-                          {/* Paid Date */}
-                          {payment.paid_at && (
-                            <p className="text-sm text-green-600 dark:text-green-400 mb-1">
-                              Paid {format(new Date(payment.paid_at), 'MMM d, yyyy')}
-                            </p>
-                          )}
-                          
-                          {/* Appointment Date */}
-                          {payment.appointment && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
-                              <Calendar className="h-3.5 w-3.5" />
-                              Appointment: {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
-                            </p>
-                          )}
-                          
-                          {/* Clinic Name */}
-                          {payment.business && (
-                            <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                              <Building2 className="h-3.5 w-3.5 text-primary" />
-                              {payment.business.name}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Status Badge */}
-                        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 self-start sm:self-center">
-                          Paid
+          {outstandingPayments.length === 0 ? (
+            <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900 dark:text-green-100">
+                      All caught up!
+                    </p>
+                    <p className="text-sm text-green-700 dark:text-green-200">
+                      You have no outstanding payments.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {outstandingPayments.map((payment) => (
+                <Card 
+                  key={payment.id} 
+                  className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/10 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => openAppointmentDetail(payment.appointment_id, 'payment')}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      {/* Payment Info */}
+                      <div className="flex-1">
+                        {/* Amount - Prominent */}
+                        <p className="text-2xl font-bold text-foreground mb-1">
+                          {formatAmount(payment.amount)}
+                        </p>
+                        
+                        {/* Status */}
+                        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 mb-2">
+                          Payment required
                         </Badge>
+                        
+                        {/* Appointment Date */}
+                        {payment.appointment && (
+                          <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
+                          </p>
+                        )}
+                        
+                        {/* Clinic Name - Very Visible */}
+                        {payment.business && (
+                          <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-primary" />
+                            {payment.business.name}
+                          </p>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-2 sm:items-end">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePayNow(payment.id);
+                          }}
+                          disabled={processingPayment === payment.id}
+                          className="w-full sm:w-auto"
+                        >
+                          {processingPayment === payment.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Pay Now
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
-      {/* Empty State */}
-      {/* Empty State */}
-      {payments.length === 0 && (
+      {/* Paid Payments - Section (auto-expanded when filter is 'paid') */}
+      {(filter === 'paid' || paidPayments.length > 0) && (
+        <section>
+          {filter === 'paid' ? (
+            // When viewing paid-only, show directly without collapsible
+            <>
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                Payment History ({paidPayments.length})
+              </h2>
+              
+              {paidPayments.length === 0 ? (
+                <div className="text-center py-12">
+                  <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground">No payment history yet</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    Your completed payments will appear here
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paidPayments.map((payment) => (
+                    <Card 
+                      key={payment.id} 
+                      className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => openAppointmentDetail(payment.appointment_id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex-1">
+                            <p className="text-xl font-semibold text-foreground mb-1">
+                              {formatAmount(payment.amount)}
+                            </p>
+                            {payment.paid_at && (
+                              <p className="text-sm text-green-600 dark:text-green-400 mb-1">
+                                Paid {format(new Date(payment.paid_at), 'MMM d, yyyy')}
+                              </p>
+                            )}
+                            {payment.appointment && (
+                              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
+                                <Calendar className="h-3.5 w-3.5" />
+                                Appointment: {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
+                              </p>
+                            )}
+                            {payment.business && (
+                              <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                <Building2 className="h-3.5 w-3.5 text-primary" />
+                                {payment.business.name}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 self-start sm:self-center">
+                            Paid
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            // When viewing all or unpaid, show collapsible
+            <Collapsible open={paidExpanded} onOpenChange={setPaidExpanded}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    Paid ({paidPayments.length})
+                  </h2>
+                  {paidExpanded ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+
+              <CollapsibleContent className="mt-4">
+                <div className="space-y-3">
+                  {paidPayments.map((payment) => (
+                    <Card 
+                      key={payment.id} 
+                      className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => openAppointmentDetail(payment.appointment_id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex-1">
+                            <p className="text-xl font-semibold text-foreground mb-1">
+                              {formatAmount(payment.amount)}
+                            </p>
+                            {payment.paid_at && (
+                              <p className="text-sm text-green-600 dark:text-green-400 mb-1">
+                                Paid {format(new Date(payment.paid_at), 'MMM d, yyyy')}
+                              </p>
+                            )}
+                            {payment.appointment && (
+                              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
+                                <Calendar className="h-3.5 w-3.5" />
+                                Appointment: {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
+                              </p>
+                            )}
+                            {payment.business && (
+                              <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                <Building2 className="h-3.5 w-3.5 text-primary" />
+                                {payment.business.name}
+                              </p>
+                            )}
+                          </div>
+                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 self-start sm:self-center">
+                            Paid
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </section>
+      )}
+
+      {/* Empty State - Only show when no filter and no payments at all */}
+      {!filter && payments.length === 0 && (
         <div className="text-center py-12">
           <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">No payments yet</p>
