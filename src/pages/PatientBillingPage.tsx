@@ -119,18 +119,10 @@ export default function PatientBillingPage() {
         </TabsList>
         <div className="mt-6">
           <TabsContent value="unpaid">
-            {patientId && <PaymentsTab patientId={patientId} totalDueCents={totalDueCents} />}
+            {patientId && <PaymentsTab patientId={patientId} totalDueCents={totalDueCents} filter="unpaid" />}
           </TabsContent>
           <TabsContent value="paid">
-            <EmptyState
-              icon={Receipt}
-              title={t.noPaidInvoices}
-              description={t.noPaidInvoicesDesc}
-              action={{
-                label: t.viewUnpaid,
-                onClick: () => setTab('unpaid')
-              }}
-            />
+            {patientId && <PaymentsTab patientId={patientId} filter="paid" />}
           </TabsContent>
           <TabsContent value="statements">
             <EmptyState
