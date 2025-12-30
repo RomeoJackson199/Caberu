@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SimpleCalendar } from "@/components/SimpleCalendar";
 import { DentistSelection } from "@/components/DentistSelection";
 import { PatientSelection } from "@/components/PatientSelection";
+import { IntakeSummaryInput } from "@/components/booking/IntakeSummaryInput";
 import { CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { clinicTimeToUtc, createAppointmentDateTimeFromStrings } from "@/lib/timezone";
+
 interface AppointmentCalendarProps {
   user: User;
   onComplete: (appointmentData?: any) => void;
@@ -29,11 +31,31 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
   const [selectedTime, setSelectedTime] = useState("");
   const [reason, setReason] = useState("");
   const [reasonType, setReasonType] = useState<'checkup' | 'custom'>('checkup');
+  const [intakeSummary, setIntakeSummary] = useState("");
   const [isForUser, setIsForUser] = useState(true);
   const [patientInfo, setPatientInfo] = useState<any>(null);
   const [isEmergency, setIsEmergency] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Check for stored conversation data from AI chat
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('booking_context');
+      if (stored) {
+        const ctx = JSON.parse(stored);
+        if (ctx.symptoms) {
+          setIntakeSummary(ctx.symptoms);
+        }
+        if (ctx.urgency === 'emergency') {
+          setIsEmergency(true);
+        }
+        sessionStorage.removeItem('booking_context');
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }, []);
 
   // Set default reason based on type
   useEffect(() => {
@@ -43,6 +65,7 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
       setReason('');
     }
   }, [reasonType]);
+
 
   const handleDateTimeSelect = (date: Date, time: string) => {
     setSelectedDate(date);
@@ -84,6 +107,7 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
         dentist_id: selectedDentist.id,
         appointment_date: appointmentDateTime.toISOString(),
         reason: reason || "Consultation générale",
+        notes: intakeSummary || null, // Store intake summary in notes field
         status: "confirmed",
         urgency: isEmergency ? "emergency" : "medium",
         is_for_user: isForUser,
@@ -218,14 +242,25 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
                 )}
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">Résumé du rendez-vous</h4>
-                <div className="space-y-1 text-sm text-blue-800">
+              {/* Intake Summary - Symptoms / What's happening */}
+              <IntakeSummaryInput
+                value={intakeSummary}
+                onChange={setIntakeSummary}
+                placeholder="Describe any symptoms or concerns you'd like the dentist to know about..."
+                aiSuggested={!!intakeSummary && intakeSummary.length > 10}
+              />
+
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Résumé du rendez-vous</h4>
+                <div className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
                   <p><strong>Patient:</strong> {isForUser ? "Vous" : patientInfo?.name}</p>
                   <p><strong>Dentiste:</strong> Dr {selectedDentist?.profiles.first_name} {selectedDentist?.profiles.last_name}</p>
                   <p><strong>Date:</strong> {selectedDate?.toLocaleDateString('fr-FR')}</p>
                   <p><strong>Heure:</strong> {selectedTime}</p>
                   <p><strong>Motif:</strong> {reason || "Contrôle de routine"}</p>
+                  {intakeSummary && (
+                    <p><strong>Notes:</strong> {intakeSummary}</p>
+                  )}
                 </div>
               </div>
             </CardContent>

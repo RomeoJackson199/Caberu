@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +16,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2, Mail, ClipboardList, ArrowLeft } from 'lucide-react';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface AddPatientDialogProps {
   businessId: string;
@@ -22,11 +25,20 @@ interface AddPatientDialogProps {
   onPatientAdded: () => void;
 }
 
+type Mode = 'select' | 'invite' | 'full';
+
 export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddPatientDialogProps) {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<Mode>('select');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { businessName } = useBusinessContext();
 
+  // Invite form state
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+
+  // Full form state
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -49,6 +61,82 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
       dateOfBirth: '',
       medicalHistory: '',
     });
+    setInviteEmail('');
+    setInviteName('');
+    setMode('select');
+  };
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Email is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail.trim())) {
+      toast({
+        title: 'Invalid email',
+        description: 'Please enter a valid email address',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Check if patient already exists
+      const { data: existingPatient } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('email', inviteEmail.trim().toLowerCase())
+        .maybeSingle();
+
+      if (existingPatient) {
+        toast({
+          title: 'Patient exists',
+          description: `${existingPatient.first_name || 'This patient'} is already in the system.`,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Call edge function to send invite
+      const { error } = await supabase.functions.invoke('create-patient-profile', {
+        body: {
+          email: inviteEmail.trim().toLowerCase(),
+          first_name: inviteName.trim() || null,
+          business_id: businessId,
+          dentist_id: dentistId,
+          send_invite: true,
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Invitation sent',
+        description: `An invitation email has been sent to ${inviteEmail}`,
+      });
+
+      resetForm();
+      setOpen(false);
+      onPatientAdded();
+    } catch (error: any) {
+      console.error('Error sending invite:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send invitation',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,8 +210,207 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
     }
   };
 
+  const renderModeSelect = () => (
+    <div className="grid gap-4 py-4">
+      <Card 
+        className="cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all"
+        onClick={() => setMode('invite')}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Mail className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Quick Invite</CardTitle>
+              <CardDescription className="text-sm">
+                Send an email invitation to let the patient complete their profile
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      <Card 
+        className="cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all"
+        onClick={() => setMode('full')}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-500/10">
+              <ClipboardList className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Full Profile</CardTitle>
+              <CardDescription className="text-sm">
+                Enter all patient details now
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    </div>
+  );
+
+  const renderInviteForm = () => (
+    <div className="space-y-4 py-4">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => setMode('select')} 
+        className="gap-1.5 -ml-2"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </Button>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="inviteEmail">Email Address *</Label>
+          <Input
+            id="inviteEmail"
+            type="email"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            placeholder="patient@email.com"
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            We'll send an invitation to create their account
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="inviteName">Name (optional)</Label>
+          <Input
+            id="inviteName"
+            value={inviteName}
+            onChange={(e) => setInviteName(e.target.value)}
+            placeholder="John Doe"
+          />
+        </div>
+      </div>
+
+      <DialogFooter className="pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setOpen(false)}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button onClick={handleInvite} disabled={loading}>
+          {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Send Invitation
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+
+  const renderFullForm = () => (
+    <form onSubmit={handleSubmit}>
+      <div className="space-y-4 py-4">
+        <Button 
+          type="button"
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setMode('select')} 
+          className="gap-1.5 -ml-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">First Name *</Label>
+            <Input
+              id="firstName"
+              value={formData.firstName}
+              onChange={(e) => handleChange('firstName', e.target.value)}
+              placeholder="John"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Last Name *</Label>
+            <Input
+              id="lastName"
+              value={formData.lastName}
+              onChange={(e) => handleChange('lastName', e.target.value)}
+              placeholder="Doe"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange('email', e.target.value)}
+            placeholder="john.doe@email.com"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            placeholder="+31 6 12345678"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dateOfBirth">Date of Birth</Label>
+          <Input
+            id="dateOfBirth"
+            type="date"
+            value={formData.dateOfBirth}
+            onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="medicalHistory">Medical Notes</Label>
+          <Textarea
+            id="medicalHistory"
+            value={formData.medicalHistory}
+            onChange={(e) => handleChange('medicalHistory', e.target.value)}
+            placeholder="Any allergies, conditions, or relevant medical history..."
+            rows={3}
+          />
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setOpen(false)}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading}>
+          {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Add Patient
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) resetForm();
+    }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <UserPlus className="h-4 w-4" />
@@ -132,95 +419,21 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Patient</DialogTitle>
+          <DialogTitle>
+            {mode === 'select' && 'Add New Patient'}
+            {mode === 'invite' && 'Invite Patient by Email'}
+            {mode === 'full' && 'Create Patient Profile'}
+          </DialogTitle>
           <DialogDescription>
-            Add a new patient to your practice. They will be linked to you as their dentist.
+            {mode === 'select' && 'Choose how you want to add a patient to your practice.'}
+            {mode === 'invite' && `Send an invitation for ${businessName || 'your practice'}.`}
+            {mode === 'full' && 'Enter the patient details to create their profile.'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => handleChange('firstName', e.target.value)}
-                  placeholder="John"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => handleChange('lastName', e.target.value)}
-                  placeholder="Doe"
-                  required
-                />
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="john.doe@email.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
-                placeholder="+31 6 12345678"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="medicalHistory">Medical Notes</Label>
-              <Textarea
-                id="medicalHistory"
-                value={formData.medicalHistory}
-                onChange={(e) => handleChange('medicalHistory', e.target.value)}
-                placeholder="Any allergies, conditions, or relevant medical history..."
-                rows={3}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Patient
-            </Button>
-          </DialogFooter>
-        </form>
+        {mode === 'select' && renderModeSelect()}
+        {mode === 'invite' && renderInviteForm()}
+        {mode === 'full' && renderFullForm()}
       </DialogContent>
     </Dialog>
   );
