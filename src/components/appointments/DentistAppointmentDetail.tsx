@@ -218,7 +218,7 @@ export function DentistAppointmentDetail({
   }, [appointment?.id, onClose, onOptimisticUpdate, onStatusChange, queryClient]);
 
   const handleViewProfile = useCallback(() => {
-    navigate(`/dentist/patients?patient=${appointment?.patient_id}`);
+    navigate(`/dentist/patients?patientId=${appointment?.patient_id}`);
   }, [navigate, appointment?.patient_id]);
 
   if (!appointment) {
