@@ -221,12 +221,20 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
               <CardTitle>Détails du rendez-vous</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Reason Selection */}
+              {/* Symptoms First - What's happening */}
+              <IntakeSummaryInput
+                value={intakeSummary}
+                onChange={setIntakeSummary}
+                placeholder="Décrivez vos symptômes ou préoccupations (ex: douleur, sensibilité, gonflement...)"
+                aiSuggested={!!intakeSummary && intakeSummary.length > 10}
+              />
+
+              {/* Reason Selection - Treatment type */}
               <div className="space-y-3">
-                <Label>Motif de consultation</Label>
+                <Label>Type de consultation</Label>
                 <Select value={reasonType} onValueChange={(value: 'checkup' | 'custom') => setReasonType(value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choisissez le motif" />
+                    <SelectValue placeholder="Choisissez le type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="checkup">Contrôle de routine</SelectItem>
@@ -236,21 +244,13 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
                 
                 {reasonType === 'custom' && (
                   <Textarea
-                    placeholder="Ex: Douleur dentaire, nettoyage, urgence..."
+                    placeholder="Ex: Détartrage, extraction, urgence..."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     className="min-h-[80px]"
                   />
                 )}
               </div>
-
-              {/* Intake Summary - Symptoms / What's happening */}
-              <IntakeSummaryInput
-                value={intakeSummary}
-                onChange={setIntakeSummary}
-                placeholder="Describe any symptoms or concerns you'd like the dentist to know about..."
-                aiSuggested={!!intakeSummary && intakeSummary.length > 10}
-              />
 
               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Résumé du rendez-vous</h4>
