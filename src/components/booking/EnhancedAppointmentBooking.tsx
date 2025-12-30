@@ -18,6 +18,7 @@ import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 import { format, addMinutes, parse } from 'date-fns';
 import { handleEmailError } from '@/hooks/useEmailLimit';
 import { invalidateAvailabilityCache } from '@/lib/appointmentAvailability';
+import { IntakeSummaryInput } from '@/components/booking/IntakeSummaryInput';
 
 interface EnhancedAppointmentBookingProps {
   user: User;
@@ -877,8 +878,13 @@ export const EnhancedAppointmentBooking = ({
                 </div>
               )}
 
-              {/* Reason and Symptoms */}
+              {/* Step 4: Details & Summary */}
               <div className="space-y-4">
+                <Label className="text-lg font-bold text-foreground flex items-center">
+                  <Package className="h-5 w-5 mr-2 text-pink-600" />
+                  Step 4: Appointment Details
+                </Label>
+                
                 <div className="space-y-2">
                   <Label htmlFor="reason">Reason for Visit</Label>
                   <Textarea
@@ -890,19 +896,13 @@ export const EnhancedAppointmentBooking = ({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="symptoms">Describe Your Symptoms (Optional)</Label>
-                  <Textarea
-                    id="symptoms"
-                    placeholder="Please describe your symptoms in detail. For example: Where does it hurt? How long have you had this issue? Any triggers? This helps your dentist prepare for your visit."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="min-h-[120px] bg-blue-50/50 border-blue-200"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Your dentist will see this information before your appointment
-                  </p>
-                </div>
+                {/* Intake Summary - Using component */}
+                <IntakeSummaryInput
+                  value={notes}
+                  onChange={setNotes}
+                  placeholder="Please describe your symptoms in detail. For example: Where does it hurt? How long have you had this issue? Any triggers? This helps your dentist prepare for your visit."
+                  aiSuggested={!!chatNotes}
+                />
 
                 {chatNotes && (
                   <div className="space-y-2">

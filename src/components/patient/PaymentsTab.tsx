@@ -72,7 +72,6 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
         `)
         .eq('patient_id', patientId)
         .neq('status', 'draft')
-        .not('appointment_id', 'is', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -339,8 +338,6 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId }) => {
           if (!open) {
             setSelectedAppointmentId(null);
             setScrollToSection(null);
-            // Refresh payments in case status changed
-            fetchPayments();
           }
         }}
         scrollTo={scrollToSection}
