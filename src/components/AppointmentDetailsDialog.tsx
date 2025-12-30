@@ -49,6 +49,7 @@ export function AppointmentDetailsDialog({ appointmentId, open, onOpenChange }: 
           urgency,
           reason,
           notes,
+          ai_summary,
           duration_minutes,
           booking_source,
           created_at,
@@ -223,6 +224,28 @@ export function AppointmentDetailsDialog({ appointmentId, open, onOpenChange }: 
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">{appointment.reason}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Patient Symptoms */}
+              {(appointment.notes || appointment.ai_summary) && (
+                <Card className="border-blue-200 dark:border-blue-800">
+                  <CardHeader className="bg-blue-50 dark:bg-blue-950/50 rounded-t-lg">
+                    <CardTitle className="flex items-center gap-2 text-base text-blue-700 dark:text-blue-300">
+                      <AlertCircle className="h-4 w-4" />
+                      Patient Symptoms
+                      {appointment.booking_source === 'ai_chat' && (
+                        <Badge variant="outline" className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700">
+                          AI Assisted
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {appointment.notes || appointment.ai_summary}
+                    </p>
                   </CardContent>
                 </Card>
               )}
