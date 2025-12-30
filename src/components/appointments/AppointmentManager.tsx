@@ -489,6 +489,9 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
                   setSelectedAppointment(null);
                 }
               }}
+              onOptimisticUpdate={(appointmentId, updates) => {
+                setSelectedAppointment((prev: any) => prev?.id === appointmentId ? { ...prev, ...updates } : prev);
+              }}
             />
           )}
         </SheetContent>

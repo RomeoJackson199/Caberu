@@ -24,6 +24,12 @@ export function ConsultationModeView({
   onAppointmentUpdated
 }: ConsultationModeViewProps) {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [localAppointment, setLocalAppointment] = useState(appointment);
+
+  // Sync local state when appointment prop changes
+  useEffect(() => {
+    setLocalAppointment(appointment);
+  }, [appointment]);
 
   const handleStatusChange = (appointmentId: string, newStatus: string) => {
     onAppointmentUpdated();
@@ -33,9 +39,13 @@ export function ConsultationModeView({
     }
   };
 
+  const handleOptimisticUpdate = (appointmentId: string, updates: Record<string, unknown>) => {
+    setLocalAppointment(prev => ({ ...prev, ...updates }));
+  };
+
   // Build the appointment object with patient info for DentistAppointmentDetail
   const enrichedAppointment = {
-    ...appointment,
+    ...localAppointment,
     patient: {
       first_name: patient.first_name,
       last_name: patient.last_name,
@@ -49,7 +59,7 @@ export function ConsultationModeView({
       {/* Consultation Mode Banner */}
       <ConsultationModeBanner
         patient={patient}
-        appointment={appointment}
+        appointment={localAppointment}
         onExit={onExit}
       />
 
@@ -59,6 +69,7 @@ export function ConsultationModeView({
           appointment={enrichedAppointment}
           onClose={onExit}
           onStatusChange={handleStatusChange}
+          onOptimisticUpdate={handleOptimisticUpdate}
           standalone
         />
       </div>

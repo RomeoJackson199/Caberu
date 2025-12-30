@@ -277,6 +277,9 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
               }}
               onClose={() => setShowAppointmentDetail(false)}
               onStatusChange={handleOptimisticStatusChange}
+              onOptimisticUpdate={(appointmentId, updates) => {
+                updateAppointmentOptimistically(selectedPatient.id, appointmentId, updates as any);
+              }}
             />
           )}
         </SheetContent>

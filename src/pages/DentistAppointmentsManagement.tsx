@@ -551,6 +551,10 @@ export default function DentistAppointmentsManagement() {
               appointment={selectedAppointment}
               onClose={handleBackToWeek}
               onStatusChange={handleStatusChange}
+              onOptimisticUpdate={(appointmentId, updates) => {
+                // Update local state immediately for instant UI feedback
+                setSelectedAppointment((prev: any) => prev?.id === appointmentId ? { ...prev, ...updates } : prev);
+              }}
             />
           )}
         </SheetContent>

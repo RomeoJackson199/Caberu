@@ -348,6 +348,9 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
                   handleCompletionSuccess();
                   setShowDetailsSheet(false);
                 }}
+                onOptimisticUpdate={(appointmentId, updates) => {
+                  setNextAppointment((prev: any) => prev?.id === appointmentId ? { ...prev, ...updates } : prev);
+                }}
               />
             )}
           </SheetContent>
