@@ -29,6 +29,8 @@ export interface PatientAppointment {
   amount_paid_cents?: number | null;
   payment_status?: string;
   completed_at?: string;
+  ai_summary?: string;
+  booking_source?: string;
 }
 
 export interface PatientFlags {
