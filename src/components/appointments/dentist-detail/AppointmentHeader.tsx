@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, parseISO, differenceInYears } from "date-fns";
-import { Calendar, Clock, User, MapPin, Stethoscope, Pencil, Check, X, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Stethoscope, Pencil, Check, X, Loader2, MessageSquare, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,9 @@ interface AppointmentHeaderProps {
     appointment_date: string;
     duration_minutes?: number;
     reason?: string;
+    notes?: string; // Patient symptoms
+    ai_summary?: string;
+    booking_source?: string;
     patient?: {
       first_name?: string;
       last_name?: string;
@@ -221,6 +224,30 @@ export function AppointmentHeader({
           </div>
         )}
       </div>
+
+      {/* Patient Symptoms Section */}
+      {(appointment.notes || appointment.ai_summary) && (
+        <div className="p-3 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            {appointment.booking_source === 'ai_chat' ? (
+              <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            ) : (
+              <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            )}
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              Patient Symptoms
+            </span>
+            {appointment.booking_source === 'ai_chat' && (
+              <Badge variant="outline" className="text-xs bg-blue-100 dark:bg-blue-900 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
+                AI Assisted
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap">
+            {appointment.notes || appointment.ai_summary}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
