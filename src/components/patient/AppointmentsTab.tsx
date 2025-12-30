@@ -504,9 +504,19 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user }) => {
           setDetailsDialogOpen(open);
           if (!open) {
             setSelectedAppointmentId(null);
-            // Refresh in case status changed
-            fetchAppointments();
           }
+        }}
+        onCancel={(appointmentId) => {
+          // Optimistically update the cancelled appointment
+          setAppointments(prev => 
+            prev.map(apt => 
+              apt.id === appointmentId 
+                ? { ...apt, status: 'cancelled' } 
+                : apt
+            )
+          );
+          setDetailsDialogOpen(false);
+          setSelectedAppointmentId(null);
         }}
       />
     </div>
