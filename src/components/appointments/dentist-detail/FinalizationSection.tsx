@@ -39,6 +39,10 @@ interface FinalizationSectionProps {
   currentStatus?: string;
   onFinalized: () => void;
   onStatusChange?: (status: string) => void;
+  /** Callback for optimistic UI updates */
+  onOptimisticUpdate?: (updates: Record<string, unknown>) => void;
+  /** Callback to close the parent modal/sheet */
+  onClose?: () => void;
 }
 
 /**
@@ -61,6 +65,8 @@ export function FinalizationSection({
   currentStatus,
   onFinalized,
   onStatusChange,
+  onOptimisticUpdate,
+  onClose,
 }: FinalizationSectionProps) {
   const { toast } = useToast();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -148,13 +154,28 @@ export function FinalizationSection({
       notes: notes?.slice(0, 50) 
     });
     
+    const completedAtTime = new Date().toISOString();
+    
+    // Optimistic update - update UI immediately
+    onOptimisticUpdate?.({
+      status: 'completed',
+      completed_at: completedAtTime,
+      consultation_notes: notes,
+      amount_paid_cents: totalCents,
+      payment_status: totalCents > 0 ? 'pending' : 'paid',
+    });
+    
+    // Close modal immediately for snappy UX
+    setShowConfirmDialog(false);
+    onClose?.();
+    
     try {
       // 1. Update appointment with completed_at timestamp
       const { error: updateError } = await supabase
         .from('appointments')
         .update({
           status: 'completed',
-          completed_at: new Date().toISOString(),
+          completed_at: completedAtTime,
           consultation_notes: notes,
           amount_paid_cents: totalCents,
           payment_status: totalCents > 0 ? 'pending' : 'paid',
@@ -268,9 +289,18 @@ export function FinalizationSection({
   const handleApprovalAction = async (action: 'confirm' | 'cancel') => {
     setApprovalLoading(action);
     
+    const newStatus = action === 'confirm' ? 'confirmed' : 'cancelled';
+    
+    // Optimistic update - update UI immediately
+    onOptimisticUpdate?.({ 
+      status: newStatus,
+      updated_at: new Date().toISOString() 
+    });
+    
+    // Close modal for snappy UX
+    onClose?.();
+    
     try {
-      const newStatus = action === 'confirm' ? 'confirmed' : 'cancelled';
-      
       // Use business_id filter to satisfy RLS policy
       const { error } = await supabase
         .from('appointments')

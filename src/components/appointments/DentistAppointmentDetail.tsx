@@ -5,8 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Calendar, Eye, XCircle, Sparkles, ExternalLink } from "lucide-react";
+import { Calendar, Eye, XCircle, Sparkles, ExternalLink, Loader2 } from "lucide-react";
 import { RescheduleAssistant } from "@/components/RescheduleAssistant";
+import { toast } from "sonner";
 
 import {
   deriveDentistState,
@@ -33,6 +34,8 @@ interface DentistAppointmentDetailProps {
   appointment: any;
   onClose: () => void;
   onStatusChange?: (appointmentId: string, status: string) => void;
+  /** Callback for optimistic UI updates - updates parent state immediately */
+  onOptimisticUpdate?: (appointmentId: string, updates: Record<string, unknown>) => void;
   /** When true, skips SheetHeader/SheetTitle (use when not inside a Sheet) */
   standalone?: boolean;
 }
@@ -53,6 +56,7 @@ export function DentistAppointmentDetail({
   appointment,
   onClose,
   onStatusChange,
+  onOptimisticUpdate,
   standalone = false,
 }: DentistAppointmentDetailProps) {
   const navigate = useNavigate();
@@ -62,6 +66,7 @@ export function DentistAppointmentDetail({
   const [notes, setNotes] = useState(appointment?.consultation_notes || "");
   const [charges, setCharges] = useState<ChargeItem[]>([]);
   const [chargesKey, setChargesKey] = useState(0); // Force reload trigger
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Sync notes when appointment changes or component mounts with fresh data
   useEffect(() => {
@@ -171,9 +176,46 @@ export function DentistAppointmentDetail({
     onStatusChange?.(appointment.id, status);
   }, [queryClient, onStatusChange, appointment?.id]);
 
-  const handleCancel = useCallback(() => {
-    onStatusChange?.(appointment.id, 'cancelled');
-  }, [onStatusChange, appointment?.id]);
+  const handleCancel = useCallback(async () => {
+    if (!appointment?.id) return;
+    
+    setIsCancelling(true);
+    
+    // Optimistic update - update UI immediately
+    onOptimisticUpdate?.(appointment.id, { 
+      status: 'cancelled',
+      updated_at: new Date().toISOString() 
+    });
+    
+    // Close immediately for snappy UX
+    onClose();
+    toast.success('Appointment cancelled');
+    
+    try {
+      // Release the slot
+      await supabase.rpc('release_appointment_slots', { p_appointment_id: appointment.id });
+      
+      const { error } = await supabase
+        .from('appointments')
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', appointment.id);
+
+      if (error) throw error;
+      
+      // Refresh queries
+      await queryClient.invalidateQueries({ queryKey: ['appointments'], exact: false });
+      onStatusChange?.(appointment.id, 'cancelled');
+    } catch (error) {
+      console.error('Failed to cancel appointment:', error);
+      toast.error('Failed to cancel appointment', { description: 'Please try again' });
+      // Note: We don't rollback here since onClose was called. User will see fresh data on reopen.
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [appointment?.id, onClose, onOptimisticUpdate, onStatusChange, queryClient]);
 
   const handleViewProfile = useCallback(() => {
     navigate(`/dentist/patients?patient=${appointment?.patient_id}`);
@@ -273,6 +315,8 @@ export function DentistAppointmentDetail({
             currentStatus={appointment.status}
             onFinalized={handleFinalized}
             onStatusChange={handleAppointmentStatusChange}
+            onOptimisticUpdate={(updates) => onOptimisticUpdate?.(appointment.id, updates)}
+            onClose={onClose}
           />
         </div>
       </ScrollArea>
@@ -298,8 +342,13 @@ export function DentistAppointmentDetail({
                   variant="ghost" 
                   className="text-destructive hover:text-destructive hover:bg-destructive/10" 
                   onClick={handleCancel}
+                  disabled={isCancelling}
                 >
-                  <XCircle className="h-4 w-4 mr-1" />
+                  {isCancelling ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <XCircle className="h-4 w-4 mr-1" />
+                  )}
                   Cancel
                 </Button>
               )}
