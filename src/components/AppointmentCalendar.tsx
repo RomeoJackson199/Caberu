@@ -70,6 +70,8 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
   const handleDateTimeSelect = (date: Date, time: string) => {
     setSelectedDate(date);
     setSelectedTime(time);
+    // Auto-advance to details step after selecting time
+    setStep('details');
   };
 
   const handleBookAppointment = async () => {
