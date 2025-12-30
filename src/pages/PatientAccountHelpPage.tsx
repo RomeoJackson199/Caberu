@@ -2,6 +2,7 @@ import React from "react";
 import { HelpCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export default function PatientAccountHelpPage() {
@@ -14,8 +15,8 @@ export default function PatientAccountHelpPage() {
           <CardTitle>{t.pnav.account.help}</CardTitle>
         </CardHeader>
         <CardContent className="space-x-2">
-          <Button asChild><a href="/support">{t.contactSupport}</a></Button>
-          <Button variant="outline" asChild><a href="/privacy">{t.privacyPolicyLink}</a></Button>
+          <Button asChild><Link to="/support">{t.contactSupport}</Link></Button>
+          <Button variant="outline" asChild><Link to="/privacy">{t.privacyPolicyLink}</Link></Button>
         </CardContent>
       </Card>
     </div>
