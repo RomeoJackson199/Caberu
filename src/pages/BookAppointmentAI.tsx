@@ -77,7 +77,7 @@ export default function BookAppointment() {
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [bookingStep, setBookingStep] = useState<'dentist' | 'service' | 'datetime' | 'confirm'>('dentist');
+  const [bookingStep, setBookingStep] = useState<'dentist' | 'symptoms' | 'service' | 'datetime' | 'confirm'>('dentist');
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [loadingServices, setLoadingServices] = useState(false);
@@ -336,9 +336,11 @@ export default function BookAppointment() {
     setSelectedDentist(dentist);
     setSelectedService(null);
     
-    // Fetch services first
-    await fetchServices();
-    setBookingStep('service');
+    // Go to symptoms step first
+    setBookingStep('symptoms');
+    
+    // Pre-fetch services and availability in background
+    fetchServices();
     
     if (businessId) {
       // Fetch dentist's available days
@@ -355,6 +357,10 @@ export default function BookAppointment() {
         setDentistAvailableDays([1, 2, 3, 4, 5]);
       }
     }
+  };
+  
+  const handleSymptomsNext = () => {
+    setBookingStep('service');
   };
 
   const handleServiceSelect = (service: Service | null) => {
@@ -728,8 +734,8 @@ export default function BookAppointment() {
         </div>
       )}
 
-      {/* Step 2: Select Service */}
-      {bookingStep === 'service' && selectedDentist && (
+      {/* Step 2: Symptoms Input */}
+      {bookingStep === 'symptoms' && selectedDentist && (
         <div className="max-w-4xl mx-auto p-4 py-8">
           <Button
             variant="ghost"
@@ -739,6 +745,72 @@ export default function BookAppointment() {
           >
             <ArrowLeft className="h-4 w-4" />
             Back to dentists
+          </Button>
+
+          <Card>
+            <CardContent className="p-6 space-y-6">
+              {/* Selected Dentist */}
+              <div className="flex items-center gap-4 pb-4 border-b">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedDentist.profiles?.profile_picture_url || undefined} className="object-cover" />
+                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                    {getDentistInitials(selectedDentist)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-xl font-bold">
+                    Dr. {selectedDentist.first_name} {selectedDentist.last_name}
+                  </h2>
+                  <p className="text-muted-foreground capitalize">
+                    {selectedDentist.specialization || 'General Dentistry'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Symptoms Input */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5 text-orange-600" />
+                  <h3 className="font-semibold text-lg">Describe Your Symptoms</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Please describe your symptoms or reason for visit. This helps your dentist prepare for your appointment.
+                </p>
+                <Textarea
+                  value={symptomSummary}
+                  onChange={(e) => setSymptomSummary(e.target.value)}
+                  placeholder="E.g., I have a toothache on my upper left molar, sensitivity to cold drinks, mild swelling..."
+                  className="min-h-[120px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {symptomSummary.length}/500 characters
+                </p>
+              </div>
+
+              {/* Continue Button */}
+              <Button 
+                onClick={handleSymptomsNext} 
+                className="w-full"
+                size="lg"
+              >
+                Continue to Select Service
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Step 3: Select Service */}
+      {bookingStep === 'service' && selectedDentist && (
+        <div className="max-w-4xl mx-auto p-4 py-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setBookingStep('symptoms')}
+            className="gap-2 mb-6"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to symptoms
           </Button>
 
           <Card>
@@ -895,7 +967,7 @@ export default function BookAppointment() {
         </div>
       )}
 
-      {/* Step 3: Select Date & Time */}
+      {/* Step 4: Select Date & Time */}
       {bookingStep === 'datetime' && selectedDentist && (
         <div className="max-w-4xl mx-auto p-4 py-8">
           <Button
@@ -1007,7 +1079,7 @@ export default function BookAppointment() {
         </div>
       )}
 
-      {/* Step 3: Confirm Booking */}
+      {/* Step 5: Confirm Booking */}
       {bookingStep === 'confirm' && selectedDentist && selectedDate && selectedTime && (
         <div className="max-w-2xl mx-auto p-4 py-8">
           <Button
