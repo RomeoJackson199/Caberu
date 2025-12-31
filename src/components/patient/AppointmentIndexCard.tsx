@@ -2,8 +2,8 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, Building2, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { formatClinicTime } from "@/lib/timezone";
 import { 
   deriveAppointmentState, 
   getStateConfig, 
@@ -51,7 +51,6 @@ export function AppointmentIndexCard({ appointment, onClick }: AppointmentIndexC
     completed_at: appointment.completed_at ?? null,
   };
   const appointmentState = deriveAppointmentState(stateInput);
-  const appointmentDate = new Date(appointment.appointment_date);
   
   return (
     <Card 
@@ -70,11 +69,11 @@ export function AppointmentIndexCard({ appointment, onClick }: AppointmentIndexC
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-foreground font-medium">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{format(appointmentDate, 'EEE, MMM d, yyyy')}</span>
+                <span>{formatClinicTime(appointment.appointment_date, 'EEE, MMM d, yyyy')}</span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span>{format(appointmentDate, 'h:mm a')}</span>
+                <span>{formatClinicTime(appointment.appointment_date, 'h:mm a')}</span>
               </div>
             </div>
             
