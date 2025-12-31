@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { format, differenceInYears } from 'date-fns';
+import { differenceInYears } from 'date-fns';
+import { formatClinicTime } from '@/lib/timezone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -80,7 +81,7 @@ export function PatientProfileView({
       if (!searchTerm.trim()) return true;
       const searchLower = searchTerm.toLowerCase();
       return (apt.reason || '').toLowerCase().includes(searchLower) ||
-             format(new Date(apt.appointment_date), 'MMM d, yyyy').toLowerCase().includes(searchLower);
+             formatClinicTime(apt.appointment_date, 'MMM d, yyyy').toLowerCase().includes(searchLower);
     });
 
     const groups = {
@@ -609,7 +610,7 @@ function AppointmentRow({
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              {format(new Date(appointment.appointment_date), 'MMM d, yyyy')} at {format(new Date(appointment.appointment_date), 'h:mm a')}
+              {formatClinicTime(appointment.appointment_date, 'MMM d, yyyy')} at {formatClinicTime(appointment.appointment_date, 'h:mm a')}
               {appointment.duration_minutes && ` · ${appointment.duration_minutes} min`}
             </p>
           </div>
