@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,6 +19,7 @@ import {
 } from 'lucide-react';
 import { DentistPatient, PatientAppointment, getAppointmentGroup } from './types';
 import { cn } from '@/lib/utils';
+import { formatClinicTime } from '@/lib/timezone';
 
 interface ConsultationModeEntryProps {
   open: boolean;
@@ -85,14 +85,14 @@ export function ConsultationModeEntry({
               </p>
             </div>
           ) : (
-            <div className="h-full overflow-y-auto pr-2">
+            <ScrollArea className="h-full max-h-[300px]">
               <RadioGroup 
                 value={selectedAppointmentId || ''} 
                 onValueChange={(value) => {
                   console.log('[ConsultationModeEntry] Selected appointment:', value);
                   setSelectedAppointmentId(value);
                 }}
-                className="space-y-2"
+                className="space-y-2 pr-3"
               >
                 {eligibleAppointments.map(apt => {
                   const group = getAppointmentGroupLocal(apt);
@@ -123,7 +123,7 @@ export function ConsultationModeEntry({
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(new Date(apt.appointment_date), 'MMM d, yyyy')} at {format(new Date(apt.appointment_date), 'h:mm a')}
+                            {formatClinicTime(apt.appointment_date, 'MMM d, yyyy')} at {formatClinicTime(apt.appointment_date, 'h:mm a')}
                           </p>
                         </div>
                       </Label>
@@ -131,7 +131,7 @@ export function ConsultationModeEntry({
                   );
                 })}
               </RadioGroup>
-            </div>
+            </ScrollArea>
           )}
         </div>
 
@@ -176,7 +176,7 @@ export function ConsultationModeBanner({
             Consultation Mode: {patient.first_name} {patient.last_name}
           </p>
           <p className="text-xs opacity-80">
-            Appointment: {format(new Date(appointment.appointment_date), 'MMM d, yyyy')} - {appointment.reason || 'General'}
+            Appointment: {formatClinicTime(appointment.appointment_date, 'MMM d, yyyy')} - {appointment.reason || 'General'}
           </p>
         </div>
       </div>
