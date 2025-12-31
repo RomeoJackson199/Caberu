@@ -32,6 +32,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { logger } from '@/lib/logger';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
+import { formatClinicTime } from "@/lib/timezone";
 
 const Messages = lazy(() => import("@/pages/Messages"));
 
@@ -518,11 +519,8 @@ export const PatientDashboard = ({
       const location = appointmentDetails.location || appointmentDetails.location_description || appointmentDetails.clinic_location || appointmentDetails.address || appointmentDetails.office || appointmentDetails.meeting_location || null;
       return {
         id: nextAppointment.id,
-        date: new Date(nextAppointment.appointment_date).toLocaleDateString(),
-        time: new Date(nextAppointment.appointment_date).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
+        date: formatClinicTime(nextAppointment.appointment_date, 'PPP'),
+        time: formatClinicTime(nextAppointment.appointment_date, 'HH:mm'),
         dentistName: undefined,
         status: nextAppointment.status,
         isVirtual,

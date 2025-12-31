@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
+import { formatClinicTime } from "@/lib/timezone";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Calendar,
@@ -348,8 +349,8 @@ export function PatientAppointmentDetail({
   const getStatusSentence = (): string => {
     if (!appointment) return '';
     
-    const dateStr = format(parseISO(appointment.appointment_date), 'MMMM d');
-    const timeStr = format(parseISO(appointment.appointment_date), 'h:mm a');
+    const dateStr = formatClinicTime(appointment.appointment_date, 'MMMM d');
+    const timeStr = formatClinicTime(appointment.appointment_date, 'h:mm a');
     
     switch (appointmentState) {
       case 'UPCOMING':
@@ -436,10 +437,10 @@ export function PatientAppointmentDetail({
                 {/* Date & time */}
                 <div>
                   <h2 className="text-xl font-semibold text-foreground">
-                    {format(parseISO(appointment.appointment_date), 'EEEE, MMMM d, yyyy')}
+                    {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d, yyyy')}
                   </h2>
                   <p className="text-base text-muted-foreground mt-0.5">
-                    {format(parseISO(appointment.appointment_date), 'h:mm a')}
+                    {formatClinicTime(appointment.appointment_date, 'h:mm a')}
                     {appointment.duration_minutes && ` · ${appointment.duration_minutes} min`}
                   </p>
                 </div>
