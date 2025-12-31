@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { saveProfileData, loadProfileData, ProfileData } from "@/lib/profileUtils";
 import { useToast } from "@/hooks/use-toast";
-import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
+import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 import { PatientSecuritySettings } from "@/components/patient/PatientSecuritySettings";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
@@ -144,7 +144,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
         <CardTitle>Profile & Personal Info</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ProfilePictureUpload
+        <ProfilePictureUploadWithCrop
           currentUrl={profile.profile_picture_url}
           userId={userId}
           onUploadComplete={(url) => setProfile({ ...profile, profile_picture_url: url })}

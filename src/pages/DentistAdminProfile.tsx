@@ -10,7 +10,7 @@ import { Loader2, Save, User, Globe } from "lucide-react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
-import { ProfilePictureUpload } from "@/components/ProfilePictureUpload";
+import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { LanguageSettings } from "@/components/LanguageSettings";
@@ -173,7 +173,7 @@ export default function DentistAdminProfile() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <ProfilePictureUpload
+            <ProfilePictureUploadWithCrop
               currentUrl={formData.profile_picture_url}
               userId={dentistId || ''}
               onUploadComplete={(url) => handleInputChange('profile_picture_url', url)}
