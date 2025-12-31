@@ -60,9 +60,9 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
   const hasAIChat = !templateLoading && hasFeature('aiChat');
   const unpaid = totalDueCents > 0;
 
-  // Track previous order to prevent jitter
+  // Track previous order to prevent jitter - initialize with sorted order on mount
   const [stableOrder, setStableOrder] = useState<string[]>([]);
-  const initialRenderRef = useRef(true);
+  const hasInitialized = useRef(false);
 
   const formatVisitContext = (value?: string | null) => {
     if (!value) return null;
@@ -209,8 +209,8 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
       )
     });
 
-    // 3. Prescriptions card - promote if has active prescriptions
-    const prescriptionPriority = activePrescriptions > 0 ? 60 : 20;
+    // 3. Prescriptions card - promote if has active prescriptions, demote to bottom if 0
+    const prescriptionPriority = activePrescriptions > 0 ? 60 : 5;
     result.push({
       id: 'prescriptions',
       priority: prescriptionPriority,
@@ -342,29 +342,23 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
     return result;
   }, [nextAppointment, activePrescriptions, totalDueCents, unpaid, hasAIChat, currencySettings, t, onNavigateTo, onOpenAssistant, onBookAppointment]);
 
-  // Calculate new order - only update if priorities change significantly
+  // Calculate order based on priorities - update when data changes
   useEffect(() => {
     const newOrder = [...cards]
       .sort((a, b) => b.priority - a.priority)
       .map(c => c.id);
 
-    // On first render, set the order
-    if (initialRenderRef.current) {
+    // On first data load, set initial order
+    if (!hasInitialized.current && cards.length > 0) {
       setStableOrder(newOrder);
-      initialRenderRef.current = false;
+      hasInitialized.current = true;
       return;
     }
 
-    // Only update order if priorities have meaningfully changed
-    // This prevents jitter from minor re-renders
-    const currentPriorities = stableOrder.map(id => cards.find(c => c.id === id)?.priority || 0);
-    const newPriorities = newOrder.map(id => cards.find(c => c.id === id)?.priority || 0);
-
-    const hasSignificantChange = currentPriorities.some((p, i) => 
-      Math.abs(p - newPriorities[i]) > 20
-    );
-
-    if (hasSignificantChange || stableOrder.length === 0) {
+    // Check if the actual order should change (not just minor priority tweaks)
+    const orderChanged = newOrder.some((id, i) => stableOrder[i] !== id);
+    
+    if (orderChanged) {
       setStableOrder(newOrder);
     }
   }, [cards, stableOrder]);

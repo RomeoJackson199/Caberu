@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { DollarSign, CheckCircle, ChevronDown, ChevronUp, Loader2, ExternalLink, Calendar, Building2 } from "lucide-react";
+import { DollarSign, CheckCircle, Loader2, ExternalLink, Calendar, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -30,15 +29,17 @@ interface PaymentWithDetails {
 export interface PaymentsTabProps {
   patientId: string;
   totalDueCents?: number;
-  /** Filter to show only 'unpaid' or 'paid' payments - if not set, shows both */
+  /** Filter to show only 'unpaid' or 'paid' payments - if not set, shows both with tabs */
   filter?: 'unpaid' | 'paid';
 }
+
+type PaymentViewTab = 'outstanding' | 'history';
 
 export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId, filter }) => {
   const [payments, setPayments] = useState<PaymentWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
-  const [paidExpanded, setPaidExpanded] = useState(filter === 'paid');
+  const [activeTab, setActiveTab] = useState<PaymentViewTab>('outstanding');
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [scrollToSection, setScrollToSection] = useState<'payment' | 'documents' | null>(null);
@@ -156,10 +157,45 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId, filter }) =
     );
   }
 
+  // When no filter provided, show tab UI
+  const showTabs = !filter;
+
   return (
-    <div className="px-4 md:px-6 py-6 space-y-8">
-      {/* Outstanding Payments - Primary Section (hidden when filter is 'paid') */}
-      {filter !== 'paid' && (
+    <div className="px-4 md:px-6 py-6 space-y-6">
+      {/* Tab Toggle - Only show when no filter is applied */}
+      {showTabs && (
+        <div className="flex gap-2 border-b pb-3">
+          <Button
+            variant={activeTab === 'outstanding' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('outstanding')}
+            className="rounded-full"
+          >
+            <DollarSign className="h-4 w-4 mr-1.5" />
+            Outstanding
+            {outstandingPayments.length > 0 && (
+              <Badge variant="destructive" className="ml-1.5 h-5 px-1.5 text-xs">
+                {outstandingPayments.length}
+              </Badge>
+            )}
+          </Button>
+          <Button
+            variant={activeTab === 'history' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('history')}
+            className="rounded-full"
+          >
+            <CheckCircle className="h-4 w-4 mr-1.5" />
+            Payment History
+            <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+              {paidPayments.length}
+            </Badge>
+          </Button>
+        </div>
+      )}
+
+      {/* Outstanding Payments Section */}
+      {(filter === 'unpaid' || (!filter && activeTab === 'outstanding')) && (
         <section>
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-orange-500" />
@@ -253,132 +289,68 @@ export const PaymentsTab: React.FC<PaymentsTabProps> = ({ patientId, filter }) =
         </section>
       )}
 
-      {/* Paid Payments - Section (always visible when filter is 'paid') */}
-      {(filter === 'paid' || filter !== 'unpaid') && (
+      {/* Payment History Section */}
+      {(filter === 'paid' || (!filter && activeTab === 'history')) && (
         <section>
-          {filter === 'paid' ? (
-            // When viewing paid-only, show directly without collapsible
-            <>
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                Payment History ({paidPayments.length})
-              </h2>
-              
-              {paidPayments.length === 0 ? (
-                <div className="text-center py-12">
-                  <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">No payment history yet</p>
-                  <p className="text-sm text-muted-foreground/70 mt-1">
-                    Your completed payments will appear here
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {paidPayments.map((payment) => (
-                    <Card 
-                      key={payment.id} 
-                      className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => openAppointmentDetail(payment.appointment_id)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex-1">
-                            <p className="text-xl font-semibold text-foreground mb-1">
-                              {formatAmount(payment.amount)}
-                            </p>
-                            {payment.paid_at && (
-                              <p className="text-sm text-green-600 dark:text-green-400 mb-1">
-                                Paid {format(new Date(payment.paid_at), 'MMM d, yyyy')}
-                              </p>
-                            )}
-                            {payment.appointment && (
-                              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
-                                <Calendar className="h-3.5 w-3.5" />
-                                Appointment: {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
-                              </p>
-                            )}
-                            {payment.business && (
-                              <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                                <Building2 className="h-3.5 w-3.5 text-primary" />
-                                {payment.business.name}
-                              </p>
-                            )}
-                          </div>
-                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 self-start sm:self-center">
-                            Paid
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </>
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            Payment History ({paidPayments.length})
+          </h2>
+          
+          {paidPayments.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+              <p className="text-muted-foreground">No payment history yet</p>
+              <p className="text-sm text-muted-foreground/70 mt-1">
+                Your completed payments will appear here
+              </p>
+            </div>
           ) : (
-            // When viewing all or unpaid, show collapsible
-            <Collapsible open={paidExpanded} onOpenChange={setPaidExpanded}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    Paid ({paidPayments.length})
-                  </h2>
-                  {paidExpanded ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-
-              <CollapsibleContent className="mt-4">
-                <div className="space-y-3">
-                  {paidPayments.map((payment) => (
-                    <Card 
-                      key={payment.id} 
-                      className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => openAppointmentDetail(payment.appointment_id)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="flex-1">
-                            <p className="text-xl font-semibold text-foreground mb-1">
-                              {formatAmount(payment.amount)}
-                            </p>
-                            {payment.paid_at && (
-                              <p className="text-sm text-green-600 dark:text-green-400 mb-1">
-                                Paid {format(new Date(payment.paid_at), 'MMM d, yyyy')}
-                              </p>
-                            )}
-                            {payment.appointment && (
-                              <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
-                                <Calendar className="h-3.5 w-3.5" />
-                                Appointment: {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
-                              </p>
-                            )}
-                            {payment.business && (
-                              <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                                <Building2 className="h-3.5 w-3.5 text-primary" />
-                                {payment.business.name}
-                              </p>
-                            )}
-                          </div>
-                          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 self-start sm:self-center">
-                            Paid
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            <div className="space-y-3">
+              {paidPayments.map((payment) => (
+                <Card 
+                  key={payment.id} 
+                  className="bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => openAppointmentDetail(payment.appointment_id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="text-xl font-semibold text-foreground mb-1">
+                          {formatAmount(payment.amount)}
+                        </p>
+                        {payment.paid_at && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mb-1">
+                            Paid {format(new Date(payment.paid_at), 'MMM d, yyyy')}
+                          </p>
+                        )}
+                        {payment.appointment && (
+                          <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            Appointment: {format(new Date(payment.appointment.appointment_date), 'MMM d, yyyy')}
+                          </p>
+                        )}
+                        {payment.business && (
+                          <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-primary" />
+                            {payment.business.name}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 self-start sm:self-center">
+                        Paid
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </section>
       )}
 
-      {/* Empty State - Only show when no filter and no payments at all */}
-      {!filter && payments.length === 0 && (
+      {/* Empty State - Only show when no payments at all */}
+      {payments.length === 0 && (
         <div className="text-center py-12">
           <DollarSign className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground">No payments yet</p>
