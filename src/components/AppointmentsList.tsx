@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/hooks/useLanguage";
 import { ReviewDialog } from "@/components/ReviewDialog";
 import { logger } from '@/lib/logger';
+import { formatClinicTime } from "@/lib/timezone";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -194,20 +195,13 @@ export const AppointmentsList = ({ user }: AppointmentsListProps) => {
   };
 
   const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const locale = language === 'en' ? 'en-US' : language === 'fr' ? 'fr-FR' : 'nl-NL';
+    // Use clinic timezone formatting for correct display
+    const dateFormat = language === 'en' ? 'EEEE, MMMM d, yyyy' : 'EEEE d MMMM yyyy';
+    const timeFormat = language === 'en' ? 'h:mm a' : 'HH:mm';
+    
     return {
-      date: date.toLocaleDateString(locale, {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
-      time: date.toLocaleTimeString(locale, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: language === 'en'
-      })
+      date: formatClinicTime(dateString, dateFormat),
+      time: formatClinicTime(dateString, timeFormat)
     };
   };
 
