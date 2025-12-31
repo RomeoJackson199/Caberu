@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,10 +59,6 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
   const { hasFeature, loading: templateLoading } = useBusinessTemplate();
   const hasAIChat = !templateLoading && hasFeature('aiChat');
   const unpaid = totalDueCents > 0;
-
-  // Track previous order to prevent jitter - initialize with sorted order on mount
-  const [stableOrder, setStableOrder] = useState<string[]>([]);
-  const hasInitialized = useRef(false);
 
   const formatVisitContext = (value?: string | null) => {
     if (!value) return null;
@@ -342,34 +338,10 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
     return result;
   }, [nextAppointment, activePrescriptions, totalDueCents, unpaid, hasAIChat, currencySettings, t, onNavigateTo, onOpenAssistant, onBookAppointment]);
 
-  // Calculate order based on priorities - update when data changes
-  useEffect(() => {
-    const newOrder = [...cards]
-      .sort((a, b) => b.priority - a.priority)
-      .map(c => c.id);
-
-    // On first data load, set initial order
-    if (!hasInitialized.current && cards.length > 0) {
-      setStableOrder(newOrder);
-      hasInitialized.current = true;
-      return;
-    }
-
-    // Check if the actual order should change (not just minor priority tweaks)
-    const orderChanged = newOrder.some((id, i) => stableOrder[i] !== id);
-    
-    if (orderChanged) {
-      setStableOrder(newOrder);
-    }
-  }, [cards, stableOrder]);
-
-  // Use stable order for rendering
+  // Always sort cards by priority - higher priority appears first
   const orderedCards = useMemo(() => {
-    if (stableOrder.length === 0) {
-      return cards.sort((a, b) => b.priority - a.priority);
-    }
-    return stableOrder.map(id => cards.find(c => c.id === id)).filter(Boolean) as CardData[];
-  }, [stableOrder, cards]);
+    return [...cards].sort((a, b) => b.priority - a.priority);
+  }, [cards]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

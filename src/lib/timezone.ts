@@ -29,13 +29,18 @@ export function utcToClinicTime(date: Date | string): Date {
 
 /**
  * Format date in clinic timezone
+ * 
+ * IMPORTANT: The appointment_date from the database is stored as a UTC timestamp.
+ * We need to convert it to Brussels local time for display, then format it.
  */
 export function formatClinicTime(date: Date | string, formatStr: string = 'PPpp'): string {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
   if (!isValid(dateObj)) {
     return 'Invalid date';
   }
-  return format(toZonedTime(dateObj, CLINIC_TIMEZONE), formatStr, { timeZone: CLINIC_TIMEZONE });
+  // Convert UTC to Brussels timezone for display, then format
+  const brusselsTime = toZonedTime(dateObj, CLINIC_TIMEZONE);
+  return format(brusselsTime, formatStr);
 }
 
 /**
