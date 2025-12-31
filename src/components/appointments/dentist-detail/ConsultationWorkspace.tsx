@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AppointmentImagingTab } from "@/components/imaging";
 import { cn } from "@/lib/utils";
+import { ExpandableNotesEditor } from "./ExpandableNotesEditor";
 
 interface ChargeItem {
   id: string;
@@ -149,18 +149,15 @@ export function ConsultationWorkspace({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isEditable ? (
-            <Textarea
-              placeholder="Enter clinical notes, findings, and treatment details..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[120px] resize-none"
-            />
-          ) : (
-            <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 p-3 rounded-md min-h-[80px]">
-              {notes || "No clinical notes recorded."}
-            </div>
-          )}
+          <ExpandableNotesEditor
+            value={notes}
+            onChange={setNotes}
+            isEditable={isEditable}
+            isSaving={notesSaving}
+            isSaved={notesSaved}
+            placeholder="Enter clinical notes, findings, and treatment details..."
+            minHeight="120px"
+          />
         </CardContent>
       </Card>
 
