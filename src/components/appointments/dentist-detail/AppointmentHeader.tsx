@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { format, parseISO, differenceInYears } from "date-fns";
+import { differenceInYears } from "date-fns";
+import { formatClinicTime } from "@/lib/timezone";
 import { Calendar, Clock, User, MapPin, Stethoscope, Pencil, Check, X, Loader2, MessageSquare, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -65,7 +66,7 @@ export function AppointmentHeader({
     ? differenceInYears(new Date(), new Date(appointment.patient.date_of_birth))
     : null;
   
-  const appointmentDate = parseISO(appointment.appointment_date);
+  // Removed - using formatClinicTime directly
 
   const handleEditReason = () => {
     setEditedReason(appointment.reason || '');
@@ -195,10 +196,10 @@ export function AppointmentHeader({
       {/* Date & Time */}
       <div>
         <h3 className="text-base font-medium text-foreground">
-          {format(appointmentDate, 'EEEE, MMMM d, yyyy')}
+          {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d, yyyy')}
         </h3>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {format(appointmentDate, 'h:mm a')}
+          {formatClinicTime(appointment.appointment_date, 'h:mm a')}
           {appointment.duration_minutes && ` (${appointment.duration_minutes} min)`}
         </p>
       </div>
