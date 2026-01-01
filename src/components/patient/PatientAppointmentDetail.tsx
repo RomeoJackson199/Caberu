@@ -317,14 +317,20 @@ export function PatientAppointmentDetail({
   const handleDownloadImagingFile = async (file: ImagingFileData, fileIndex: number) => {
     setDownloadingDoc(file.id);
     try {
-      // Get signed URLs for all imaging files to enable gallery navigation
+      // Get signed URLs for all imaging files using edge function (handles auth properly)
       const allSignedUrls = await Promise.all(
         imagingFiles.map(async (f) => {
-          const { data } = await supabase.storage
-            .from('dental-imaging')
-            .createSignedUrl(f.storage_path, 3600);
+          const { data, error } = await supabase.functions.invoke('get-imaging-url', {
+            body: { fileId: f.id }
+          });
+          
+          if (error || !data?.url) {
+            console.error('Failed to get signed URL for file:', f.id, error);
+            return null;
+          }
+          
           return {
-            url: data?.signedUrl || '',
+            url: data.url,
             filename: f.filename,
             mimeType: f.mime_type,
           };
@@ -332,12 +338,14 @@ export function PatientAppointmentDetail({
       );
 
       // Filter out any failed URLs
-      const validImages = allSignedUrls.filter(img => img.url);
+      const validImages = allSignedUrls.filter((img): img is { url: string; filename: string; mimeType: string } => img !== null && !!img.url);
       
       if (validImages.length > 0) {
         setViewerImages(validImages);
         setViewerIndex(fileIndex);
         setViewerOpen(true);
+      } else {
+        console.error('No valid signed URLs obtained');
       }
     } catch (error) {
       console.error('Error opening imaging file:', error);
