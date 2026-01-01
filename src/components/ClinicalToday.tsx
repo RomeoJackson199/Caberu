@@ -259,9 +259,9 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 									key={appointment.id}
 									className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border bg-card hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
 									onClick={() => {
-										// Navigate directly to patient profile (consultation mode) for confirmed appointments
+										// Navigate directly to consultation mode for confirmed appointments
 										if (appointment.status === 'confirmed' && appointment.patient_id) {
-											navigate(`/dentist/patients?patient=${appointment.patient_id}`);
+											navigate(`/dentist/patients?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`);
 										} else {
 											onOpenAppointmentsTab?.();
 										}

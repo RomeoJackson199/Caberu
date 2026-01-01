@@ -19,11 +19,11 @@ interface DentistPatientManagementProps {
 export function DentistPatientManagement({ dentistId }: DentistPatientManagementProps) {
   const { businessId } = useBusinessContext();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<DentistPatient | null>(null);
-  
+
   // Mode states
   const [showConsultationEntry, setShowConsultationEntry] = useState(false);
   const [consultationContext, setConsultationContext] = useState<ConsultationContext | null>(null);
@@ -45,7 +45,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
   } = usePatientData({ dentistId, businessId: businessId || undefined });
 
   // Get current patient's appointments from cache
-  const patientAppointmentsCache = selectedPatient 
+  const patientAppointmentsCache = selectedPatient
     ? getPatientAppointmentsCache(selectedPatient.id)
     : { appointments: [], hasMore: false, loading: false };
   const patientAppointments = patientAppointmentsCache.appointments;
@@ -58,16 +58,46 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     fetchPatients();
   }, [fetchPatients]);
 
-  // Handle URL params for patient selection
+  // Handle URL params for patient selection and auto-consultation mode
   useEffect(() => {
     const patientId = searchParams.get('patientId');
+    const appointmentId = searchParams.get('appointmentId');
+
     if (patientId && patients.length > 0) {
       const patient = patients.find(p => p.id === patientId);
       if (patient) {
         setSelectedPatient(patient);
+
+        // If appointmentId is also provided, auto-enter consultation mode after appointments are loaded
+        if (appointmentId) {
+          // Clear URL params to avoid re-triggering
+          setSearchParams({});
+
+          // Set a flag to enter consultation mode once appointments are loaded
+          const checkAndEnterConsultation = () => {
+            const cached = getPatientAppointmentsCache(patientId);
+            if (cached.appointments.length > 0) {
+              const appointment = cached.appointments.find((a: PatientAppointment) => a.id === appointmentId);
+              if (appointment) {
+                // Enter consultation mode directly
+                setConsultationContext({
+                  appointmentId,
+                  patientId: patient.id,
+                  dentistId,
+                  startedAt: new Date().toISOString()
+                });
+              }
+            }
+          };
+
+          // Try immediately, then retry after a short delay for appointments to load
+          checkAndEnterConsultation();
+          const timer = setTimeout(checkAndEnterConsultation, 500);
+          return () => clearTimeout(timer);
+        }
       }
     }
-  }, [searchParams, patients]);
+  }, [searchParams, patients, setSearchParams, dentistId, getPatientAppointmentsCache]);
 
   // Fetch appointments when patient changes
   useEffect(() => {
@@ -94,7 +124,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
 
   const handleEnterConsultation = (appointmentId: string) => {
     if (!selectedPatient) return;
-    
+
     const appointment = patientAppointments.find((a: PatientAppointment) => a.id === appointmentId);
     if (!appointment) return;
 
@@ -135,34 +165,34 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
   // Optimistic status change handler - updates UI immediately
   const handleOptimisticStatusChange = useCallback((appointmentId: string, newStatus: string) => {
     if (!selectedPatient) return;
-    
+
     // Cast status to valid type
     const validStatus = newStatus as PatientAppointment['status'];
-    
+
     // Find the current appointment to store original state
     const currentAppointment = patientAppointments.find((a: PatientAppointment) => a.id === appointmentId);
     if (!currentAppointment) return;
-    
+
     // Optimistically update the UI
-    updateAppointmentOptimistically(selectedPatient.id, appointmentId, { 
+    updateAppointmentOptimistically(selectedPatient.id, appointmentId, {
       status: validStatus,
       ...(validStatus === 'completed' ? { completed_at: new Date().toISOString() } : {})
     });
-    
+
     // Update the selected appointment in view if it's the same one
     if (selectedAppointmentForView?.id === appointmentId) {
-      setSelectedAppointmentForView(prev => prev ? { 
-        ...prev, 
+      setSelectedAppointmentForView(prev => prev ? {
+        ...prev,
         status: validStatus,
         ...(validStatus === 'completed' ? { completed_at: new Date().toISOString() } : {})
       } : null);
     }
-    
+
     // Close the detail sheet for cancelled/completed
     if (validStatus === 'cancelled' || validStatus === 'completed') {
       setShowAppointmentDetail(false);
     }
-    
+
     // Background sync - refetch to ensure consistency
     setTimeout(() => {
       handleAppointmentUpdated();
@@ -231,7 +261,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             onTreatmentPlanClick={handleTreatmentPlanClick}
             onBack={() => setSelectedPatient(null)}
             onAppointmentUpdated={handleAppointmentUpdated}
-            updateAppointmentOptimistically={(appointmentId: string, updates: Partial<PatientAppointment>) => 
+            updateAppointmentOptimistically={(appointmentId: string, updates: Partial<PatientAppointment>) =>
               updateAppointmentOptimistically(selectedPatient.id, appointmentId, updates)
             }
             rollbackAppointmentUpdate={(appointmentId: string, original: PatientAppointment) =>
@@ -262,8 +292,8 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
       )}
 
       {/* Appointment Detail Sheet (read-only view from profile) */}
-      <Sheet 
-        open={showAppointmentDetail} 
+      <Sheet
+        open={showAppointmentDetail}
         onOpenChange={setShowAppointmentDetail}
       >
         <SheetContent side="right" className="w-full sm:max-w-lg p-0 overflow-hidden">

@@ -145,9 +145,9 @@ export default function DentistAppointmentsManagement() {
   };
 
   const handleAppointmentClick = (appointment: any) => {
-    // Navigate directly to patient profile (consultation mode) for confirmed appointments
+    // Navigate directly to consultation mode for confirmed appointments
     if (appointment.status === 'confirmed' && appointment.patient_id) {
-      navigate(`/dentist/patients?patient=${appointment.patient_id}`);
+      navigate(`/dentist/patients?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`);
       return;
     }
     // For other statuses, show the appointment details sidebar
@@ -512,8 +512,8 @@ export default function DentistAppointmentsManagement() {
               ) : (
                 <div className="space-y-2">
                   {completedAppointments.map((apt: any) => (
-                    <Card 
-                      key={apt.id} 
+                    <Card
+                      key={apt.id}
                       className={cn(
                         "cursor-pointer hover:border-emerald-300 transition-colors",
                         selectedAppointment?.id === apt.id && "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20"
