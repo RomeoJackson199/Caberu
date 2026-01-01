@@ -619,6 +619,13 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           setPlanDetailOpen(open);
           if (!open) setSelectedPlanId(null);
         }}
+        onAppointmentClick={(appointmentId) => {
+          // Close plan sheet and open appointment detail
+          setPlanDetailOpen(false);
+          setSelectedPlanId(null);
+          setSelectedAppointmentId(appointmentId);
+          setDetailOpen(true);
+        }}
       />
     </div>
   );
