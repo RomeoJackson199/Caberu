@@ -12,6 +12,7 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
+import { TreatmentPlanDetailSheet } from "@/components/treatment-plans/TreatmentPlanDetailSheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,7 +29,8 @@ import {
   Pill,
   Receipt,
   ClipboardCheck,
-  User
+  User,
+  ClipboardList
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { format, parseISO } from "date-fns";
@@ -40,7 +42,7 @@ interface PatientRecordsTimelineProps {
 
 interface TimelineRecord {
   id: string;
-  type: 'appointment' | 'document' | 'prescription' | 'invoice';
+  type: 'appointment' | 'document' | 'prescription' | 'invoice' | 'treatment_plan';
   title: string;
   description: string;
   date: string;
@@ -49,6 +51,11 @@ interface TimelineRecord {
   dentistName?: string;
   linkedAppointmentId?: string;
   documentPath?: string;
+  // Treatment plan specific
+  planStatus?: string;
+  planTotal?: number;
+  planCurrency?: string;
+  planItemsPreview?: string;
 }
 
 export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProps) {
@@ -57,7 +64,9 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
   const [filterType, setFilterType] = useState<string>("all");
   const [filterClinic, setFilterClinic] = useState<string>("all");
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [planDetailOpen, setPlanDetailOpen] = useState(false);
 
   // Fetch completed appointments with business info
   const { data: appointments, isLoading: loadingAppointments } = useQuery({
@@ -120,6 +129,42 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
     }
   });
 
+  // Fetch treatment plans (non-draft only - RLS enforces this)
+  const { data: treatmentPlans, isLoading: loadingPlans } = useQuery({
+    queryKey: ["patient-treatment-plans", patientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("treatment_plans")
+        .select(`
+          id,
+          title,
+          status,
+          version,
+          currency,
+          total_estimated_cents,
+          notes,
+          created_at,
+          updated_at,
+          business_id,
+          businesses!inner (
+            id,
+            name
+          ),
+          dentists!inner (
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq("patient_id", patientId)
+        .neq("status", "draft")
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   // Combine and sort all records into a unified timeline
   const timelineRecords = useMemo(() => {
     const records: TimelineRecord[] = [];
@@ -176,11 +221,39 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
       });
     }
 
+    // Add treatment plans (non-draft)
+    if (treatmentPlans) {
+      treatmentPlans.forEach((plan: any) => {
+        const dentistName = plan.dentists 
+          ? `Dr. ${plan.dentists.first_name || ''} ${plan.dentists.last_name || ''}`.trim()
+          : undefined;
+
+        const statusLabel = plan.status === 'proposed' ? 'Proposed' 
+          : plan.status === 'completed' ? 'Completed' 
+          : plan.status === 'superseded' ? 'Superseded' 
+          : plan.status;
+
+        records.push({
+          id: plan.id,
+          type: 'treatment_plan',
+          title: plan.title || 'Treatment Plan',
+          description: `${statusLabel} treatment plan${plan.version > 1 ? ` (v${plan.version})` : ''}`,
+          date: plan.updated_at || plan.created_at,
+          clinicName: plan.businesses?.name || 'Clinic',
+          clinicId: plan.business_id,
+          dentistName,
+          planStatus: plan.status,
+          planTotal: plan.total_estimated_cents,
+          planCurrency: plan.currency || 'USD',
+        });
+      });
+    }
+
     // Sort by date (newest first)
     return records.sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-  }, [appointments, documents]);
+  }, [appointments, documents, treatmentPlans]);
 
   // Get unique clinics for filter
   const clinics = useMemo(() => {
@@ -221,10 +294,14 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
     });
   }, [timelineRecords, filterType, filterClinic, searchQuery]);
 
-  const isLoading = loadingAppointments || loadingDocuments;
+  const isLoading = loadingAppointments || loadingDocuments || loadingPlans;
 
   const handleRecordClick = (record: TimelineRecord) => {
-    if (record.linkedAppointmentId) {
+    if (record.type === 'treatment_plan') {
+      // Open treatment plan detail sheet
+      setSelectedPlanId(record.id);
+      setPlanDetailOpen(true);
+    } else if (record.linkedAppointmentId) {
       // Open appointment detail dialog
       setSelectedAppointmentId(record.linkedAppointmentId);
       setDetailOpen(true);
@@ -242,13 +319,15 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
         return Pill;
       case 'invoice':
         return Receipt;
+      case 'treatment_plan':
+        return ClipboardList;
       case 'document':
       default:
         return FileText;
     }
   };
 
-  const getRecordBadge = (type: TimelineRecord['type']) => {
+  const getRecordBadge = (type: TimelineRecord['type'], record?: TimelineRecord) => {
     const configs: Record<string, { label: string; className: string }> = {
       appointment: { 
         label: 'Completed visit', 
@@ -266,7 +345,24 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
         label: 'Document', 
         className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200' 
       },
+      treatment_plan: { 
+        label: 'Treatment Plan', 
+        className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200' 
+      },
     };
+    
+    // For treatment plans, show the actual status
+    if (type === 'treatment_plan' && record?.planStatus) {
+      const statusLabel = record.planStatus === 'proposed' ? 'Proposed Plan'
+        : record.planStatus === 'completed' ? 'Completed Plan'
+        : record.planStatus === 'superseded' ? 'Superseded'
+        : 'Treatment Plan';
+      return {
+        label: statusLabel,
+        className: configs.treatment_plan.className,
+      };
+    }
+    
     return configs[type] || configs.document;
   };
 
@@ -316,6 +412,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
               <SelectContent>
                 <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="appointment">Visits</SelectItem>
+                <SelectItem value="treatment_plan">Treatment Plans</SelectItem>
                 <SelectItem value="document">Documents</SelectItem>
                 <SelectItem value="prescription">Prescriptions</SelectItem>
                 <SelectItem value="invoice">Invoices</SelectItem>
@@ -369,8 +466,8 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           <div className="space-y-3">
             {filteredRecords.map((record, index) => {
               const Icon = getRecordIcon(record.type);
-              const badge = getRecordBadge(record.type);
-              const isClickable = record.linkedAppointmentId || record.documentPath;
+              const badge = getRecordBadge(record.type, record);
+              const isClickable = record.linkedAppointmentId || record.documentPath || record.type === 'treatment_plan';
 
               return (
                 <Card 
@@ -466,6 +563,16 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
         onOpenChange={(open) => {
           setDetailOpen(open);
           if (!open) setSelectedAppointmentId(null);
+        }}
+      />
+
+      {/* Treatment Plan Detail Sheet */}
+      <TreatmentPlanDetailSheet
+        planId={selectedPlanId}
+        open={planDetailOpen}
+        onOpenChange={(open) => {
+          setPlanDetailOpen(open);
+          if (!open) setSelectedPlanId(null);
         }}
       />
     </div>
