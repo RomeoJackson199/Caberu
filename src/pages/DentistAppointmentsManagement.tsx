@@ -24,6 +24,15 @@ import { AnimatedStatCard } from "@/components/ui/page-enhancements";
 import { ErrorState, EmptyState } from "@/components/stability";
 import { motion, AnimatePresence } from "framer-motion";
 
+/**
+ * Render the dentist appointments management interface with calendar views, statistics, and a detail sheet.
+ *
+ * Displays week/day/completed views, date navigation, a stats dashboard, and an appointment detail panel.
+ * Fetches appointments and related data for the current dentist/business, shows loading and error states,
+ * and lets users view, navigate to, and update appointment status (with Google Calendar sync attempts).
+ *
+ * @returns A React element for managing and viewing a dentist's appointments and related controls.
+ */
 export default function DentistAppointmentsManagement() {
   const { businessId } = useBusinessContext();
   const {

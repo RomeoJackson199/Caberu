@@ -28,6 +28,19 @@ interface SuccessDialogProps {
   type?: "appointment" | "payment" | "treatment" | "general";
 }
 
+/**
+ * Render a configurable success modal with an animated icon, optional confetti, a title, optional description and details, and configurable action buttons.
+ *
+ * @param open - Whether the dialog is visible
+ * @param onClose - Callback invoked when the dialog is closed
+ * @param title - Primary heading displayed in the dialog
+ * @param description - Optional secondary text shown below the title
+ * @param details - Optional array of label/value pairs rendered as a summary block
+ * @param actions - Optional array of action buttons; each action may include `label`, `onClick`, optional `variant`, and optional `icon`
+ * @param showConfetti - When true, show celebratory sparkles around the icon
+ * @param type - Visual theme for the dialog; one of `"appointment"`, `"payment"`, `"treatment"`, or `"general"`
+ * @returns A dialog element that displays the success UI configured by the provided props
+ */
 export function SuccessDialog({
   open,
   onClose,
@@ -152,6 +165,19 @@ interface AppointmentSuccessProps {
   onBookAnother?: () => void;
 }
 
+/**
+ * Render a pre-configured success dialog for a booked appointment.
+ *
+ * @param open - Whether the dialog is visible
+ * @param onClose - Callback invoked to close the dialog
+ * @param appointmentDate - The appointment date to display
+ * @param appointmentTime - The appointment time to display
+ * @param dentistName - Optional dentist name to include in the details
+ * @param serviceName - Optional service name to include in the details
+ * @param onViewAppointments - Optional callback triggered by the "View Appointments" action
+ * @param onBookAnother - Optional callback for booking another appointment (not rendered unless used by callers)
+ * @returns A JSX element rendering the appointment success dialog
+ */
 export function AppointmentSuccessDialog({
   open,
   onClose,
@@ -196,6 +222,18 @@ interface PaymentSuccessProps {
   onPrint?: () => void;
 }
 
+/**
+ * Render a payment success dialog configured with payment details and optional actions.
+ *
+ * @param open - Whether the dialog is visible
+ * @param onClose - Callback invoked when the dialog is dismissed
+ * @param amount - Display string for the paid amount
+ * @param paymentMethod - Optional display string for the payment method
+ * @param transactionId - Optional transaction identifier to display
+ * @param onViewReceipt - Optional callback to view the receipt
+ * @param onPrint - Optional callback to print the receipt
+ * @returns A JSX element that renders the configured payment success dialog
+ */
 export function PaymentSuccessDialog({
   open,
   onClose,
@@ -241,6 +279,18 @@ interface TreatmentCompleteProps {
   onScheduleFollowUp?: () => void;
 }
 
+/**
+ * Renders a pre-configured success dialog announcing a completed treatment.
+ *
+ * @param open - Whether the dialog is visible.
+ * @param onClose - Callback invoked when the dialog is closed or the default "Done" action is clicked.
+ * @param patientName - The patient's display name shown in the dialog details.
+ * @param treatmentName - The treatment name shown in the dialog details.
+ * @param nextSteps - Optional description text shown under the title; when omitted a default confirmation message is used.
+ * @param onViewPatient - Optional callback for the "View Patient" action button.
+ * @param onScheduleFollowUp - Optional callback for the "Schedule Follow-up" action button.
+ * @returns A SuccessDialog element configured for treatment completion.
+ */
 export function TreatmentCompleteDialog({
   open,
   onClose,
