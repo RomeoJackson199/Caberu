@@ -42,7 +42,6 @@ import {
   Plus,
   Trash2,
   Save,
-  Send,
   Loader2,
   BookTemplate,
   AlertTriangle,
@@ -246,24 +245,15 @@ export function TreatmentPlanEditorSheet({
     [templates, items.length, title]
   );
 
-  const needsVersioning = planStatus === "proposed" || planStatus === "completed";
+  const needsVersioning = planStatus === "completed";
 
-  const handleSaveDraft = useCallback(async () => {
-    if (needsVersioning) {
-      setPendingAction("save");
-      setShowVersionWarning(true);
-      return;
-    }
-    await performSave("draft");
-  }, [needsVersioning]);
-
-  const handlePropose = useCallback(async () => {
+  const handleSave = useCallback(async () => {
     if (items.length === 0) {
       toast.error("Please add at least one treatment item");
       return;
     }
     if (needsVersioning) {
-      setPendingAction("propose");
+      setPendingAction("save");
       setShowVersionWarning(true);
       return;
     }
@@ -382,11 +372,7 @@ export function TreatmentPlanEditorSheet({
 
   const handleVersionConfirm = async () => {
     setShowVersionWarning(false);
-    if (pendingAction === "propose") {
-      await performSave("proposed", true);
-    } else {
-      await performSave("draft", true);
-    }
+    await performSave("proposed", true);
     setPendingAction(null);
   };
 
@@ -609,42 +595,26 @@ export function TreatmentPlanEditorSheet({
 
               {/* Actions Footer */}
               {isEditable && (
-                <div className="p-4 border-t bg-background sticky bottom-0 space-y-2">
+                <div className="p-4 border-t bg-background sticky bottom-0 flex gap-2">
                   <Button
-                    onClick={handlePropose}
-                    disabled={saving || items.length === 0}
-                    className="w-full"
-                    size="lg"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    className="flex-1"
                   >
-                    {saving && pendingAction === "propose" ? (
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving || items.length === 0}
+                    className="flex-1"
+                  >
+                    {saving ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
-                      <Send className="h-4 w-4 mr-2" />
+                      <Save className="h-4 w-4 mr-2" />
                     )}
-                    Propose to Patient
+                    Save Plan
                   </Button>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleSaveDraft}
-                      disabled={saving}
-                      className="flex-1"
-                    >
-                      {saving && pendingAction === "save" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Save Draft
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => onOpenChange(false)}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
                 </div>
               )}
             </>
