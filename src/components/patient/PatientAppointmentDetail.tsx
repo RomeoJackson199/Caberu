@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { formatClinicTime } from "@/lib/timezone";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ImagingViewer } from "@/components/imaging/ImagingViewer";
 import {
   Calendar,
   Clock,
@@ -133,6 +134,11 @@ export function PatientAppointmentDetail({
   const [addendumNotes, setAddendumNotes] = useState<AddendumNote[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null);
+  
+  // Imaging viewer state
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerImages, setViewerImages] = useState<Array<{ url: string; filename: string; mimeType: string }>>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   const paymentRef = useRef<HTMLDivElement>(null);
   const documentsRef = useRef<HTMLDivElement>(null);
@@ -308,64 +314,33 @@ export function PatientAppointmentDetail({
     }
   };
 
-  const handleDownloadImagingFile = async (file: ImagingFileData) => {
+  const handleDownloadImagingFile = async (file: ImagingFileData, fileIndex: number) => {
     setDownloadingDoc(file.id);
     try {
-      const { data, error } = await supabase.storage
-        .from('dental-imaging')
-        .createSignedUrl(file.storage_path, 3600);
+      // Get signed URLs for all imaging files to enable gallery navigation
+      const allSignedUrls = await Promise.all(
+        imagingFiles.map(async (f) => {
+          const { data } = await supabase.storage
+            .from('dental-imaging')
+            .createSignedUrl(f.storage_path, 3600);
+          return {
+            url: data?.signedUrl || '',
+            filename: f.filename,
+            mimeType: f.mime_type,
+          };
+        })
+      );
 
-      if (error) {
-        console.error('Error creating signed URL:', error);
-        return;
-      }
-
-      if (data?.signedUrl) {
-        // Use fetch + blob for mobile-friendly download/preview
-        try {
-          const response = await fetch(data.signedUrl);
-          const blob = await response.blob();
-          const blobUrl = URL.createObjectURL(blob);
-          
-          // For images, open in new tab for preview
-          if (file.mime_type.startsWith('image/')) {
-            const newWindow = window.open('', '_blank');
-            if (newWindow) {
-              newWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <title>${file.filename}</title>
-                  <meta name="viewport" content="width=device-width, initial-scale=1">
-                  <style>
-                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
-                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
-                  </style>
-                </head>
-                <body>
-                  <img src="${blobUrl}" alt="${file.filename}" />
-                </body>
-                </html>
-              `);
-              newWindow.document.close();
-            }
-          } else {
-            // For PDFs and other files, trigger download
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = file.filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(blobUrl);
-          }
-        } catch (fetchError) {
-          // Fallback to direct URL open
-          window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
-        }
+      // Filter out any failed URLs
+      const validImages = allSignedUrls.filter(img => img.url);
+      
+      if (validImages.length > 0) {
+        setViewerImages(validImages);
+        setViewerIndex(fileIndex);
+        setViewerOpen(true);
       }
     } catch (error) {
-      console.error('Error downloading imaging file:', error);
+      console.error('Error opening imaging file:', error);
     } finally {
       setDownloadingDoc(null);
     }
@@ -760,10 +735,10 @@ export function PatientAppointmentDetail({
                           ) : (
                             <div className="space-y-2">
                               {/* Imaging files */}
-                              {imagingFiles.map((file) => (
+                              {imagingFiles.map((file, index) => (
                                 <button 
                                   key={file.id}
-                                  onClick={() => handleDownloadImagingFile(file)}
+                                  onClick={() => handleDownloadImagingFile(file, index)}
                                   disabled={downloadingDoc === file.id}
                                   className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
                                 >
@@ -957,19 +932,47 @@ export function PatientAppointmentDetail({
   // Mobile: Sheet from bottom, Desktop: Dialog
   if (isMobile) {
     return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh] p-0 rounded-t-2xl">
-          {content}
-        </SheetContent>
-      </Sheet>
+      <>
+        <Sheet open={open} onOpenChange={onOpenChange}>
+          <SheetContent side="bottom" className="h-[90vh] p-0 rounded-t-2xl">
+            {content}
+          </SheetContent>
+        </Sheet>
+        
+        {/* Imaging Viewer Modal */}
+        <ImagingViewer
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          imageUrl={viewerImages[viewerIndex]?.url || ''}
+          filename={viewerImages[viewerIndex]?.filename}
+          mimeType={viewerImages[viewerIndex]?.mimeType}
+          images={viewerImages}
+          currentIndex={viewerIndex}
+          onNavigate={setViewerIndex}
+        />
+      </>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-hidden">
-        {content}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-hidden">
+          {content}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Imaging Viewer Modal */}
+      <ImagingViewer
+        isOpen={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        imageUrl={viewerImages[viewerIndex]?.url || ''}
+        filename={viewerImages[viewerIndex]?.filename}
+        mimeType={viewerImages[viewerIndex]?.mimeType}
+        images={viewerImages}
+        currentIndex={viewerIndex}
+        onNavigate={setViewerIndex}
+      />
+    </>
   );
 }
