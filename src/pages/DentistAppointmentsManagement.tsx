@@ -145,12 +145,21 @@ export default function DentistAppointmentsManagement() {
   };
 
   const handleAppointmentClick = (appointment: any) => {
-    // Navigate directly to consultation mode for confirmed appointments
-    if (appointment.status === 'confirmed' && appointment.patient_id) {
+    // Determine if appointment is actionable (can enter consultation)
+    const isPending = appointment.status === 'pending';
+    const isCompleted = appointment.status === 'completed';
+    const isCancelled = appointment.status === 'cancelled';
+    
+    // Actionable = not pending, not completed, not cancelled
+    const isActionable = !isPending && !isCompleted && !isCancelled && appointment.patient_id;
+    
+    if (isActionable) {
+      // Navigate directly to consultation mode
       navigate(`/dentist/patients?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`);
       return;
     }
-    // For other statuses, show the appointment details sidebar
+    
+    // For non-actionable (pending/completed/cancelled), show the appointment details sidebar
     setSelectedAppointment(appointment);
     setViewMode("day");
     setCurrentDate(parseISO(appointment.appointment_date));
