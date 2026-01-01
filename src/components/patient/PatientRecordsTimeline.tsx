@@ -84,6 +84,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           duration_minutes,
           dentist_id,
           business_id,
+          treatment_plan_id,
           businesses!inner (
             id,
             name
@@ -169,9 +170,15 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
   const timelineRecords = useMemo(() => {
     const records: TimelineRecord[] = [];
 
-    // Add completed appointments
+    // Add completed appointments - ONLY those not linked to a treatment plan
+    // Appointments linked to plans appear as part of the plan card, not separately
     if (appointments) {
       appointments.forEach((apt: any) => {
+        // Skip appointments that belong to a treatment plan
+        if (apt.treatment_plan_id) {
+          return;
+        }
+        
         const dentistName = apt.dentists 
           ? `Dr. ${apt.dentists.first_name || ''} ${apt.dentists.last_name || ''}`.trim()
           : undefined;

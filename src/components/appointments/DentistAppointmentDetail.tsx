@@ -24,6 +24,8 @@ import {
   FinalizedAddendum,
 } from "./dentist-detail";
 
+import { TreatmentPlanEditor, AppointmentLinker } from "@/components/treatment-plans";
+
 interface ChargeItem {
   id: string;
   description: string;
@@ -284,6 +286,16 @@ export function DentistAppointmentDetail({
                   onSaved={handleDraftSaved}
                 />
               </div>
+
+              {/* Treatment Plan Section */}
+              <TreatmentPlanEditor
+                appointmentId={appointment.id}
+                patientId={appointment.patient_id}
+                dentistId={appointment.dentist_id}
+                businessId={appointment.business_id}
+                existingPlanId={appointment.treatment_plan_id}
+                isEditable={true}
+              />
             </>
           )}
 
