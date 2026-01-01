@@ -59,31 +59,36 @@ export function TreatmentPlanDetailSheet({
     queryFn: async () => {
       if (!planId) return null;
       
-      // Fetch plan with business and dentist info
+      // Fetch plan first (no inner joins to avoid RLS issues)
       const { data: planData, error: planError } = await supabase
         .from("treatment_plans")
-        .select(`
-          *,
-          businesses!inner (id, name),
-          dentists!inner (id, first_name, last_name)
-        `)
+        .select("*")
         .eq("id", planId)
         .single();
 
       if (planError) throw planError;
+      if (!planData) return null;
 
-      // Fetch items
-      const { data: items, error: itemsError } = await supabase
-        .from("treatment_plan_items")
-        .select("*")
-        .eq("treatment_plan_id", planId)
-        .order("sort_order", { ascending: true });
-
-      if (itemsError) throw itemsError;
+      // Fetch items, business, and dentist info separately
+      const [itemsResult, businessResult, dentistResult] = await Promise.all([
+        supabase
+          .from("treatment_plan_items")
+          .select("*")
+          .eq("treatment_plan_id", planId)
+          .order("sort_order", { ascending: true }),
+        planData.business_id 
+          ? supabase.from("businesses").select("id, name").eq("id", planData.business_id).single()
+          : { data: null, error: null },
+        planData.dentist_id
+          ? supabase.from("dentists").select("id, first_name, last_name").eq("id", planData.dentist_id).single()
+          : { data: null, error: null }
+      ]);
 
       return {
         ...planData,
-        items: items || [],
+        items: itemsResult.data || [],
+        businesses: businessResult.data || null,
+        dentists: dentistResult.data || null,
       } as TreatmentPlan;
     },
     enabled: !!planId && open,
