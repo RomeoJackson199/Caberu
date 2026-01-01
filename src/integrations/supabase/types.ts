@@ -3111,10 +3111,73 @@ export type Database = {
         }
         Relationships: []
       }
+      treatment_plan_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          line_total_cents: number | null
+          name: string
+          procedure_code: string | null
+          qty: number
+          sort_order: number
+          tooth: string | null
+          treatment_plan_id: string
+          unit_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_total_cents?: number | null
+          name: string
+          procedure_code?: string | null
+          qty?: number
+          sort_order?: number
+          tooth?: string | null
+          treatment_plan_id: string
+          unit_price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          line_total_cents?: number | null
+          name?: string
+          procedure_code?: string | null
+          qty?: number
+          sort_order?: number
+          tooth?: string | null
+          treatment_plan_id?: string
+          unit_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plan_items_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "secure_treatment_plans_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plan_items_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       treatment_plans: {
         Row: {
           business_id: string
           created_at: string
+          created_by_dentist_id: string | null
+          created_from_appointment_id: string | null
+          currency: string
           dentist_id: string
           description: string | null
           description_encrypted: string | null
@@ -3133,12 +3196,17 @@ export type Database = {
           status: string
           target_completion_date: string | null
           title: string
+          total_estimated_cents: number | null
           treatment_goals: string[] | null
           updated_at: string
+          version: number
         }
         Insert: {
           business_id: string
           created_at?: string
+          created_by_dentist_id?: string | null
+          created_from_appointment_id?: string | null
+          currency?: string
           dentist_id: string
           description?: string | null
           description_encrypted?: string | null
@@ -3157,12 +3225,17 @@ export type Database = {
           status?: string
           target_completion_date?: string | null
           title: string
+          total_estimated_cents?: number | null
           treatment_goals?: string[] | null
           updated_at?: string
+          version?: number
         }
         Update: {
           business_id?: string
           created_at?: string
+          created_by_dentist_id?: string | null
+          created_from_appointment_id?: string | null
+          currency?: string
           dentist_id?: string
           description?: string | null
           description_encrypted?: string | null
@@ -3181,8 +3254,10 @@ export type Database = {
           status?: string
           target_completion_date?: string | null
           title?: string
+          total_estimated_cents?: number | null
           treatment_goals?: string[] | null
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -3197,6 +3272,27 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_by_dentist_id_fkey"
+            columns: ["created_by_dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_by_dentist_id_fkey"
+            columns: ["created_by_dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
+            columns: ["created_from_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
           {
@@ -3218,6 +3314,68 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatment_templates: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by_dentist_id: string | null
+          default_items: Json
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by_dentist_id?: string | null
+          default_items?: Json
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by_dentist_id?: string | null
+          default_items?: Json
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_templates_created_by_dentist_id_fkey"
+            columns: ["created_by_dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_templates_created_by_dentist_id_fkey"
+            columns: ["created_by_dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
         ]
