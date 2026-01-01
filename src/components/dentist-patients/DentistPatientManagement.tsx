@@ -268,6 +268,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             onLoadMoreAppointments={handleLoadMoreAppointments}
             onStartConsultation={handleStartConsultation}
             onAppointmentClick={handleAppointmentClick}
+            onEnterConsultation={handleEnterConsultation}
             onTreatmentPlanClick={handleTreatmentPlanClick}
             onBack={() => setSelectedPatient(null)}
             onAppointmentUpdated={handleAppointmentUpdated}
