@@ -27,7 +27,8 @@ import {
   Pencil,
   Check,
   X,
-  Loader2
+  Loader2,
+  ClipboardList
 } from 'lucide-react';
 import { DentistPatient, PatientFlags, PatientAppointment, getAppointmentGroup } from './types';
 import { MedicalAlertsBanner } from '@/components/patient/MedicalAlertsBanner';
@@ -616,6 +617,12 @@ function AppointmentRow({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {appointment.treatment_plan_id && (
+            <Badge variant="secondary" className="text-xs gap-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200">
+              <ClipboardList className="h-3 w-3" />
+              Plan
+            </Badge>
+          )}
           <Badge variant="outline" className={cn("text-xs capitalize", getStatusBadge(appointment.status))}>
             {appointment.status}
           </Badge>

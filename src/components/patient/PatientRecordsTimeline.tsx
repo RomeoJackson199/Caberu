@@ -389,16 +389,23 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
       },
     };
     
-    // For treatment plans, show the actual status
+    // For treatment plans, show status-based styling but simpler labels
     if (type === 'treatment_plan' && record?.planStatus) {
-      const statusLabel = record.planStatus === 'proposed' ? 'Proposed Plan'
-        : record.planStatus === 'completed' ? 'Completed Plan'
-        : record.planStatus === 'superseded' ? 'Superseded'
-        : 'Treatment Plan';
-      return {
-        label: statusLabel,
-        className: configs.treatment_plan.className,
+      const statusConfigs: Record<string, { label: string; className: string }> = {
+        proposed: { 
+          label: 'Treatment Plan', 
+          className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200' 
+        },
+        completed: { 
+          label: 'Completed', 
+          className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200' 
+        },
+        superseded: { 
+          label: 'Superseded', 
+          className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200' 
+        },
       };
+      return statusConfigs[record.planStatus] || configs.treatment_plan;
     }
     
     return configs[type] || configs.document;
