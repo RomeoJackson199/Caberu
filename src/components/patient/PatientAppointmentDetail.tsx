@@ -321,7 +321,48 @@ export function PatientAppointmentDetail({
       }
 
       if (data?.signedUrl) {
-        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+        // Use fetch + blob for mobile-friendly download/preview
+        try {
+          const response = await fetch(data.signedUrl);
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          
+          // For images, open in new tab for preview
+          if (file.mime_type.startsWith('image/')) {
+            const newWindow = window.open('', '_blank');
+            if (newWindow) {
+              newWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <title>${file.filename}</title>
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <style>
+                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
+                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                  </style>
+                </head>
+                <body>
+                  <img src="${blobUrl}" alt="${file.filename}" />
+                </body>
+                </html>
+              `);
+              newWindow.document.close();
+            }
+          } else {
+            // For PDFs and other files, trigger download
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = file.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+          }
+        } catch (fetchError) {
+          // Fallback to direct URL open
+          window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+        }
       }
     } catch (error) {
       console.error('Error downloading imaging file:', error);
