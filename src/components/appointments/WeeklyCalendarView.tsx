@@ -15,6 +15,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 interface WeeklyCalendarViewProps {
   dentistId: string;
+  businessId?: string;
   currentDate: Date;
   onAppointmentClick: (appointment: any) => void;
   selectedAppointmentId?: string;
@@ -64,6 +65,7 @@ const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 export function WeeklyCalendarView({
   dentistId,
+  businessId,
   currentDate,
   onAppointmentClick,
   selectedAppointmentId,
@@ -96,16 +98,23 @@ export function WeeklyCalendarView({
 
   // Fetch appointments
   const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ["appointments-calendar", dentistId, format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["appointments-calendar", dentistId, businessId, format(weekStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const weekEnd = addDays(weekStart, 7);
-      const { data, error } = await supabase
+      let query = supabase
         .from("appointments")
         .select("*")
         .eq("dentist_id", dentistId)
         .gte("appointment_date", weekStart.toISOString())
         .lt("appointment_date", weekEnd.toISOString())
         .order("appointment_date", { ascending: true });
+
+      // Filter by business if provided
+      if (businessId) {
+        query = query.eq("business_id", businessId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
