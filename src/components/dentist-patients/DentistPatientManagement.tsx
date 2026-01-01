@@ -7,6 +7,7 @@ import { PatientProfileView } from './PatientProfileView';
 import { ConsultationModeEntry } from './ConsultationModeEntry';
 import { ConsultationModeView } from './ConsultationModeView';
 import { DentistAppointmentDetail } from '@/components/appointments/DentistAppointmentDetail';
+import { TreatmentPlanDetailSheet } from '@/components/treatment-plans/TreatmentPlanDetailSheet';
 import { usePatientData } from './hooks/usePatientData';
 import { DentistPatient, PatientAppointment, ConsultationContext } from './types';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,8 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
   const [consultationContext, setConsultationContext] = useState<ConsultationContext | null>(null);
   const [selectedAppointmentForView, setSelectedAppointmentForView] = useState<PatientAppointment | null>(null);
   const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [showPlanDetail, setShowPlanDetail] = useState(false);
 
   // Data hook
   const {
@@ -115,6 +118,11 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
   const handleAppointmentClick = (appointment: PatientAppointment) => {
     setSelectedAppointmentForView(appointment);
     setShowAppointmentDetail(true);
+  };
+
+  const handleTreatmentPlanClick = (planId: string) => {
+    setSelectedPlanId(planId);
+    setShowPlanDetail(true);
   };
 
   const handleAppointmentUpdated = useCallback(() => {
@@ -220,6 +228,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             onLoadMoreAppointments={handleLoadMoreAppointments}
             onStartConsultation={handleStartConsultation}
             onAppointmentClick={handleAppointmentClick}
+            onTreatmentPlanClick={handleTreatmentPlanClick}
             onBack={() => setSelectedPatient(null)}
             onAppointmentUpdated={handleAppointmentUpdated}
             updateAppointmentOptimistically={(appointmentId: string, updates: Partial<PatientAppointment>) => 
@@ -278,6 +287,16 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Treatment Plan Detail Sheet */}
+      <TreatmentPlanDetailSheet
+        planId={selectedPlanId}
+        open={showPlanDetail}
+        onOpenChange={(open) => {
+          setShowPlanDetail(open);
+          if (!open) setSelectedPlanId(null);
+        }}
+      />
     </div>
   );
 }

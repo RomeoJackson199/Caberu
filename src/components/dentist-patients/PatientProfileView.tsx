@@ -46,6 +46,7 @@ interface PatientProfileViewProps {
   onLoadMoreAppointments?: () => void;
   onStartConsultation: (appointmentId?: string) => void;
   onAppointmentClick: (appointment: PatientAppointment) => void;
+  onTreatmentPlanClick?: (planId: string) => void;
   onBack?: () => void;
   onAppointmentUpdated?: () => void;
   updateAppointmentOptimistically?: (appointmentId: string, updates: Partial<PatientAppointment>) => void;
@@ -62,6 +63,7 @@ export function PatientProfileView({
   onLoadMoreAppointments,
   onStartConsultation,
   onAppointmentClick,
+  onTreatmentPlanClick,
   onBack,
   onAppointmentUpdated,
   updateAppointmentOptimistically,
@@ -293,6 +295,7 @@ export function PatientProfileView({
                             getStatusIcon={getStatusIcon}
                             getStatusBadge={getStatusBadge}
                             onReasonUpdated={onAppointmentUpdated}
+                            onTreatmentPlanClick={onTreatmentPlanClick}
                           />
                         ))}
                       </div>
@@ -328,6 +331,7 @@ export function PatientProfileView({
                             getStatusBadge={getStatusBadge}
                             highlight
                             onReasonUpdated={onAppointmentUpdated}
+                            onTreatmentPlanClick={onTreatmentPlanClick}
                           />
                         ))}
                       </div>
@@ -362,6 +366,7 @@ export function PatientProfileView({
                             getStatusIcon={getStatusIcon}
                             getStatusBadge={getStatusBadge}
                             onReasonUpdated={onAppointmentUpdated}
+                            onTreatmentPlanClick={onTreatmentPlanClick}
                           />
                         ))}
                       </div>
@@ -396,6 +401,7 @@ export function PatientProfileView({
                             getStatusIcon={getStatusIcon}
                             getStatusBadge={getStatusBadge}
                             onReasonUpdated={onAppointmentUpdated}
+                            onTreatmentPlanClick={onTreatmentPlanClick}
                           />
                         ))}
                       </div>
@@ -489,7 +495,8 @@ function AppointmentRow({
   getStatusIcon,
   getStatusBadge,
   highlight = false,
-  onReasonUpdated
+  onReasonUpdated,
+  onTreatmentPlanClick
 }: { 
   appointment: PatientAppointment;
   onClick: () => void;
@@ -497,6 +504,7 @@ function AppointmentRow({
   getStatusBadge: (status: string) => string;
   highlight?: boolean;
   onReasonUpdated?: () => void;
+  onTreatmentPlanClick?: (planId: string) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedReason, setEditedReason] = useState(appointment.reason || '');
@@ -618,7 +626,14 @@ function AppointmentRow({
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {appointment.treatment_plan_id && (
-            <Badge variant="secondary" className="text-xs gap-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200">
+            <Badge 
+              variant="secondary" 
+              className="text-xs gap-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200 cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTreatmentPlanClick?.(appointment.treatment_plan_id!);
+              }}
+            >
               <ClipboardList className="h-3 w-3" />
               Plan
             </Badge>
