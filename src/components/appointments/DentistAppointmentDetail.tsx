@@ -5,7 +5,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Calendar, Eye, XCircle, Sparkles, ExternalLink, Loader2, Stethoscope } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Calendar, Eye, XCircle, Sparkles, ExternalLink, Loader2, Stethoscope, AlertTriangle } from "lucide-react";
 import { RescheduleAssistant } from "@/components/RescheduleAssistant";
 import { toast } from "sonner";
 
@@ -65,6 +75,7 @@ export function DentistAppointmentDetail({
   const queryClient = useQueryClient();
   
   const [showReschedule, setShowReschedule] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [notes, setNotes] = useState(appointment?.consultation_notes || "");
   const [charges, setCharges] = useState<ChargeItem[]>([]);
   const [chargesKey, setChargesKey] = useState(0); // Force reload trigger
@@ -178,35 +189,40 @@ export function DentistAppointmentDetail({
     onStatusChange?.(appointment.id, status);
   }, [queryClient, onStatusChange, appointment?.id]);
 
-  const handleCancel = useCallback(async () => {
+  const handleCancelClick = useCallback(() => {
+    setShowCancelDialog(true);
+  }, []);
+
+  const confirmCancel = useCallback(async () => {
     if (!appointment?.id) return;
-    
+
     setIsCancelling(true);
-    
+    setShowCancelDialog(false);
+
     // Optimistic update - update UI immediately
-    onOptimisticUpdate?.(appointment.id, { 
+    onOptimisticUpdate?.(appointment.id, {
       status: 'cancelled',
-      updated_at: new Date().toISOString() 
+      updated_at: new Date().toISOString()
     });
-    
+
     // Close immediately for snappy UX
     onClose();
     toast.success('Appointment cancelled');
-    
+
     try {
       // Release the slot
       await supabase.rpc('release_appointment_slots', { p_appointment_id: appointment.id });
-      
+
       const { error } = await supabase
         .from('appointments')
-        .update({ 
+        .update({
           status: 'cancelled',
-          updated_at: new Date().toISOString() 
+          updated_at: new Date().toISOString()
         })
         .eq('id', appointment.id);
 
       if (error) throw error;
-      
+
       // Refresh queries
       await queryClient.invalidateQueries({ queryKey: ['appointments'], exact: false });
       onStatusChange?.(appointment.id, 'cancelled');
@@ -361,10 +377,10 @@ export function DentistAppointmentDetail({
             )}
             <div className="grid grid-cols-2 gap-2">
               {permissions.canCancel && (
-                <Button 
-                  variant="ghost" 
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10" 
-                  onClick={handleCancel}
+                <Button
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={handleCancelClick}
                   disabled={isCancelling}
                 >
                   {isCancelling ? (
@@ -414,6 +430,52 @@ export function DentistAppointmentDetail({
         }}
         reason="patient_requested"
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Cancel this appointment?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will cancel the appointment with{' '}
+              <span className="font-medium text-foreground">
+                {appointment?.patient?.first_name} {appointment?.patient?.last_name}
+              </span>
+              {appointment?.appointment_date && (
+                <span className="block mt-2">
+                  Scheduled for: {new Date(appointment.appointment_date).toLocaleString('en-US', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}
+                </span>
+              )}
+              <span className="block mt-3 font-medium">
+                The patient will be notified of the cancellation.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Keep Appointment</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCancel}
+              disabled={isCancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                'Yes, Cancel Appointment'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

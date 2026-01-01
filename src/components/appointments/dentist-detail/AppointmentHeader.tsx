@@ -110,15 +110,20 @@ export function AppointmentHeader({
   return (
     <div className="p-4 sm:p-6 border-b bg-muted/30 flex-shrink-0 space-y-4">
       {/* Status Badge - Visually dominant */}
-      <Badge 
-        variant="outline" 
-        className={cn("gap-1.5 font-medium text-sm px-3 py-1.5", stateConfig.badgeClassName)}
-      >
-        {stateConfig.icon === 'calendar' && <Calendar className="h-3.5 w-3.5" />}
-        {stateConfig.icon === 'edit' && <Clock className="h-3.5 w-3.5" />}
-        {stateConfig.icon === 'check' && <Stethoscope className="h-3.5 w-3.5" />}
-        {stateConfig.label}
-      </Badge>
+      <div className="space-y-1">
+        <Badge
+          variant="outline"
+          className={cn("gap-2 font-semibold text-base px-4 py-2 inline-flex", stateConfig.badgeClassName)}
+        >
+          {stateConfig.icon === 'calendar' && <Calendar className="h-4 w-4" />}
+          {stateConfig.icon === 'edit' && <Clock className="h-4 w-4 animate-pulse" />}
+          {stateConfig.icon === 'check' && <Check className="h-4 w-4" />}
+          {stateConfig.label}
+        </Badge>
+        <p className="text-xs text-muted-foreground ml-1">
+          {stateConfig.description}
+        </p>
+      </div>
 
       {/* Patient Info */}
       <div className="flex items-center gap-3">

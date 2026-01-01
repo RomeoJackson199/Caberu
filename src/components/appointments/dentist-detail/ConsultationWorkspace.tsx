@@ -5,9 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { 
-  FileText, Upload, DollarSign, Calendar, 
-  Plus, Trash2, Save, Loader2, Check
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  FileText, Upload, DollarSign, Calendar,
+  Plus, Trash2, Save, Loader2, Check, AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,32 +60,45 @@ export function ConsultationWorkspace({
   onChargesChange,
 }: ConsultationWorkspaceProps) {
   const { toast } = useToast();
-  
+
   // Clinical Notes - sync with external changes
   const [notes, setNotes] = useState(existingNotes);
   const [notesSaving, setNotesSaving] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
-  
+  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
+
   // Charges - sync with external changes
   const [charges, setCharges] = useState<ChargeItem[]>(existingCharges);
   const [newChargeDesc, setNewChargeDesc] = useState("");
   const [newChargeAmount, setNewChargeAmount] = useState("");
+  const [hasUnsavedCharges, setHasUnsavedCharges] = useState(false);
 
   // Sync notes when external prop changes
   useEffect(() => {
     setNotes(existingNotes);
+    setHasUnsavedNotes(false);
   }, [existingNotes]);
 
   // Sync charges when external prop changes
   useEffect(() => {
     console.log('🔄 ConsultationWorkspace: syncing charges from props', existingCharges);
     setCharges(existingCharges);
+    setHasUnsavedCharges(false);
   }, [existingCharges]);
+
+  // Track when notes change
+  useEffect(() => {
+    if (notes !== existingNotes) {
+      setHasUnsavedNotes(true);
+    } else {
+      setHasUnsavedNotes(false);
+    }
+  }, [notes, existingNotes]);
 
   // Auto-save notes with debounce
   useEffect(() => {
     if (!isEditable || notes === existingNotes) return;
-    
+
     const timeoutId = setTimeout(async () => {
       setNotesSaving(true);
       try {
@@ -83,19 +106,25 @@ export function ConsultationWorkspace({
           .from('appointments')
           .update({ consultation_notes: notes })
           .eq('id', appointmentId);
-        
+
         setNotesSaved(true);
+        setHasUnsavedNotes(false);
         onNotesChange?.(notes);
         setTimeout(() => setNotesSaved(false), 2000);
       } catch (error) {
         console.error('Error saving notes:', error);
+        toast({
+          title: "Failed to save notes",
+          description: "Your notes will be saved automatically when you try again.",
+          variant: "destructive",
+        });
       } finally {
         setNotesSaving(false);
       }
     }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [notes, appointmentId, isEditable]);
+  }, [notes, appointmentId, isEditable, existingNotes, onNotesChange, toast]);
 
   // Calculate totals
   const totalCents = charges.reduce((sum, c) => sum + c.amount_cents, 0);
@@ -130,21 +159,35 @@ export function ConsultationWorkspace({
   return (
     <div className="space-y-4">
       {/* Clinical Notes */}
-      <Card>
+      <Card className={cn(
+        hasUnsavedNotes && "border-amber-300 dark:border-amber-700"
+      )}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
             Clinical Notes
-            {isEditable && (
+            {isEditable && !hasUnsavedNotes && !notesSaving && !notesSaved && (
               <Badge variant="outline" className="ml-auto text-xs">
                 Draft
               </Badge>
             )}
+            {hasUnsavedNotes && !notesSaving && (
+              <Badge variant="outline" className="ml-auto text-xs bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                Unsaved Changes
+              </Badge>
+            )}
             {notesSaving && (
-              <Loader2 className="h-3 w-3 animate-spin ml-auto text-muted-foreground" />
+              <Badge variant="outline" className="ml-auto text-xs flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving...
+              </Badge>
             )}
             {notesSaved && (
-              <Check className="h-3 w-3 ml-auto text-emerald-600" />
+              <Badge variant="outline" className="ml-auto text-xs bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700 flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                Saved
+              </Badge>
             )}
           </CardTitle>
         </CardHeader>
