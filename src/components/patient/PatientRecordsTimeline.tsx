@@ -131,10 +131,12 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
   });
 
   // Fetch treatment plans (non-draft only - RLS enforces this)
-  const { data: treatmentPlans, isLoading: loadingPlans } = useQuery({
+  const { data: treatmentPlans, isLoading: loadingPlans, error: plansError } = useQuery({
     queryKey: ["patient-treatment-plans", patientId],
     queryFn: async () => {
-      // Use left joins (no !inner) to ensure we get results even if related data is inaccessible
+      console.log("[PatientRecordsTimeline] Fetching treatment plans for patientId:", patientId);
+      
+      // Simple query first - no joins
       const { data, error } = await supabase
         .from("treatment_plans")
         .select(`
@@ -148,29 +150,52 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           created_at,
           updated_at,
           business_id,
-          dentist_id,
-          businesses (
-            id,
-            name
-          ),
-          dentists (
-            id,
-            first_name,
-            last_name
-          )
+          dentist_id
         `)
         .eq("patient_id", patientId)
         .neq("status", "draft")
         .order("updated_at", { ascending: false });
 
+      console.log("[PatientRecordsTimeline] Query result:", { data, error, patientId });
+      
       if (error) {
-        console.error("Error fetching treatment plans:", error);
+        console.error("[PatientRecordsTimeline] Error fetching treatment plans:", error);
         throw error;
       }
-      console.log("Fetched treatment plans for patient:", patientId, data);
+      
+      // Fetch business and dentist info separately if we have plans
+      if (data && data.length > 0) {
+        const businessIds = [...new Set(data.map(p => p.business_id).filter(Boolean))];
+        const dentistIds = [...new Set(data.map(p => p.dentist_id).filter(Boolean))];
+        
+        const [businessesResult, dentistsResult] = await Promise.all([
+          businessIds.length > 0 
+            ? supabase.from("businesses").select("id, name").in("id", businessIds)
+            : { data: [] },
+          dentistIds.length > 0 
+            ? supabase.from("dentists").select("id, first_name, last_name").in("id", dentistIds)
+            : { data: [] }
+        ]);
+        
+        const businessMap = new Map((businessesResult.data || []).map(b => [b.id, b]));
+        const dentistMap = new Map((dentistsResult.data || []).map(d => [d.id, d]));
+        
+        return data.map(plan => ({
+          ...plan,
+          businesses: plan.business_id ? businessMap.get(plan.business_id) || null : null,
+          dentists: plan.dentist_id ? dentistMap.get(plan.dentist_id) || null : null
+        }));
+      }
+      
+      console.log("[PatientRecordsTimeline] Returning treatment plans:", data);
       return data || [];
     }
   });
+  
+  // Log any query errors
+  if (plansError) {
+    console.error("[PatientRecordsTimeline] Query error:", plansError);
+  }
 
   // Combine and sort all records into a unified timeline
   const timelineRecords = useMemo(() => {
