@@ -102,6 +102,15 @@ interface DocumentData {
   created_at: string;
 }
 
+interface ImagingFileData {
+  id: string;
+  filename: string;
+  storage_path: string;
+  mime_type: string;
+  imaging_type: string;
+  created_at: string;
+}
+
 interface AddendumNote {
   id: string;
   content: string;
@@ -120,6 +129,7 @@ export function PatientAppointmentDetail({
   const isMobile = useIsMobile();
   const [appointment, setAppointment] = useState<AppointmentData | null>(null);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const [imagingFiles, setImagingFiles] = useState<ImagingFileData[]>([]);
   const [addendumNotes, setAddendumNotes] = useState<AddendumNote[]>([]);
   const [loading, setLoading] = useState(false);
   const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null);
@@ -133,10 +143,11 @@ export function PatientAppointmentDetail({
     }
   }, [open, appointmentId]);
 
-  // Fetch documents and addendum notes when we have the patient_id
+  // Fetch documents, imaging files, and addendum notes when we have the patient_id
   useEffect(() => {
     if (appointment?.patient_id && appointment?.business?.id) {
       fetchDocuments();
+      fetchImagingFiles();
       fetchAddendumNotes();
     }
   }, [appointment?.patient_id, appointment?.business?.id, appointmentId]);
@@ -173,6 +184,55 @@ export function PatientAppointmentDetail({
       setDocuments(data || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
+    }
+  };
+
+  const fetchImagingFiles = async () => {
+    if (!appointmentId) return;
+    
+    try {
+      // Fetch imaging sets for this appointment with their files
+      const { data: imagingSets, error } = await supabase
+        .from('imaging_sets')
+        .select(`
+          id,
+          imaging_type,
+          created_at,
+          imaging_files (
+            id,
+            filename,
+            storage_path,
+            mime_type,
+            created_at
+          )
+        `)
+        .eq('appointment_id', appointmentId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching imaging files:', error);
+        return;
+      }
+
+      // Flatten the imaging files with their type
+      const files: ImagingFileData[] = [];
+      for (const set of imagingSets || []) {
+        const setFiles = set.imaging_files || [];
+        for (const file of setFiles) {
+          files.push({
+            id: file.id,
+            filename: file.filename,
+            storage_path: file.storage_path,
+            mime_type: file.mime_type,
+            imaging_type: set.imaging_type || 'document',
+            created_at: file.created_at,
+          });
+        }
+      }
+      
+      setImagingFiles(files);
+    } catch (error) {
+      console.error('Error fetching imaging files:', error);
     }
   };
 
@@ -231,6 +291,28 @@ export function PatientAppointmentDetail({
       }
     } catch (error) {
       console.error('Error downloading document:', error);
+    } finally {
+      setDownloadingDoc(null);
+    }
+  };
+
+  const handleDownloadImagingFile = async (file: ImagingFileData) => {
+    setDownloadingDoc(file.id);
+    try {
+      const { data, error } = await supabase.storage
+        .from('dental-imaging')
+        .createSignedUrl(file.storage_path, 3600);
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        return;
+      }
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('Error downloading imaging file:', error);
     } finally {
       setDownloadingDoc(null);
     }
@@ -419,6 +501,30 @@ export function PatientAppointmentDetail({
     return <FileText className="h-4 w-4 text-muted-foreground" />;
   };
 
+  // Imaging type to icon mapping
+  const getImagingIcon = (type: string) => {
+    const lowerType = type.toLowerCase();
+    if (lowerType.includes('xray') || lowerType.includes('x-ray')) {
+      return <Stethoscope className="h-4 w-4 text-muted-foreground" />;
+    }
+    if (lowerType.includes('photo')) {
+      return <FileText className="h-4 w-4 text-muted-foreground" />;
+    }
+    return <FileText className="h-4 w-4 text-muted-foreground" />;
+  };
+
+  // Format imaging type for display
+  const formatImagingType = (type: string) => {
+    const typeMap: Record<string, string> = {
+      'xray': 'X-Ray',
+      'photo': 'Photo',
+      'scan': 'Scan',
+      'document': 'Document',
+      'unknown': 'File',
+    };
+    return typeMap[type.toLowerCase()] || type;
+  };
+
   const content = (
     <div className="flex flex-col h-full overflow-hidden">
       {loading ? (
@@ -582,16 +688,16 @@ export function PatientAppointmentDetail({
                     </Card>
                   )}
 
-                  {/* 4. Documents (read-only, after finalization) */}
+                  {/* 4. Documents & Imaging (read-only, after finalization) */}
                   {permissions.canDownloadDocuments && (
                     <div ref={documentsRef}>
                       <Card>
                         <CardContent className="p-4">
                           <h4 className="font-medium text-foreground flex items-center gap-2 mb-3">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            Documents
+                            Documents & Files
                           </h4>
-                          {documents.length === 0 ? (
+                          {documents.length === 0 && imagingFiles.length === 0 ? (
                             <div className="text-center py-4">
                               <FolderOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                               <p className="text-sm text-muted-foreground">
@@ -600,6 +706,31 @@ export function PatientAppointmentDetail({
                             </div>
                           ) : (
                             <div className="space-y-2">
+                              {/* Imaging files */}
+                              {imagingFiles.map((file) => (
+                                <button 
+                                  key={file.id}
+                                  onClick={() => handleDownloadImagingFile(file)}
+                                  disabled={downloadingDoc === file.id}
+                                  className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    {getImagingIcon(file.imaging_type)}
+                                    <div>
+                                      <p className="text-sm font-medium">{file.filename}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {formatImagingType(file.imaging_type)} · {format(parseISO(file.created_at), 'MMM d, yyyy')}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {downloadingDoc === file.id ? (
+                                    <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </button>
+                              ))}
+                              {/* Regular documents */}
                               {documents.map((doc) => (
                                 <button 
                                   key={doc.id}
