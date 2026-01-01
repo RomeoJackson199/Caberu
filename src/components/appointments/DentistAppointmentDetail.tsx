@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Calendar, Eye, XCircle, Sparkles, ExternalLink, Loader2 } from "lucide-react";
+import { Calendar, Eye, XCircle, Sparkles, ExternalLink, Loader2, Stethoscope } from "lucide-react";
 import { RescheduleAssistant } from "@/components/RescheduleAssistant";
 import { toast } from "sonner";
 
@@ -335,16 +335,24 @@ export function DentistAppointmentDetail({
 
       {/* Actions Footer - State-dependent */}
       <div className="border-t p-4 space-y-2 bg-background flex-shrink-0">
-        {/* UPCOMING: Reschedule, Cancel, View Profile */}
+        {/* UPCOMING: Start Consultation, Reschedule, Cancel, View Profile */}
         {state === 'UPCOMING' && (
           <>
+            {/* Primary action: Start Consultation */}
+            <Button 
+              className="w-full" 
+              onClick={() => navigate(`/dentist/patients?patientId=${appointment?.patient_id}&appointmentId=${appointment?.id}`)}
+            >
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Start Consultation
+            </Button>
             {permissions.canReschedule && (
               <Button 
                 variant="outline" 
                 className="w-full" 
                 onClick={() => setShowReschedule(true)}
               >
-                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                <Calendar className="h-4 w-4 mr-2" />
                 Reschedule
               </Button>
             )}
@@ -372,12 +380,21 @@ export function DentistAppointmentDetail({
           </>
         )}
         
-        {/* COMPLETED_DRAFT: Just profile link (finalization is in workspace) */}
+        {/* COMPLETED_DRAFT: Continue Consultation, Profile link */}
         {state === 'COMPLETED_DRAFT' && (
-          <Button variant="ghost" className="w-full" onClick={handleViewProfile}>
-            <Eye className="h-4 w-4 mr-2" />
-            View Patient Profile
-          </Button>
+          <>
+            <Button 
+              className="w-full" 
+              onClick={() => navigate(`/dentist/patients?patientId=${appointment?.patient_id}&appointmentId=${appointment?.id}`)}
+            >
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Continue Consultation
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={handleViewProfile}>
+              <Eye className="h-4 w-4 mr-2" />
+              View Patient Profile
+            </Button>
+          </>
         )}
         
         {/* FINALIZED: Profile link with external indicator */}

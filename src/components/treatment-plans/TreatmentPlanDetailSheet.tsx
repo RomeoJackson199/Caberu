@@ -46,13 +46,16 @@ interface TreatmentPlanDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAppointmentClick?: (appointmentId: string) => void;
+  /** Called when clicking an actionable appointment to enter consultation mode directly */
+  onEnterConsultation?: (appointmentId: string) => void;
 }
 
 export function TreatmentPlanDetailSheet({ 
   planId, 
   open, 
   onOpenChange,
-  onAppointmentClick 
+  onAppointmentClick,
+  onEnterConsultation 
 }: TreatmentPlanDetailSheetProps) {
   const { data: plan, isLoading } = useQuery({
     queryKey: ["treatment-plan-detail", planId],
@@ -233,6 +236,7 @@ export function TreatmentPlanDetailSheet({
                 <LinkedAppointmentsList 
                   planId={plan.id} 
                   onAppointmentClick={onAppointmentClick}
+                  onEnterConsultation={onEnterConsultation}
                 />
               </div>
 

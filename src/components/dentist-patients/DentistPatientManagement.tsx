@@ -155,6 +155,16 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     setShowPlanDetail(true);
   };
 
+  // Enter consultation directly from treatment plan linked appointments
+  const handleEnterConsultationFromPlan = (appointmentId: string) => {
+    // Close the plan detail sheet
+    setShowPlanDetail(false);
+    setSelectedPlanId(null);
+    
+    // Enter consultation mode directly
+    handleEnterConsultation(appointmentId);
+  };
+
   const handleAppointmentUpdated = useCallback(() => {
     if (selectedPatient) {
       fetchPatientAppointments(selectedPatient.id, false);
@@ -326,6 +336,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
           setShowPlanDetail(open);
           if (!open) setSelectedPlanId(null);
         }}
+        onEnterConsultation={handleEnterConsultationFromPlan}
       />
     </div>
   );
