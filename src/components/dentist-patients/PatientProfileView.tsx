@@ -46,6 +46,8 @@ interface PatientProfileViewProps {
   onLoadMoreAppointments?: () => void;
   onStartConsultation: (appointmentId?: string) => void;
   onAppointmentClick: (appointment: PatientAppointment) => void;
+  /** Called for actionable appointments (upcoming/needs completion) to enter consultation directly */
+  onEnterConsultation?: (appointmentId: string) => void;
   onTreatmentPlanClick?: (planId: string) => void;
   onBack?: () => void;
   onAppointmentUpdated?: () => void;
@@ -63,6 +65,7 @@ export function PatientProfileView({
   onLoadMoreAppointments,
   onStartConsultation,
   onAppointmentClick,
+  onEnterConsultation,
   onTreatmentPlanClick,
   onBack,
   onAppointmentUpdated,
@@ -287,17 +290,21 @@ export function PatientProfileView({
                         Upcoming ({filteredAndGroupedAppointments.upcoming.length})
                       </h4>
                       <div className="space-y-2">
-                        {getVisibleItems('upcoming', filteredAndGroupedAppointments.upcoming).map((apt: PatientAppointment) => (
-                          <AppointmentRow 
-                            key={apt.id} 
-                            appointment={apt} 
-                            onClick={() => onAppointmentClick(apt)}
-                            getStatusIcon={getStatusIcon}
-                            getStatusBadge={getStatusBadge}
-                            onReasonUpdated={onAppointmentUpdated}
-                            onTreatmentPlanClick={onTreatmentPlanClick}
-                          />
-                        ))}
+                        {getVisibleItems('upcoming', filteredAndGroupedAppointments.upcoming).map((apt: PatientAppointment) => {
+                          // For actionable appointments (not pending), enter consultation directly
+                          const isActionable = apt.status !== 'pending';
+                          return (
+                            <AppointmentRow 
+                              key={apt.id} 
+                              appointment={apt} 
+                              onClick={() => isActionable && onEnterConsultation ? onEnterConsultation(apt.id) : onAppointmentClick(apt)}
+                              getStatusIcon={getStatusIcon}
+                              getStatusBadge={getStatusBadge}
+                              onReasonUpdated={onAppointmentUpdated}
+                              onTreatmentPlanClick={onTreatmentPlanClick}
+                            />
+                          );
+                        })}
                       </div>
                       {filteredAndGroupedAppointments.upcoming.length > INITIAL_VISIBLE && !searchTerm && (
                         <Button
@@ -326,7 +333,7 @@ export function PatientProfileView({
                           <AppointmentRow 
                             key={apt.id} 
                             appointment={apt} 
-                            onClick={() => onAppointmentClick(apt)}
+                            onClick={() => onEnterConsultation ? onEnterConsultation(apt.id) : onAppointmentClick(apt)}
                             getStatusIcon={getStatusIcon}
                             getStatusBadge={getStatusBadge}
                             highlight
