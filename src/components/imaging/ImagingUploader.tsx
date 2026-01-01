@@ -37,7 +37,6 @@ export function ImagingUploader({
     const { uploadImaging, isLoading, uploadProgress } = useImaging();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [files, setFiles] = useState<File[]>([]);
     const [imagingType, setImagingType] = useState<'xray' | 'photo' | 'scan' | 'unknown'>('unknown');
     const [notes, setNotes] = useState('');
     const [dragActive, setDragActive] = useState(false);
@@ -62,6 +61,26 @@ export function ImagingUploader({
         return { valid, errors };
     }, []);
 
+    // Auto-upload function
+    const autoUpload = useCallback(async (filesToUpload: File[]) => {
+        if (filesToUpload.length === 0) return;
+
+        const params: UploadImagingParams = {
+            patientId,
+            appointmentId,
+            imagingType,
+            notes: notes || undefined,
+            files: filesToUpload
+        };
+
+        const result = await uploadImaging(params);
+
+        if (result) {
+            setNotes('');
+            onUploadComplete?.();
+        }
+    }, [patientId, appointmentId, imagingType, notes, uploadImaging, onUploadComplete]);
+
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -80,44 +99,27 @@ export function ImagingUploader({
         const droppedFiles = Array.from(e.dataTransfer.files);
         const { valid, errors: newErrors } = validateFiles(droppedFiles);
 
-        setFiles(prev => [...prev, ...valid]);
         setErrors(newErrors);
-    }, [validateFiles]);
+        
+        if (valid.length > 0) {
+            autoUpload(valid);
+        }
+    }, [validateFiles, autoUpload]);
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const selectedFiles = Array.from(e.target.files);
             const { valid, errors: newErrors } = validateFiles(selectedFiles);
 
-            setFiles(prev => [...prev, ...valid]);
             setErrors(newErrors);
+            
+            if (valid.length > 0) {
+                autoUpload(valid);
+            }
+            
+            e.target.value = '';
         }
-    }, [validateFiles]);
-
-    const removeFile = useCallback((index: number) => {
-        setFiles(prev => prev.filter((_, i) => i !== index));
-    }, []);
-
-    const handleUpload = async () => {
-        if (files.length === 0) return;
-
-        const params: UploadImagingParams = {
-            patientId,
-            appointmentId,
-            imagingType,
-            notes: notes || undefined,
-            files
-        };
-
-        const result = await uploadImaging(params);
-
-        if (result) {
-            setFiles([]);
-            setNotes('');
-            setImagingType('unknown');
-            onUploadComplete?.();
-        }
-    };
+    }, [validateFiles, autoUpload]);
 
     const formatFileSize = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} B`;
@@ -127,7 +129,7 @@ export function ImagingUploader({
 
     return (
         <Card className={cn("w-full", className)}>
-            <CardHeader>
+            <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                     <Upload className="h-5 w-5" />
                     Upload Imaging
@@ -157,7 +159,7 @@ export function ImagingUploader({
                 {/* Drop Zone */}
                 <div
                     className={cn(
-                        "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
+                        "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
                         dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50",
                         isLoading && "opacity-50 pointer-events-none"
                     )}
@@ -175,12 +177,12 @@ export function ImagingUploader({
                         onChange={handleFileSelect}
                         className="hidden"
                     />
-                    <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                    <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-1">
-                        Drag & drop files here, or click to browse
+                        Tap to select files
                     </p>
                     <p className="text-xs text-muted-foreground">
-                        JPG, PNG, WebP, PDF • Max 50MB each
+                        JPG, PNG, WebP, PDF • Auto-uploads on select
                     </p>
                 </div>
 
@@ -193,54 +195,21 @@ export function ImagingUploader({
                     </div>
                 )}
 
-                {/* Selected Files */}
-                {files.length > 0 && (
-                    <div className="space-y-2">
-                        <Label>Selected Files ({files.length})</Label>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {files.map((file, index) => (
-                                <div
-                                    key={`${file.name}-${index}`}
-                                    className="flex items-center justify-between p-2 bg-muted rounded-md text-sm"
-                                >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <Image className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                        <span className="truncate">{file.name}</span>
-                                        <span className="text-muted-foreground shrink-0">
-                                            ({formatFileSize(file.size)})
-                                        </span>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            removeFile(index);
-                                        }}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Notes */}
+                {/* Notes (optional, can be set before selecting files) */}
                 <div className="space-y-2">
-                    <Label htmlFor="notes">Notes (optional)</Label>
+                    <Label htmlFor="notes">Notes (optional - set before upload)</Label>
                     <Textarea
                         id="notes"
                         placeholder="Add notes about these images..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        rows={3}
+                        rows={2}
+                        disabled={isLoading}
                     />
                 </div>
 
                 {/* Upload Progress */}
-                {isLoading && uploadProgress > 0 && (
+                {isLoading && (
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                             <span>Uploading...</span>
@@ -250,20 +219,14 @@ export function ImagingUploader({
                     </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-2 pt-2">
-                    {onCancel && (
+                {/* Cancel Button */}
+                {onCancel && (
+                    <div className="flex justify-end pt-2">
                         <Button variant="outline" onClick={onCancel} disabled={isLoading}>
-                            Cancel
+                            {isLoading ? 'Uploading...' : 'Close'}
                         </Button>
-                    )}
-                    <Button
-                        onClick={handleUpload}
-                        disabled={files.length === 0 || isLoading}
-                    >
-                        {isLoading ? 'Uploading...' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
-                    </Button>
-                </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
