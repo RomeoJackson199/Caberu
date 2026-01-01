@@ -965,7 +965,7 @@ export function PatientAppointmentDetail({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-w-4xl w-[90vw] p-0 gap-0 h-[90vh] overflow-hidden">
           {content}
         </DialogContent>
       </Dialog>
