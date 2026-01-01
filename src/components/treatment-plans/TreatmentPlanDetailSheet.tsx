@@ -27,9 +27,11 @@ import {
   ClipboardList,
   DollarSign,
   Hash,
-  Circle
+  Circle,
+  CalendarDays
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { LinkedAppointmentsList } from "./AppointmentLinker";
 import { 
   TreatmentPlan, 
   TreatmentPlanItem,
@@ -43,12 +45,14 @@ interface TreatmentPlanDetailSheetProps {
   planId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAppointmentClick?: (appointmentId: string) => void;
 }
 
 export function TreatmentPlanDetailSheet({ 
   planId, 
   open, 
-  onOpenChange 
+  onOpenChange,
+  onAppointmentClick 
 }: TreatmentPlanDetailSheetProps) {
   const { data: plan, isLoading } = useQuery({
     queryKey: ["treatment-plan-detail", planId],
@@ -211,6 +215,20 @@ export function TreatmentPlanDetailSheet({
                 ) : (
                   <p className="text-sm text-muted-foreground">No items in this plan.</p>
                 )}
+              </div>
+
+              <Separator />
+
+              {/* Linked Appointments */}
+              <div className="space-y-3">
+                <h3 className="font-medium flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" />
+                  Linked Appointments
+                </h3>
+                <LinkedAppointmentsList 
+                  planId={plan.id} 
+                  onAppointmentClick={onAppointmentClick}
+                />
               </div>
 
               <Separator />
