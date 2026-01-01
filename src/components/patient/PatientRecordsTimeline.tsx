@@ -134,6 +134,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
   const { data: treatmentPlans, isLoading: loadingPlans } = useQuery({
     queryKey: ["patient-treatment-plans", patientId],
     queryFn: async () => {
+      // Use left joins (no !inner) to ensure we get results even if related data is inaccessible
       const { data, error } = await supabase
         .from("treatment_plans")
         .select(`
@@ -147,11 +148,12 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
           created_at,
           updated_at,
           business_id,
-          businesses!inner (
+          dentist_id,
+          businesses (
             id,
             name
           ),
-          dentists!inner (
+          dentists (
             id,
             first_name,
             last_name
@@ -161,7 +163,11 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
         .neq("status", "draft")
         .order("updated_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching treatment plans:", error);
+        throw error;
+      }
+      console.log("Fetched treatment plans for patient:", patientId, data);
       return data || [];
     }
   });
