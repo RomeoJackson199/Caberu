@@ -280,11 +280,14 @@ export function AppointmentLinker({
 interface LinkedAppointmentsListProps {
   planId: string;
   onAppointmentClick?: (appointmentId: string) => void;
+  /** Called when clicking an actionable appointment (upcoming/needs completion) to enter consultation mode */
+  onEnterConsultation?: (appointmentId: string) => void;
 }
 
 export function LinkedAppointmentsList({
   planId,
   onAppointmentClick,
+  onEnterConsultation,
 }: LinkedAppointmentsListProps) {
   const { data: appointments, isLoading } = useQuery({
     queryKey: ["plan-linked-appointments", planId],
@@ -338,23 +341,40 @@ export function LinkedAppointmentsList({
           ? `Dr. ${dentistData.first_name || ""} ${dentistData.last_name || ""}`.trim()
           : "";
         const isCompleted = apt.status === "completed";
-        const isUpcoming = new Date(apt.appointment_date) > new Date() && apt.status !== "cancelled";
+        const isCancelled = apt.status === "cancelled";
+        const isPending = apt.status === "pending";
+        const isUpcoming = new Date(apt.appointment_date) > new Date() && !isCancelled;
+        const isPast = new Date(apt.appointment_date) < new Date();
+        
+        // Actionable = can enter consultation (upcoming confirmed, or past not completed)
+        const isActionable = !isCompleted && !isCancelled && !isPending && (isUpcoming || isPast);
+        
+        const handleClick = () => {
+          // If actionable and onEnterConsultation is provided, enter consultation directly
+          if (isActionable && onEnterConsultation) {
+            onEnterConsultation(apt.id);
+          } else if (onAppointmentClick) {
+            onAppointmentClick(apt.id);
+          }
+        };
+        
+        const hasClickHandler = (isActionable && onEnterConsultation) || onAppointmentClick;
 
         return (
           <div
             key={apt.id}
             className={cn(
               "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-              onAppointmentClick && "cursor-pointer hover:bg-muted/50"
+              hasClickHandler && "cursor-pointer hover:bg-muted/50"
             )}
-            onClick={() => onAppointmentClick?.(apt.id)}
-            role={onAppointmentClick ? "button" : undefined}
-            tabIndex={onAppointmentClick ? 0 : undefined}
+            onClick={handleClick}
+            role={hasClickHandler ? "button" : undefined}
+            tabIndex={hasClickHandler ? 0 : undefined}
           >
             <div className={cn(
               "p-2 rounded-full",
               isCompleted && "bg-emerald-100 dark:bg-emerald-900/30",
-              isUpcoming && "bg-blue-100 dark:bg-blue-900/30",
+              isUpcoming && !isCompleted && "bg-blue-100 dark:bg-blue-900/30",
               !isCompleted && !isUpcoming && "bg-muted"
             )}>
               {isCompleted ? (
@@ -385,14 +405,15 @@ export function LinkedAppointmentsList({
               variant="outline" 
               className={cn(
                 isCompleted && "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300",
-                isUpcoming && "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300",
-                apt.status === "cancelled" && "bg-gray-100 text-gray-600 border-gray-200"
+                isUpcoming && !isCompleted && "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300",
+                isCancelled && "bg-gray-100 text-gray-600 border-gray-200",
+                isPending && "bg-amber-100 text-amber-800 border-amber-200"
               )}
             >
-              {isCompleted ? "Completed" : isUpcoming ? "Upcoming" : apt.status}
+              {isCompleted ? "Completed" : isPending ? "Pending" : isUpcoming ? "Upcoming" : isCancelled ? "Cancelled" : "Needs Completion"}
             </Badge>
 
-            {onAppointmentClick && (
+            {hasClickHandler && (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
           </div>
