@@ -34,6 +34,12 @@ interface ConfirmationContextType {
 
 const ConfirmationContext = createContext<ConfirmationContextType | null>(null);
 
+/**
+ * Retrieves the confirmation context created by ConfirmationProvider.
+ *
+ * @returns The confirmation context exposing `confirm`, `confirmDanger`, and `confirmFinancial` methods.
+ * @throws If called outside of a `ConfirmationProvider`.
+ */
 export function useConfirmation() {
   const context = useContext(ConfirmationContext);
   if (!context) {
@@ -42,7 +48,11 @@ export function useConfirmation() {
   return context;
 }
 
-// Provider component
+/**
+ * Provides a confirmation dialog context and renders a global confirmation dialog UI.
+ *
+ * @returns The provider element that supplies `confirm`, `confirmDanger`, and `confirmFinancial` methods to descendants and renders its children along with the configurable AlertDialog used for confirmations.
+ */
 export function ConfirmationProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<ConfirmationConfig | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -208,6 +218,24 @@ interface ConfirmButtonProps {
   disabled?: boolean;
 }
 
+/**
+ * Renders a trigger button that opens a confirmation dialog and runs an action when confirmed.
+ *
+ * The dialog shows an icon and styling based on `type`, displays `title` and `description`,
+ * and disables controls while the confirmation action is in progress.
+ *
+ * @param onConfirm - Callback invoked when the user confirms; if it returns a promise, the dialog shows a loading state until it settles.
+ * @param title - Dialog title text.
+ * @param description - Dialog description text.
+ * @param type - Visual variant for the dialog and confirm button (`"danger" | "warning" | "info" | "success" | "financial"`).
+ * @param confirmLabel - Label for the confirm button.
+ * @param children - Content rendered inside the trigger button.
+ * @param className - Additional CSS classes applied to the trigger button.
+ * @param variant - Button variant for the trigger.
+ * @param size - Button size for the trigger.
+ * @param disabled - Whether the trigger button is disabled.
+ * @returns A React element that renders the trigger button and the associated confirmation dialog.
+ */
 export function ConfirmButton({
   onConfirm,
   title,

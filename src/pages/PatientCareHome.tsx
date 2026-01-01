@@ -34,6 +34,13 @@ interface PatientStats {
   activePrescriptions: number;
 }
 
+/**
+ * Render the patient care dashboard for the current user, including stats, quick actions, upcoming appointments, and a health tip.
+ *
+ * Fetches patient profile, upcoming appointments, total visits, and active prescriptions on mount (with retry support), manages loading and error states, and exposes interactions for booking and viewing appointments and other quick actions. When an error occurs it displays an ErrorState with retry and go-home actions.
+ *
+ * @returns The patient care dashboard React element
+ */
 export default function PatientCareHome() {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -469,4 +476,3 @@ export default function PatientCareHome() {
     </div>
   );
 }
-

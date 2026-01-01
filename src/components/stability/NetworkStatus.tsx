@@ -9,6 +9,16 @@ interface NetworkStatusProps {
   className?: string;
 }
 
+/**
+ * Render a top-of-page network status banner that shows offline and brief reconnection notifications.
+ *
+ * Subscribes to window `online`/`offline` events to track connectivity, shows an offline banner with a retry button when disconnected,
+ * and briefly shows a "You're back online!" banner after reconnection. Event listeners are cleaned up on unmount.
+ *
+ * @param showOnlineStatus - When `true`, show the online banner state even if currently online; defaults to `false`.
+ * @param className - Optional additional CSS classes applied to the banner container.
+ * @returns A React element displaying the network status banner, or `null` when nothing should be rendered.
+ */
 export function NetworkStatus({ showOnlineStatus = false, className }: NetworkStatusProps) {
   const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [showReconnected, setShowReconnected] = useState(false);
@@ -95,7 +105,12 @@ export function NetworkStatus({ showOnlineStatus = false, className }: NetworkSt
   );
 }
 
-// Inline network indicator for forms and critical sections
+/**
+ * Renders a compact inline network connectivity indicator.
+ *
+ * @param className - Optional additional CSS classes applied to the root container
+ * @returns A small inline element showing "Connected" with a green cloud icon when the browser is online, or "Offline" with an orange cloud-off icon when the browser is offline.
+ */
 export function NetworkIndicator({ className }: { className?: string }) {
   const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
 
@@ -137,6 +152,17 @@ interface SyncingIndicatorProps {
   className?: string;
 }
 
+/**
+ * Render a compact sync status indicator reflecting error, active syncing, or time since last successful sync.
+ *
+ * Displays exactly one state in priority order: error, syncing, then last-synced timestamp. Returns nothing when no status is applicable.
+ *
+ * @param isSyncing - When true, shows a "Saving..." syncing indicator.
+ * @param lastSyncedAt - Timestamp of the last successful sync; when provided (and not syncing or error) shows "Saved X ago".
+ * @param error - When true, shows a "Sync failed" error indicator.
+ * @param className - Optional additional CSS class names applied to the root element.
+ * @returns A JSX element representing the current sync status, or `null` when there is no status to show.
+ */
 export function SyncingIndicator({ isSyncing, lastSyncedAt, error, className }: SyncingIndicatorProps) {
   if (error) {
     return (
@@ -169,6 +195,12 @@ export function SyncingIndicator({ isSyncing, lastSyncedAt, error, className }: 
   return null;
 }
 
+/**
+ * Produces a concise human-readable description of how long ago a date occurred.
+ *
+ * @param date - The past date to describe relative to now.
+ * @returns A string describing the elapsed time: "just now" if under 60s, "{n}m ago" if under 1h, "{n}h ago" if under 1d, or "{n}d ago" otherwise.
+ */
 function formatTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
 

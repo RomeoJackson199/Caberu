@@ -51,6 +51,22 @@ const errorConfig: Record<ErrorType, { icon: React.ElementType; defaultTitle: st
   },
 };
 
+/**
+ * Renders an error UI tailored to a specific error `type`, with optional actions and a compact mode.
+ *
+ * Displays a type-specific icon, title, and message; when `compact` is true it renders a condensed inline row,
+ * otherwise it renders a centered card with action buttons as provided.
+ *
+ * @param type - The error variant to display (affects icon, default title/message, and styling)
+ * @param title - Optional override for the displayed title; falls back to the type's default title
+ * @param message - Optional override for the displayed message; falls back to the type's default message
+ * @param onRetry - Optional callback shown as a "Retry"/"Try Again" action when provided
+ * @param onGoHome - Optional callback shown as a "Go Home" action when provided
+ * @param retrying - When true, indicates a retry is in progress and updates button states/labels accordingly
+ * @param compact - When true, render a compact inline error row instead of the full centered card
+ * @param className - Optional additional CSS classes applied to the root container
+ * @returns A React element representing the configured error state UI
+ */
 export function ErrorState({
   title,
   message,
@@ -169,6 +185,16 @@ interface EmptyStateProps {
   className?: string;
 }
 
+/**
+ * Renders a centered empty-state UI with an icon, title, description, and an optional action button.
+ *
+ * @param icon - React component used as the large icon inside the circular background.
+ * @param title - Primary heading text displayed below the icon.
+ * @param description - Supporting descriptive text displayed under the title.
+ * @param action - Optional action containing `label` and `onClick`; when provided, a button is rendered.
+ * @param className - Additional CSS classes applied to the root container.
+ * @returns A JSX element that presents the empty-state UI.
+ */
 export function EmptyState({
   icon: Icon = AlertCircle,
   title,
