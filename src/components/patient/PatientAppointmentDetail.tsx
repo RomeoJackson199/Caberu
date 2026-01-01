@@ -191,6 +191,8 @@ export function PatientAppointmentDetail({
     if (!appointmentId) return;
     
     try {
+      console.log('[PatientAppointmentDetail] Fetching imaging for appointment:', appointmentId);
+      
       // Fetch imaging sets for this appointment with their files
       const { data: imagingSets, error } = await supabase
         .from('imaging_sets')
@@ -208,6 +210,8 @@ export function PatientAppointmentDetail({
         `)
         .eq('appointment_id', appointmentId)
         .order('created_at', { ascending: false });
+
+      console.log('[PatientAppointmentDetail] Imaging sets result:', { imagingSets, error });
 
       if (error) {
         console.error('Error fetching imaging files:', error);
