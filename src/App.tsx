@@ -34,6 +34,8 @@ import { GlobalDashboardErrorListener } from "@/components/dashboard/GlobalDashb
 import { getUserFriendlyErrorMessage } from "@/lib/errorHandling";
 import { toast } from "@/hooks/use-toast";
 import { EmailLimitProvider } from "@/hooks/useEmailLimit";
+import { NetworkStatus } from "@/components/stability/NetworkStatus";
+import { ConfirmationProvider } from "@/components/stability/ConfirmationDialogs";
 
 // Force resync: 2025-12-07T19:03
 
@@ -293,6 +295,8 @@ const App = () => {
                 <Toaster />
                 <GlobalDashboardErrorListener />
                 <PWAInstallPrompt />
+                <NetworkStatus />
+                <ConfirmationProvider>
                 <BrowserRouter>
                   <EmailLimitProvider>
                     <DentistInvitationDialog />
@@ -388,6 +392,7 @@ const App = () => {
                     />
                   </EmailLimitProvider>
                 </BrowserRouter>
+                </ConfirmationProvider>
               </TooltipProvider>
             </BusinessProvider>
           </LanguageProvider>
