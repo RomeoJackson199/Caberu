@@ -14,6 +14,8 @@ import { useTemplate } from "@/contexts/TemplateContext";
 import { TimeGreeting, QuickActions, AnimatedStatCard } from "@/components/ui/page-enhancements";
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorState, EmptyState } from "@/components/stability";
+import { getProviderName } from "@/lib/dataValidation";
+
 interface Appointment {
   id: string;
   appointment_date: string;
@@ -411,9 +413,9 @@ export default function PatientCareHome() {
                           <span>{format(new Date(appointment.appointment_date), 'h:mm a')}</span>
                         </div>
                       </div>
-                      {appointment.dentists?.profiles && (
+                      {appointment.dentists && (
                         <p className="text-sm mt-2">
-                          with Dr. {appointment.dentists.profiles.first_name} {appointment.dentists.profiles.last_name}
+                          with Dr. {getProviderName(appointment.dentists)}
                         </p>
                       )}
                     </div>

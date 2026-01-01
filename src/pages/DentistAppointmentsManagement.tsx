@@ -21,7 +21,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedStatCard } from "@/components/ui/page-enhancements";
-import { ErrorState, EmptyState } from "@/components/stability";
+import { ErrorState, EmptyState, CalendarSyncStatusCompact } from "@/components/stability";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function DentistAppointmentsManagement() {
@@ -34,6 +34,8 @@ export default function DentistAppointmentsManagement() {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [viewMode, setViewMode] = useState<"week" | "day" | "completed">("week");
   const [showStats, setShowStats] = useState(false);
+  const [calendarSyncError, setCalendarSyncError] = useState<Error | null>(null);
+  const [lastCalendarSync, setLastCalendarSync] = useState<Date | null>(null);
   const lastScrollY = useRef(0);
   const {
     toast
@@ -127,30 +129,49 @@ export default function DentistAppointmentsManagement() {
 
   // Fetch Google Calendar events
   const {
-    data: googleCalendarEvents
+    data: googleCalendarEvents,
+    isLoading: isCalendarSyncing,
+    error: googleCalendarError,
+    refetch: refetchGoogleCalendar
   } = useQuery({
     queryKey: ['google-calendar-events', dentistId, currentDate],
     queryFn: async () => {
       if (!dentistId) return [];
       const startDate = startOfWeek(currentDate);
       const endDate = endOfWeek(addDays(currentDate, 7));
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('google-calendar-sync', {
-        body: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString()
+
+      try {
+        setCalendarSyncError(null);
+        const {
+          data,
+          error
+        } = await supabase.functions.invoke('google-calendar-sync', {
+          body: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+          }
+        });
+
+        if (error) {
+          const syncError = new Error(error.message || 'Failed to sync calendar');
+          setCalendarSyncError(syncError);
+          logger.error('Error fetching Google Calendar events:', error);
+          return [];
         }
-      });
-      if (error) {
-        logger.error('Error fetching Google Calendar events:', error);
+
+        setLastCalendarSync(new Date());
+        return data?.events || [];
+      } catch (err) {
+        const syncError = err instanceof Error ? err : new Error('Calendar sync failed');
+        setCalendarSyncError(syncError);
+        logger.error('Calendar sync exception:', err);
         return [];
       }
-      return data?.events || [];
     },
     enabled: !!dentistId,
-    refetchInterval: 300000 // Refresh every 5 minutes
+    refetchInterval: 300000, // Refresh every 5 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   const navigateDate = (direction: "prev" | "next") => {
@@ -383,6 +404,14 @@ export default function DentistAppointmentsManagement() {
 
           {/* View Mode & Today Button */}
           <div className="flex items-center gap-2">
+            {/* Google Calendar Sync Status */}
+            <CalendarSyncStatusCompact
+              lastSyncTime={lastCalendarSync}
+              isSyncing={isCalendarSyncing}
+              syncError={calendarSyncError}
+              onSync={() => refetchGoogleCalendar()}
+            />
+
             {/* View Mode Toggle */}
             <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
               <Button
@@ -593,38 +622,44 @@ export default function DentistAppointmentsManagement() {
                 </Card>
               ) : (
                 <div className="space-y-2">
-                  {completedAppointments.map((apt: any) => (
-                    <Card
-                      key={apt.id}
-                      className={cn(
-                        "cursor-pointer hover:border-emerald-300 transition-colors",
-                        selectedAppointment?.id === apt.id && "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20"
-                      )}
-                      onClick={() => setSelectedAppointment(apt)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <p className="font-medium">
-                              {apt.patient?.first_name} {apt.patient?.last_name}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{apt.reason}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(parseISO(apt.appointment_date), "EEEE, MMM d, yyyy 'at' h:mm a")}
-                            </p>
+                  {completedAppointments.map((apt: any) => {
+                    // Null safety checks
+                    const patientName = apt.patient
+                      ? `${apt.patient.first_name || 'Unknown'} ${apt.patient.last_name || 'Patient'}`
+                      : 'Unknown Patient';
+                    const reason = apt.reason || 'No reason specified';
+
+                    return (
+                      <Card
+                        key={apt.id}
+                        className={cn(
+                          "cursor-pointer hover:border-emerald-300 transition-colors",
+                          selectedAppointment?.id === apt.id && "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20"
+                        )}
+                        onClick={() => setSelectedAppointment(apt)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <p className="font-medium">{patientName}</p>
+                              <p className="text-sm text-muted-foreground">{reason}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(parseISO(apt.appointment_date), "EEEE, MMM d, yyyy 'at' h:mm a")}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                Completed
+                              </Badge>
+                              {apt.completed_at && (
+                                <span className="text-xs text-muted-foreground">Finalized</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                              Completed
-                            </Badge>
-                            {apt.completed_at && (
-                              <span className="text-xs text-muted-foreground">Finalized</span>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </div>
