@@ -21,10 +21,11 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedStatCard } from "@/components/ui/page-enhancements";
-import { ErrorState, EmptyState, CalendarSyncStatusCompact } from "@/components/stability";
+import { ErrorState, EmptyState, CalendarSyncStatusCompact, AppointmentErrorBoundary, OfflineBanner } from "@/components/stability";
 import { motion, AnimatePresence } from "framer-motion";
+import { getFriendlyErrorMessage } from "@/lib/userFriendlyErrors";
 
-export default function DentistAppointmentsManagement() {
+function DentistAppointmentsManagementContent() {
   const { businessId } = useBusinessContext();
   const {
     dentistId,
@@ -685,5 +686,15 @@ export default function DentistAppointmentsManagement() {
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+// Wrap with error boundary and offline detection for better stability
+export default function DentistAppointmentsManagement() {
+  return (
+    <AppointmentErrorBoundary context="management">
+      <OfflineBanner />
+      <DentistAppointmentsManagementContent />
+    </AppointmentErrorBoundary>
   );
 }
