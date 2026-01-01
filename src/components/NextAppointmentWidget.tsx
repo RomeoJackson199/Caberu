@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
-import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import {
   Calendar,
   Clock,
@@ -16,7 +15,7 @@ import {
   Mail,
   AlertTriangle,
   FileText,
-  Eye
+  Stethoscope
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -48,10 +47,10 @@ interface NextAppointmentWidgetProps {
 }
 
 export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps) {
+  const navigate = useNavigate();
   const [nextAppointment, setNextAppointment] = useState<NextAppointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
-  const [showDetailsSheet, setShowDetailsSheet] = useState(false);
   const { toast } = useToast();
   const { businessId } = useBusinessContext();
   const { t } = useLanguage();
@@ -299,13 +298,22 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
           </div>
         </div>
 
-        {/* Action Button */}
+        {/* Action Button - Go directly to consultation */}
         <Button 
           className="w-full rounded-full" 
-          onClick={() => setShowDetailsSheet(true)}
+          onClick={() => {
+            // Pending appointments show details, actionable ones go to consultation
+            if (nextAppointment.status === 'pending') {
+              // For pending, navigate to patient profile
+              navigate(`/dentist/patients?patientId=${nextAppointment.patient_id}`);
+            } else {
+              // For confirmed/upcoming, go directly to consultation
+              navigate(`/dentist/patients?patientId=${nextAppointment.patient_id}&appointmentId=${nextAppointment.id}`);
+            }
+          }}
         >
-          <Eye className="h-4 w-4 mr-2" />
-          {t.viewDetails || 'View Details'}
+          <Stethoscope className="h-4 w-4 mr-2" />
+          {nextAppointment.status === 'pending' ? 'View Patient' : 'Start Consultation'}
         </Button>
 
         {/* Complete Appointment Dialog */}
@@ -328,33 +336,6 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
             onCompleted={handleCompletionSuccess}
           />
         )}
-
-        {/* Appointment Details Sheet */}
-        <Sheet open={showDetailsSheet} onOpenChange={setShowDetailsSheet}>
-          <SheetContent side="right" className="w-full sm:max-w-lg p-0">
-            {nextAppointment && (
-              <DentistAppointmentDetail
-                appointment={{
-                  ...nextAppointment,
-                  patient: nextAppointment.profiles ? {
-                    first_name: nextAppointment.profiles.first_name,
-                    last_name: nextAppointment.profiles.last_name,
-                    email: nextAppointment.profiles.email,
-                    phone: nextAppointment.profiles.phone
-                  } : undefined
-                }}
-                onClose={() => setShowDetailsSheet(false)}
-                onStatusChange={(appointmentId, status) => {
-                  handleCompletionSuccess();
-                  setShowDetailsSheet(false);
-                }}
-                onOptimisticUpdate={(appointmentId, updates) => {
-                  setNextAppointment((prev: any) => prev?.id === appointmentId ? { ...prev, ...updates } : prev);
-                }}
-              />
-            )}
-          </SheetContent>
-        </Sheet>
       </CardContent>
     </Card>
   );

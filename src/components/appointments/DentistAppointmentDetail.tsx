@@ -334,18 +334,21 @@ export function DentistAppointmentDetail({
       </ScrollArea>
 
       {/* Actions Footer - State-dependent */}
+      {/* Hide navigation buttons when in standalone mode (already in consultation) */}
       <div className="border-t p-4 space-y-2 bg-background flex-shrink-0">
-        {/* UPCOMING: Start Consultation, Reschedule, Cancel, View Profile */}
+        {/* UPCOMING: Start Consultation (only when not standalone), Reschedule, Cancel, View Profile */}
         {state === 'UPCOMING' && (
           <>
-            {/* Primary action: Start Consultation */}
-            <Button 
-              className="w-full" 
-              onClick={() => navigate(`/dentist/patients?patientId=${appointment?.patient_id}&appointmentId=${appointment?.id}`)}
-            >
-              <Stethoscope className="h-4 w-4 mr-2" />
-              Start Consultation
-            </Button>
+            {/* Primary action: Start Consultation - only show when not in standalone mode */}
+            {!standalone && (
+              <Button 
+                className="w-full" 
+                onClick={() => navigate(`/dentist/patients?patientId=${appointment?.patient_id}&appointmentId=${appointment?.id}`)}
+              >
+                <Stethoscope className="h-4 w-4 mr-2" />
+                Start Consultation
+              </Button>
+            )}
             {permissions.canReschedule && (
               <Button 
                 variant="outline" 
@@ -372,33 +375,26 @@ export function DentistAppointmentDetail({
                   Cancel
                 </Button>
               )}
-              <Button variant="ghost" onClick={handleViewProfile}>
-                <Eye className="h-4 w-4 mr-1" />
-                Profile
-              </Button>
+              {!standalone && (
+                <Button variant="ghost" onClick={handleViewProfile}>
+                  <Eye className="h-4 w-4 mr-1" />
+                  Profile
+                </Button>
+              )}
             </div>
           </>
         )}
         
-        {/* COMPLETED_DRAFT: Continue Consultation, Profile link */}
-        {state === 'COMPLETED_DRAFT' && (
-          <>
-            <Button 
-              className="w-full" 
-              onClick={() => navigate(`/dentist/patients?patientId=${appointment?.patient_id}&appointmentId=${appointment?.id}`)}
-            >
-              <Stethoscope className="h-4 w-4 mr-2" />
-              Continue Consultation
-            </Button>
-            <Button variant="ghost" className="w-full" onClick={handleViewProfile}>
-              <Eye className="h-4 w-4 mr-2" />
-              View Patient Profile
-            </Button>
-          </>
+        {/* COMPLETED_DRAFT: Only show profile link when not standalone (already in consultation) */}
+        {state === 'COMPLETED_DRAFT' && !standalone && (
+          <Button variant="ghost" className="w-full" onClick={handleViewProfile}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Patient Profile
+          </Button>
         )}
         
         {/* FINALIZED: Profile link with external indicator */}
-        {state === 'FINALIZED' && (
+        {state === 'FINALIZED' && !standalone && (
           <Button variant="secondary" className="w-full" onClick={handleViewProfile}>
             <Eye className="h-4 w-4 mr-2" />
             View Patient Profile
