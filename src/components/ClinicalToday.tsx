@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface ClinicalTodayProps {
 interface TodayAppointment {
 	id: string;
 	appointment_date: string;
+	patient_id: string | null;
 	patient_name: string | null;
 	reason: string | null;
 	status: string;
@@ -37,6 +39,7 @@ interface TodayAppointment {
 
 export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppointmentsTab }: ClinicalTodayProps) {
 	const today = new Date();
+	const navigate = useNavigate();
 	const { t: businessT } = useBusinessTemplate();
 	const { t } = useLanguage();
 	const [stats, setStats] = useState({
@@ -63,6 +66,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 						.select(`
 							id,
 							appointment_date,
+							patient_id,
 							patient_name,
 							reason,
 							status,
@@ -254,7 +258,14 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 								<div
 									key={appointment.id}
 									className="group flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border bg-card hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
-									onClick={() => onOpenAppointmentsTab?.()}
+									onClick={() => {
+										// Navigate directly to patient profile (consultation mode) for confirmed appointments
+										if (appointment.status === 'confirmed' && appointment.patient_id) {
+											navigate(`/dentist/patients?patient=${appointment.patient_id}`);
+										} else {
+											onOpenAppointmentsTab?.();
+										}
+									}}
 								>
 									<div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 w-full min-w-0">
 										<div className="flex flex-col items-center justify-center min-w-[50px] sm:min-w-[60px] flex-shrink-0">

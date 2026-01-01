@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,6 +39,7 @@ export default function DentistAppointmentsManagement() {
   const {
     t
   } = useLanguage();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   // Fetch all appointments for stats
@@ -143,6 +145,12 @@ export default function DentistAppointmentsManagement() {
   };
 
   const handleAppointmentClick = (appointment: any) => {
+    // Navigate directly to patient profile (consultation mode) for confirmed appointments
+    if (appointment.status === 'confirmed' && appointment.patient_id) {
+      navigate(`/dentist/patients?patient=${appointment.patient_id}`);
+      return;
+    }
+    // For other statuses, show the appointment details sidebar
     setSelectedAppointment(appointment);
     setViewMode("day");
     setCurrentDate(parseISO(appointment.appointment_date));
