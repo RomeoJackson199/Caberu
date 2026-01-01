@@ -119,6 +119,19 @@ interface AddendumNote {
   title: string | null;
 }
 
+/**
+ * Patient-facing appointment detail panel that displays status, summary, documents, imaging, payments, and available actions.
+ *
+ * Fetches appointment details (including related business, dentist, service), patient documents, imaging files, and addendum notes when opened and a valid appointmentId is provided. Provides UI for downloading/viewing documents and imaging (opens imaging viewer with signed URLs), auto-scrolls to payment or documents sections when requested, and adapts presentation for mobile (bottom sheet) and desktop (dialog).
+ *
+ * @param appointmentId - The appointment identifier to load; if null no appointment will be fetched.
+ * @param open - Whether the panel is visible.
+ * @param onOpenChange - Callback invoked when the panel open state should change.
+ * @param onReschedule - Optional handler called with the appointment id when the user requests a reschedule.
+ * @param onCancel - Optional handler called with the appointment id when the user requests cancellation.
+ * @param scrollTo - Optional target section to auto-scroll to when the panel opens; either 'payment', 'documents', or null.
+ * @returns The rendered appointment detail UI as a React element.
+ */
 export function PatientAppointmentDetail({
   appointmentId,
   open,
