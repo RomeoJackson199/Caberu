@@ -327,7 +327,6 @@ export function TreatmentPlanEditorSheet({
           tooth: item.tooth || null,
           qty: item.qty,
           unit_price_cents: item.unit_price_cents,
-          line_total_cents: item.unit_price_cents * item.qty,
           description: item.description || null,
           sort_order: index,
         }));
