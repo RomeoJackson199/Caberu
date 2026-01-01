@@ -24,7 +24,7 @@ import {
   FinalizedAddendum,
 } from "./dentist-detail";
 
-import { TreatmentPlanEditor, AppointmentLinker } from "@/components/treatment-plans";
+import { TreatmentPlanSection } from "@/components/treatment-plans";
 
 interface ChargeItem {
   id: string;
@@ -288,7 +288,7 @@ export function DentistAppointmentDetail({
               </div>
 
               {/* Treatment Plan Section */}
-              <TreatmentPlanEditor
+              <TreatmentPlanSection
                 appointmentId={appointment.id}
                 patientId={appointment.patient_id}
                 dentistId={appointment.dentist_id}
