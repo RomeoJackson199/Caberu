@@ -58,6 +58,9 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     fetchPatients();
   }, [fetchPatients]);
 
+  // Track pending consultation to enter after appointments load
+  const [pendingConsultationAppointmentId, setPendingConsultationAppointmentId] = useState<string | null>(null);
+
   // Handle URL params for patient selection and auto-consultation mode
   useEffect(() => {
     const patientId = searchParams.get('patientId');
@@ -68,36 +71,33 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
       if (patient) {
         setSelectedPatient(patient);
 
-        // If appointmentId is also provided, auto-enter consultation mode after appointments are loaded
+        // If appointmentId is also provided, set pending consultation
         if (appointmentId) {
           // Clear URL params to avoid re-triggering
           setSearchParams({});
-
-          // Set a flag to enter consultation mode once appointments are loaded
-          const checkAndEnterConsultation = () => {
-            const cached = getPatientAppointmentsCache(patientId);
-            if (cached.appointments.length > 0) {
-              const appointment = cached.appointments.find((a: PatientAppointment) => a.id === appointmentId);
-              if (appointment) {
-                // Enter consultation mode directly
-                setConsultationContext({
-                  appointmentId,
-                  patientId: patient.id,
-                  dentistId,
-                  startedAt: new Date().toISOString()
-                });
-              }
-            }
-          };
-
-          // Try immediately, then retry after a short delay for appointments to load
-          checkAndEnterConsultation();
-          const timer = setTimeout(checkAndEnterConsultation, 500);
-          return () => clearTimeout(timer);
+          // Set pending consultation to be processed once appointments load
+          setPendingConsultationAppointmentId(appointmentId);
         }
       }
     }
-  }, [searchParams, patients, setSearchParams, dentistId, getPatientAppointmentsCache]);
+  }, [searchParams, patients, setSearchParams]);
+
+  // Effect to enter consultation mode once appointments are loaded
+  useEffect(() => {
+    if (pendingConsultationAppointmentId && selectedPatient && patientAppointments.length > 0 && !loadingAppointments) {
+      const appointment = patientAppointments.find((a: PatientAppointment) => a.id === pendingConsultationAppointmentId);
+      if (appointment) {
+        // Enter consultation mode directly
+        setConsultationContext({
+          appointmentId: pendingConsultationAppointmentId,
+          patientId: selectedPatient.id,
+          dentistId,
+          startedAt: new Date().toISOString()
+        });
+        setPendingConsultationAppointmentId(null);
+      }
+    }
+  }, [pendingConsultationAppointmentId, selectedPatient, patientAppointments, loadingAppointments, dentistId]);
 
   // Fetch appointments when patient changes
   useEffect(() => {
