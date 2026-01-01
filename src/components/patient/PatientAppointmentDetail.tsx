@@ -193,47 +193,55 @@ export function PatientAppointmentDetail({
     try {
       console.log('[PatientAppointmentDetail] Fetching imaging for appointment:', appointmentId);
       
-      // Fetch imaging sets for this appointment with their files
-      const { data: imagingSets, error } = await supabase
+      // First, get the imaging sets for this appointment
+      const { data: imagingSets, error: setsError } = await supabase
         .from('imaging_sets')
-        .select(`
-          id,
-          imaging_type,
-          created_at,
-          imaging_files (
-            id,
-            filename,
-            storage_path,
-            mime_type,
-            created_at
-          )
-        `)
+        .select('id, imaging_type, created_at')
         .eq('appointment_id', appointmentId)
         .order('created_at', { ascending: false });
 
-      console.log('[PatientAppointmentDetail] Imaging sets result:', { imagingSets, error });
+      console.log('[PatientAppointmentDetail] Imaging sets result:', { imagingSets, setsError });
 
-      if (error) {
-        console.error('Error fetching imaging files:', error);
+      if (setsError) {
+        console.error('Error fetching imaging sets:', setsError);
         return;
       }
 
-      // Flatten the imaging files with their type
-      const files: ImagingFileData[] = [];
-      for (const set of imagingSets || []) {
-        const setFiles = set.imaging_files || [];
-        for (const file of setFiles) {
-          files.push({
-            id: file.id,
-            filename: file.filename,
-            storage_path: file.storage_path,
-            mime_type: file.mime_type,
-            imaging_type: set.imaging_type || 'document',
-            created_at: file.created_at,
-          });
-        }
+      if (!imagingSets || imagingSets.length === 0) {
+        console.log('[PatientAppointmentDetail] No imaging sets found for this appointment');
+        setImagingFiles([]);
+        return;
       }
+
+      // Now fetch the files for these imaging sets
+      const setIds = imagingSets.map(s => s.id);
+      const { data: filesData, error: filesError } = await supabase
+        .from('imaging_files')
+        .select('id, filename, storage_path, mime_type, created_at, imaging_set_id')
+        .in('imaging_set_id', setIds)
+        .order('created_at', { ascending: false });
+
+      console.log('[PatientAppointmentDetail] Imaging files result:', { filesData, filesError });
+
+      if (filesError) {
+        console.error('Error fetching imaging files:', filesError);
+        return;
+      }
+
+      // Map files with their imaging types
+      const files: ImagingFileData[] = (filesData || []).map(file => {
+        const set = imagingSets.find(s => s.id === file.imaging_set_id);
+        return {
+          id: file.id,
+          filename: file.filename,
+          storage_path: file.storage_path,
+          mime_type: file.mime_type,
+          imaging_type: set?.imaging_type || 'document',
+          created_at: file.created_at,
+        };
+      });
       
+      console.log('[PatientAppointmentDetail] Processed imaging files:', files);
       setImagingFiles(files);
     } catch (error) {
       console.error('Error fetching imaging files:', error);
