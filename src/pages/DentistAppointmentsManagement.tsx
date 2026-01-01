@@ -18,9 +18,11 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedStatCard } from "@/components/ui/page-enhancements";
+import { ErrorState, EmptyState } from "@/components/stability";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DentistAppointmentsManagement() {
   const { businessId } = useBusinessContext();
@@ -44,7 +46,11 @@ export default function DentistAppointmentsManagement() {
 
   // Fetch all appointments for stats
   const {
-    data: allAppointments = []
+    data: allAppointments = [],
+    isLoading: appointmentsLoading,
+    error: appointmentsError,
+    refetch: refetchAppointments,
+    isRefetching
   } = useQuery({
     queryKey: ['all-appointments', dentistId, businessId, currentDate],
     queryFn: async () => {
@@ -64,11 +70,15 @@ export default function DentistAppointmentsManagement() {
       return data || [];
     },
     enabled: !!dentistId && !!businessId,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   // Fetch completed appointments (for "Completed" view)
   const {
-    data: completedAppointments = []
+    data: completedAppointments = [],
+    isLoading: completedLoading,
+    error: completedError
   } = useQuery({
     queryKey: ['completed-appointments', dentistId, businessId],
     queryFn: async () => {
@@ -89,6 +99,7 @@ export default function DentistAppointmentsManagement() {
       return data || [];
     },
     enabled: !!dentistId && !!businessId && viewMode === 'completed',
+    retry: 2,
   });
 
   // Fetch monthly appointments for overview
@@ -280,8 +291,65 @@ export default function DentistAppointmentsManagement() {
     );
   }
 
+  // Determine if there's an error to show
+  const hasError = appointmentsError || completedError;
+  const isNetworkError = (error: unknown) => {
+    const err = error as Error | null;
+    return err?.message?.includes('fetch') || err?.message?.includes('network');
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-blue-950/30 dark:to-purple-950/30">
+      {/* Error Banner */}
+      <AnimatePresence>
+        {hasError && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-800 px-4 py-3"
+          >
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                {isNetworkError(appointmentsError || completedError) ? (
+                  <WifiOff className="h-5 w-5 text-red-500" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                    {isNetworkError(appointmentsError || completedError)
+                      ? "Connection issue"
+                      : "Failed to load appointments"}
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    {isNetworkError(appointmentsError || completedError)
+                      ? "Please check your internet connection"
+                      : "Please try again in a moment"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetchAppointments()}
+                disabled={isRefetching}
+                className="border-red-200 hover:bg-red-100 dark:border-red-800 dark:hover:bg-red-900"
+              >
+                {isRefetching ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Retry
+                  </>
+                )}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* View Controls Only - Header Removed */}
       <div className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl sticky top-0 z-30 transition-all duration-300 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 py-3">

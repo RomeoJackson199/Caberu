@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Calendar, Clock, FileText, Heart, Activity, MessageSquare, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Calendar, Clock, FileText, Heart, Activity, MessageSquare, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -12,7 +12,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { showEnhancedErrorToast } from "@/lib/enhancedErrorHandling";
 import { useTemplate } from "@/contexts/TemplateContext";
 import { TimeGreeting, QuickActions, AnimatedStatCard } from "@/components/ui/page-enhancements";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { ErrorState, EmptyState } from "@/components/stability";
 interface Appointment {
   id: string;
   appointment_date: string;
@@ -38,6 +39,8 @@ export default function PatientCareHome() {
   const navigate = useNavigate();
   const { hasFeature } = useTemplate();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<{ type: "network" | "auth" | "generic"; message?: string } | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
   const [stats, setStats] = useState<PatientStats>({
@@ -45,32 +48,60 @@ export default function PatientCareHome() {
     totalAppointments: 0,
     activePrescriptions: 0,
   });
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchPatientData();
   }, []);
 
-  const fetchPatientData = async () => {
+  const fetchPatientData = useCallback(async (isRetry = false) => {
     try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      if (isRetry) {
+        setRetrying(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError) {
+        setError({ type: "auth", message: "Please log in again to continue." });
+        setLoading(false);
+        setRetrying(false);
+        return;
+      }
 
       if (!user) {
+        setError({ type: "auth", message: "Please log in to view your dashboard." });
         setLoading(false);
+        setRetrying(false);
         return;
       }
 
       setUser(user);
 
       // Get patient profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
+      if (profileError) {
+        if (profileError.message?.includes('fetch') || profileError.message?.includes('network')) {
+          setError({ type: "network", message: "Unable to connect. Please check your internet connection." });
+        } else {
+          setError({ type: "generic", message: "Unable to load your profile. Please try again." });
+        }
+        setLoading(false);
+        setRetrying(false);
+        return;
+      }
+
       if (!profile) {
         setLoading(false);
+        setRetrying(false);
         return;
       }
 
@@ -131,15 +162,33 @@ export default function PatientCareHome() {
         activePrescriptions: prescriptionCount || 0,
       });
 
-    } catch (error) {
+      setLastRefresh(new Date());
+      setError(null);
+
+    } catch (error: any) {
+      const isNetworkError = error?.message?.includes('fetch') ||
+                            error?.message?.includes('network') ||
+                            error?.message?.includes('Failed to fetch');
+
+      if (isNetworkError) {
+        setError({ type: "network", message: "Connection lost. Please check your internet and try again." });
+      } else {
+        setError({ type: "generic", message: "Something went wrong. Please try again." });
+      }
+
       showEnhancedErrorToast(error, {
         component: 'PatientCareHome',
         action: 'fetchPatientData',
       });
     } finally {
       setLoading(false);
+      setRetrying(false);
     }
-  };
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    fetchPatientData(true);
+  }, [fetchPatientData]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -189,6 +238,27 @@ export default function PatientCareHome() {
     },
   ];
 
+  // Show error state if there's an error and not loading
+  if (error && !loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TimeGreeting
+            name={user?.user_metadata?.first_name}
+            showDate={true}
+          />
+        </div>
+        <ErrorState
+          type={error.type}
+          message={error.message}
+          onRetry={handleRetry}
+          retrying={retrying}
+          onGoHome={() => navigate("/")}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with TimeGreeting */}
@@ -210,15 +280,26 @@ export default function PatientCareHome() {
 
       {/* Stats Cards with AnimatedStatCard */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {[...Array(3)].map((_, i) => (
-            <Card key={i}>
+            <Card key={i} className="overflow-hidden">
               <CardContent className="pt-6">
-                <Skeleton className="h-20 w-full" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
               </CardContent>
             </Card>
           ))}
-        </div>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <AnimatedStatCard
@@ -279,11 +360,32 @@ export default function PatientCareHome() {
         </div>
 
         {loading ? (
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-32 w-full" />
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-3"
+          >
+            {[...Array(2)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    <Skeleton className="h-9 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </motion.div>
         ) : upcomingAppointments.length > 0 ? (
           <div className="space-y-3">
             {upcomingAppointments.map((appointment) => (
