@@ -362,9 +362,10 @@ export function TreatmentPlanEditorSheet({
       }
 
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving treatment plan:", error);
-      toast.error("Failed to save treatment plan");
+      const errorMessage = error?.message || error?.details || "Failed to save treatment plan";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
