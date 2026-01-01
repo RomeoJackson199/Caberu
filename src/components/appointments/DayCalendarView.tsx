@@ -13,6 +13,7 @@ import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
 
 interface DayCalendarViewProps {
   dentistId: string;
+  businessId?: string;
   currentDate: Date;
   onAppointmentClick: (appointment: any) => void;
   selectedAppointmentId?: string;
@@ -34,6 +35,7 @@ const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 export function DayCalendarView({
   dentistId,
+  businessId,
   currentDate,
   onAppointmentClick,
   selectedAppointmentId,
@@ -51,20 +53,27 @@ export function DayCalendarView({
 
   // Fetch appointments for the day
   const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ["appointments-day", dentistId, format(currentDate, "yyyy-MM-dd")],
+    queryKey: ["appointments-day", dentistId, businessId, format(currentDate, "yyyy-MM-dd")],
     queryFn: async () => {
       const dayStart = new Date(currentDate);
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(currentDate);
       dayEnd.setHours(23, 59, 59, 999);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("appointments")
         .select("*")
         .eq("dentist_id", dentistId)
         .gte("appointment_date", dayStart.toISOString())
         .lte("appointment_date", dayEnd.toISOString())
         .order("appointment_date", { ascending: true });
+
+      // Filter by business if provided
+      if (businessId) {
+        query = query.eq("business_id", businessId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

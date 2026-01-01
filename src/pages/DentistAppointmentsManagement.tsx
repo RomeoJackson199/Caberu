@@ -46,15 +46,16 @@ export default function DentistAppointmentsManagement() {
   const {
     data: allAppointments = []
   } = useQuery({
-    queryKey: ['all-appointments', dentistId, currentDate],
+    queryKey: ['all-appointments', dentistId, businessId, currentDate],
     queryFn: async () => {
-      if (!dentistId) return [];
+      if (!dentistId || !businessId) return [];
       const weekStart = startOfWeek(currentDate);
       const weekEnd = endOfWeek(addDays(currentDate, 7));
       const { data, error } = await supabase
         .from("appointments")
         .select("*")
         .eq("dentist_id", dentistId)
+        .eq("business_id", businessId)
         .gte("appointment_date", weekStart.toISOString())
         .lt("appointment_date", weekEnd.toISOString())
         .order("appointment_date", { ascending: true });
@@ -62,16 +63,16 @@ export default function DentistAppointmentsManagement() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!dentistId,
+    enabled: !!dentistId && !!businessId,
   });
 
   // Fetch completed appointments (for "Completed" view)
   const {
     data: completedAppointments = []
   } = useQuery({
-    queryKey: ['completed-appointments', dentistId],
+    queryKey: ['completed-appointments', dentistId, businessId],
     queryFn: async () => {
-      if (!dentistId) return [];
+      if (!dentistId || !businessId) return [];
       const { data, error } = await supabase
         .from("appointments")
         .select(`
@@ -79,6 +80,7 @@ export default function DentistAppointmentsManagement() {
           patient:profiles!appointments_patient_id_fkey(id, first_name, last_name, email)
         `)
         .eq("dentist_id", dentistId)
+        .eq("business_id", businessId)
         .eq("status", "completed")
         .order("appointment_date", { ascending: false })
         .limit(50);
@@ -86,29 +88,30 @@ export default function DentistAppointmentsManagement() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!dentistId && viewMode === 'completed',
+    enabled: !!dentistId && !!businessId && viewMode === 'completed',
   });
 
   // Fetch monthly appointments for overview
   const {
     data: monthlyAppointments = []
   } = useQuery({
-    queryKey: ['monthly-appointments', dentistId, format(currentDate, 'yyyy-MM')],
+    queryKey: ['monthly-appointments', dentistId, businessId, format(currentDate, 'yyyy-MM')],
     queryFn: async () => {
-      if (!dentistId) return [];
+      if (!dentistId || !businessId) return [];
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
       const { data, error } = await supabase
         .from("appointments")
         .select("*")
         .eq("dentist_id", dentistId)
+        .eq("business_id", businessId)
         .gte("appointment_date", monthStart.toISOString())
         .lte("appointment_date", monthEnd.toISOString());
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!dentistId && showStats,
+    enabled: !!dentistId && !!businessId && showStats,
   });
 
   // Fetch Google Calendar events
@@ -492,6 +495,7 @@ export default function DentistAppointmentsManagement() {
           ) : viewMode === "week" ? (
             <WeeklyCalendarView
               dentistId={dentistId}
+              businessId={businessId || undefined}
               currentDate={currentDate}
               onAppointmentClick={handleAppointmentClick}
               selectedAppointmentId={selectedAppointment?.id}
@@ -500,6 +504,7 @@ export default function DentistAppointmentsManagement() {
           ) : viewMode === "day" ? (
             <DayCalendarView
               dentistId={dentistId}
+              businessId={businessId || undefined}
               currentDate={currentDate}
               onAppointmentClick={setSelectedAppointment}
               selectedAppointmentId={selectedAppointment?.id}
