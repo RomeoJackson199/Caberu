@@ -21,6 +21,12 @@ export {
   TreatmentCompleteDialog
 } from "./SuccessDialog";
 
+// Session Management
+export { SessionTimeoutWarning } from "./SessionTimeoutWarning";
+
+// Calendar Sync
+export { CalendarSyncStatus, CalendarSyncStatusCompact } from "./CalendarSyncStatus";
+
 // Loading States (re-export from SkeletonLoader for convenience)
 export {
   Skeleton,
