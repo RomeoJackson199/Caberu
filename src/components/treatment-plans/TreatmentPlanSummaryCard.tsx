@@ -9,7 +9,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardList, Plus, Pencil, Loader2 } from "lucide-react";
+import { ClipboardList, Plus, Pencil, Loader2, Link } from "lucide-react";
 import { formatCurrency, formatPlanStatus, getPlanStatusColor } from "./types";
 
 interface TreatmentPlanSummaryCardProps {
@@ -24,6 +24,7 @@ interface TreatmentPlanSummaryCardProps {
   } | null;
   isLoading: boolean;
   onOpenEditor: () => void;
+  onLinkExisting: () => void;
   isEditable: boolean;
 }
 
@@ -31,6 +32,7 @@ export function TreatmentPlanSummaryCard({
   existingPlan,
   isLoading,
   onOpenEditor,
+  onLinkExisting,
   isEditable,
 }: TreatmentPlanSummaryCardProps) {
   if (isLoading) {
@@ -56,14 +58,20 @@ export function TreatmentPlanSummaryCard({
               </div>
               <div>
                 <p className="font-medium text-sm">Treatment Plan</p>
-                <p className="text-xs text-muted-foreground">No plan created yet</p>
+                <p className="text-xs text-muted-foreground">No plan linked yet</p>
               </div>
             </div>
             {isEditable && (
-              <Button size="sm" onClick={onOpenEditor} className="shrink-0">
-                <Plus className="h-4 w-4 mr-1.5" />
-                Create Plan
-              </Button>
+              <div className="flex gap-2 shrink-0">
+                <Button variant="outline" size="sm" onClick={onLinkExisting}>
+                  <Link className="h-4 w-4 mr-1.5" />
+                  Link Existing
+                </Button>
+                <Button size="sm" onClick={onOpenEditor}>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Create New
+                </Button>
+              </div>
             )}
           </div>
         </CardContent>
