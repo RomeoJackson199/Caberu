@@ -2,8 +2,13 @@
 export { ErrorState, EmptyState } from "./ErrorState";
 export type { ErrorType } from "./ErrorState";
 
+// Error Boundaries
+export { AppointmentErrorBoundary, withAppointmentErrorBoundary } from "./AppointmentErrorBoundary";
+export { FormErrorBoundary, withFormErrorBoundary } from "./FormErrorBoundary";
+
 // Network Status Components
 export { NetworkStatus, NetworkIndicator, SyncingIndicator } from "./NetworkStatus";
+export { OfflineIndicator, OfflineBanner } from "./OfflineIndicator";
 
 // Confirmation Dialogs
 export {

@@ -28,6 +28,10 @@ const ClinicMap = lazy(() => import("@/components/Map"));
 import { logger } from '@/lib/logger';
 import { AnimatedBackground, EmptyState } from "@/components/ui/polished-components";
 import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
+import { AppointmentErrorBoundary } from "@/components/stability/AppointmentErrorBoundary";
+import { OfflineBanner } from "@/components/stability/OfflineIndicator";
+import { retryAppointmentOperation } from "@/lib/retryStrategies";
+import { getFriendlyErrorMessage } from "@/lib/userFriendlyErrors";
 
 interface Dentist {
   id: string;
@@ -65,7 +69,7 @@ interface Service {
   category: string | null;
 }
 
-export default function BookAppointment() {
+function BookAppointmentContent() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { businessId, loading: businessLoading, switchBusiness } = useBusinessContext();
@@ -522,23 +526,31 @@ export default function BookAppointment() {
       setShowSuccessDialog(true);
     } catch (error) {
       logger.error("Error booking appointment:", error);
-      const errorMessage = error instanceof Error ? error.message : "Please try again";
 
-      if (errorMessage.includes("no longer available") || errorMessage.includes("Slot not available")) {
-        toast({
-          title: "Slot No Longer Available",
-          description: "Sorry, this slot is not available. It may have just been taken.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Booking Failed",
-          description: "Please try again or contact support.",
-          variant: "destructive",
-        });
+      // Use friendly error messages
+      const friendlyError = getFriendlyErrorMessage(
+        error instanceof Error ? error : new Error(String(error)),
+        { operation: 'booking your appointment', entity: 'appointment' }
+      );
+
+      toast({
+        title: friendlyError.title,
+        description: friendlyError.message,
+        variant: "destructive",
+      });
+
+      // Show suggestion if available
+      if (friendlyError.suggestion) {
+        setTimeout(() => {
+          toast({
+            description: friendlyError.suggestion,
+            duration: 5000,
+          });
+        }, 500);
       }
+
       // Refresh slots on failure to prevent stale data
-      if (selectedDate && selectedDentist) {
+      if (selectedDate && selectedDentist && friendlyError.canRetry) {
         fetchAvailableSlots(selectedDate, selectedDentist.id);
       }
       setBookingStep('datetime');
@@ -1131,5 +1143,15 @@ export default function BookAppointment() {
         </div>
       )}
     </div>
+  );
+}
+
+// Wrap with error boundary for better stability
+export default function BookAppointment() {
+  return (
+    <AppointmentErrorBoundary context="booking">
+      <OfflineBanner />
+      <BookAppointmentContent />
+    </AppointmentErrorBoundary>
   );
 }
