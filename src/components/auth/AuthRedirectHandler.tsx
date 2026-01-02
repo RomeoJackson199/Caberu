@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useIsSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
@@ -225,7 +225,7 @@ export function AuthRedirectHandler() {
 
   if (superAdminLoading || roleLoading || businessLoading) {
     return (
-      <ModernLoadingSpinner
+      <LoadingSpinner
         variant="overlay"
         size="lg"
         message="Redirecting..."
@@ -236,7 +236,7 @@ export function AuthRedirectHandler() {
 
   if (isRedirecting) {
     return (
-      <ModernLoadingSpinner
+      <LoadingSpinner
         variant="overlay"
         size="lg"
         message="Almost there..."

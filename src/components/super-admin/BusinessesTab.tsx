@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAllBusinesses } from '@/hooks/useSuperAdmin';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Search, Building2, Users, Calendar, Plus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CreateBusinessDialog } from './CreateBusinessDialog';
@@ -66,7 +66,7 @@ export function BusinessesTab() {
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <ModernLoadingSpinner />
+              <LoadingSpinner />
             </div>
           ) : (
             <div className="border rounded-lg">

@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Eye, Sparkles } from "lucide-react";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
+import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 
 export function HomepageEditor() {
@@ -127,7 +127,7 @@ export function HomepageEditor() {
   };
 
   if (loading) {
-    return <ModernLoadingSpinner />;
+    return <LoadingSpinner />;
   }
 
   return (

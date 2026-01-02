@@ -19,7 +19,7 @@ import {
   RefreshCw,
   Check
 } from 'lucide-react';
-import { modernToast } from '@/components/enhanced/ModernNotificationToast';
+import { showToast } from '@/components/ui/notification-toast';
 import { PulseIndicator } from '@/components/ui/micro-interactions';
 import { AnimatedToggle } from '@/components/ui/page-enhancements';
 
@@ -66,7 +66,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
 
   const handleInstallApp = async () => {
     if (!installPrompt) {
-      modernToast.info({
+      showToast.info({
         title: 'Install Available',
         description: 'Use your browser menu to install this app'
       });
@@ -75,7 +75,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
 
     const result = await installPrompt.prompt();
     if (result.outcome === 'accepted') {
-      modernToast.success({
+      showToast.success({
         title: 'App Installing',
         description: 'DentiSmart is being installed on your device'
       });
@@ -85,7 +85,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
 
   const handleEnableNotifications = async () => {
     if (!('Notification' in window)) {
-      modernToast.error({
+      showToast.error({
         title: 'Not Supported',
         description: 'Your browser does not support notifications'
       });
@@ -94,7 +94,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
 
     if (notificationPermission === 'granted') {
       setPushEnabled(!pushEnabled);
-      modernToast.success({
+      showToast.success({
         title: pushEnabled ? 'Notifications Disabled' : 'Notifications Enabled',
         description: `Push notifications have been ${pushEnabled ? 'disabled' : 'enabled'}`
       });
@@ -107,7 +107,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
       
       if (permission === 'granted') {
         setPushEnabled(true);
-        modernToast.success({
+        showToast.success({
           title: 'Notifications Enabled',
           description: 'You will now receive push notifications'
         });
@@ -119,13 +119,13 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
           badge: '/favicon.ico'
         });
       } else {
-        modernToast.warning({
+        showToast.warning({
           title: 'Permission Denied',
           description: 'Enable notifications in your browser settings'
         });
       }
     } catch (error) {
-      modernToast.error({
+      showToast.error({
         title: 'Error',
         description: 'Failed to enable notifications'
       });
@@ -140,7 +140,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
           text: 'Check out this amazing dental appointment scheduling app!',
           url: window.location.origin
         });
-        modernToast.success({
+        showToast.success({
           title: 'Shared Successfully',
           description: 'Thanks for sharing DentiSmart!'
         });
@@ -150,7 +150,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
     } else {
       // Fallback to copying URL
       navigator.clipboard.writeText(window.location.origin);
-      modernToast.success({
+      showToast.success({
         title: 'Link Copied',
         description: 'App link copied to clipboard'
       });
@@ -158,7 +158,7 @@ export function PWAFeatures({ className }: PWAFeaturesProps) {
   };
 
   const addToHomeScreen = () => {
-    modernToast.info({
+    showToast.info({
       title: 'Add to Home Screen',
       description: 'Use your browser menu to add DentiSmart to your home screen',
       action: {

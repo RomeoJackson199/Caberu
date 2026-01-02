@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthRedirectHandler } from '@/components/auth/AuthRedirectHandler';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 /**
  * Post-authentication redirect page that routes users based on their roles:
@@ -20,7 +20,7 @@ export default function AuthRedirect() {
   }, []);
 
   if (isAuthenticated === null) {
-    return <ModernLoadingSpinner variant="overlay" message="Checking authentication..." />;
+    return <LoadingSpinner variant="overlay" message="Checking authentication..." />;
   }
 
   if (!isAuthenticated) {

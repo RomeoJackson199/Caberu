@@ -20,7 +20,7 @@ export interface ToastOptions {
   };
 }
 
-export const modernToast = {
+export const showToast = {
   success: (options: ToastOptions) => {
     toast.success(options.title, {
       description: options.description,

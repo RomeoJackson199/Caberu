@@ -31,7 +31,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { DentistPatient, PatientFlags, PatientAppointment, getAppointmentGroup } from './types';
-import { MedicalAlertsBanner } from '@/components/patient/MedicalAlertsBanner';
+import { MedicalAlertsBanner } from '@/components/patients/MedicalAlertsBanner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';

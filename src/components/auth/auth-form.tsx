@@ -28,13 +28,13 @@ import { analytics, ANALYTICS_EVENTS } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
-interface EnhancedAuthFormProps {
+interface AuthFormProps {
   compact?: boolean;
   onSuccess?: () => void;
   showNextParam?: boolean;
 }
 
-export const EnhancedAuthForm: React.FC<EnhancedAuthFormProps> = ({
+export const AuthForm: React.FC<AuthFormProps> = ({
   compact = false,
   onSuccess,
   showNextParam = true

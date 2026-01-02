@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSystemStats } from '@/hooks/useSuperAdmin';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Building2,
   Users,
@@ -16,7 +16,7 @@ export function OverviewTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <ModernLoadingSpinner />
+        <LoadingSpinner />
       </div>
     );
   }

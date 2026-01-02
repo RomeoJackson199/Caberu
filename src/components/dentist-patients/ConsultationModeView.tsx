@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { DentistPatient, PatientAppointment } from './types';
 import { DentistAppointmentDetail } from '@/components/appointments/DentistAppointmentDetail';
-import { AppointmentCompletionDialog } from '@/components/appointment/AppointmentCompletionDialog';
+import { CompletionDialog } from '@/components/appointments/completion-dialog';
 import { ConsultationModeBanner } from './ConsultationModeEntry';
 
 interface ConsultationModeViewProps {
@@ -76,7 +76,7 @@ export function ConsultationModeView({
 
       {/* Completion Dialog */}
       {showCompletionDialog && (
-        <AppointmentCompletionDialog
+        <CompletionDialog
           open={showCompletionDialog}
           onOpenChange={setShowCompletionDialog}
           appointment={{

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
+import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from '@/lib/logger';
 
@@ -79,11 +79,11 @@ export function RoleBasedRouter({ children, requiredRole, redirectTo = "/" }: Ro
   }, [loading, requiredRole, hasRole, isDentist, roles, navigate, redirectTo]);
 
   if (loading) {
-    return <ModernLoadingSpinner variant="overlay" message="Verifying access..." />;
+    return <LoadingSpinner variant="overlay" message="Verifying access..." />;
   }
 
   if (!authorized) {
-    return <ModernLoadingSpinner variant="overlay" message="Redirecting..." />;
+    return <LoadingSpinner variant="overlay" message="Redirecting..." />;
   }
 
   return <>{children}</>;

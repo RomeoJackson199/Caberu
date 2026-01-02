@@ -19,11 +19,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useSystemErrors, useResolveError } from '@/hooks/useSuperAdmin';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AlertCircle, CheckCircle2, Calendar, ExternalLink, TestTube } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { SystemError } from '@/types/super-admin';
-import { reportError } from '@/lib/errorReporting';
+import { reportError } from '@/lib/error-handling/reporting';
 import { useToast } from '@/hooks/use-toast';
 
 export function ErrorsTab() {
@@ -112,7 +112,7 @@ export function ErrorsTab() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <ModernLoadingSpinner />
+              <LoadingSpinner />
             </div>
           ) : (
             <div className="border rounded-lg">

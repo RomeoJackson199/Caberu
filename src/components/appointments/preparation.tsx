@@ -10,7 +10,7 @@ import {
   AlertCircle 
 } from 'lucide-react';
 
-interface AppointmentPreparationProps {
+interface PreparationProps {
   appointmentType?: string;
   preparationInstructions?: string;
   clinicAddress?: string;
@@ -19,14 +19,14 @@ interface AppointmentPreparationProps {
   estimatedDuration?: number;
 }
 
-export function AppointmentPreparation({
+export function Preparation({
   appointmentType = "General",
   preparationInstructions,
   clinicAddress,
   parkingInfo,
   directions,
   estimatedDuration = 30,
-}: AppointmentPreparationProps) {
+}: PreparationProps) {
   const defaultInstructions = {
     "General": [
       "Bring your insurance card and ID",

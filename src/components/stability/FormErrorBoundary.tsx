@@ -3,7 +3,7 @@ import { AlertCircle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';
-import { reportError } from '@/lib/errorReporting';
+import { reportError } from '@/lib/error-handling/reporting';
 
 interface Props {
   children: ReactNode;

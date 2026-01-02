@@ -18,7 +18,7 @@ import { TestimonialsSection } from "@/components/homepage/TestimonialsSection";
 import { FAQSection } from "@/components/homepage/FAQSection";
 import { ContactForm } from "@/components/homepage/ContactForm";
 import { PremiumHeroSection } from "@/components/homepage/PremiumHeroSection";
-import { EnhancedFeatureSection } from "@/components/homepage/EnhancedFeatureSection";
+import { FeatureSection } from "@/components/homepage/FeatureSection";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ const Index = () => {
         <PremiumHeroSection />
 
         {/* Enhanced Feature Section */}
-        <EnhancedFeatureSection />
+        <FeatureSection />
 
         {/* Interactive Features Grid */}
         <InteractiveBentoGrid />

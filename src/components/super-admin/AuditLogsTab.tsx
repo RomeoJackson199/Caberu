@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuditLogs } from '@/hooks/useSuperAdmin';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Shield, Calendar, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -53,7 +53,7 @@ export function AuditLogsTab() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <ModernLoadingSpinner />
+              <LoadingSpinner />
             </div>
           ) : (
             <div className="border rounded-lg">
