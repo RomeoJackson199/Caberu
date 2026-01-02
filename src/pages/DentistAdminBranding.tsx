@@ -469,9 +469,9 @@ export default function DentistAdminBranding() {
     setHasChanges(JSON.stringify(currentState) !== JSON.stringify(initialState));
   }, [clinicName, slug, tagline, address, phone, primaryColor, secondaryColor, logoUrl, templateType, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
 
-  const { ConfirmationDialog } = useUnsavedChanges({
-    hasUnsavedChanges: hasChanges,
-    onSave: handleSaveBranding,
+  useUnsavedChanges({
+    when: hasChanges,
+    onNavigate: handleSaveBranding,
   });
 
   if (businessLoading) {
@@ -480,7 +480,6 @@ export default function DentistAdminBranding() {
 
   return (
     <>
-      <ConfirmationDialog />
       <div>
         <PageHeader
           title={t.brandingSettings}

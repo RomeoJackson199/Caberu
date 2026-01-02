@@ -31,7 +31,7 @@ import {
   Award
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RecallBanner } from "@/components/patient/RecallBanner";
+import { RecallBanner } from "@/components/patients/RecallBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { getPatientActiveRecall, RecallRecord } from "@/lib/recalls";
 import { useLanguage } from "@/hooks/useLanguage";

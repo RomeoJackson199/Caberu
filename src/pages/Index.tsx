@@ -18,7 +18,7 @@ import { TestimonialsSection } from "@/components/homepage/TestimonialsSection";
 import { FAQSection } from "@/components/homepage/FAQSection";
 import { ContactForm } from "@/components/homepage/ContactForm";
 import { PremiumHeroSection } from "@/components/homepage/PremiumHeroSection";
-import { FeatureSection } from "@/components/homepage/FeatureSection";
+import { FeatureSection } from "@/components/homepage/feature-section";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);

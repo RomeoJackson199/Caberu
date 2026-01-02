@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { saveProfileData, loadProfileData, ProfileData } from "@/lib/profileUtils";
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
-import { PatientSecuritySettings } from "@/components/patient/PatientSecuritySettings";
+import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySettings";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { supabase } from "@/integrations/supabase/client";

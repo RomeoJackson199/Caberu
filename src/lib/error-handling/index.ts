@@ -42,6 +42,5 @@ export {
 // Error reporting
 export {
   reportError,
-  ErrorSeverity,
-  type ErrorReport,
 } from './reporting';
+export type { ErrorSeverity } from './reporting';

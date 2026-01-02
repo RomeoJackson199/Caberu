@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { PaymentsTab } from "@/components/patient/PaymentsTab";
+import { PaymentsTab } from "@/components/patients/PaymentsTab";
 import { emitAnalyticsEvent } from "@/lib/analyticsEvents";
 import { AnimatedBackground, SectionHeader, EmptyState } from "@/components/ui/polished-components";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";

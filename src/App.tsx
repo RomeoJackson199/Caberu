@@ -16,7 +16,7 @@ import { SeoManager } from "./lib/seo";
 import AuthCallbackHandler from "./components/AuthCallbackHandler";
 import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import { DentistPortal } from "@/pages/DentistPortal";
-import { PatientPortalNav } from "@/components/patient/PatientPortalNav";
+import { PatientPortalNav } from "@/components/patients/PatientPortalNav";
 import { RoleBasedRouter } from "@/components/RoleBasedRouter";
 import { DentistInvitationDialog } from "@/components/DentistInvitationDialog";
 import { SubscriptionGuard } from "@/components/auth/SubscriptionGuard";

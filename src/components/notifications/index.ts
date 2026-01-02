@@ -1,5 +1,4 @@
 // Enhanced Notification System Exports
-export { EnhancedNotificationPanel } from './EnhancedNotificationPanel';
 export { NotificationToast, NotificationToastContainer } from './NotificationToast';
 export { MobileNotificationOverlay } from './MobileNotificationOverlay';
 export { 

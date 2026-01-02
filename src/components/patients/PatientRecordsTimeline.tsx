@@ -11,7 +11,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
+import { PatientAppointmentDetail } from "@/components/patients/PatientAppointmentDetail";
 import { TreatmentPlanDetailSheet } from "@/components/treatment-plans/TreatmentPlanDetailSheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

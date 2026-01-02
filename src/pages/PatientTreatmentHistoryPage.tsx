@@ -2,7 +2,7 @@ import React from "react";
 import { FileText, FolderOpen, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
-import { PatientRecordsTimeline } from "@/components/patient/PatientRecordsTimeline";
+import { PatientRecordsTimeline } from "@/components/patients/PatientRecordsTimeline";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";

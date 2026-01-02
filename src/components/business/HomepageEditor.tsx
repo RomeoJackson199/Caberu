@@ -109,9 +109,9 @@ export function HomepageEditor() {
     setHasChanges(JSON.stringify(settings) !== JSON.stringify(initialSettings));
   }, [settings, initialSettings]);
 
-  const { ConfirmationDialog } = useUnsavedChanges({
-    hasUnsavedChanges: hasChanges,
-    onSave: handleSave,
+  useUnsavedChanges({
+    when: hasChanges,
+    onNavigate: handleSave,
   });
 
   const handlePreview = async () => {
@@ -132,7 +132,6 @@ export function HomepageEditor() {
 
   return (
     <>
-      <ConfirmationDialog />
       <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>

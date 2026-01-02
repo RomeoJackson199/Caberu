@@ -24,10 +24,10 @@ import {
   isToday, 
   isPast 
 } from "date-fns";
-import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
+import { PatientAppointmentDetail } from "@/components/patients/PatientAppointmentDetail";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
-import { AppointmentIndexCard, AppointmentIndexCardSkeleton } from "@/components/patient/AppointmentIndexCard";
+import { AppointmentIndexCard, AppointmentIndexCardSkeleton } from "@/components/patients/AppointmentIndexCard";
 import { 
   deriveAppointmentState, 
   getAppointmentGroup,

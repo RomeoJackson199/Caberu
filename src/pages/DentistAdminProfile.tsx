@@ -141,9 +141,9 @@ export default function DentistAdminProfile() {
     await handleSubmit(fakeEvent);
   };
 
-  const { ConfirmationDialog } = useUnsavedChanges({
-    hasUnsavedChanges: hasChanges,
-    onSave: handleSave,
+  useUnsavedChanges({
+    when: hasChanges,
+    onNavigate: handleSave,
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -156,7 +156,6 @@ export default function DentistAdminProfile() {
 
   return (
     <>
-      <ConfirmationDialog />
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
