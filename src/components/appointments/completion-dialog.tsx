@@ -34,7 +34,7 @@ import { logger } from '@/lib/logger';
 import { ImagingUploader } from '@/components/imaging/ImagingUploader';
 import { ImagingGallery } from '@/components/imaging/ImagingGallery';
 
-interface AppointmentCompletionDialogProps {
+interface CompletionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appointment: {
@@ -72,12 +72,12 @@ const allStepMeta: Record<string, { title: string; icon: any }> = {
   complete: { title: 'Complete', icon: CheckCircle2 },
 } as const;
 
-export function AppointmentCompletionDialog({
+export function CompletionDialog({
   open,
   onOpenChange,
   appointment,
   onCompleted
-}: AppointmentCompletionDialogProps) {
+}: CompletionDialogProps) {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);

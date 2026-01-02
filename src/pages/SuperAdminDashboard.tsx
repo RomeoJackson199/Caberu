@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useIsSuperAdmin } from '@/hooks/useSuperAdmin';
 import { Shield, AlertCircle, LogOut } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -50,7 +50,7 @@ export default function SuperAdminDashboard() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <ModernLoadingSpinner size="lg" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

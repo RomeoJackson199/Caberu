@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { ModernLoadingSpinner } from '@/components/enhanced/ModernLoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface LazyLoadingWrapperProps {
   importFunc: () => Promise<{ default: React.ComponentType<any> }>;
@@ -8,7 +8,7 @@ interface LazyLoadingWrapperProps {
 
 export const LazyLoadingWrapper = ({ 
   importFunc, 
-  fallback = <ModernLoadingSpinner message="Loading component..." />
+  fallback = <LoadingSpinner message="Loading component..." />
 }: LazyLoadingWrapperProps) => {
   const LazyComponent = lazy(importFunc);
   

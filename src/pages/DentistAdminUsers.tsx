@@ -8,7 +8,7 @@ import { AddUserDialog } from "@/components/admin/AddUserDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Mail, Calendar, Shield, Users as UsersIcon, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
+import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import { logger } from '@/lib/logger';
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -133,7 +133,7 @@ export default function DentistAdminUsers() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <ModernLoadingSpinner message={t.loading} />
+        <LoadingSpinner message={t.loading} />
       </div>
     );
   }

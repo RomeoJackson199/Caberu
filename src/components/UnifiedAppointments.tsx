@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
+import { CompletionDialog } from "@/components/appointment/CompletionDialog";
 import { AppointmentEditDialog } from "@/components/appointments/AppointmentEditDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -731,7 +731,7 @@ export function UnifiedAppointments({
 
       {/* Modern Completion Dialog */}
       {selectedAppointment && (
-        <AppointmentCompletionDialog
+        <CompletionDialog
           open={showCompletion}
           onOpenChange={setShowCompletion}
           appointment={{

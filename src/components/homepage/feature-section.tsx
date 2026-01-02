@@ -154,7 +154,7 @@ const StatsBar = () => {
   );
 };
 
-export function EnhancedFeatureSection() {
+export function FeatureSection() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });

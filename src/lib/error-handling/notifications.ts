@@ -153,7 +153,7 @@ export function processError(error: unknown, context?: ErrorContext): DetailedEr
 /**
  * Display error toast with enhanced messaging
  */
-export function showEnhancedErrorToast(error: unknown, context?: ErrorContext): DetailedError {
+export function showErrorToast(error: unknown, context?: ErrorContext): DetailedError {
   const processedError = processError(error, context);
   
   toast({
@@ -178,9 +178,9 @@ export function showEnhancedErrorToast(error: unknown, context?: ErrorContext): 
 /**
  * Display success toast with consistent styling
  */
-export function showEnhancedSuccessToast(
-  message: string, 
-  title?: string, 
+export function showSuccessToast(
+  message: string,
+  title?: string,
   duration: number = 4000
 ): void {
   toast({
@@ -278,7 +278,7 @@ export function debouncedErrorToast(
   
   // Set new timeout
   const timeout = setTimeout(() => {
-    showEnhancedErrorToast(error, context);
+    showErrorToast(error, context);
     errorQueue.delete(key);
   }, debounceMs);
   
@@ -298,11 +298,11 @@ export async function safeAsyncOperation<T>(
     return { data, error: null };
   } catch (error) {
     const processedError = processError(error, context);
-    
+
     if (showToast) {
-      showEnhancedErrorToast(error, context);
+      showErrorToast(error, context);
     }
-    
+
     return { data: null, error: processedError };
   }
 }
@@ -363,3 +363,6 @@ export const COMMON_ERRORS = {
   NOT_FOUND: 'not_found',
   SERVER_ERROR: 'server_error'
 } as const;
+// Backward compatibility exports
+export const showEnhancedErrorToast = showErrorToast;
+export const showEnhancedSuccessToast = showSuccessToast;

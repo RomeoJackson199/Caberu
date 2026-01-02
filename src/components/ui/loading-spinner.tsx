@@ -1,19 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Heart, Sparkles } from "lucide-react";
 
-interface ModernLoadingSpinnerProps {
+interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg" | "xl";
   variant?: "default" | "card" | "overlay" | "minimal";
   message?: string;
   description?: string;
 }
 
-export function ModernLoadingSpinner({ 
+export function LoadingSpinner({ 
   size = "md", 
   variant = "default",
   message = "Loading...",
   description
-}: ModernLoadingSpinnerProps) {
+}: LoadingSpinnerProps) {
   const sizeClasses = {
     sm: "h-4 w-4",
     md: "h-6 w-6", 

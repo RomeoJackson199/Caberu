@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Clock, User, MapPin } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
+import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from '@/lib/logger';
 

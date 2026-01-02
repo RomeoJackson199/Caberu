@@ -32,7 +32,7 @@ interface VacationDay {
   is_approved: boolean;
 }
 
-interface EnhancedAvailabilitySettingsProps {
+interface AvailabilitySettingsProps {
   dentistId: string;
 }
 
@@ -52,7 +52,7 @@ const VACATION_TYPES = [
   { value: 'personal', label: 'Congé personnel', color: 'bg-green-100 text-green-800' },
 ];
 
-export function EnhancedAvailabilitySettings({ dentistId }: EnhancedAvailabilitySettingsProps) {
+export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
   const [availability, setAvailability] = useState<DentistAvailability[]>([]);
   const [vacationDays, setVacationDays] = useState<VacationDay[]>([]);
   const [loading, setLoading] = useState(true);

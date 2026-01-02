@@ -15,7 +15,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
 import { DentistPatientManagement } from "@/components/dentist-patients";
-import { EnhancedAvailabilitySettings } from "@/components/enhanced/EnhancedAvailabilitySettings";
+import { AvailabilitySettings } from "@/components/enhanced/AvailabilitySettings";
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
 // Lazy load analytics (includes heavy chart library ~400KB)
 const DentistAnalytics = lazy(() => import("@/components/analytics/DentistAnalytics").then(m => ({ default: m.DentistAnalytics })));
@@ -26,7 +26,7 @@ import DentistAdminSecurity from "./DentistAdminSecurity";
 import DentistAdminUsers from "./DentistAdminUsers";
 import DentistTeamManagement from "./DentistTeamManagement";
 import DentistSettings from "./DentistSettings";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
+import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import DentistAppointmentsManagement from "./DentistAppointmentsManagement";
 import { InviteDentistDialog } from "@/components/InviteDentistDialog";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
@@ -296,7 +296,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   }
 
   if (!dentistId) {
-    return <ModernLoadingSpinner variant="card" message={t.accessDenied || "Access Denied"} description={t.notRegisteredAsDentist} />;
+    return <LoadingSpinner variant="card" message={t.accessDenied || "Access Denied"} description={t.notRegisteredAsDentist} />;
   }
 
   const renderContent = () => {
@@ -322,7 +322,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     // If trying to access clinical section without medical features, redirect to dashboard
     if (activeSection === 'clinical' && !hasFeature('medicalRecords') && !hasFeature('prescriptions') && !hasFeature('treatmentPlans')) {
       setActiveSection('dashboard');
-      return <ModernLoadingSpinner variant="card" message={t.loading} />;
+      return <LoadingSpinner variant="card" message={t.loading} />;
     }
 
     switch (activeSection) {
@@ -336,7 +336,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         return <DentistAdminUsers />;
       case 'messages':
         return (
-          <Suspense fallback={<ModernLoadingSpinner />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <Messages />
           </Suspense>
         );
@@ -347,12 +347,12 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         }
         return <div className="p-4">{t.clinicalNotAvailable || "Clinical features not available for this business type"}</div>;
       case 'schedule':
-        return <EnhancedAvailabilitySettings dentistId={dentistId} />;
+        return <AvailabilitySettings dentistId={dentistId} />;
       case 'payments':
         return hasFeature('paymentRequests') ? <PaymentRequestManager dentistId={dentistId} /> : <div className="p-4">{t.paymentNotAvailable || "Payment features not available"}</div>;
       case 'analytics':
         return (
-          <Suspense fallback={<ModernLoadingSpinner />}>
+          <Suspense fallback={<LoadingSpinner />}>
             <DentistAnalytics
               dentistId={dentistId}
               onOpenPatientsTab={() => setActiveSection('patients')}

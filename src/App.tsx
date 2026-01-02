@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SeoManager } from "./lib/seo";
 import AuthCallbackHandler from "./components/AuthCallbackHandler";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
+import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import { DentistPortal } from "@/pages/DentistPortal";
 import { PatientPortalNav } from "@/components/patient/PatientPortalNav";
 import { RoleBasedRouter } from "@/components/RoleBasedRouter";
@@ -116,7 +116,7 @@ const Dashboard = () => {
   }, []);
 
   if (loading) {
-    return <ModernLoadingSpinner variant="overlay" message="Loading dashboard..." />;
+    return <LoadingSpinner variant="overlay" message="Loading dashboard..." />;
   }
 
   if (!user) {
@@ -297,7 +297,7 @@ const App = () => {
                     <CookieConsent isAuthenticated={!!user} />
                     <OnboardingOrchestrator user={user} />
                     <SeoManager />
-                    <Suspense fallback={<ModernLoadingSpinner variant="overlay" message="Loading..." />}>
+                    <Suspense fallback={<LoadingSpinner variant="overlay" message="Loading..." />}>
                       <Routes>
                         <Route path="/" element={<Index />} />
                         {/* Demo routes */}

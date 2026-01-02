@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
-import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
+import { CompletionDialog } from "@/components/appointment/CompletionDialog";
 import {
   Calendar,
   Clock,
@@ -318,7 +318,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
 
         {/* Complete Appointment Dialog */}
         {nextAppointment && (
-          <AppointmentCompletionDialog
+          <CompletionDialog
             open={showCompleteDialog}
             onOpenChange={setShowCompleteDialog}
             appointment={{

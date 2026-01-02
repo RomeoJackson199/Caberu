@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { EnhancedAuthForm } from "@/components/auth/EnhancedAuthForm";
-import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
+import { AuthForm } from "@/components/auth/AuthForm";
+import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2 } from "lucide-react";
@@ -130,7 +130,7 @@ export default function BusinessPortal() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <ModernLoadingSpinner />
+        <LoadingSpinner />
       </div>
     );
   }
@@ -171,7 +171,7 @@ export default function BusinessPortal() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <EnhancedAuthForm onSuccess={handleAuthSuccess} />
+                <AuthForm onSuccess={handleAuthSuccess} />
               </CardContent>
             </Card>
           </div>

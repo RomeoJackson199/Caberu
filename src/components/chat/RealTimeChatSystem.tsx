@@ -15,7 +15,7 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { modernToast } from '@/components/enhanced/ModernNotificationToast';
+import { showToast } from '@/components/ui/notification-toast';
 import { logger } from '@/lib/logger';
 
 interface Message {
@@ -174,7 +174,7 @@ export function RealTimeChatSystem({
       const newMsg = payload.new as Message;
       if (newMsg.sender_id !== currentUserId) {
         setMessages(prev => [...prev, newMsg]);
-        modernToast.info({
+        showToast.info({
           title: 'New Message',
           description: `New message from ${newMsg.sender_type}`,
           duration: 3000
@@ -240,13 +240,13 @@ export function RealTimeChatSystem({
       // Here you would save to database
       // const { data } = await supabase.from('messages').insert(message);
       
-      modernToast.success({
+      showToast.success({
         title: 'Message sent',
         description: 'Your message has been delivered'
       });
     } catch (error) {
       console.error('Error sending message:', error);
-      modernToast.error({
+      showToast.error({
         title: 'Failed to send',
         description: 'Please try again'
       });
