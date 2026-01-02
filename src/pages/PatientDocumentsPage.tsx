@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/hooks/useLanguage";
 import { AnimatedBackground, SectionHeader, EmptyState } from "@/components/ui/polished-components";
-import { HealthProgressDashboard } from "@/components/patient/HealthProgressDashboard";
+import { HealthProgressDashboard } from "@/components/patients/HealthProgressDashboard";
 
 export default function PatientDocumentsPage() {
   const { t } = useLanguage();

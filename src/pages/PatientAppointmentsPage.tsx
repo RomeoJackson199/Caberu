@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Plus, Clock, CheckCircle2, CalendarX, Sparkles } from "lucide-react";
 import { User } from "@supabase/supabase-js";
-import { AppointmentsTab } from "@/components/patient/AppointmentsTab";
+import { AppointmentsTab } from "@/components/patients/AppointmentsTab";
 import { supabase } from "@/integrations/supabase/client";
 import { SectionHeader, StatCard, AnimatedBackground } from "@/components/ui/polished-components";
 import { useNavigate } from "react-router-dom";

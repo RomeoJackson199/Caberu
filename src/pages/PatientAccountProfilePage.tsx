@@ -3,7 +3,7 @@ import { User } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SbUser } from "@supabase/supabase-js";
-import { SettingsPage } from "@/components/patient/SettingsPage";
+import { SettingsPage } from "@/components/patients/SettingsPage";
 
 export default function PatientAccountProfilePage() {
   const { t } = useLanguage();

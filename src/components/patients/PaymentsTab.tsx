@@ -6,7 +6,7 @@ import { DollarSign, CheckCircle, Loader2, ExternalLink, Calendar, Building2 } f
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { PatientAppointmentDetail } from "@/components/patient/PatientAppointmentDetail";
+import { PatientAppointmentDetail } from "@/components/patients/PatientAppointmentDetail";
 
 interface PaymentWithDetails {
   id: string;
