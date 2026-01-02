@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
-import { CompletionDialog } from "@/components/appointment/CompletionDialog";
+import { CompletionDialog } from "@/components/appointments/completion-dialog";
 import {
   Calendar,
   Clock,

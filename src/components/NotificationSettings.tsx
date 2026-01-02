@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { NotificationService } from '@/lib/notificationService';
 import { NotificationPreferences } from '@/types/common';
 import { supabase } from '@/integrations/supabase/client';
