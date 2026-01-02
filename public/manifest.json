@@ -12,16 +12,28 @@
   "categories": ["medical", "health", "productivity", "business"],
   "icons": [
     {
-      "src": "/lovable-uploads/bd9069b9-f5b0-427d-8acb-8b6a25ccba24.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/lovable-uploads/bd9069b9-f5b0-427d-8acb-8b6a25ccba24.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -30,14 +42,14 @@
       "short_name": "Book",
       "description": "Book a new appointment",
       "url": "/book-appointment",
-      "icons": [{ "src": "/lovable-uploads/bd9069b9-f5b0-427d-8acb-8b6a25ccba24.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View your dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/lovable-uploads/bd9069b9-f5b0-427d-8acb-8b6a25ccba24.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }
