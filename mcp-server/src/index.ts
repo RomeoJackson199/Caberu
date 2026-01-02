@@ -16,6 +16,12 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Type for patient data with enhanced fields
+type PatientWithExtras = Record<string, unknown> & {
+  last_dentist?: unknown;
+  last_appointment_date?: string;
+};
+
 const server = new Server(
   {
     name: 'dental-practice-db',
@@ -492,8 +498,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               .maybeSingle();
 
             if (lastAppt) {
-              (patient as any).last_dentist = lastAppt.dentists;
-              (patient as any).last_appointment_date = lastAppt.appointment_date;
+              (patient as PatientWithExtras).last_dentist = lastAppt.dentists;
+              (patient as PatientWithExtras).last_appointment_date = lastAppt.appointment_date;
             }
           }
         }
@@ -559,7 +565,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             .maybeSingle();
 
           if (lastAppt) {
-            (patient as any).last_dentist = lastAppt.dentists;
+            (patient as PatientWithExtras).last_dentist = lastAppt.dentists;
           }
         }
 

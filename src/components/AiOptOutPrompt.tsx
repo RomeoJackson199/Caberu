@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +9,6 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Bot, X, Check } from "lucide-react";
-import { logger } from '@/lib/logger';
 
 interface AiOptOutPromptProps {
   user: User;
@@ -50,7 +48,7 @@ export const AiOptOutPrompt = ({ user }: AiOptOutPromptProps) => {
         title: "AI Features Enabled",
         description: "AI features have been re-enabled for your account.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to enable AI features",

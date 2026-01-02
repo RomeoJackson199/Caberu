@@ -135,7 +135,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
           .filter(Boolean)
       ));
       
-      let businessNameMap = new Map<string, string>();
+      const businessNameMap = new Map<string, string>();
       if (businessIds.length > 0) {
         const { data: businesses } = await supabase
           .from('businesses')

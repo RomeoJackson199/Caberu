@@ -281,7 +281,7 @@ export function ModernPatientManagement({ dentistId }: ModernPatientManagementPr
         .filter(Boolean) as Patient[];
 
       // Also get patients directly linked to the business (including those without appointments)
-      let allPatients = [...patientsFromAppointments];
+      const allPatients = [...patientsFromAppointments];
 
       if (businessId) {
         const { data: businessPatients, error: businessError } = await supabase
