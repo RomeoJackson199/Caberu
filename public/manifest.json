@@ -12,25 +12,25 @@
   "categories": ["medical", "health", "productivity", "business"],
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-192x192-maskable.png",
+      "src": "https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icon-512x512-maskable.png",
+      "src": "https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -42,14 +42,14 @@
       "short_name": "Book",
       "description": "Book a new appointment",
       "url": "/book-appointment",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-icon.png", "sizes": "192x192" }]
     },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View your dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "https://gjvxcisbaxhhblhsytar.supabase.co/storage/v1/object/public/company-logos/caberu-logo-icon.png", "sizes": "192x192" }]
     }
   ]
 }
