@@ -1,30 +1,34 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Lock, User, CheckCircle, ArrowLeft } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { logger } from '@/lib/logger';
+
+interface ExistingProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+}
 
 interface AccountClaimFlowProps {
   email: string;
-  existingProfile: any;
+  existingProfile: ExistingProfile;
   onBack: () => void;
   onSuccess: () => void;
 }
 
 export const AccountClaimFlow = ({ email, existingProfile, onBack, onSuccess }: AccountClaimFlowProps) => {
-  const { t } = useLanguage();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isCodeMode, setIsCodeMode] = useState(false);
   const [code, setCode] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
+  const [codeSent] = useState(false);
   const { toast } = useToast();
 
   const handleClaimAccount = async (e: React.FormEvent) => {

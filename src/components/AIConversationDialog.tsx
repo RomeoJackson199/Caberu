@@ -8,21 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Bot, Send, Loader2, Check, X, MessageSquare, User } from "lucide-react";
 import { AIWritingAssistant } from "@/components/AIWritingAssistant";
-import { 
-  ChatMessage, 
-  AiResponse, 
-  AiAction 
-} from "@/types/common";
-import { 
-  Patient,
-  MedicalRecord,
-  PatientNote,
-  TreatmentPlan,
-  Prescription, 
-  NewPrescriptionForm, 
-  NewTreatmentPlanForm, 
-  NewMedicalRecordForm, 
-  NewPatientNoteForm 
+import {
+  NewPrescriptionForm,
+  NewTreatmentPlanForm,
+  NewMedicalRecordForm,
+  NewPatientNoteForm
 } from "@/types/dental";
 
 interface AISuggestion {

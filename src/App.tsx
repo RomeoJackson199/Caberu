@@ -6,21 +6,15 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { BusinessProvider, useBusinessContext } from "./hooks/useBusinessContext";
-import { BusinessPickerDialog } from "./components/BusinessPickerDialog";
-import { BusinessSelectionForPatients } from "./components/BusinessSelectionForPatients";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./components/ui/dialog";
+import { BusinessProvider } from "./hooks/useBusinessContext";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
-import { ChangelogPopup } from "./components/ChangelogPopup";
 import { useState, useEffect, lazy, Suspense } from "react";
 import React from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import { SeoManager } from "./lib/seo";
-import { LazyLoadingWrapper } from "./components/optimized/LazyLoadingWrapper";
 import AuthCallbackHandler from "./components/AuthCallbackHandler";
 import { ModernLoadingSpinner } from "@/components/enhanced/ModernLoadingSpinner";
-import { AppShell } from "@/components/layout/AppShell";
 import { DentistPortal } from "@/pages/DentistPortal";
 import { PatientPortalNav } from "@/components/patient/PatientPortalNav";
 import { RoleBasedRouter } from "@/components/RoleBasedRouter";
@@ -59,8 +53,6 @@ const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Messages = lazy(() => import("./pages/Messages"));
 const DemoDentistDashboard = lazy(() => import("./pages/demo/DemoDentistDashboard"));
-const Schedule = lazy(() => import("./pages/Schedule"));
-const Analytics = lazy(() => import("./pages/Analytics"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Support = lazy(() => import("./pages/Support"));
 const FeatureDetail = lazy(() => import("./pages/FeatureDetail"));
@@ -93,7 +85,7 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
 
 // Business gate component - DISABLED: Now using dedicated /select-business page
-const BusinessGate = ({ showBusinessPicker, setShowBusinessPicker }: { showBusinessPicker: boolean, setShowBusinessPicker: (show: boolean) => void }) => {
+const BusinessGate = () => {
   // Popup disabled - business selection is now handled by /select-business page
   return null;
 };
@@ -387,10 +379,7 @@ const App = () => {
                     </Suspense>
 
                     {/* Business Picker Dialog */}
-                    <BusinessGate
-                      showBusinessPicker={showBusinessPicker}
-                      setShowBusinessPicker={setShowBusinessPicker}
-                    />
+                    <BusinessGate />
                   </EmailLimitProvider>
                 </BrowserRouter>
                 </ConfirmationProvider>
