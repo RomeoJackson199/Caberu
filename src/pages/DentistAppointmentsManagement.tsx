@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { WeeklyCalendarView } from "@/components/appointments/WeeklyCalendarView";
 import { DayCalendarView } from "@/components/appointments/DayCalendarView";
