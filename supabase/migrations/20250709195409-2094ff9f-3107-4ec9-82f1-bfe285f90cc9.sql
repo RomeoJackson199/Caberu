@@ -14,6 +14,7 @@ CREATE OR REPLACE FUNCTION cancel_appointment(appointment_id UUID, user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   UPDATE appointments 

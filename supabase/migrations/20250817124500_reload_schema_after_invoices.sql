@@ -8,6 +8,7 @@ CREATE OR REPLACE FUNCTION public.reload_postgrest_schema()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   PERFORM pg_notify('pgrst', 'reload schema');

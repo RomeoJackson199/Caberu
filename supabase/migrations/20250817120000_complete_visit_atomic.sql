@@ -10,6 +10,7 @@ CREATE OR REPLACE FUNCTION public.complete_visit_atomic(
 ) RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_invoice_id uuid;

@@ -185,6 +185,7 @@ CREATE OR REPLACE FUNCTION public.process_gdpr_deletion(target_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   result JSONB := '{}';

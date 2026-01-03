@@ -39,10 +39,14 @@ VALUES ('ILOVECABERU', 'free', 100, TRUE, NULL, NULL);
 
 -- Create function to increment promo code usage
 CREATE OR REPLACE FUNCTION increment_promo_usage(promo_id UUID)
-RETURNS VOID AS $$
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   UPDATE public.promo_codes
   SET uses_count = uses_count + 1
   WHERE id = promo_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;

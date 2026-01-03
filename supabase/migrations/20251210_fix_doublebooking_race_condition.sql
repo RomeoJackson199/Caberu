@@ -79,6 +79,7 @@ CREATE OR REPLACE FUNCTION generate_daily_slots(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_day_of_week INT;

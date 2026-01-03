@@ -196,62 +196,90 @@ const App = () => {
     const checkAuth = async () => {
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
+
+        // If there's an auth error, only log it if it's not a simple "no user" case
+        if (userError) {
+          // Don't log errors for unauthenticated users - this is expected
+          if (userError.message && !userError.message.includes('session_not_found')) {
+            logger.error('Error fetching user:', userError);
+          }
+          return;
+        }
 
         if (!isMounted) return;
         setUser(user);
 
-        if (user) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
+        // No user means not authenticated - this is not an error
+        if (!user) {
+          return;
+        }
 
-          if (profileError && profileError.code !== 'PGRST116') {
-            // Ignore "no rows found" error, log others
-            console.error('Error fetching profile:', profileError);
-          }
+        // User is authenticated, fetch their profile and business data
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
 
-          if (profile && isMounted) {
-            const { data: memberships, error: memberError } = await supabase
+        if (profileError && profileError.code !== 'PGRST116') {
+          // Only log unexpected errors (PGRST116 is "no rows found" - expected for new users)
+          logger.error('Error fetching profile:', profileError);
+        }
+
+        if (profile && isMounted) {
+          // Parallelize independent queries for faster loading
+          const [
+            { data: memberships, error: memberError },
+            { data: sessionBusiness, error: sessionError }
+          ] = await Promise.all([
+            supabase
               .from('business_members')
               .select('business_id')
-              .eq('profile_id', profile.id);
-
-            if (memberError) console.error('Error fetching memberships:', memberError);
-
-            // Check if they have a current business selection
-            const { data: sessionBusiness, error: sessionError } = await supabase
+              .eq('profile_id', profile.id),
+            supabase
               .from('session_business')
               .select('business_id')
               .eq('user_id', user.id)
               .order('updated_at', { ascending: false })
               .limit(1)
-              .maybeSingle();
+              .maybeSingle()
+          ]);
 
-            if (sessionError) console.error('Error fetching session business:', sessionError);
+          if (memberError) {
+            logger.error('Error fetching memberships:', memberError);
+          }
 
-            if (!isMounted) return;
+          if (sessionError) {
+            logger.error('Error fetching session business:', sessionError);
+          }
 
-            // Show business picker on login
-            if (memberships && memberships.length > 0) {
-              if (memberships.length >= 1 && !sessionBusiness?.business_id) {
-                // Providers with ANY clinics need to choose (to allow seeing public list)
-                setTimeout(() => {
-                  if (isMounted) setShowBusinessPicker(true);
-                }, 500);
-              }
-            } else if (!sessionBusiness?.business_id) {
-              // Patient/guest: no clinic selected yet, show patient picker
+          if (!isMounted) return;
+
+          // Show business picker on login
+          if (memberships && memberships.length > 0) {
+            if (memberships.length >= 1 && !sessionBusiness?.business_id) {
+              // Providers with ANY clinics need to choose (to allow seeing public list)
               setTimeout(() => {
                 if (isMounted) setShowBusinessPicker(true);
               }, 500);
             }
+          } else if (!sessionBusiness?.business_id) {
+            // Patient/guest: no clinic selected yet, show patient picker
+            setTimeout(() => {
+              if (isMounted) setShowBusinessPicker(true);
+            }, 500);
           }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        // Only log unexpected errors - don't log normal unauthenticated state
+        if (error && typeof error === 'object' && 'message' in error) {
+          const errorMessage = (error as { message: string }).message;
+          if (!errorMessage.includes('session_not_found') && !errorMessage.includes('not authenticated')) {
+            logger.error('Auth check failed:', error);
+          }
+        } else {
+          logger.error('Auth check failed:', error);
+        }
       }
     };
 

@@ -64,6 +64,7 @@ CREATE OR REPLACE FUNCTION generate_daily_slots(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_day_of_week INT;
@@ -136,6 +137,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   -- First ensure slots are generated
@@ -173,6 +175,7 @@ CREATE OR REPLACE FUNCTION book_appointment_slot(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   UPDATE appointment_slots

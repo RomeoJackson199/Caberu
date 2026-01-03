@@ -186,7 +186,11 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION public.log_and_enforce_payment_status_transition()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_actor uuid;
 BEGIN
@@ -207,7 +211,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DO $$
 BEGIN

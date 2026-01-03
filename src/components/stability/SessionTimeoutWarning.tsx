@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 const WARNING_BEFORE_TIMEOUT_MS = 2 * 60 * 1000; // Warn 2 minutes before
@@ -12,8 +13,31 @@ export function SessionTimeoutWarning() {
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isExtending, setIsExtending] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session?.user);
+    };
+
+    checkAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
+    // Only setup session timeout warning for authenticated users
+    if (!isAuthenticated) {
+      return;
+    }
+
     let warningTimeout: ReturnType<typeof setTimeout>;
     let countdownInterval: ReturnType<typeof setInterval>;
 
@@ -62,7 +86,7 @@ export function SessionTimeoutWarning() {
         document.removeEventListener(event, resetWarning);
       });
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const handleExtendSession = async () => {
     setIsExtending(true);
@@ -74,7 +98,7 @@ export function SessionTimeoutWarning() {
       setShowWarning(false);
       setTimeRemaining(0);
     } catch (error) {
-      console.error('Failed to extend session:', error);
+      logger.error('Failed to extend session:', error);
     } finally {
       setIsExtending(false);
     }

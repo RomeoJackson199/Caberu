@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.book_appointment_slot(p_dentist_id uuid, p_slo
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $function$
 BEGIN
   UPDATE public.appointment_slots 
@@ -24,6 +25,7 @@ CREATE OR REPLACE FUNCTION public.release_appointment_slot(p_appointment_id uuid
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $function$
 BEGIN
   UPDATE public.appointment_slots 

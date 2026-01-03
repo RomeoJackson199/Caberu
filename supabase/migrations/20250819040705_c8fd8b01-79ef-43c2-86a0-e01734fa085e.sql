@@ -145,6 +145,7 @@ CREATE OR REPLACE FUNCTION public.update_import_job_progress(p_job_id UUID)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   UPDATE public.import_jobs 

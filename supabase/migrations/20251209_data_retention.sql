@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION public.archive_old_appointments()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   archived_count INTEGER := 0;
@@ -57,6 +58,7 @@ CREATE OR REPLACE FUNCTION public.cleanup_expired_exports()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   deleted_count INTEGER := 0;
@@ -88,6 +90,7 @@ CREATE OR REPLACE FUNCTION public.anonymize_old_billing()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   anonymized_count INTEGER := 0;
@@ -131,6 +134,7 @@ CREATE OR REPLACE FUNCTION public.cleanup_old_audit_logs()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   deleted_count INTEGER := 0;
@@ -158,6 +162,7 @@ CREATE OR REPLACE FUNCTION public.run_data_retention_tasks()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   result JSONB := '{}';

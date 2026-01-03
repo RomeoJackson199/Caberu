@@ -115,6 +115,7 @@ CREATE OR REPLACE FUNCTION public.create_notification(
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   notification_id uuid;
@@ -148,6 +149,7 @@ CREATE OR REPLACE FUNCTION public.mark_notification_read(p_notification_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   UPDATE public.notifications
@@ -163,6 +165,7 @@ CREATE OR REPLACE FUNCTION public.mark_all_notifications_read()
 RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   affected_count integer;
@@ -181,6 +184,7 @@ CREATE OR REPLACE FUNCTION public.get_unread_notification_count()
 RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   count_result integer;
@@ -202,6 +206,7 @@ CREATE OR REPLACE FUNCTION public.create_appointment_reminder(
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   appointment_record record;
@@ -264,6 +269,7 @@ CREATE OR REPLACE FUNCTION public.create_prescription_notification(
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   prescription_record record;
@@ -307,6 +313,7 @@ CREATE OR REPLACE FUNCTION public.create_treatment_plan_notification(
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   treatment_plan_record record;

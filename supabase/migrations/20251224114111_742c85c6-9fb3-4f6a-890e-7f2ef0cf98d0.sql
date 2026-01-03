@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.generate_daily_slots(p_dentist_id uuid, p_date
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
+SET search_path = public
 AS $function$
 DECLARE
   v_day_of_week INT;

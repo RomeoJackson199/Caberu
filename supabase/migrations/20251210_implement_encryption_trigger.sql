@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION public.encrypt_treatment_plan_trigger()
 RETURNS TRIGGER 
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     app_key TEXT;

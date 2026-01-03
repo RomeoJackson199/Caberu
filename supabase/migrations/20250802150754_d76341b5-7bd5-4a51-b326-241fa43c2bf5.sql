@@ -75,7 +75,11 @@ CREATE OR REPLACE FUNCTION create_simple_appointment(
   p_appointment_date TIMESTAMP WITH TIME ZONE,
   p_reason TEXT DEFAULT 'Consultation',
   p_urgency urgency_level DEFAULT 'medium'
-) RETURNS UUID AS $$
+) RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   new_appointment_id UUID;
   patient_name TEXT;
@@ -83,7 +87,7 @@ BEGIN
   -- Get patient name
   SELECT first_name || ' ' || last_name INTO patient_name
   FROM profiles WHERE id = p_patient_id;
-  
+
   -- Insert appointment
   INSERT INTO appointments (
     patient_id,
@@ -104,7 +108,7 @@ BEGIN
     patient_name,
     60
   ) RETURNING id INTO new_appointment_id;
-  
+
   RETURN new_appointment_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;

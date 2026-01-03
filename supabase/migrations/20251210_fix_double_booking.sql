@@ -96,6 +96,7 @@ CREATE OR REPLACE FUNCTION public.generate_appointment_slots_safe(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   -- Get exclusive advisory lock for this dentist+date combination
