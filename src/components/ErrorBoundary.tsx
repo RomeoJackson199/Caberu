@@ -27,17 +27,17 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    console.error('Error stack:', error.stack);
-    console.error('Component stack:', errorInfo.componentStack);
+    logger.error('ErrorBoundary caught an error:', { error, errorInfo });
+    logger.error('Error stack:', error.stack);
+    logger.error('Component stack:', errorInfo.componentStack);
 
     // Also log to a more visible place for debugging
-    console.group('🚨 ERROR BOUNDARY TRIGGERED');
-    console.error('Error message:', error.message);
-    console.error('Error name:', error.name);
-    console.error('Full error:', error);
-    console.error('Component stack:', errorInfo.componentStack);
-    console.groupEnd();
+    logger.error('🚨 ERROR BOUNDARY TRIGGERED', {
+      message: error.message,
+      name: error.name,
+      error: error,
+      componentStack: errorInfo.componentStack
+    });
 
     // Report to system errors table
     reportError({

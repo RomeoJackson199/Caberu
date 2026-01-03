@@ -184,9 +184,19 @@ const App = () => {
   const [showBusinessPicker, setShowBusinessPicker] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  // Initialize error reporting on mount
+  // Initialize error reporting on mount - deferred to avoid blocking
   useEffect(() => {
-    initializeErrorReporting();
+    // Use requestIdleCallback to defer non-critical initialization
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        initializeErrorReporting();
+      });
+    } else {
+      // Fallback for browsers without requestIdleCallback
+      setTimeout(() => {
+        initializeErrorReporting();
+      }, 100);
+    }
   }, []);
 
   useEffect(() => {
@@ -210,7 +220,7 @@ const App = () => {
 
           if (profileError && profileError.code !== 'PGRST116') {
             // Ignore "no rows found" error, log others
-            console.error('Error fetching profile:', profileError);
+            logger.error('Error fetching profile:', profileError);
           }
 
           if (profile && isMounted) {
@@ -219,7 +229,7 @@ const App = () => {
               .select('business_id')
               .eq('profile_id', profile.id);
 
-            if (memberError) console.error('Error fetching memberships:', memberError);
+            if (memberError) logger.error('Error fetching memberships:', memberError);
 
             // Check if they have a current business selection
             const { data: sessionBusiness, error: sessionError } = await supabase
@@ -230,7 +240,7 @@ const App = () => {
               .limit(1)
               .maybeSingle();
 
-            if (sessionError) console.error('Error fetching session business:', sessionError);
+            if (sessionError) logger.error('Error fetching session business:', sessionError);
 
             if (!isMounted) return;
 
@@ -251,7 +261,15 @@ const App = () => {
           }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        // Only log if it's not an auth error (user just not authenticated)
+        if (error && typeof error === 'object' && 'status' in error) {
+          const statusError = error as { status?: number };
+          if (statusError.status !== 401 && statusError.status !== 403) {
+            logger.error('Auth check failed:', error);
+          }
+        } else {
+          logger.error('Auth check failed:', error);
+        }
       }
     };
 
