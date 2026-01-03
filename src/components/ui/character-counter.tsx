@@ -21,10 +21,11 @@ export function CharacterCounter({
   className,
   warningThreshold = 0.9
 }: CharacterCounterProps) {
-  const percentage = current / max;
+  // Guard against division by zero
+  const percentage = max > 0 ? current / max : 0;
   const isWarning = percentage >= warningThreshold && percentage < 1;
   const isDanger = percentage >= 1;
-  const isOverLimit = current > max;
+  const isOverLimit = max > 0 ? current > max : current > 0;
 
   return (
     <div

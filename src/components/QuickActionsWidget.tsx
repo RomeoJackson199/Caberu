@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 export interface QuickAction {
   id: string;
@@ -100,28 +101,59 @@ export function QuickActionsWidget({
 }: QuickActionsWidgetProps) {
   const [localRecentItems, setLocalRecentItems] = useState<RecentItem[]>([]);
 
-  // Load recent items from localStorage
+  // Load recent items from localStorage and listen for changes
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('recentItems');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setLocalRecentItems(
-          parsed.map((item: any) => ({
-            ...item,
-            timestamp: new Date(item.timestamp),
-          }))
-        );
+    const loadRecentItems = () => {
+      try {
+        const stored = localStorage.getItem('recentItems');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setLocalRecentItems(
+            parsed.map((item: any) => ({
+              ...item,
+              timestamp: new Date(item.timestamp),
+            }))
+          );
+        }
+      } catch (error) {
+        logger.error('Failed to load recent items', { error });
       }
-    } catch (error) {
-      console.error('Failed to load recent items:', error);
-    }
+    };
+
+    // Load on mount
+    loadRecentItems();
+
+    // Listen for storage changes (cross-tab updates)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'recentItems') {
+        loadRecentItems();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
-  // Combine and sort recent items
-  const allRecentItems = [...recentItems, ...localRecentItems]
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, maxRecentItems);
+  // Combine and deduplicate recent items by ID
+  const allRecentItems = (() => {
+    const itemMap = new Map<string, RecentItem>();
+
+    // Add all items to map, keeping the one with latest timestamp
+    [...recentItems, ...localRecentItems].forEach((item) => {
+      const existing = itemMap.get(item.id);
+      if (!existing || item.timestamp.getTime() > existing.timestamp.getTime()) {
+        itemMap.set(item.id, item);
+      }
+    });
+
+    // Convert to array, sort by timestamp desc, and limit
+    return Array.from(itemMap.values())
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, maxRecentItems);
+  })();
 
   const formatRelativeTime = (date: Date) => {
     const now = new Date();
@@ -255,7 +287,7 @@ export function useRecentItems() {
 
       localStorage.setItem('recentItems', JSON.stringify(updated));
     } catch (error) {
-      console.error('Failed to save recent item:', error);
+      logger.error('Failed to save recent item', { error });
     }
   };
 
@@ -263,7 +295,7 @@ export function useRecentItems() {
     try {
       localStorage.removeItem('recentItems');
     } catch (error) {
-      console.error('Failed to clear recent items:', error);
+      logger.error('Failed to clear recent items', { error });
     }
   };
 

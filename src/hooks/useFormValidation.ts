@@ -135,19 +135,27 @@ export function useFormValidation<T extends Record<string, any>>({
 
   const setValue = useCallback(
     (fieldName: keyof T, value: any) => {
-      setFields(prev => ({
-        ...prev,
-        [fieldName]: {
-          ...prev[fieldName],
-          value
-        }
-      }));
+      let shouldValidate = false;
 
-      if (validateOnChange && fields[fieldName].isTouched) {
+      setFields(prev => {
+        // Capture touched state during update
+        shouldValidate = validateOnChange && prev[fieldName].isTouched;
+
+        return {
+          ...prev,
+          [fieldName]: {
+            ...prev[fieldName],
+            value
+          }
+        };
+      });
+
+      // Validate after state update if needed
+      if (shouldValidate) {
         validateField(fieldName, value, true);
       }
     },
-    [validateOnChange, validateField, fields]
+    [validateOnChange, validateField]
   );
 
   const setTouched = useCallback((fieldName: keyof T, touched = true) => {
@@ -171,21 +179,36 @@ export function useFormValidation<T extends Record<string, any>>({
   );
 
   const validateForm = useCallback(async (): Promise<boolean> => {
-    const validationPromises: Promise<void>[] = [];
+    const validationResults: Promise<string | null>[] = [];
+    const fieldNames = Object.keys(fields);
 
+    // Mark all fields as touched and collect validation promises
     for (const fieldName in fields) {
-      validationPromises.push(
-        validateField(fieldName as keyof T, fields[fieldName].value, false).then(() => {
-          setTouched(fieldName as keyof T, true);
-        })
+      setTouched(fieldName as keyof T, true);
+      validationResults.push(
+        validateFieldSync(fieldName as keyof T, fields[fieldName].value)
       );
     }
 
-    await Promise.all(validationPromises);
+    const errors = await Promise.all(validationResults);
 
-    // Check if all fields are valid
-    return Object.values(fields).every((field: any) => field.isValid);
-  }, [fields, validateField, setTouched]);
+    // Update all fields with validation results in a single state update
+    setFields(prev => {
+      const updated = { ...prev };
+      fieldNames.forEach((name, i) => {
+        updated[name] = {
+          ...updated[name],
+          error: errors[i],
+          isValid: errors[i] === null,
+          isValidating: false
+        };
+      });
+      return updated;
+    });
+
+    // Return whether all fields are valid
+    return errors.every(error => error === null);
+  }, [fields, validateFieldSync, setTouched]);
 
   const resetForm = useCallback(() => {
     const reset: any = {};

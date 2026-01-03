@@ -24,9 +24,10 @@ export function RouteProgressBar() {
     const timer3 = setTimeout(() => setProgress(90), 600);
 
     // Complete progress
+    let timer5: NodeJS.Timeout | null = null;
     const timer4 = setTimeout(() => {
       setProgress(100);
-      setTimeout(() => setIsAnimating(false), 300);
+      timer5 = setTimeout(() => setIsAnimating(false), 300);
     }, 900);
 
     return () => {
@@ -34,6 +35,7 @@ export function RouteProgressBar() {
       clearTimeout(timer2);
       clearTimeout(timer3);
       clearTimeout(timer4);
+      if (timer5) clearTimeout(timer5);
     };
   }, [location.pathname]);
 
