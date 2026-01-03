@@ -138,10 +138,17 @@ export function QuickActionsWidget({
       }
     };
 
+    // Listen for custom event (same-tab updates)
+    const handleRecentItemsUpdate = () => {
+      loadRecentItems();
+    };
+
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('recentItemsUpdated', handleRecentItemsUpdate);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('recentItemsUpdated', handleRecentItemsUpdate);
     };
   }, []);
 
@@ -294,6 +301,9 @@ export function useRecentItems() {
       ].slice(0, 20); // Keep max 20 items
 
       localStorage.setItem('recentItems', JSON.stringify(updated));
+
+      // Dispatch custom event for same-tab updates
+      window.dispatchEvent(new CustomEvent('recentItemsUpdated'));
     } catch (error) {
       logger.error('Failed to save recent item', { error });
     }
@@ -302,6 +312,9 @@ export function useRecentItems() {
   const clearRecentItems = () => {
     try {
       localStorage.removeItem('recentItems');
+
+      // Dispatch custom event for same-tab updates
+      window.dispatchEvent(new CustomEvent('recentItemsUpdated'));
     } catch (error) {
       logger.error('Failed to clear recent items', { error });
     }
