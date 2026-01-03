@@ -1,6 +1,13 @@
 /**
  * Data validation utilities to ensure data integrity and prevent null pointer exceptions
  */
+import type { 
+  PatientLike, 
+  ProviderLike, 
+  AppointmentInput, 
+  ValidationResult,
+  UnknownRecord 
+} from '@/types/validation';
 
 /**
  * Safely get a nested property from an object
@@ -12,21 +19,21 @@
  * ```
  */
 export function safeGet<T>(
-  obj: any,
+  obj: unknown,
   path: string,
   defaultValue: T
 ): T {
   const keys = path.split('.');
-  let current = obj;
+  let current: unknown = obj;
 
   for (const key of keys) {
     if (current == null || typeof current !== 'object') {
       return defaultValue;
     }
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
 
-  return current ?? defaultValue;
+  return (current ?? defaultValue) as T;
 }
 
 /**
@@ -40,7 +47,7 @@ export function safeGet<T>(
  * ```
  */
 export function hasRequiredFields(
-  obj: any,
+  obj: unknown,
   fields: string[]
 ): boolean {
   if (!obj || typeof obj !== 'object') return false;
@@ -54,7 +61,7 @@ export function hasRequiredFields(
 /**
  * Get a patient's full name with fallback
  */
-export function getPatientName(patient: any): string {
+export function getPatientName(patient: PatientLike | null | undefined): string {
   if (!patient) return 'Unknown Patient';
 
   const firstName = patient.first_name || patient.firstName || '';
@@ -70,7 +77,7 @@ export function getPatientName(patient: any): string {
 /**
  * Get a dentist/provider name with fallback
  */
-export function getProviderName(provider: any): string {
+export function getProviderName(provider: ProviderLike | null | undefined): string {
   if (!provider) return 'Unassigned';
 
   // Handle nested profiles structure
@@ -154,7 +161,7 @@ export function safeJsonParse<T>(
 /**
  * Check if a value is a valid number
  */
-export function isValidNumber(value: any): boolean {
+export function isValidNumber(value: unknown): value is number {
   return typeof value === 'number' && !isNaN(value) && isFinite(value);
 }
 
@@ -182,10 +189,7 @@ export function sanitizeInput(input: string | null | undefined): string {
 /**
  * Validate appointment data before save
  */
-export function validateAppointment(appointment: any): {
-  valid: boolean;
-  errors: string[];
-} {
+export function validateAppointment(appointment: AppointmentInput): ValidationResult {
   const errors: string[] = [];
 
   if (!appointment.patient_id) {
@@ -228,16 +232,16 @@ export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj;
 
   if (obj instanceof Date) {
-    return new Date(obj.getTime()) as any;
+    return new Date(obj.getTime()) as T;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => deepClone(item)) as any;
+    return obj.map(item => deepClone(item)) as T;
   }
 
   const cloned = {} as T;
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       cloned[key] = deepClone(obj[key]);
     }
   }

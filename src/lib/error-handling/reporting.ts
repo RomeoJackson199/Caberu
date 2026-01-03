@@ -11,6 +11,13 @@ interface ReportErrorParams {
   url?: string;
 }
 
+// Extend window for error reporting flag
+declare global {
+  interface Window {
+    __error_reporting_initialized__?: boolean;
+  }
+}
+
 export async function reportError(params: ReportErrorParams) {
   try {
     const { data: userData } = await supabase.auth.getUser();
@@ -51,8 +58,8 @@ export async function reportError(params: ReportErrorParams) {
 // Initialize global error handlers
 export function initializeErrorReporting() {
   // Prevent double-initialization
-  if ((window as any).__error_reporting_initialized__) return;
-  (window as any).__error_reporting_initialized__ = true;
+  if (window.__error_reporting_initialized__) return;
+  window.__error_reporting_initialized__ = true;
 
   // Simple dedupe to avoid spammy duplicates (30s window)
   const DEDUPE_WINDOW_MS = 30_000;
@@ -65,7 +72,7 @@ export function initializeErrorReporting() {
     return true;
   };
 
-  const safeSerialize = (values: any[]) => {
+  const safeSerialize = (values: unknown[]) => {
     try {
       return values.map((v) => {
         if (v instanceof Error) {
