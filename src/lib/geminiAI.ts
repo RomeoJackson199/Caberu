@@ -2,9 +2,37 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentBusinessId } from '@/lib/businessScopedSupabase';
 import { TimeSlot } from './appointmentAvailability';
-import { getSlotUsageStatistics, getUnderutilizedSlots, SlotUsageStats } from './slotUsageTracking';
 import { PatientPreferences } from './smartScheduling';
 import { format, getDay } from 'date-fns';
+
+// Slot usage statistics interface (simplified inline)
+interface SlotUsageStats {
+  time_slot: string;
+  day_of_week: number;
+  hour_of_day: number;
+  booking_rate: number;
+  recent_booking_rate: number;
+  total_bookings: number;
+  recent_bookings: number;
+  is_underutilized: boolean;
+}
+
+interface UnderutilizedSlot {
+  time_slot: string;
+  day_of_week: number;
+  booking_rate: number;
+  recent_booking_rate: number;
+  total_bookings: number;
+}
+
+// Stub functions - slot tracking was unused elsewhere, provide minimal implementation
+async function getSlotUsageStatistics(_dentistId: string): Promise<SlotUsageStats[]> {
+  return [];
+}
+
+async function getUnderutilizedSlots(_dentistId: string, _threshold: number): Promise<UnderutilizedSlot[]> {
+  return [];
+}
 
 // Initialize Gemini AI
 const getGeminiAI = () => {
