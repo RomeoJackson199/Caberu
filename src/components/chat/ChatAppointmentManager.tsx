@@ -133,7 +133,7 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
       onResponse(responseMessage);
 
     } catch (error) {
-      console.error("Error fetching appointments:", error);
+      logger.error("Error fetching appointments:", error);
       onResponse("I'm sorry, I couldn't retrieve your appointments right now. Please try again later.");
     } finally {
       setLoading(false);
@@ -157,7 +157,7 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
       onResponse("✅ Your appointment has been cancelled successfully. If you need to book a new one, just let me know!");
 
     } catch (error) {
-      console.error("Error cancelling appointment:", error);
+      logger.error("Error cancelling appointment:", error);
       onResponse("I'm sorry, I couldn't cancel your appointment right now. Please try again or contact the clinic directly.");
     }
   };

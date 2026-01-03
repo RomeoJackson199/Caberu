@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { BookTemplate, Save, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 interface TemplateItem {
   name: string;
@@ -106,7 +107,7 @@ export function SaveAsTemplateButton({
       setName("");
       setDescription("");
     } catch (error) {
-      console.error("Error saving template:", error);
+      logger.error("Error saving template:", error);
       toast.error("Failed to save template");
     } finally {
       setSaving(false);
@@ -215,7 +216,7 @@ export function TemplateList({ businessId }: TemplateListProps) {
       toast.success("Template deleted");
       setDeleteId(null);
     } catch (error) {
-      console.error("Error deleting template:", error);
+      logger.error("Error deleting template:", error);
       toast.error("Failed to delete template");
     } finally {
       setDeleting(false);
