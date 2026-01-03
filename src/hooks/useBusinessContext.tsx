@@ -47,13 +47,21 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       }
 
       // Get profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
+      if (profileError) {
+        logger.error('Error fetching user profile:', profileError);
+        setMemberships([]);
+        setLoading(false);
+        return;
+      }
+
       if (!profile) {
+        logger.warn('No profile found for user');
         setMemberships([]);
         setLoading(false);
         return;
@@ -134,13 +142,15 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
             }
           } else {
             // For patients (non-members): fetch business details directly
-            const { data: business } = await supabase
+            const { data: business, error: businessError } = await supabase
               .from('businesses')
               .select('id, name, slug')
               .eq('id', sessionBusiness.business_id)
               .single();
 
-            if (business) {
+            if (businessError) {
+              logger.error('Error fetching business details:', businessError);
+            } else if (business) {
               setBusinessId(business.id);
               setBusinessSlug(business.slug);
               setBusinessName(business.name);
@@ -186,16 +196,21 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           toast.success(`Switched to ${membership.business.name}`);
         } else {
           // For patients (non-members): fetch business details
-          const { data: business } = await supabase
+          const { data: business, error: businessError } = await supabase
             .from('businesses')
             .select('name, slug')
             .eq('id', data.businessId)
             .single();
 
-          if (business) {
+          if (businessError) {
+            logger.error('Error fetching business details in switchBusiness:', businessError);
+            toast.error('Failed to load business details');
+          } else if (business) {
             setBusinessSlug(business.slug);
             setBusinessName(business.name);
             toast.success(`Switched to ${business.name}`);
+          } else {
+            logger.warn('Business not found for ID:', data.businessId);
           }
         }
 

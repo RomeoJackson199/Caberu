@@ -20,6 +20,7 @@ import { emitAnalyticsEvent } from '@/lib/analyticsEvents';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { useLanguage } from '@/hooks/useLanguage';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 export interface Appointment {
   id: string;
@@ -46,7 +47,7 @@ export interface AppointmentManagerProps {
   user: User;
 }
 
-export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistId, user }) => {
+const AppointmentManagerComponent: React.FC<AppointmentManagerProps> = ({ dentistId, user }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -499,3 +500,6 @@ export const AppointmentManager: React.FC<AppointmentManagerProps> = ({ dentistI
     </div>
   );
 };
+
+// Export with error boundary for better stability
+export const AppointmentManager = withErrorBoundary(AppointmentManagerComponent);

@@ -80,21 +80,32 @@ export async function createAppointmentWithNotification(appointmentData: {
   // Get business_id if not provided
   let businessId = appointmentData.business_id;
   if (!businessId) {
-    // Try to get business_id from dentist's business membership
-    const { data: dentistData } = await supabase
-      .from('dentists')
-      .select('profile_id')
-      .eq('id', appointmentData.dentist_id)
-      .single();
-    
-    if (dentistData?.profile_id) {
-      const { data: membership } = await supabase
-        .from('business_members')
-        .select('business_id')
-        .eq('profile_id', dentistData.profile_id)
-        .limit(1)
-        .maybeSingle();
-      businessId = membership?.business_id;
+    try {
+      // Try to get business_id from dentist's business membership
+      const { data: dentistData, error: dentistErr } = await supabase
+        .from('dentists')
+        .select('profile_id')
+        .eq('id', appointmentData.dentist_id)
+        .single();
+
+      if (dentistErr) {
+        logger.warn('Could not fetch dentist profile for business_id resolution:', dentistErr);
+      } else if (dentistData?.profile_id) {
+        const { data: membership, error: membershipErr } = await supabase
+          .from('business_members')
+          .select('business_id')
+          .eq('profile_id', dentistData.profile_id)
+          .limit(1)
+          .maybeSingle();
+
+        if (membershipErr) {
+          logger.warn('Could not fetch business membership:', membershipErr);
+        } else {
+          businessId = membership?.business_id;
+        }
+      }
+    } catch (err) {
+      logger.error('Error resolving business_id:', err);
     }
   }
   console.log('📧 Business ID resolved:', businessId);
@@ -118,18 +129,28 @@ export async function createAppointmentWithNotification(appointmentData: {
   console.log('✅ Appointment created:', appointment.id);
 
   // Fetch patient data separately for reliability
-  const { data: patient } = await supabase
+  const { data: patient, error: patientError } = await supabase
     .from('profiles')
     .select('first_name, last_name, email, phone')
     .eq('id', appointment.patient_id)
     .single();
 
+  if (patientError) {
+    logger.error('Failed to fetch patient data for appointment notification:', patientError);
+    console.error('❌ Failed to fetch patient data:', patientError);
+  }
+
   // Fetch dentist data separately
-  const { data: dentist } = await supabase
+  const { data: dentist, error: dentistError } = await supabase
     .from('dentists')
     .select('profile_id, profiles(first_name, last_name)')
     .eq('id', appointment.dentist_id)
     .single();
+
+  if (dentistError) {
+    logger.error('Failed to fetch dentist data for appointment notification:', dentistError);
+    console.error('❌ Failed to fetch dentist data:', dentistError);
+  }
 
   console.log('📧 Patient data:', patient);
   console.log('📧 Dentist data:', dentist);
