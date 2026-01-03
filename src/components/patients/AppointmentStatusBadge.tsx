@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { isPast, isFuture } from "date-fns";
@@ -9,7 +10,11 @@ interface AppointmentStatusBadgeProps {
   className?: string;
 }
 
-export function AppointmentStatusBadge({ status, appointmentDate, className }: AppointmentStatusBadgeProps) {
+export const AppointmentStatusBadge = memo(function AppointmentStatusBadge({ 
+  status, 
+  appointmentDate, 
+  className 
+}: AppointmentStatusBadgeProps) {
   const date = new Date(appointmentDate);
   const now = new Date();
   
@@ -74,4 +79,4 @@ export function AppointmentStatusBadge({ status, appointmentDate, className }: A
       {displayText}
     </Badge>
   );
-}
+});

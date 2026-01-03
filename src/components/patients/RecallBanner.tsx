@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +8,7 @@ interface RecallBannerProps {
 	recall: RecallRecord;
 }
 
-export function RecallBanner({ recall }: RecallBannerProps) {
+export const RecallBanner = memo(function RecallBanner({ recall }: RecallBannerProps) {
 	const navigate = useNavigate();
 	const first = recall.suggested_slots?.[0];
 	const niceDue = new Date(recall.due_date).toLocaleDateString();
@@ -27,4 +28,4 @@ export function RecallBanner({ recall }: RecallBannerProps) {
 			</CardContent>
 		</Card>
 	);
-}
+});

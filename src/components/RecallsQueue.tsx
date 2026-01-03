@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,18 @@ interface RecallsQueueProps {
 	dentistId: string;
 }
 
-export function RecallsQueue({ dentistId }: RecallsQueueProps) {
+export const RecallsQueue = memo(function RecallsQueue({ dentistId }: RecallsQueueProps) {
 	const [recalls, setRecalls] = useState<RecallRecord[]>([]);
 	const [status, setStatus] = useState<'all' | 'suggested' | 'snoozed' | 'declined' | 'booked'>('all');
 
-	const load = async () => {
+	const load = useCallback(async () => {
 		let query = supabase.from('recalls').select('*').eq('dentist_id', dentistId).order('due_date');
 		if (status !== 'all') query = query.eq('status', status);
 		const { data } = await query;
-		setRecalls((data || []) as any);
-	};
+		setRecalls((data || []) as RecallRecord[]);
+	}, [dentistId, status]);
 
-	useEffect(() => { load(); }, [dentistId, status]);
+	useEffect(() => { load(); }, [load]);
 
 	return (
 		<Card>
@@ -54,4 +54,4 @@ export function RecallsQueue({ dentistId }: RecallsQueueProps) {
 			</CardContent>
 		</Card>
 	);
-}
+});

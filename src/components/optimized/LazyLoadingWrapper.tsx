@@ -1,8 +1,8 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, ComponentType } from 'react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface LazyLoadingWrapperProps {
-  importFunc: () => Promise<{ default: React.ComponentType<any> }>;
+  importFunc: () => Promise<{ default: ComponentType<Record<string, unknown>> }>;
   fallback?: React.ReactNode;
 }
 
