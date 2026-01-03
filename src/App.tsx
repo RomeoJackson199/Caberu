@@ -30,6 +30,7 @@ import { toast } from "@/hooks/use-toast";
 import { EmailLimitProvider } from "@/hooks/useEmailLimit";
 import { NetworkStatus, SessionTimeoutWarning } from "@/components/stability";
 import { ConfirmationProvider } from "@/components/stability/ConfirmationDialogs";
+import { RouteProgressBar } from "@/components/RouteProgressBar";
 
 // Force resync: 2025-12-07T19:03
 
@@ -309,6 +310,7 @@ const App = () => {
                 <SessionTimeoutWarning />
                 <ConfirmationProvider>
                 <BrowserRouter>
+                  <RouteProgressBar />
                   <EmailLimitProvider>
                     <DentistInvitationDialog />
                     <CommandPalette />
