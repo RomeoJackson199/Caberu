@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { X, Cookie, Shield, Settings } from "lucide-react";
+import { logger } from "@/lib/logger";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +51,7 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
         const savedPreferences = JSON.parse(consent);
         setPreferences(savedPreferences);
       } catch (error) {
-        console.error("Failed to parse cookie preferences:", error);
+        logger.error("Failed to parse cookie preferences:", error);
       }
     }
   }, [isAuthenticated]);

@@ -2,6 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "./input";
 import { Label } from "./label";
+import { CharacterCounter } from "./character-counter";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface FormFieldProps extends React.ComponentProps<"input"> {
@@ -11,6 +12,7 @@ interface FormFieldProps extends React.ComponentProps<"input"> {
   hint?: string;
   validate?: (value: string) => string | undefined;
   onValidation?: (isValid: boolean) => void;
+  showCharacterCount?: boolean; // Show character counter when maxLength is set
 }
 
 /**
@@ -18,10 +20,10 @@ interface FormFieldProps extends React.ComponentProps<"input"> {
  * Shows error/success states below the field on blur
  */
 const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ 
-    className, 
-    label, 
-    error: externalError, 
+  ({
+    className,
+    label,
+    error: externalError,
     success,
     hint,
     validate,
@@ -29,7 +31,9 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     onBlur,
     onChange,
     id,
-    ...props 
+    showCharacterCount = true,
+    maxLength,
+    ...props
   }, ref) => {
     const [touched, setTouched] = React.useState(false);
     const [internalError, setInternalError] = React.useState<string | undefined>();
@@ -93,10 +97,11 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             )}
             onBlur={handleBlur}
             onChange={handleChange}
+            maxLength={maxLength}
             aria-invalid={showError ? "true" : undefined}
             aria-describedby={
-              showError ? `${fieldId}-error` : 
-              hint ? `${fieldId}-hint` : 
+              showError ? `${fieldId}-error` :
+              hint ? `${fieldId}-hint` :
               undefined
             }
             {...props}
@@ -115,26 +120,40 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           )}
         </div>
         
-        {/* Error message */}
-        {showError && (
-          <p 
-            id={`${fieldId}-error`}
-            className="text-sm text-destructive flex items-center gap-1.5 animate-in fade-in-50 slide-in-from-top-1"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
-        
-        {/* Hint text (only show if no error) */}
-        {hint && !showError && (
-          <p 
-            id={`${fieldId}-hint`}
-            className="text-xs text-muted-foreground"
-          >
-            {hint}
-          </p>
-        )}
+        {/* Bottom row: Error/Hint and Character Counter */}
+        <div className="flex items-start justify-between gap-2 min-h-[20px]">
+          <div className="flex-1">
+            {/* Error message */}
+            {showError && (
+              <p
+                id={`${fieldId}-error`}
+                className="text-sm text-destructive flex items-center gap-1.5 animate-in fade-in-50 slide-in-from-top-1"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
+
+            {/* Hint text (only show if no error) */}
+            {hint && !showError && (
+              <p
+                id={`${fieldId}-hint`}
+                className="text-xs text-muted-foreground"
+              >
+                {hint}
+              </p>
+            )}
+          </div>
+
+          {/* Character Counter */}
+          {showCharacterCount && maxLength && (
+            <CharacterCounter
+              current={value.length}
+              max={maxLength}
+              className="flex-shrink-0"
+            />
+          )}
+        </div>
       </div>
     );
   }
