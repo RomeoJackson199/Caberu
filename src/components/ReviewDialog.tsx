@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,20 +13,25 @@ interface ReviewDialogProps {
   onSubmitted: () => void;
 }
 
-export const ReviewDialog = ({ appointmentId, patientId, dentistId, onSubmitted }: ReviewDialogProps) => {
+export const ReviewDialog = memo(function ReviewDialog({ 
+  appointmentId, 
+  patientId, 
+  dentistId, 
+  onSubmitted 
+}: ReviewDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
-const submitReview = async () => {
-  const { error } = await supabase.from("dentist_ratings").insert({
-    patient_id: patientId,
-    dentist_id: dentistId,
-    appointment_id: appointmentId,
-    rating,
-    review: comment || null,
-  });
+  const submitReview = useCallback(async () => {
+    const { error } = await supabase.from("dentist_ratings").insert({
+      patient_id: patientId,
+      dentist_id: dentistId,
+      appointment_id: appointmentId,
+      rating,
+      review: comment || null,
+    });
 
     if (error) {
       toast({ description: "Failed to submit feedback", variant: "destructive" });
@@ -35,7 +40,7 @@ const submitReview = async () => {
       setOpen(false);
       onSubmitted();
     }
-  };
+  }, [patientId, dentistId, appointmentId, rating, comment, toast, onSubmitted]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -66,4 +71,4 @@ const submitReview = async () => {
       </DialogContent>
     </Dialog>
   );
-};
+});

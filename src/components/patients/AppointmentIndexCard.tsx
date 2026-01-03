@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, Building2, ChevronRight } from "lucide-react";
@@ -42,7 +42,10 @@ function getStatusBadge(state: AppointmentState) {
   );
 }
 
-export function AppointmentIndexCard({ appointment, onClick }: AppointmentIndexCardProps) {
+export const AppointmentIndexCard = memo(function AppointmentIndexCard({ 
+  appointment, 
+  onClick 
+}: AppointmentIndexCardProps) {
   // Derive state using the centralized state machine
   const stateInput: AppointmentStateInput = {
     status: appointment.status,
@@ -103,7 +106,7 @@ export function AppointmentIndexCard({ appointment, onClick }: AppointmentIndexC
       </CardContent>
     </Card>
   );
-}
+});
 
 /**
  * Skeleton loader that matches the card shape
