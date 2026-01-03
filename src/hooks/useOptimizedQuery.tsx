@@ -164,14 +164,17 @@ export function useOptimizedUserProfile(userId: string) {
     async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, user_id, first_name, last_name, email, phone, date_of_birth, role, created_at, updated_at')
         .eq('user_id', userId)
         .single();
-      
+
       if (error) throw error;
       return data;
     },
-    { staleTime: 10 * 60 * 1000 } // User profiles change less frequently
+    {
+      staleTime: 15 * 60 * 1000,  // 15 minutes - profiles change less frequently
+      cacheTime: 30 * 60 * 1000   // 30 minutes - keep in cache longer
+    }
   );
 }
 
@@ -182,7 +185,16 @@ export function useOptimizedAppointments(patientId: string) {
       const { data, error } = await supabase
         .from('appointments')
         .select(`
-          *,
+          id,
+          patient_id,
+          dentist_id,
+          appointment_date,
+          reason,
+          notes,
+          status,
+          urgency,
+          duration_minutes,
+          created_at,
           dentist:dentist_id(
             specialization,
             profile:profile_id(first_name, last_name)
@@ -190,7 +202,7 @@ export function useOptimizedAppointments(patientId: string) {
         `)
         .eq('patient_id', patientId)
         .order('appointment_date', { ascending: false });
-      
+
       if (error) throw error;
       return data || [];
     },
