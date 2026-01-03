@@ -1,23 +1,17 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type { ValidationRule, FieldValidation as BaseFieldValidation } from '@/types/shared';
 
-export type ValidationRule<T = any> = {
-  validate: (value: T) => boolean | Promise<boolean>;
-  message: string;
+export type { ValidationRule };
+
+export interface FieldValidation<T = unknown> extends Omit<BaseFieldValidation, 'value'> {
+  value: T;
+}
+
+export type FormValidation<T extends Record<string, unknown>> = {
+  [K in keyof T]: FieldValidation<T[K]>;
 };
 
-export type FieldValidation = {
-  value: any;
-  error: string | null;
-  isValid: boolean;
-  isTouched: boolean;
-  isValidating: boolean;
-};
-
-export type FormValidation<T extends Record<string, any>> = {
-  [K in keyof T]: FieldValidation;
-};
-
-export interface UseFormValidationOptions<T extends Record<string, any>> {
+export interface UseFormValidationOptions<T extends Record<string, unknown>> {
   initialValues: T;
   validationRules: Partial<Record<keyof T, ValidationRule<T[keyof T]>[]>>;
   validateOnChange?: boolean;
@@ -48,7 +42,7 @@ export interface UseFormValidationOptions<T extends Record<string, any>> {
  *   }
  * });
  */
-export function useFormValidation<T extends Record<string, any>>({
+export function useFormValidation<T extends Record<string, unknown>>({
   initialValues,
   validationRules,
   validateOnChange = true,
@@ -56,7 +50,7 @@ export function useFormValidation<T extends Record<string, any>>({
   debounceMs = 300
 }: UseFormValidationOptions<T>) {
   const [fields, setFields] = useState<FormValidation<T>>(() => {
-    const initial: any = {};
+    const initial = {} as FormValidation<T>;
     for (const key in initialValues) {
       initial[key] = {
         value: initialValues[key],
@@ -64,7 +58,7 @@ export function useFormValidation<T extends Record<string, any>>({
         isValid: true,
         isTouched: false,
         isValidating: false
-      };
+      } as FieldValidation<T[typeof key]>;
     }
     return initial;
   });
@@ -72,7 +66,7 @@ export function useFormValidation<T extends Record<string, any>>({
   const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
   const validateFieldSync = useCallback(
-    async (fieldName: keyof T, value: any): Promise<string | null> => {
+    async (fieldName: keyof T, value: T[keyof T]): Promise<string | null> => {
       const rules = validationRules[fieldName];
       if (!rules || rules.length === 0) return null;
 
@@ -93,7 +87,7 @@ export function useFormValidation<T extends Record<string, any>>({
   );
 
   const validateField = useCallback(
-    async (fieldName: keyof T, value: any, shouldDebounce = false) => {
+    async (fieldName: keyof T, value: T[keyof T], shouldDebounce = false) => {
       // Clear existing timer
       if (debounceTimers.current[fieldName as string]) {
         clearTimeout(debounceTimers.current[fieldName as string]);
@@ -134,7 +128,7 @@ export function useFormValidation<T extends Record<string, any>>({
   );
 
   const setValue = useCallback(
-    (fieldName: keyof T, value: any) => {
+    (fieldName: keyof T, value: T[keyof T]) => {
       let shouldValidate = false;
 
       setFields(prev => {
@@ -211,7 +205,7 @@ export function useFormValidation<T extends Record<string, any>>({
   }, [fields, validateFieldSync, setTouched]);
 
   const resetForm = useCallback(() => {
-    const reset: any = {};
+    const reset = {} as FormValidation<T>;
     for (const key in initialValues) {
       reset[key] = {
         value: initialValues[key],
@@ -219,19 +213,19 @@ export function useFormValidation<T extends Record<string, any>>({
         isValid: true,
         isTouched: false,
         isValidating: false
-      };
+      } as FieldValidation<T[typeof key]>;
     }
     setFields(reset);
   }, [initialValues]);
 
-  const isFormValid = Object.values(fields).every((field: any) => field.isValid);
+  const isFormValid = Object.values(fields).every((field) => field.isValid);
 
   const getFieldProps = useCallback(
     (fieldName: keyof T) => ({
       value: fields[fieldName].value,
-      onChange: (e: any) => {
-        const value = e.target ? e.target.value : e;
-        setValue(fieldName, value);
+      onChange: (e: React.ChangeEvent<HTMLInputElement> | T[keyof T]) => {
+        const value = 'target' in e ? (e.target as HTMLInputElement).value : e;
+        setValue(fieldName, value as T[keyof T]);
       },
       onBlur: () => handleBlur(fieldName),
       error: fields[fieldName].isTouched ? fields[fieldName].error : null,

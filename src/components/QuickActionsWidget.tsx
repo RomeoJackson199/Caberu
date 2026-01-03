@@ -33,6 +33,14 @@ export interface RecentItem {
   subtitle?: string;
 }
 
+interface StoredRecentItem {
+  id: string;
+  label: string;
+  href: string;
+  timestamp: string; // stored as ISO string
+  subtitle?: string;
+}
+
 interface QuickActionsWidgetProps {
   actions?: QuickAction[];
   recentItems?: RecentItem[];
@@ -107,9 +115,9 @@ export function QuickActionsWidget({
       try {
         const stored = localStorage.getItem('recentItems');
         if (stored) {
-          const parsed = JSON.parse(stored);
+          const parsed: StoredRecentItem[] = JSON.parse(stored);
           setLocalRecentItems(
-            parsed.map((item: any) => ({
+            parsed.map((item) => ({
               ...item,
               timestamp: new Date(item.timestamp),
             }))
