@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { ServiceDialog } from './ServiceDialog';
 import { Badge } from '@/components/ui/badge';
 import { logger } from '@/lib/logger';
+import { getErrorMessage } from '@/lib/error-utils';
 
 interface Service {
   id: string;
@@ -52,8 +53,8 @@ export function ServiceManager() {
 
       if (error) throw error;
       setServices(data || []);
-    } catch (error: any) {
-      console.error('Error loading services:', error);
+    } catch (error: unknown) {
+      logger.error('Error loading services:', error);
       toast.error('Failed to load services');
     } finally {
       setLoading(false);
@@ -75,10 +76,10 @@ export function ServiceManager() {
         .eq('id', serviceId);
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Rollback on error
       setServices(previousServices);
-      console.error('Error deleting service:', error);
+      logger.error('Error deleting service:', error);
       toast.error('Failed to delete service');
     }
   };
@@ -98,10 +99,10 @@ export function ServiceManager() {
         .eq('id', serviceId);
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Rollback on error
       setServices(previousServices);
-      console.error('Error updating service:', error);
+      logger.error('Error updating service:', error);
       toast.error('Failed to update service');
     }
   };

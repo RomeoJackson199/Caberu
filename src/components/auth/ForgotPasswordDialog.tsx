@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Mail, Lock, ArrowRight, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getErrorMessage } from "@/lib/error-utils";
 
 interface ForgotPasswordDialogProps {
     open: boolean;
@@ -43,10 +44,10 @@ export function ForgotPasswordDialog({
                 description: "Please check your email for the reset code",
             });
             setStep('verify');
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message || "Failed to send code",
+                description: getErrorMessage(error),
                 variant: "destructive",
             });
         } finally {
@@ -67,10 +68,10 @@ export function ForgotPasswordDialog({
             if (error) throw error;
 
             setStep('success');
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast({
                 title: "Error",
-                description: error.message || "Failed to reset password",
+                description: getErrorMessage(error),
                 variant: "destructive",
             });
         } finally {

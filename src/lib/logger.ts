@@ -10,7 +10,7 @@ interface LogContext {
   component?: string;
   action?: string;
   userId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 class Logger {
@@ -20,7 +20,7 @@ class Logger {
   /**
    * General logging - only in development
    */
-  log(...args: any[]): void {
+  log(...args: unknown[]): void {
     if (this.isDevelopment) {
       console.log('[LOG]', ...args);
     }
@@ -29,7 +29,7 @@ class Logger {
   /**
    * Informational messages - only in development
    */
-  info(...args: any[]): void {
+  info(...args: unknown[]): void {
     if (this.isDevelopment) {
       console.info('[INFO]', ...args);
     }
@@ -38,7 +38,7 @@ class Logger {
   /**
    * Warning messages - in development and production
    */
-  warn(...args: any[]): void {
+  warn(...args: unknown[]): void {
     if (this.isDevelopment) {
       console.warn('[WARN]', ...args);
     } else {
@@ -50,7 +50,7 @@ class Logger {
   /**
    * Error messages - always logged
    */
-  error(...args: any[]): void {
+  error(...args: unknown[]): void {
     if (this.isDevelopment) {
       console.error('[ERROR]', ...args);
     } else {
@@ -62,7 +62,7 @@ class Logger {
   /**
    * Debug messages - only in development
    */
-  debug(...args: any[]): void {
+  debug(...args: unknown[]): void {
     if (this.isDevelopment) {
       console.debug('[DEBUG]', ...args);
     }
@@ -91,7 +91,7 @@ class Logger {
    * Send logs to error tracking service (e.g., Sentry, LogRocket)
    * Implement this when you integrate an error tracking service
    */
-  private sendToErrorTracking(level: string, data: any[]): void {
+  private sendToErrorTracking(level: string, data: unknown[]): void {
     // Integration point for error tracking services
     // To enable Sentry, install @sentry/react and uncomment:
     //
@@ -171,7 +171,7 @@ class Logger {
   /**
    * Log table data (useful for arrays of objects)
    */
-  table(data: any): void {
+  table(data: unknown): void {
     if (this.isDevelopment) {
       console.table(data);
     }

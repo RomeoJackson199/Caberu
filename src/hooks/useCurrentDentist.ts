@@ -87,8 +87,9 @@ export function useCurrentDentist(businessId?: string | null): CurrentDentistSta
         loading: false,
         error: null,
       });
-    } catch (e: any) {
-      setState(prev => ({ ...prev, loading: false, error: e?.message || 'Failed to load dentist context' }));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Failed to load dentist context';
+      setState(prev => ({ ...prev, loading: false, error: message }));
     }
   }, [businessId]);
 
