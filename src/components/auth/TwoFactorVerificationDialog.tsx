@@ -68,7 +68,7 @@ export function TwoFactorVerificationDialog({
         description: "Check your email for the 6-digit code",
       });
     } catch (error: any) {
-      console.error('Error sending code:', error);
+      logger.error('Error sending code:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to send verification code",
@@ -114,7 +114,7 @@ export function TwoFactorVerificationDialog({
         });
       }
     } catch (error: any) {
-      console.error('Error verifying code:', error);
+      logger.error('Error verifying code:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to verify code",

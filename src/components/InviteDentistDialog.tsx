@@ -88,7 +88,7 @@ export const InviteDentistDialog = ({ businessId, businessName }: InviteDentistD
           }
         });
       } catch (emailError) {
-        console.error("Failed to send invitation email:", emailError);
+        logger.error("Failed to send invitation email:", emailError);
         // Don't fail the whole operation if email fails
       }
 
@@ -100,7 +100,7 @@ export const InviteDentistDialog = ({ businessId, businessName }: InviteDentistD
       setEmail("");
       setOpen(false);
     } catch (error: any) {
-      console.error("Error sending invitation:", error);
+      logger.error("Error sending invitation:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to send invitation",

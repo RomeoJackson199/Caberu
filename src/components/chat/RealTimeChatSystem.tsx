@@ -148,7 +148,7 @@ export function RealTimeChatSystem({
         }
       }
     } catch (error) {
-      console.error('Error loading participants:', error);
+      logger.error('Error loading participants:', error);
     }
   };
 
@@ -213,7 +213,7 @@ export function RealTimeChatSystem({
       
       setMessages(simulatedMessages);
     } catch (error) {
-      console.error('Error loading messages:', error);
+      logger.error('Error loading messages:', error);
     } finally {
       setIsLoading(false);
     }
@@ -245,7 +245,7 @@ export function RealTimeChatSystem({
         description: 'Your message has been delivered'
       });
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       showToast.error({
         title: 'Failed to send',
         description: 'Please try again'

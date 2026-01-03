@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Mail, UserPlus, ArrowLeft } from "lucide-react";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { logger } from "@/lib/logger";
 
 interface NewPatientDialogProps {
   open: boolean;
@@ -83,7 +84,7 @@ export function NewPatientDialog({ open, onOpenChange, dentistId, onPatientCreat
       onOpenChange(false);
       resetForms();
     } catch (error: any) {
-      console.error('Error sending invite:', error);
+      logger.error('Error sending invite:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to send invitation",
@@ -124,7 +125,7 @@ export function NewPatientDialog({ open, onOpenChange, dentistId, onPatientCreat
       onOpenChange(false);
       resetForms();
     } catch (error: any) {
-      console.error('Error creating patient:', error);
+      logger.error('Error creating patient:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create patient",

@@ -9,6 +9,7 @@ import { Users, TrendingUp, AlertTriangle, CheckCircle, Calendar as CalendarIcon
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 import { checkDentistCapacity } from "@/lib/smartScheduling";
 import { format } from "date-fns";
+import { logger } from "@/lib/logger";
 
 interface DentistCapacity {
   dentist_id: string;
@@ -49,7 +50,7 @@ export const CapacityDashboard = () => {
         .eq('is_active', true);
 
       if (dentistsError || !dentists) {
-        console.error('Error fetching dentists:', dentistsError);
+        logger.error('Error fetching dentists:', dentistsError);
         return;
       }
 
@@ -73,7 +74,7 @@ export const CapacityDashboard = () => {
       const capacityData = await Promise.all(capacityPromises);
       setCapacities(capacityData.filter(c => c.total_slots > 0));
     } catch (error) {
-      console.error('Error fetching capacities:', error);
+      logger.error('Error fetching capacities:', error);
     } finally {
       setLoading(false);
     }

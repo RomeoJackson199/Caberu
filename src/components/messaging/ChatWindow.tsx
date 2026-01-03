@@ -84,7 +84,7 @@ export function ChatWindow({
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error loading messages:', error);
+      logger.error('Error loading messages:', error);
       return;
     }
 
@@ -144,7 +144,7 @@ export function ChatWindow({
       setNewMessage('');
       await loadMessages();
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       toast.error('Failed to send message');
     } finally {
       setSending(false);
