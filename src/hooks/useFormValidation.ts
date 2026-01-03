@@ -188,10 +188,11 @@ export function useFormValidation<T extends Record<string, unknown>>({
 
     // Update all fields with validation results in a single state update
     setFields(prev => {
-      const updated = { ...prev };
+      const updated = { ...prev } as FormValidation<T>;
       fieldNames.forEach((name, i) => {
-        updated[name] = {
-          ...updated[name],
+        const fieldName = name as keyof T;
+        updated[fieldName] = {
+          ...prev[fieldName],
           error: errors[i],
           isValid: errors[i] === null,
           isValidating: false
@@ -224,7 +225,9 @@ export function useFormValidation<T extends Record<string, unknown>>({
     (fieldName: keyof T) => ({
       value: fields[fieldName].value,
       onChange: (e: React.ChangeEvent<HTMLInputElement> | T[keyof T]) => {
-        const value = 'target' in e ? (e.target as HTMLInputElement).value : e;
+        const value = (e !== null && typeof e === 'object' && 'target' in e) 
+          ? (e.target as HTMLInputElement).value 
+          : e;
         setValue(fieldName, value as T[keyof T]);
       },
       onBlur: () => handleBlur(fieldName),
