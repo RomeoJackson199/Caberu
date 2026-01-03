@@ -31,6 +31,7 @@ import { EmailLimitProvider } from "@/hooks/useEmailLimit";
 import { NetworkStatus, SessionTimeoutWarning } from "@/components/stability";
 import { ConfirmationProvider } from "@/components/stability/ConfirmationDialogs";
 import { RouteProgressBar } from "@/components/RouteProgressBar";
+import { KeyboardShortcutsGuide } from "@/components/KeyboardShortcutsGuide";
 
 // Force resync: 2025-12-07T19:03
 
@@ -314,6 +315,7 @@ const App = () => {
                   <EmailLimitProvider>
                     <DentistInvitationDialog />
                     <CommandPalette />
+                    <KeyboardShortcutsGuide />
                     <CookieConsent isAuthenticated={!!user} />
                     <OnboardingOrchestrator user={user} />
                     <SeoManager />
