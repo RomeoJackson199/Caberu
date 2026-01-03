@@ -108,7 +108,7 @@ export async function createAppointmentWithNotification(appointmentData: {
       status: appointmentData.status || 'confirmed',
       urgency: appointmentData.urgency || 'medium'
     })
-    .select('*')
+    .select('id, patient_id, dentist_id, appointment_date, reason, notes, status, urgency, patient_name, duration_minutes, created_at, updated_at, business_id')
     .single();
 
   if (error) {
@@ -295,7 +295,18 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
       let query = supabase
         .from('appointments')
         .select(`
-          *,
+          id,
+          patient_id,
+          dentist_id,
+          appointment_date,
+          reason,
+          notes,
+          status,
+          urgency,
+          patient_name,
+          duration_minutes,
+          created_at,
+          updated_at,
           profiles(
             first_name,
             last_name,
@@ -422,8 +433,26 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
     return () => clearInterval(interval);
   }, [params.autoRefresh, fetchAppointments]);
 
-  // Real-time subscriptions for appointments
+  // Real-time subscriptions for appointments with optimized server-side filtering
   useEffect(() => {
+    // Build filter string for server-side filtering
+    let filter: string | undefined;
+
+    if (businessId && params.dentistId) {
+      // Filter by both business and dentist for maximum efficiency
+      filter = `business_id=eq.${businessId},dentist_id=eq.${params.dentistId}`;
+    } else if (businessId && params.patientId) {
+      // Filter by both business and patient
+      filter = `business_id=eq.${businessId},patient_id=eq.${params.patientId}`;
+    } else if (params.dentistId) {
+      filter = `dentist_id=eq.${params.dentistId}`;
+    } else if (params.patientId) {
+      filter = `patient_id=eq.${params.patientId}`;
+    } else if (businessId) {
+      // At minimum, filter by business to avoid cross-business updates
+      filter = `business_id=eq.${businessId}`;
+    }
+
     const channel = supabase
       .channel('appointments-changes')
       .on(
@@ -432,11 +461,7 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
           event: '*',
           schema: 'public',
           table: 'appointments',
-          filter: params.dentistId
-            ? `dentist_id=eq.${params.dentistId}`
-            : params.patientId
-              ? `patient_id=eq.${params.patientId}`
-              : undefined
+          filter: filter
         },
         () => {
           // Refetch data when changes occur
@@ -448,7 +473,7 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [params.dentistId, params.patientId, fetchAppointments]);
+  }, [params.dentistId, params.patientId, businessId, fetchAppointments]);
 
   return {
     appointments,

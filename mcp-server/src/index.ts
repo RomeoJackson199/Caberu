@@ -486,17 +486,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const { data: patients, error } = await query;
         if (error) throw error;
 
-        // Get last dentist for each patient
+        // Get last dentist for each patient (optimized: single query instead of N+1)
         if (patients && patients.length > 0) {
-          for (const patient of patients) {
-            const { data: lastAppt } = await supabase
-              .from('appointments')
-              .select('dentist_id, appointment_date, dentists!inner(id, first_name, last_name, specialization)')
-              .eq('patient_id', patient.id)
-              .order('appointment_date', { ascending: false })
-              .limit(1)
-              .maybeSingle();
+          const patientIds = patients.map(p => p.id);
 
+          // Fetch all last appointments in one query
+          const { data: lastAppointments } = await supabase
+            .from('appointments')
+            .select('patient_id, dentist_id, appointment_date, dentists!inner(id, first_name, last_name, specialization)')
+            .in('patient_id', patientIds)
+            .order('appointment_date', { ascending: false });
+
+          // Create a map of patient_id -> last appointment
+          const lastApptMap = new Map<string, any>();
+          if (lastAppointments) {
+            for (const appt of lastAppointments) {
+              // Only keep the most recent appointment for each patient
+              if (!lastApptMap.has(appt.patient_id)) {
+                lastApptMap.set(appt.patient_id, appt);
+              }
+            }
+          }
+
+          // Assign last appointment data to each patient
+          for (const patient of patients) {
+            const lastAppt = lastApptMap.get(patient.id);
             if (lastAppt) {
               (patient as PatientWithExtras).last_dentist = lastAppt.dentists;
               (patient as PatientWithExtras).last_appointment_date = lastAppt.appointment_date;

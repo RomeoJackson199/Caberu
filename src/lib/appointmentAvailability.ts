@@ -28,13 +28,24 @@ async function getCurrentBusinessId(): Promise<string | null> {
   }
 }
 
-// Simple cache for availability
+// Optimized cache for availability with automatic cleanup
 interface CacheEntry {
   data: TimeSlot[];
   timestamp: number;
 }
 const availabilityCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes - extended for better performance
+const MAX_CACHE_SIZE = 100; // Prevent unbounded cache growth
+
+// Automatic cache cleanup to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of availabilityCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL) {
+      availabilityCache.delete(key);
+    }
+  }
+}, 5 * 60 * 1000); // Clean every 5 minutes
 
 /**
  * Fetches available time slots for a dentist on a specific date
@@ -79,7 +90,13 @@ export async function fetchDentistAvailability(
       appointmentId: slot.appointment_id || undefined
     }));
 
-    // Cache the result
+    // Cache the result with size limit enforcement
+    if (availabilityCache.size >= MAX_CACHE_SIZE) {
+      // Remove oldest entry when cache is full
+      const firstKey = availabilityCache.keys().next().value;
+      if (firstKey) availabilityCache.delete(firstKey);
+    }
+
     availabilityCache.set(cacheKey, {
       data: slots,
       timestamp: Date.now()
