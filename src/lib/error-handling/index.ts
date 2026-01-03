@@ -44,3 +44,22 @@ export {
   reportError,
 } from './reporting';
 export type { ErrorSeverity } from './reporting';
+
+// Type-safe error utilities
+export {
+  getErrorMessage as getTypedErrorMessage,
+  isError,
+  hasErrorProperty,
+  getErrorDetails,
+  safeAsync,
+} from '../error-utils';
+
+// User-friendly error messages
+export {
+  getFriendlyErrorMessage,
+  getBriefErrorMessage,
+  getErrorActionText,
+  isRecoverableError,
+  type ErrorContext as UserErrorContext,
+  type FriendlyError,
+} from '../userFriendlyErrors';

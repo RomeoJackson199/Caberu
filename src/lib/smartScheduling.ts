@@ -3,11 +3,23 @@ import { format, parseISO, addMinutes, getHours, getDay } from 'date-fns';
 import { getCurrentBusinessId } from '@/lib/businessScopedSupabase';
 import { TimeSlot } from './appointmentAvailability';
 import { getGeminiSlotRecommendations, GeminiSlotRecommendation } from './geminiAI';
-import { isSlotUnderutilized, updateSlotStatisticsAfterBooking, calculateSlotUsageStatistics } from './slotUsageTracking';
 import { logger } from '@/lib/logger';
 
-// Re-export for convenience
-export { updateSlotStatisticsAfterBooking, calculateSlotUsageStatistics } from './slotUsageTracking';
+// Stub functions - slot tracking was unused, provide minimal implementation
+function isSlotUnderutilized(_dentistId: string, _date: Date, _slotTime: string): boolean {
+  return false;
+}
+
+async function updateSlotStatisticsAfterBooking(_dentistId: string): Promise<void> {
+  // No-op: slot statistics tracking removed
+}
+
+async function calculateSlotUsageStatistics(_dentistId?: string): Promise<{ success: boolean; error?: string }> {
+  return { success: true };
+}
+
+// Re-export for convenience (stubs)
+export { updateSlotStatisticsAfterBooking, calculateSlotUsageStatistics };
 
 export interface RecommendedSlot extends TimeSlot {
   score: number; // 0-100, higher is better
