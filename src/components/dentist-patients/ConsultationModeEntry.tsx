@@ -15,11 +15,36 @@ import {
   Stethoscope,
   Calendar,
   Plus,
-  X
+  X,
+  Clock,
+  Video,
+  Heart,
+  Zap,
+  Scissors,
+  Crown,
+  AlertCircle,
+  ClipboardList,
+  Sparkles,
+  User,
 } from 'lucide-react';
 import { DentistPatient, PatientAppointment, getAppointmentGroup } from './types';
 import { cn } from '@/lib/utils';
 import { formatClinicTime } from '@/lib/timezone';
+
+// Appointment type category configuration for banner
+const APPOINTMENT_TYPE_CONFIG: Record<string, { icon: React.ElementType; label: string }> = {
+  checkup: { icon: Stethoscope, label: 'Check-up' },
+  cleaning: { icon: Sparkles, label: 'Cleaning' },
+  filling: { icon: Heart, label: 'Filling' },
+  extraction: { icon: Scissors, label: 'Extraction' },
+  root_canal: { icon: Zap, label: 'Root Canal' },
+  crown: { icon: Crown, label: 'Crown' },
+  whitening: { icon: Sparkles, label: 'Whitening' },
+  orthodontics: { icon: Stethoscope, label: 'Orthodontics' },
+  emergency: { icon: AlertCircle, label: 'Emergency' },
+  consultation: { icon: Video, label: 'Consultation' },
+  other: { icon: ClipboardList, label: 'Appointment' },
+};
 
 interface ConsultationModeEntryProps {
   open: boolean;
@@ -158,7 +183,19 @@ export function ConsultationModeEntry({
 // Consultation Mode Banner - shown when in consultation
 interface ConsultationModeBannerProps {
   patient: DentistPatient;
-  appointment: PatientAppointment;
+  appointment: PatientAppointment & {
+    appointment_type?: {
+      id: string;
+      name: string;
+      category: string;
+      color?: string | null;
+    } | null;
+    service?: {
+      name: string;
+      price_cents?: number;
+    } | null;
+    duration_minutes?: number;
+  };
   onExit: () => void;
 }
 
@@ -167,24 +204,61 @@ export function ConsultationModeBanner({
   appointment,
   onExit
 }: ConsultationModeBannerProps) {
+  // Get appointment type config
+  const appointmentType = appointment.appointment_type;
+  const typeConfig = appointmentType
+    ? APPOINTMENT_TYPE_CONFIG[appointmentType.category.toLowerCase()] || APPOINTMENT_TYPE_CONFIG.other
+    : null;
+  const TypeIcon = typeConfig?.icon || Stethoscope;
+
   return (
-    <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <Stethoscope className="h-5 w-5" />
-        <div>
-          <p className="text-sm font-medium">
-            Consultation Mode: {patient.first_name} {patient.last_name}
-          </p>
-          <p className="text-xs opacity-80">
-            Appointment: {formatClinicTime(appointment.appointment_date, 'MMM d, yyyy')} - {appointment.reason || 'General'}
-          </p>
+    <div className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        {/* Mode Icon */}
+        <div className="p-2 bg-primary-foreground/10 rounded-lg">
+          <TypeIcon className="h-5 w-5" />
+        </div>
+
+        {/* Main Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold">
+              {patient.first_name} {patient.last_name}
+            </p>
+            {appointmentType && (
+              <Badge
+                variant="outline"
+                className="text-[10px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/30"
+              >
+                {appointmentType.name}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-xs text-primary-foreground/80 mt-0.5">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {formatClinicTime(appointment.appointment_date, 'MMM d, yyyy')}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatClinicTime(appointment.appointment_date, 'h:mm a')}
+              {appointment.duration_minutes && ` (${appointment.duration_minutes} min)`}
+            </span>
+            {appointment.reason && (
+              <span className="hidden sm:inline truncate max-w-[150px]">
+                {appointment.reason}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-      <Button 
-        variant="ghost" 
-        size="sm" 
+
+      {/* Exit Button */}
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={onExit}
-        className="text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/10"
+        className="text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/10 shrink-0"
       >
         <X className="h-4 w-4 mr-1" />
         Exit

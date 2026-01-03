@@ -175,6 +175,33 @@ export function DentistAppointmentDetail({
     enabled: !!appointment?.dentist_id,
   });
 
+  // Fetch appointment type and service info
+  const { data: appointmentExtras } = useQuery({
+    queryKey: ['appointment-extras', appointment?.id],
+    queryFn: async () => {
+      if (!appointment?.id) return null;
+      const { data } = await supabase
+        .from('appointments')
+        .select(`
+          appointment_types (
+            id,
+            name,
+            category,
+            color,
+            description
+          ),
+          business_services (
+            name,
+            price_cents
+          )
+        `)
+        .eq('id', appointment.id)
+        .single();
+      return data;
+    },
+    enabled: !!appointment?.id,
+  });
+
   const dentistName = dentist 
     ? `Dr. ${dentist.first_name || ''} ${dentist.last_name || ''}`.trim()
     : undefined;
@@ -263,7 +290,11 @@ export function DentistAppointmentDetail({
 
       {/* Section 1: Header - Context & State (always visible) */}
       <AppointmentHeader
-        appointment={appointment}
+        appointment={{
+          ...appointment,
+          appointment_type: appointmentExtras?.appointment_types || null,
+          service: appointmentExtras?.business_services || null,
+        }}
         state={state}
         dentistName={dentistName}
         dentistSpecialization={dentist?.specialization}

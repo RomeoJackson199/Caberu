@@ -1,7 +1,26 @@
 import { useState } from "react";
 import { differenceInYears } from "date-fns";
 import { formatClinicTime } from "@/lib/timezone";
-import { Calendar, Clock, User, MapPin, Stethoscope, Pencil, Check, X, Loader2, MessageSquare, Sparkles } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  User,
+  MapPin,
+  Stethoscope,
+  Pencil,
+  Check,
+  X,
+  Loader2,
+  MessageSquare,
+  Sparkles,
+  Video,
+  Heart,
+  Zap,
+  Scissors,
+  Crown,
+  AlertCircle,
+  ClipboardList,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,10 +28,33 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { 
-  DentistAppointmentState, 
-  DENTIST_STATE_CONFIG 
+import {
+  DentistAppointmentState,
+  DENTIST_STATE_CONFIG
 } from "@/lib/dentistAppointmentState";
+
+// Appointment type category configuration
+const APPOINTMENT_TYPE_CONFIG: Record<string, { icon: React.ElementType; bgColor: string; textColor: string; label: string }> = {
+  checkup: { icon: Stethoscope, bgColor: 'bg-blue-100 dark:bg-blue-900/50', textColor: 'text-blue-700 dark:text-blue-300', label: 'Check-up' },
+  cleaning: { icon: Sparkles, bgColor: 'bg-cyan-100 dark:bg-cyan-900/50', textColor: 'text-cyan-700 dark:text-cyan-300', label: 'Cleaning' },
+  filling: { icon: Heart, bgColor: 'bg-purple-100 dark:bg-purple-900/50', textColor: 'text-purple-700 dark:text-purple-300', label: 'Filling' },
+  extraction: { icon: Scissors, bgColor: 'bg-red-100 dark:bg-red-900/50', textColor: 'text-red-700 dark:text-red-300', label: 'Extraction' },
+  root_canal: { icon: Zap, bgColor: 'bg-orange-100 dark:bg-orange-900/50', textColor: 'text-orange-700 dark:text-orange-300', label: 'Root Canal' },
+  crown: { icon: Crown, bgColor: 'bg-amber-100 dark:bg-amber-900/50', textColor: 'text-amber-700 dark:text-amber-300', label: 'Crown' },
+  whitening: { icon: Sparkles, bgColor: 'bg-yellow-100 dark:bg-yellow-900/50', textColor: 'text-yellow-700 dark:text-yellow-300', label: 'Whitening' },
+  orthodontics: { icon: Stethoscope, bgColor: 'bg-indigo-100 dark:bg-indigo-900/50', textColor: 'text-indigo-700 dark:text-indigo-300', label: 'Orthodontics' },
+  emergency: { icon: AlertCircle, bgColor: 'bg-red-100 dark:bg-red-900/50', textColor: 'text-red-700 dark:text-red-300', label: 'Emergency' },
+  consultation: { icon: Video, bgColor: 'bg-emerald-100 dark:bg-emerald-900/50', textColor: 'text-emerald-700 dark:text-emerald-300', label: 'Consultation' },
+  other: { icon: ClipboardList, bgColor: 'bg-gray-100 dark:bg-gray-800/50', textColor: 'text-gray-700 dark:text-gray-300', label: 'Appointment' },
+};
+
+interface AppointmentTypeInfo {
+  id: string;
+  name: string;
+  category: string;
+  color?: string | null;
+  description?: string | null;
+}
 
 interface AppointmentHeaderProps {
   appointment: {
@@ -29,6 +71,11 @@ interface AppointmentHeaderProps {
       date_of_birth?: string;
     };
     patient_name?: string;
+    appointment_type?: AppointmentTypeInfo | null;
+    service?: {
+      name: string;
+      price_cents?: number;
+    } | null;
   };
   state: DentistAppointmentState;
   dentistName?: string;
@@ -107,19 +154,45 @@ export function AppointmentHeader({
     }
   };
 
+  // Get appointment type config
+  const appointmentType = appointment.appointment_type;
+  const typeConfig = appointmentType
+    ? APPOINTMENT_TYPE_CONFIG[appointmentType.category.toLowerCase()] || APPOINTMENT_TYPE_CONFIG.other
+    : null;
+  const TypeIcon = typeConfig?.icon;
+
   return (
     <div className="p-4 sm:p-6 border-b bg-muted/30 flex-shrink-0 space-y-4">
-      {/* Status Badge - Visually dominant */}
-      <div className="space-y-1">
-        <Badge
-          variant="outline"
-          className={cn("gap-2 font-semibold text-base px-4 py-2 inline-flex", stateConfig.badgeClassName)}
-        >
-          {stateConfig.icon === 'calendar' && <Calendar className="h-4 w-4" />}
-          {stateConfig.icon === 'edit' && <Clock className="h-4 w-4 animate-pulse" />}
-          {stateConfig.icon === 'check' && <Check className="h-4 w-4" />}
-          {stateConfig.label}
-        </Badge>
+      {/* Badges Row - Status and Appointment Type */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant="outline"
+            className={cn("gap-2 font-semibold text-base px-4 py-2 inline-flex", stateConfig.badgeClassName)}
+          >
+            {stateConfig.icon === 'calendar' && <Calendar className="h-4 w-4" />}
+            {stateConfig.icon === 'edit' && <Clock className="h-4 w-4 animate-pulse" />}
+            {stateConfig.icon === 'check' && <Check className="h-4 w-4" />}
+            {stateConfig.label}
+          </Badge>
+          {appointmentType && typeConfig && TypeIcon && (
+            <Badge
+              variant="outline"
+              className={cn(
+                "gap-1.5 font-medium text-sm px-3 py-1.5 border",
+                typeConfig.bgColor,
+                typeConfig.textColor
+              )}
+              style={appointmentType.color ? {
+                borderColor: appointmentType.color,
+                backgroundColor: `${appointmentType.color}15`
+              } : undefined}
+            >
+              <TypeIcon className="h-3.5 w-3.5" />
+              {appointmentType.name}
+            </Badge>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground ml-1">
           {stateConfig.description}
         </p>
@@ -209,7 +282,7 @@ export function AppointmentHeader({
         </p>
       </div>
 
-      {/* Clinic & Dentist - Secondary info */}
+      {/* Clinic, Dentist & Service - Secondary info */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
         {dentistName && (
           <div className="flex items-center gap-1.5">
@@ -229,7 +302,25 @@ export function AppointmentHeader({
             <span>{clinicName}</span>
           </div>
         )}
+        {appointment.service?.name && (
+          <div className="flex items-center gap-1.5">
+            <ClipboardList className="h-4 w-4 flex-shrink-0" />
+            <span>{appointment.service.name}</span>
+            {appointment.service.price_cents && appointment.service.price_cents > 0 && (
+              <span className="text-xs">· €{(appointment.service.price_cents / 100).toFixed(2)}</span>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Appointment Type Description */}
+      {appointmentType?.description && (
+        <div className="p-3 rounded-lg bg-muted/50 border">
+          <p className="text-sm text-muted-foreground">
+            {appointmentType.description}
+          </p>
+        </div>
+      )}
 
       {/* Patient Symptoms Section */}
       {(appointment.notes || appointment.ai_summary) && (

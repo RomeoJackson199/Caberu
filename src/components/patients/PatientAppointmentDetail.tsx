@@ -42,6 +42,12 @@ import {
   Loader2,
   FolderOpen,
   Info,
+  Sparkles,
+  Video,
+  Heart,
+  Zap,
+  Scissors,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -60,6 +66,14 @@ interface PatientAppointmentDetailProps {
   onCancel?: (appointmentId: string) => void;
   /** Optional: auto-scroll to a specific section */
   scrollTo?: 'payment' | 'documents' | null;
+}
+
+interface AppointmentTypeData {
+  id: string;
+  name: string;
+  category: string;
+  color: string | null;
+  description: string | null;
 }
 
 interface AppointmentData {
@@ -92,6 +106,7 @@ interface AppointmentData {
     name: string;
     price_cents: number;
   } | null;
+  appointment_type: AppointmentTypeData | null;
 }
 
 interface DocumentData {
@@ -357,7 +372,7 @@ export function PatientAppointmentDetail({
   const fetchAppointmentDetails = async () => {
     if (!appointmentId) return;
     setLoading(true);
-    
+
     try {
       const { data, error } = await supabase
         .from('appointments')
@@ -390,6 +405,13 @@ export function PatientAppointmentDetail({
           business_services (
             name,
             price_cents
+          ),
+          appointment_types (
+            id,
+            name,
+            category,
+            color,
+            description
           )
         `)
         .eq('id', appointmentId)
@@ -400,6 +422,7 @@ export function PatientAppointmentDetail({
       const businessData = Array.isArray(data.businesses) ? data.businesses[0] : data.businesses;
       const dentistData = Array.isArray(data.dentists) ? data.dentists[0] : data.dentists;
       const serviceData = Array.isArray(data.business_services) ? data.business_services[0] : data.business_services;
+      const appointmentTypeData = Array.isArray(data.appointment_types) ? data.appointment_types[0] : data.appointment_types;
 
       setAppointment({
         id: data.id,
@@ -430,6 +453,13 @@ export function PatientAppointmentDetail({
         service: serviceData ? {
           name: serviceData.name,
           price_cents: serviceData.price_cents,
+        } : null,
+        appointment_type: appointmentTypeData ? {
+          id: appointmentTypeData.id,
+          name: appointmentTypeData.name,
+          category: appointmentTypeData.category,
+          color: appointmentTypeData.color,
+          description: appointmentTypeData.description,
         } : null,
       });
     } catch (error) {
@@ -561,6 +591,24 @@ export function PatientAppointmentDetail({
     return typeMap[type.toLowerCase()] || type;
   };
 
+  // Appointment type category icons and colors
+  const getAppointmentTypeConfig = (category: string) => {
+    const configs: Record<string, { icon: React.ElementType; bgColor: string; textColor: string; label: string }> = {
+      checkup: { icon: Stethoscope, bgColor: 'bg-blue-100 dark:bg-blue-900/50', textColor: 'text-blue-700 dark:text-blue-300', label: 'Check-up' },
+      cleaning: { icon: Sparkles, bgColor: 'bg-cyan-100 dark:bg-cyan-900/50', textColor: 'text-cyan-700 dark:text-cyan-300', label: 'Cleaning' },
+      filling: { icon: Heart, bgColor: 'bg-purple-100 dark:bg-purple-900/50', textColor: 'text-purple-700 dark:text-purple-300', label: 'Filling' },
+      extraction: { icon: Scissors, bgColor: 'bg-red-100 dark:bg-red-900/50', textColor: 'text-red-700 dark:text-red-300', label: 'Extraction' },
+      root_canal: { icon: Zap, bgColor: 'bg-orange-100 dark:bg-orange-900/50', textColor: 'text-orange-700 dark:text-orange-300', label: 'Root Canal' },
+      crown: { icon: Crown, bgColor: 'bg-amber-100 dark:bg-amber-900/50', textColor: 'text-amber-700 dark:text-amber-300', label: 'Crown' },
+      whitening: { icon: Sparkles, bgColor: 'bg-yellow-100 dark:bg-yellow-900/50', textColor: 'text-yellow-700 dark:text-yellow-300', label: 'Whitening' },
+      orthodontics: { icon: Stethoscope, bgColor: 'bg-indigo-100 dark:bg-indigo-900/50', textColor: 'text-indigo-700 dark:text-indigo-300', label: 'Orthodontics' },
+      emergency: { icon: AlertCircle, bgColor: 'bg-red-100 dark:bg-red-900/50', textColor: 'text-red-700 dark:text-red-300', label: 'Emergency' },
+      consultation: { icon: Video, bgColor: 'bg-emerald-100 dark:bg-emerald-900/50', textColor: 'text-emerald-700 dark:text-emerald-300', label: 'Consultation' },
+      other: { icon: ClipboardList, bgColor: 'bg-gray-100 dark:bg-gray-800/50', textColor: 'text-gray-700 dark:text-gray-300', label: 'Appointment' },
+    };
+    return configs[category.toLowerCase()] || configs.other;
+  };
+
   const content = (
     <div className="flex flex-col h-full overflow-hidden">
       {loading ? (
@@ -573,9 +621,32 @@ export function PatientAppointmentDetail({
           <div className="p-6 border-b bg-muted/30 flex-shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-3">
-                {/* State badge - visually dominant */}
-                <StatusBadge />
-                
+                {/* Badges row - Status and Appointment Type */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge />
+                  {appointment.appointment_type && (() => {
+                    const typeConfig = getAppointmentTypeConfig(appointment.appointment_type.category);
+                    const TypeIcon = typeConfig.icon;
+                    return (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "gap-1.5 font-medium text-sm px-3 py-1 border",
+                          typeConfig.bgColor,
+                          typeConfig.textColor
+                        )}
+                        style={appointment.appointment_type.color ? {
+                          borderColor: appointment.appointment_type.color,
+                          backgroundColor: `${appointment.appointment_type.color}15`
+                        } : undefined}
+                      >
+                        <TypeIcon className="h-3.5 w-3.5" />
+                        {appointment.appointment_type.name}
+                      </Badge>
+                    );
+                  })()}
+                </div>
+
                 {/* Date & time */}
                 <div>
                   <h2 className="text-xl font-semibold text-foreground">
@@ -590,15 +661,15 @@ export function PatientAppointmentDetail({
 
               {/* Clinic logo */}
               {appointment.business?.logo_url && (
-                <img 
-                  src={appointment.business.logo_url} 
+                <img
+                  src={appointment.business.logo_url}
                   alt={appointment.business.name}
                   className="h-14 w-14 rounded-xl object-cover flex-shrink-0 border"
                 />
               )}
             </div>
 
-            {/* Clinic, Dentist & Appointment type info */}
+            {/* Clinic, Dentist & Service info */}
             <div className="mt-4 space-y-1.5 text-sm">
               <div className="flex items-center gap-1.5 text-foreground font-medium">
                 <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -607,12 +678,38 @@ export function PatientAppointmentDetail({
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <User className="h-4 w-4 flex-shrink-0" />
                 <span>{dentistName}</span>
+                {appointment.dentist?.specialization && (
+                  <>
+                    <span className="mx-1">·</span>
+                    <span className="text-xs">{appointment.dentist.specialization}</span>
+                  </>
+                )}
               </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Stethoscope className="h-4 w-4 flex-shrink-0" />
-                <span>{appointment.service?.name || appointment.reason || 'Appointment'}</span>
-              </div>
+              {appointment.service?.name && (
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Stethoscope className="h-4 w-4 flex-shrink-0" />
+                  <span>{appointment.service.name}</span>
+                  {appointment.service.price_cents > 0 && (
+                    <span className="text-xs">· €{(appointment.service.price_cents / 100).toFixed(2)}</span>
+                  )}
+                </div>
+              )}
+              {appointment.reason && !appointment.service?.name && (
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <ClipboardList className="h-4 w-4 flex-shrink-0" />
+                  <span>{appointment.reason}</span>
+                </div>
+              )}
             </div>
+
+            {/* Appointment type description if available */}
+            {appointment.appointment_type?.description && (
+              <div className="mt-3 p-3 rounded-lg bg-muted/50 border">
+                <p className="text-sm text-muted-foreground">
+                  {appointment.appointment_type.description}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* ============================================ */}

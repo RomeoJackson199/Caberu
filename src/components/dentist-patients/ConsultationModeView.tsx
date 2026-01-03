@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { DentistPatient, PatientAppointment } from './types';
 import { DentistAppointmentDetail } from '@/components/appointments/DentistAppointmentDetail';
 import { CompletionDialog } from '@/components/appointments/completion-dialog';
@@ -31,6 +31,32 @@ export function ConsultationModeView({
     setLocalAppointment(appointment);
   }, [appointment]);
 
+  // Fetch appointment type and service info for banner
+  const { data: appointmentExtras } = useQuery({
+    queryKey: ['appointment-extras-banner', appointment.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('appointments')
+        .select(`
+          duration_minutes,
+          appointment_types (
+            id,
+            name,
+            category,
+            color
+          ),
+          business_services (
+            name,
+            price_cents
+          )
+        `)
+        .eq('id', appointment.id)
+        .single();
+      return data;
+    },
+    enabled: !!appointment.id,
+  });
+
   const handleStatusChange = (appointmentId: string, newStatus: string) => {
     onAppointmentUpdated();
     if (newStatus === 'completed') {
@@ -54,12 +80,20 @@ export function ConsultationModeView({
     }
   };
 
+  // Enrich appointment with type info for banner
+  const enrichedBannerAppointment = {
+    ...localAppointment,
+    duration_minutes: appointmentExtras?.duration_minutes,
+    appointment_type: appointmentExtras?.appointment_types || null,
+    service: appointmentExtras?.business_services || null,
+  };
+
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Consultation Mode Banner */}
       <ConsultationModeBanner
         patient={patient}
-        appointment={localAppointment}
+        appointment={enrichedBannerAppointment}
         onExit={onExit}
       />
 
