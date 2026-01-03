@@ -33,16 +33,25 @@ export class OfflineManager {
     return OfflineManager.instance;
   }
 
+  // Bound methods for event listeners
+  private boundHandleOnline = () => this.handleOnline();
+  private boundHandleOffline = () => this.handleOffline();
+
   private initialize() {
     // Listen to browser online/offline events
-    window.addEventListener('online', () => this.handleOnline());
-    window.addEventListener('offline', () => this.handleOffline());
+    window.addEventListener('online', this.boundHandleOnline);
+    window.addEventListener('offline', this.boundHandleOffline);
 
     // Check initial status
     this.updateStatus(navigator.onLine ? 'online' : 'offline');
 
     // Periodic connection quality check
     this.startConnectionMonitoring();
+
+    // Clean up on page unload to prevent memory leaks
+    window.addEventListener('beforeunload', () => {
+      this.destroy();
+    });
   }
 
   private startConnectionMonitoring() {
@@ -241,9 +250,10 @@ export class OfflineManager {
   destroy() {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
+      this.checkInterval = null;
     }
-    window.removeEventListener('online', () => this.handleOnline());
-    window.removeEventListener('offline', () => this.handleOffline());
+    window.removeEventListener('online', this.boundHandleOnline);
+    window.removeEventListener('offline', this.boundHandleOffline);
     this.listeners.clear();
   }
 }

@@ -98,19 +98,57 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 
 	useEffect(() => {
 		if (!open) return;
+
+		let isMounted = true;
+		const controller = new AbortController();
+
 		(async () => {
-			const user = await sb.auth.getUser();
-			setCurrentUserId(user.data.user?.id || null);
-			const { data: dent } = await sb.from('dentists').select('id, profile_id').eq('id', dentistId).single();
-			if (dent?.profile_id) {
-				const { data: prof } = await sb.from('profiles').select('first_name, last_name').eq('id', dent.profile_id).single();
-				setDentistName(prof ? `${prof.first_name || ''} ${prof.last_name || ''}`.trim() : '');
+			try {
+				const user = await sb.auth.getUser();
+				if (!isMounted) return;
+				setCurrentUserId(user.data.user?.id || null);
+
+				const { data: dent, error: dentErr } = await sb.from('dentists').select('id, profile_id').eq('id', dentistId).single();
+				if (dentErr) {
+					logger.error('Failed to fetch dentist data:', dentErr);
+				} else if (dent?.profile_id && isMounted) {
+					const { data: prof, error: profErr } = await sb.from('profiles').select('first_name, last_name').eq('id', dent.profile_id).single();
+					if (profErr) {
+						logger.error('Failed to fetch dentist profile:', profErr);
+					} else if (isMounted) {
+						setDentistName(prof ? `${prof.first_name || ''} ${prof.last_name || ''}`.trim() : '');
+					}
+				}
+
+				const { data: pat, error: patErr } = await sb.from('profiles').select('first_name, last_name').eq('id', appointment.patient_id).single();
+				if (patErr) {
+					logger.error('Failed to fetch patient data:', patErr);
+				} else if (isMounted) {
+					setPatientName(pat ? `${pat.first_name || ''} ${pat.last_name || ''}`.trim() : '');
+				}
+
+				const { data: inv, error: invErr } = await sb.from('inventory_items').select('id, name, quantity, min_threshold').eq('dentist_id', dentistId).order('name');
+				if (invErr) {
+					logger.error('Failed to fetch inventory items:', invErr);
+				} else if (isMounted) {
+					setInventoryItems((inv || []) as any);
+				}
+			} catch (error) {
+				if (isMounted) {
+					logger.error('Error loading completion sheet data:', error);
+					toast({
+						title: 'Error',
+						description: 'Failed to load some data. Please try again.',
+						variant: 'destructive',
+					});
+				}
 			}
-			const { data: pat } = await sb.from('profiles').select('first_name, last_name').eq('id', appointment.patient_id).single();
-			setPatientName(pat ? `${pat.first_name || ''} ${pat.last_name || ''}`.trim() : '');
-			const { data: inv } = await sb.from('inventory_items').select('id, name, quantity, min_threshold').eq('dentist_id', dentistId).order('name');
-			setInventoryItems((inv || []) as any);
-		})()
+		})();
+
+		return () => {
+			isMounted = false;
+			controller.abort();
+		};
 	}, [open, dentistId, appointment.patient_id]);
 
 	// Build auto supplies from selected procedures + overrides

@@ -65,11 +65,36 @@ const resetSessionTimeout = () => {
 };
 
 // Track user activity to reset timeout
+const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+
 if (typeof window !== 'undefined') {
-  ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+  activityEvents.forEach(event => {
     document.addEventListener(event, resetSessionTimeout, { passive: true });
   });
 
   // Start initial timer
   resetSessionTimeout();
+
+  // Clean up on page unload to prevent memory leaks
+  window.addEventListener('beforeunload', () => {
+    if (sessionTimer) {
+      clearTimeout(sessionTimer);
+    }
+    activityEvents.forEach(event => {
+      document.removeEventListener(event, resetSessionTimeout);
+    });
+  });
 }
+
+// Export cleanup function for manual cleanup if needed
+export const cleanupSessionTimeout = () => {
+  if (sessionTimer) {
+    clearTimeout(sessionTimer);
+    sessionTimer = undefined;
+  }
+  if (typeof window !== 'undefined') {
+    activityEvents.forEach(event => {
+      document.removeEventListener(event, resetSessionTimeout);
+    });
+  }
+};

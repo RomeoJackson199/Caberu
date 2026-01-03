@@ -28,6 +28,7 @@ import { HomeTab } from "@/components/patients/HomeTab";
 import { PatientRecordsTimeline } from "@/components/patients/PatientRecordsTimeline";
 import { AppointmentsTab } from "@/components/patients/AppointmentsTab";
 import { PaymentsTab } from "@/components/patients/PaymentsTab";
+import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { logger } from '@/lib/logger';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
@@ -113,7 +114,7 @@ const getNavigationItems = (hasAIChat: boolean) => [{
   }]
 }];
 
-export const PatientDashboard = ({
+const PatientDashboardComponent = ({
   user
 }: PatientDashboardProps) => {
   const { t } = useLanguage();
@@ -570,3 +571,6 @@ export const PatientDashboard = ({
     </Dialog>
   </PatientAppShell>;
 };
+
+// Export with error boundary for better stability
+export const PatientDashboard = withErrorBoundary(PatientDashboardComponent);

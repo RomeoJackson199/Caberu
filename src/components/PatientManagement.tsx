@@ -28,6 +28,7 @@ import {
   CreditCard
 } from "lucide-react";
 import { format } from "date-fns";
+import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -115,7 +116,7 @@ interface PatientManagementProps {
   dentistId: string;
 }
 
-export function PatientManagement({ dentistId }: PatientManagementProps) {
+function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -1629,3 +1630,6 @@ export function PatientManagement({ dentistId }: PatientManagementProps) {
     </div>
   );
 }
+
+// Export with error boundary for better stability
+export const PatientManagement = withErrorBoundary(PatientManagementComponent);

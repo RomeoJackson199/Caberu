@@ -18,7 +18,8 @@ interface QueryResult<T> {
   isStale: boolean;
 }
 
-// Simple cache implementation
+// Simple cache implementation with max size limit
+const MAX_CACHE_SIZE = 100;
 const queryCache = new Map<string, {
   data: any;
   timestamp: number;
@@ -27,14 +28,55 @@ const queryCache = new Map<string, {
 }>();
 
 // Cleanup expired cache entries
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of queryCache.entries()) {
-    if (now - entry.timestamp > entry.cacheTime) {
-      queryCache.delete(key);
+let cleanupInterval: NodeJS.Timeout | null = null;
+
+const startCacheCleanup = () => {
+  if (cleanupInterval) return; // Already running
+
+  cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    const expiredKeys: string[] = [];
+
+    for (const [key, entry] of queryCache.entries()) {
+      if (now - entry.timestamp > entry.cacheTime) {
+        expiredKeys.push(key);
+      }
     }
+
+    expiredKeys.forEach(key => queryCache.delete(key));
+
+    // Enforce max cache size by removing oldest entries
+    if (queryCache.size > MAX_CACHE_SIZE) {
+      const entries = Array.from(queryCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = entries.slice(0, queryCache.size - MAX_CACHE_SIZE);
+      toRemove.forEach(([key]) => queryCache.delete(key));
+    }
+
+    if (queryCache.size === 0 && cleanupInterval) {
+      // Stop interval if cache is empty to save resources
+      clearInterval(cleanupInterval);
+      cleanupInterval = null;
+    }
+  }, 5 * 60 * 1000); // Clean every 5 minutes
+};
+
+// Cleanup function for manual cleanup (e.g., on app unmount)
+export const cleanupQueryCache = () => {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
   }
-}, 5 * 60 * 1000); // Clean every 5 minutes
+  queryCache.clear();
+};
+
+// Start cleanup on module load
+if (typeof window !== 'undefined') {
+  startCacheCleanup();
+
+  // Clean up on page unload
+  window.addEventListener('beforeunload', cleanupQueryCache);
+}
 
 export function useOptimizedQuery<T>(
   queryKey: string,
@@ -101,6 +143,9 @@ export function useOptimizedQuery<T>(
         staleTime,
         cacheTime
       });
+
+      // Ensure cleanup is running when cache has entries
+      startCacheCleanup();
     } catch (err) {
       if (abortControllerRef.current?.signal.aborted) {
         return;
