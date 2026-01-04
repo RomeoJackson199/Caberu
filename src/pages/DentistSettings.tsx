@@ -25,7 +25,7 @@ import { PhoneUsageCard } from "@/components/settings/PhoneUsageCard";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export default function DentistSettings() {
-  const { businessId } = useBusinessContext();
+  const { businessId, loading: businessLoading } = useBusinessContext();
   const { dentistId } = useCurrentDentist(businessId);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("appointments");
@@ -141,7 +141,7 @@ export default function DentistSettings() {
     }
   };
 
-  if (!dentistId) {
+  if (businessLoading || !dentistId) {
     return (
       <div className="container max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header skeleton */}
