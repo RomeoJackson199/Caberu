@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,9 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions, className }:
               <React.Fragment key={idx}>
                 <BreadcrumbItem>
                   {bc.href ? (
-                    <BreadcrumbLink href={bc.href}>{bc.label}</BreadcrumbLink>
+                    <BreadcrumbLink asChild>
+                      <Link to={bc.href}>{bc.label}</Link>
+                    </BreadcrumbLink>
                   ) : (
                     <BreadcrumbPage>{bc.label}</BreadcrumbPage>
                   )}
