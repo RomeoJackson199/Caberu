@@ -12,6 +12,7 @@ import { useInventoryActionsWithUndo } from "@/hooks/useInventoryActionsWithUndo
 interface InventoryItem {
   id: string;
   dentist_id: string;
+  business_id: string;
   name: string;
   category: "implants" | "anesthesia" | "consumables" | "instruments" | "other";
   quantity: number;

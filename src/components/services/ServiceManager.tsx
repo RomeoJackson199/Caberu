@@ -23,6 +23,7 @@ interface Service {
   is_active: boolean;
   duration_minutes: number | null;
   category: string | null;
+  business_id: string;
 }
 
 export function ServiceManager() {
