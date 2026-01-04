@@ -108,55 +108,50 @@ export function AppointmentHeader({
   };
 
   return (
-    <div className="p-4 sm:p-6 border-b bg-muted/30 flex-shrink-0 space-y-4">
-      {/* Status Badge - Visually dominant */}
-      <div className="space-y-1">
-        <Badge
-          variant="outline"
-          className={cn("gap-2 font-semibold text-base px-4 py-2 inline-flex", stateConfig.badgeClassName)}
-        >
-          {stateConfig.icon === 'calendar' && <Calendar className="h-4 w-4" />}
-          {stateConfig.icon === 'edit' && <Clock className="h-4 w-4 animate-pulse" />}
-          {stateConfig.icon === 'check' && <Check className="h-4 w-4" />}
-          {stateConfig.label}
-        </Badge>
-        <p className="text-xs text-muted-foreground ml-1">
-          {stateConfig.description}
-        </p>
-      </div>
-
-      {/* Patient Info */}
-      <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12 ring-2 ring-primary/10">
-          <AvatarFallback className="bg-primary/5 text-primary font-semibold">
+    <div className="p-4 sm:p-6 border-b bg-gradient-to-b from-muted/50 to-background flex-shrink-0 space-y-4">
+      {/* Patient Info Row */}
+      <div className="flex items-start gap-4">
+        <Avatar className="h-14 w-14 ring-2 ring-primary/10 shadow-sm">
+          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
             {patientInitials || 'P'}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-semibold text-foreground truncate">
-            {patientName}
-          </h2>
-          <div className="text-sm text-muted-foreground flex items-center gap-1">
-            {patientAge ? `${patientAge} years` : 'Patient'}
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-xl font-semibold text-foreground truncate">
+              {patientName}
+            </h2>
+            <Badge
+              variant="outline"
+              className={cn("gap-1.5 font-medium text-xs px-2.5 py-0.5", stateConfig.badgeClassName)}
+            >
+              {stateConfig.icon === 'calendar' && <Calendar className="h-3 w-3" />}
+              {stateConfig.icon === 'edit' && <Clock className="h-3 w-3" />}
+              {stateConfig.icon === 'check' && <Check className="h-3 w-3" />}
+              {stateConfig.label}
+            </Badge>
+          </div>
+          <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+            {patientAge && <span>{patientAge} years old</span>}
+            {patientAge && (appointment.reason || !isEditingReason) && <span className="text-muted-foreground/40">•</span>}
             {appointment.reason && !isEditingReason && (
-              <>
-                <span className="mx-1">•</span>
-                <span className="truncate">{appointment.reason}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-foreground/80">{appointment.reason}</span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 ml-1"
+                  className="h-5 w-5 opacity-50 hover:opacity-100"
                   onClick={handleEditReason}
                 >
                   <Pencil className="h-3 w-3" />
                 </Button>
-              </>
+              </div>
             )}
             {!appointment.reason && !isEditingReason && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 px-2 ml-1 text-xs"
+                className="h-5 px-2 text-xs text-muted-foreground hover:text-foreground"
                 onClick={handleEditReason}
               >
                 <Pencil className="h-3 w-3 mr-1" />
@@ -165,68 +160,64 @@ export function AppointmentHeader({
             )}
           </div>
           {isEditingReason && (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-2">
               <Input
                 value={editedReason}
                 onChange={(e) => setEditedReason(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Appointment reason..."
-                className="h-7 text-sm flex-1"
+                className="h-8 text-sm flex-1"
                 autoFocus
                 disabled={isSaving}
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-primary"
+                className="h-8 w-8 text-primary"
                 onClick={handleSaveReason}
                 disabled={isSaving || !editedReason.trim()}
               >
-                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7"
+                className="h-8 w-8"
                 onClick={handleCancelEdit}
                 disabled={isSaving}
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Date & Time */}
-      <div>
-        <h3 className="text-base font-medium text-foreground">
-          {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d, yyyy')}
-        </h3>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {formatClinicTime(appointment.appointment_date, 'h:mm a')}
-          {appointment.duration_minutes && ` (${appointment.duration_minutes} min)`}
-        </p>
-      </div>
-
-      {/* Clinic & Dentist - Secondary info */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-        {dentistName && (
-          <div className="flex items-center gap-1.5">
-            <User className="h-4 w-4 flex-shrink-0" />
-            <span>{dentistName}</span>
-          </div>
-        )}
-        {dentistSpecialization && (
-          <div className="flex items-center gap-1.5">
-            <Stethoscope className="h-4 w-4 flex-shrink-0" />
-            <span>{dentistSpecialization}</span>
-          </div>
-        )}
-        {clinicName && (
-          <div className="flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 flex-shrink-0" />
-            <span>{clinicName}</span>
+      {/* Date, Time & Location Row */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm pl-1">
+        <div className="flex items-center gap-2 text-foreground">
+          <Calendar className="h-4 w-4 text-primary/70" />
+          <span className="font-medium">{formatClinicTime(appointment.appointment_date, 'EEE, MMM d')}</span>
+          <span className="text-muted-foreground">at</span>
+          <span className="font-medium">{formatClinicTime(appointment.appointment_date, 'h:mm a')}</span>
+          {appointment.duration_minutes && (
+            <span className="text-muted-foreground">({appointment.duration_minutes} min)</span>
+          )}
+        </div>
+        {(dentistName || clinicName) && (
+          <div className="flex items-center gap-4 text-muted-foreground">
+            {dentistName && (
+              <div className="flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                <span>{dentistName}</span>
+              </div>
+            )}
+            {clinicName && (
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>{clinicName}</span>
+              </div>
+            )}
           </div>
         )}
       </div>

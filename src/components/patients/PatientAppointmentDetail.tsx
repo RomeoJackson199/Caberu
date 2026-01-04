@@ -570,45 +570,47 @@ export function PatientAppointmentDetail({
           {/* ============================================ */}
           {/* 1. HEADER - Orientation (always visible) */}
           {/* ============================================ */}
-          <div className="p-6 border-b bg-muted/30 flex-shrink-0">
+          <div className="p-6 border-b bg-gradient-to-b from-muted/50 to-background flex-shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-3">
                 {/* State badge - visually dominant */}
                 <StatusBadge />
-                
+
                 {/* Date & time */}
                 <div>
-                  <h2 className="text-xl font-semibold text-foreground">
-                    {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d, yyyy')}
+                  <h2 className="text-2xl font-semibold text-foreground">
+                    {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d')}
                   </h2>
-                  <p className="text-base text-muted-foreground mt-0.5">
+                  <p className="text-lg text-muted-foreground mt-0.5">
                     {formatClinicTime(appointment.appointment_date, 'h:mm a')}
-                    {appointment.duration_minutes && ` · ${appointment.duration_minutes} min`}
+                    {appointment.duration_minutes && (
+                      <span className="text-base"> · {appointment.duration_minutes} min</span>
+                    )}
                   </p>
                 </div>
               </div>
 
               {/* Clinic logo */}
               {appointment.business?.logo_url && (
-                <img 
-                  src={appointment.business.logo_url} 
+                <img
+                  src={appointment.business.logo_url}
                   alt={appointment.business.name}
-                  className="h-14 w-14 rounded-xl object-cover flex-shrink-0 border"
+                  className="h-16 w-16 rounded-2xl object-cover flex-shrink-0 border shadow-sm"
                 />
               )}
             </div>
 
             {/* Clinic, Dentist & Appointment type info */}
-            <div className="mt-4 space-y-1.5 text-sm">
-              <div className="flex items-center gap-1.5 text-foreground font-medium">
-                <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                <span>{appointment.business?.name || 'Clinic'}</span>
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <div className="flex items-center gap-2 text-foreground">
+                <Building2 className="h-4 w-4 flex-shrink-0 text-primary/70" />
+                <span className="font-medium">{appointment.business?.name || 'Clinic'}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <User className="h-4 w-4 flex-shrink-0" />
                 <span>{dentistName}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Stethoscope className="h-4 w-4 flex-shrink-0" />
                 <span>{appointment.service?.name || appointment.reason || 'Appointment'}</span>
               </div>
@@ -618,15 +620,10 @@ export function PatientAppointmentDetail({
           {/* ============================================ */}
           {/* 2. "WHAT'S HAPPENING NOW?" - Status sentence */}
           {/* ============================================ */}
-          <div className="px-6 py-4 border-b bg-background flex-shrink-0">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0 mt-0.5">
-                <Info className="h-4 w-4 text-primary" />
-              </div>
-              <p className="text-sm text-foreground leading-relaxed">
-                {getStatusSentence()}
-              </p>
-            </div>
+          <div className="px-6 py-4 border-b bg-muted/20 flex-shrink-0">
+            <p className="text-sm text-foreground/80 leading-relaxed">
+              {getStatusSentence()}
+            </p>
           </div>
 
           {/* ============================================ */}

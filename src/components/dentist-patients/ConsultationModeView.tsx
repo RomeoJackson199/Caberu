@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { DentistPatient, PatientAppointment } from './types';
@@ -25,11 +25,17 @@ export function ConsultationModeView({
 }: ConsultationModeViewProps) {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [localAppointment, setLocalAppointment] = useState(appointment);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
 
   // Sync local state when appointment prop changes
   useEffect(() => {
     setLocalAppointment(appointment);
   }, [appointment]);
+
+  // Handle save status changes from DentistAppointmentDetail
+  const handleSaveStatusChange = useCallback((status: 'saved' | 'saving' | 'unsaved') => {
+    setSaveStatus(status);
+  }, []);
 
   const handleStatusChange = (appointmentId: string, newStatus: string) => {
     onAppointmentUpdated();
@@ -61,6 +67,7 @@ export function ConsultationModeView({
         patient={patient}
         appointment={localAppointment}
         onExit={onExit}
+        saveStatus={saveStatus}
       />
 
       {/* Appointment Detail - with full editing capabilities */}
@@ -70,6 +77,7 @@ export function ConsultationModeView({
           onClose={onExit}
           onStatusChange={handleStatusChange}
           onOptimisticUpdate={handleOptimisticUpdate}
+          onSaveStatusChange={handleSaveStatusChange}
           standalone
         />
       </div>

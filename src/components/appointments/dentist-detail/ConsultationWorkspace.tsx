@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,18 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   FileText, Upload, DollarSign, Calendar,
-  Plus, Trash2, Save, Loader2, Check, AlertCircle
+  Plus, Trash2, Loader2, Check, Cloud, CloudOff
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +31,8 @@ interface ConsultationWorkspaceProps {
   existingCharges?: ChargeItem[];
   onNotesChange?: (notes: string) => void;
   onChargesChange?: (charges: ChargeItem[]) => void;
+  /** Callback to report save status to parent */
+  onSaveStatusChange?: (status: 'saved' | 'saving' | 'unsaved') => void;
 }
 
 /**
@@ -58,6 +50,7 @@ export function ConsultationWorkspace({
   existingCharges = [],
   onNotesChange,
   onChargesChange,
+  onSaveStatusChange,
 }: ConsultationWorkspaceProps) {
   const { toast } = useToast();
 
@@ -65,39 +58,52 @@ export function ConsultationWorkspace({
   const [notes, setNotes] = useState(existingNotes);
   const [notesSaving, setNotesSaving] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
-  const [hasUnsavedNotes, setHasUnsavedNotes] = useState(false);
 
   // Charges - sync with external changes
   const [charges, setCharges] = useState<ChargeItem[]>(existingCharges);
   const [newChargeDesc, setNewChargeDesc] = useState("");
   const [newChargeAmount, setNewChargeAmount] = useState("");
-  const [hasUnsavedCharges, setHasUnsavedCharges] = useState(false);
+  const [chargesSaving, setChargesSaving] = useState(false);
+  const [chargesSaved, setChargesSaved] = useState(false);
+
+  // Track the last saved values to detect changes
+  const lastSavedNotesRef = useRef(existingNotes);
+  const lastSavedChargesRef = useRef(JSON.stringify(existingCharges));
+
+  // Compute unsaved state
+  const hasUnsavedNotes = notes !== lastSavedNotesRef.current;
+  const hasUnsavedCharges = JSON.stringify(charges) !== lastSavedChargesRef.current;
+  const hasUnsavedChanges = hasUnsavedNotes || hasUnsavedCharges;
+  const isSaving = notesSaving || chargesSaving;
+  const isSaved = (notesSaved || chargesSaved) && !hasUnsavedChanges;
+
+  // Report save status to parent
+  useEffect(() => {
+    if (isSaving) {
+      onSaveStatusChange?.('saving');
+    } else if (hasUnsavedChanges) {
+      onSaveStatusChange?.('unsaved');
+    } else {
+      onSaveStatusChange?.('saved');
+    }
+  }, [isSaving, hasUnsavedChanges, onSaveStatusChange]);
 
   // Sync notes when external prop changes
   useEffect(() => {
     setNotes(existingNotes);
-    setHasUnsavedNotes(false);
+    lastSavedNotesRef.current = existingNotes;
   }, [existingNotes]);
 
   // Sync charges when external prop changes
   useEffect(() => {
     console.log('🔄 ConsultationWorkspace: syncing charges from props', existingCharges);
     setCharges(existingCharges);
-    setHasUnsavedCharges(false);
+    lastSavedChargesRef.current = JSON.stringify(existingCharges);
   }, [existingCharges]);
-
-  // Track when notes change
-  useEffect(() => {
-    if (notes !== existingNotes) {
-      setHasUnsavedNotes(true);
-    } else {
-      setHasUnsavedNotes(false);
-    }
-  }, [notes, existingNotes]);
 
   // Auto-save notes with debounce
   useEffect(() => {
-    if (!isEditable || notes === existingNotes) return;
+    if (!isEditable || notes === lastSavedNotesRef.current) return;
 
     const timeoutId = setTimeout(async () => {
       setNotesSaving(true);
@@ -107,8 +113,8 @@ export function ConsultationWorkspace({
           .update({ consultation_notes: notes })
           .eq('id', appointmentId);
 
+        lastSavedNotesRef.current = notes;
         setNotesSaved(true);
-        setHasUnsavedNotes(false);
         onNotesChange?.(notes);
         setTimeout(() => setNotesSaved(false), 2000);
       } catch (error) {
@@ -124,7 +130,55 @@ export function ConsultationWorkspace({
     }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [notes, appointmentId, isEditable, existingNotes, onNotesChange, toast]);
+  }, [notes, appointmentId, isEditable, onNotesChange, toast]);
+
+  // Auto-save charges with debounce
+  useEffect(() => {
+    const currentChargesJson = JSON.stringify(charges);
+    if (!isEditable || currentChargesJson === lastSavedChargesRef.current) return;
+
+    const timeoutId = setTimeout(async () => {
+      setChargesSaving(true);
+      try {
+        // Delete existing draft charges
+        await supabase
+          .from('notes')
+          .delete()
+          .eq('appointment_id', appointmentId)
+          .eq('note_type', 'draft_charges');
+
+        // Insert new charges if any
+        if (charges.length > 0) {
+          await supabase
+            .from('notes')
+            .insert({
+              appointment_id: appointmentId,
+              dentist_id: dentistId,
+              created_by: dentistId,
+              note_type: 'draft_charges',
+              content: currentChargesJson,
+              is_private: true,
+            });
+        }
+
+        lastSavedChargesRef.current = currentChargesJson;
+        setChargesSaved(true);
+        onChargesChange?.(charges);
+        setTimeout(() => setChargesSaved(false), 2000);
+      } catch (error) {
+        console.error('Error saving charges:', error);
+        toast({
+          title: "Failed to save charges",
+          description: "Your charges will be saved automatically when you try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setChargesSaving(false);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [charges, appointmentId, dentistId, isEditable, onChargesChange, toast]);
 
   // Calculate totals
   const totalCents = charges.reduce((sum, c) => sum + c.amount_cents, 0);
@@ -159,36 +213,11 @@ export function ConsultationWorkspace({
   return (
     <div className="space-y-4">
       {/* Clinical Notes */}
-      <Card className={cn(
-        hasUnsavedNotes && "border-amber-300 dark:border-amber-700"
-      )}>
+      <Card className="border-muted/60">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-4 w-4 text-primary/70" />
             Clinical Notes
-            {isEditable && !hasUnsavedNotes && !notesSaving && !notesSaved && (
-              <Badge variant="outline" className="ml-auto text-xs">
-                Draft
-              </Badge>
-            )}
-            {hasUnsavedNotes && !notesSaving && (
-              <Badge variant="outline" className="ml-auto text-xs bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                Unsaved Changes
-              </Badge>
-            )}
-            {notesSaving && (
-              <Badge variant="outline" className="ml-auto text-xs flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Saving...
-              </Badge>
-            )}
-            {notesSaved && (
-              <Badge variant="outline" className="ml-auto text-xs bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700 flex items-center gap-1">
-                <Check className="h-3 w-3" />
-                Saved
-              </Badge>
-            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -205,10 +234,10 @@ export function ConsultationWorkspace({
       </Card>
 
       {/* Documents / Imaging */}
-      <Card>
+      <Card className="border-muted/60">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Upload className="h-4 w-4 text-muted-foreground" />
+            <Upload className="h-4 w-4 text-primary/70" />
             Documents & Imaging
           </CardTitle>
         </CardHeader>
@@ -221,11 +250,23 @@ export function ConsultationWorkspace({
       </Card>
 
       {/* Charges / Financials */}
-      <Card>
+      <Card className="border-muted/60">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-primary/70" />
             Charges
+            {chargesSaving && (
+              <span className="ml-auto text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {chargesSaved && !chargesSaving && (
+              <span className="ml-auto text-xs text-emerald-600 flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                Saved
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -301,10 +342,10 @@ export function ConsultationWorkspace({
       </Card>
 
       {/* Follow-up placeholder - to be implemented with scheduling */}
-      <Card>
+      <Card className="border-muted/60">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-primary/70" />
             Follow-up
           </CardTitle>
         </CardHeader>

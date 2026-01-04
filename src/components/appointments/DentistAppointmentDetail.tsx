@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Calendar, Eye, XCircle, Sparkles, ExternalLink, Loader2, Stethoscope, AlertTriangle } from "lucide-react";
+import { Calendar, Eye, XCircle, ExternalLink, Loader2, Stethoscope, AlertTriangle, Cloud, CloudOff } from "lucide-react";
 import { RescheduleAssistant } from "@/components/RescheduleAssistant";
 import { toast } from "sonner";
 
@@ -30,7 +30,6 @@ import {
   PatientSafetySnapshot,
   ConsultationWorkspace,
   FinalizationSection,
-  DraftSaveButton,
   FinalizedAddendum,
 } from "./dentist-detail";
 
@@ -50,6 +49,8 @@ interface DentistAppointmentDetailProps {
   onOptimisticUpdate?: (appointmentId: string, updates: Record<string, unknown>) => void;
   /** When true, skips SheetHeader/SheetTitle (use when not inside a Sheet) */
   standalone?: boolean;
+  /** Callback to report save status to parent (for banner display) */
+  onSaveStatusChange?: (status: 'saved' | 'saving' | 'unsaved') => void;
 }
 
 /**
@@ -70,16 +71,24 @@ export function DentistAppointmentDetail({
   onStatusChange,
   onOptimisticUpdate,
   standalone = false,
+  onSaveStatusChange,
 }: DentistAppointmentDetailProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
   const [showReschedule, setShowReschedule] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   const [notes, setNotes] = useState(appointment?.consultation_notes || "");
   const [charges, setCharges] = useState<ChargeItem[]>([]);
   const [chargesKey, setChargesKey] = useState(0); // Force reload trigger
   const [isCancelling, setIsCancelling] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+
+  // Forward save status changes to parent (for banner display)
+  useEffect(() => {
+    onSaveStatusChange?.(saveStatus);
+  }, [saveStatus, onSaveStatusChange]);
 
   // Sync notes when appointment changes or component mounts with fresh data
   useEffect(() => {
@@ -132,6 +141,30 @@ export function DentistAppointmentDetail({
     console.log('🔄 Draft saved, triggering reload...');
     setChargesKey(prev => prev + 1);
   }, []);
+
+  // Handle close with unsaved changes check
+  const handleSafeClose = useCallback(() => {
+    if (saveStatus === 'unsaved' && state === 'COMPLETED_DRAFT') {
+      setShowExitDialog(true);
+    } else {
+      onClose();
+    }
+  }, [saveStatus, state, onClose]);
+
+  // Force close without saving
+  const handleForceClose = useCallback(() => {
+    setShowExitDialog(false);
+    onClose();
+  }, [onClose]);
+
+  // Wait for save then close
+  const handleSaveAndClose = useCallback(() => {
+    setShowExitDialog(false);
+    // The auto-save will complete, just close after a brief delay
+    setTimeout(() => {
+      onClose();
+    }, 1500);
+  }, [onClose]);
 
   // Derive state from appointment data
   const state = useMemo<DentistAppointmentState>(() => 
@@ -290,18 +323,8 @@ export function DentistAppointmentDetail({
                 existingCharges={charges}
                 onNotesChange={setNotes}
                 onChargesChange={setCharges}
+                onSaveStatusChange={setSaveStatus}
               />
-              
-              {/* Draft Save Button - visible for dentist, does not notify patient */}
-              <div className="flex justify-end">
-                <DraftSaveButton
-                  appointmentId={appointment.id}
-                  dentistId={appointment.dentist_id}
-                  notes={notes}
-                  charges={charges}
-                  onSaved={handleDraftSaved}
-                />
-              </div>
 
               {/* Treatment Plan Section */}
               <TreatmentPlanSection
@@ -472,6 +495,33 @@ export function DentistAppointmentDetail({
               ) : (
                 'Yes, Cancel Appointment'
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Unsaved Changes Exit Dialog */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CloudOff className="h-5 w-5 text-amber-500" />
+              Unsaved changes
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You have changes that are still being saved. Would you like to wait for them to save before leaving?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel onClick={() => setShowExitDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <Button variant="outline" onClick={handleForceClose}>
+              Leave without saving
+            </Button>
+            <AlertDialogAction onClick={handleSaveAndClose}>
+              <Cloud className="h-4 w-4 mr-2" />
+              Wait & save
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
