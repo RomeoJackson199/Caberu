@@ -142,6 +142,18 @@ export function DentistAppointmentDetail({
     setChargesKey(prev => prev + 1);
   }, []);
 
+  // Derive state from appointment data - must be before callbacks that use it
+  const state = useMemo<DentistAppointmentState>(() => 
+    deriveDentistState({
+      status: appointment?.status || 'pending',
+      appointment_date: appointment?.appointment_date,
+      completed_at: appointment?.completed_at,
+    }), 
+    [appointment?.status, appointment?.appointment_date, appointment?.completed_at]
+  );
+
+  const permissions = useMemo(() => getDentistPermissions(state), [state]);
+
   // Handle close with unsaved changes check
   const handleSafeClose = useCallback(() => {
     if (saveStatus === 'unsaved' && state === 'COMPLETED_DRAFT') {
@@ -165,18 +177,6 @@ export function DentistAppointmentDetail({
       onClose();
     }, 1500);
   }, [onClose]);
-
-  // Derive state from appointment data
-  const state = useMemo<DentistAppointmentState>(() => 
-    deriveDentistState({
-      status: appointment?.status || 'pending',
-      appointment_date: appointment?.appointment_date,
-      completed_at: appointment?.completed_at,
-    }), 
-    [appointment?.status, appointment?.appointment_date, appointment?.completed_at]
-  );
-
-  const permissions = useMemo(() => getDentistPermissions(state), [state]);
 
   // Fetch business info
   const { data: business } = useQuery({
