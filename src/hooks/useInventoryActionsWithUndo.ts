@@ -29,6 +29,16 @@ interface QuantityAdjustment {
   newQuantity: number;
 }
 
+/**
+ * Provides inventory operations (delete, adjust quantity, bulk delete) wrapped with Gmail-style undo support and query invalidation.
+ *
+ * Uses an internal undo manager and short-lived snapshots to allow restoring deleted items or reverting quantity changes within a 5-second undo window.
+ *
+ * @returns An object with three actions:
+ * - `deleteItemWithUndo(item)` - Deletes a single inventory item and allows restoring it via undo.
+ * - `adjustQuantityWithUndo(itemId, itemName, oldQuantity, newQuantity, reason)` - Updates an item's quantity, logs the change, and allows reverting to the previous quantity via undo.
+ * - `bulkDeleteWithUndo(items)` - Deletes multiple inventory items at once and allows restoring them via undo.
+ */
 export function useInventoryActionsWithUndo() {
   const queryClient = useQueryClient();
   const { executeWithUndo } = useUndoManager();

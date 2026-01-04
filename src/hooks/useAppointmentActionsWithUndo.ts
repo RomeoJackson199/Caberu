@@ -31,6 +31,18 @@ interface UseAppointmentActionsWithUndoOptions {
   onOptimisticUpdate?: (appointmentId: string, updates: Partial<AppointmentSnapshot>) => void;
 }
 
+/**
+ * Provides appointment action handlers that apply optimistic updates and offer a 5-second Gmail-style undo window.
+ *
+ * @param options - Optional configuration:
+ *   - businessId: optional business identifier used for server operations
+ *   - onSuccess: called after an action is committed with the action type and appointment id
+ *   - onOptimisticUpdate: called to apply optimistic UI updates for an appointment
+ * @returns An object with three action handlers:
+ *   - cancelAppointmentWithUndo(appointment, closeModal?) — marks an appointment cancelled, releases its slot, and allows undo to restore the original state.
+ *   - declineAppointmentWithUndo(appointment, closeModal?) — marks an appointment declined and allows undo to restore the original state.
+ *   - markNoShowWithUndo(appointment, closeModal?) — marks an appointment as no-show and allows undo to restore the original state.
+ */
 export function useAppointmentActionsWithUndo(options: UseAppointmentActionsWithUndoOptions = {}) {
   const { businessId, onSuccess, onOptimisticUpdate } = options;
   const queryClient = useQueryClient();
