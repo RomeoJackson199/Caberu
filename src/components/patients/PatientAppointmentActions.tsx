@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useUndoManager } from '@/hooks/useUndoManager';
 
 interface PatientAppointmentActionsProps {
   appointmentId: string;
@@ -31,16 +32,20 @@ export function PatientAppointmentActions({
   onUpdate,
 }: PatientAppointmentActionsProps) {
   const { toast } = useToast();
+  const { executeWithUndo } = useUndoManager();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [originalStatus, setOriginalStatus] = useState(status);
 
   const isPast = new Date(appointmentDate) < new Date();
   const canModify = !isPast && status !== 'cancelled' && status !== 'completed';
 
   const handleCancel = async () => {
     setCancelling(true);
+    setShowCancelDialog(false);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -53,27 +58,56 @@ export function PatientAppointmentActions({
 
       if (!profile) throw new Error('Profile not found');
 
-      const { error } = await supabase
-        .from('appointments')
-        .update({
-          status: 'cancelled',
-          cancellation_reason: cancelReason || 'Patient requested cancellation',
-          cancelled_by: profile.id,
-          cancelled_at: new Date().toISOString(),
-        })
-        .eq('id', appointmentId);
+      // Store original status for undo
+      setOriginalStatus(status);
 
-      if (error) throw error;
+      // Use undo functionality - shows toast with undo button
+      await executeWithUndo({
+        message: 'Appointment cancelled',
+        description: 'Click undo to restore within 5 seconds',
+        undoDelay: 5000,
+        action: async () => {
+          // Actually cancel the appointment
+          const { error } = await supabase
+            .from('appointments')
+            .update({
+              status: 'cancelled',
+              cancellation_reason: cancelReason || 'Patient requested cancellation',
+              cancelled_by: profile.id,
+              cancelled_at: new Date().toISOString(),
+            })
+            .eq('id', appointmentId);
 
-      toast({
-        title: "Appointment Cancelled",
-        description: "Your appointment has been cancelled successfully",
+          if (error) throw error;
+        },
+        undo: async () => {
+          // Restore the appointment
+          const { error } = await supabase
+            .from('appointments')
+            .update({
+              status: originalStatus,
+              cancellation_reason: null,
+              cancelled_by: null,
+              cancelled_at: null,
+            })
+            .eq('id', appointmentId);
+
+          if (error) throw error;
+        },
+        onSuccess: () => {
+          onUpdate?.();
+        },
+        onError: (error) => {
+          console.error('Error cancelling appointment:', error);
+          toast({
+            title: "Error",
+            description: error.message || "Failed to cancel appointment",
+            variant: "destructive",
+          });
+        },
       });
-
-      setShowCancelDialog(false);
-      onUpdate?.();
     } catch (error: any) {
-      console.error('Error cancelling appointment:', error);
+      console.error('Error in cancel flow:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to cancel appointment",
@@ -121,7 +155,7 @@ export function PatientAppointmentActions({
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
               <p>
-                Are you sure you want to cancel this appointment? This action cannot be undone.
+                Are you sure you want to cancel this appointment? You'll have 5 seconds to undo after confirming.
               </p>
               <div className="space-y-2">
                 <Label htmlFor="cancel-reason">Reason for Cancellation (Optional)</Label>
