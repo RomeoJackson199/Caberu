@@ -160,34 +160,64 @@ interface ConsultationModeBannerProps {
   patient: DentistPatient;
   appointment: PatientAppointment;
   onExit: () => void;
+  saveStatus?: 'saved' | 'saving' | 'unsaved';
 }
 
 export function ConsultationModeBanner({
   patient,
   appointment,
-  onExit
+  onExit,
+  saveStatus = 'saved'
 }: ConsultationModeBannerProps) {
   return (
-    <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <Stethoscope className="h-5 w-5" />
+    <div className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary-foreground/10">
+          <Stethoscope className="h-5 w-5" />
+        </div>
         <div>
-          <p className="text-sm font-medium">
-            Consultation Mode: {patient.first_name} {patient.last_name}
-          </p>
-          <p className="text-xs opacity-80">
-            Appointment: {formatClinicTime(appointment.appointment_date, 'MMM d, yyyy')} - {appointment.reason || 'General'}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold">
+              {patient.first_name} {patient.last_name}
+            </p>
+            <span className="text-primary-foreground/60">•</span>
+            <p className="text-sm opacity-90">
+              {appointment.reason || 'General Consultation'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs opacity-75 mt-0.5">
+            <Calendar className="h-3 w-3" />
+            <span>{formatClinicTime(appointment.appointment_date, 'MMM d, yyyy \'at\' h:mm a')}</span>
+            <span className="text-primary-foreground/40">|</span>
+            {saveStatus === 'saving' && (
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-300 animate-pulse" />
+                Saving...
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                All changes saved
+              </span>
+            )}
+            {saveStatus === 'unsaved' && (
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />
+                Unsaved changes
+              </span>
+            )}
+          </div>
         </div>
       </div>
-      <Button 
-        variant="ghost" 
-        size="sm" 
+      <Button
+        variant="secondary"
+        size="sm"
         onClick={onExit}
-        className="text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/10"
+        className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20"
       >
-        <X className="h-4 w-4 mr-1" />
-        Exit
+        <X className="h-4 w-4 mr-1.5" />
+        Exit Consultation
       </Button>
     </div>
   );
