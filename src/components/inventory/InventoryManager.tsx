@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useInventoryActionsWithUndo } from "@/hooks/useInventoryActionsWithUndo";
 
 interface InventoryItem {
   id: string;
@@ -33,6 +34,9 @@ export function InventoryManager({ dentistId, userId }: InventoryManagerProps) {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileId, setProfileId] = useState<string | null>(null);
+
+  // Undo functionality
+  const { deleteItemWithUndo } = useInventoryActionsWithUndo();
 
   // Add/Edit form state
   const [editId, setEditId] = useState<string | null>(null);
@@ -136,14 +140,20 @@ export function InventoryManager({ dentistId, userId }: InventoryManagerProps) {
   };
 
   const deleteItem = async (id: string) => {
-    try {
-      const { error } = await sb.from('inventory_items').delete().eq('id', id);
-      if (error) throw error;
-      setItems(prev => prev.filter(i => i.id !== id));
-      toast({ title: 'Item deleted' });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Failed to delete item', variant: 'destructive' });
-    }
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    // Optimistically remove from UI
+    setItems(prev => prev.filter(i => i.id !== id));
+
+    // Use undo functionality - will show toast with undo button
+    await deleteItemWithUndo(item);
+
+    // Reload items after undo window
+    setTimeout(async () => {
+      const { data } = await sb.from('inventory_items').select('*').eq('dentist_id', dentistId).order('updated_at', { ascending: false });
+      setItems(data || []);
+    }, 5500);
   };
 
   const applyAdjustment = async () => {
