@@ -55,6 +55,7 @@ const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Messages = lazy(() => import("./pages/Messages"));
 const DemoDentistDashboard = lazy(() => import("./pages/demo/DemoDentistDashboard"));
+const UndoDemo = lazy(() => import("./components/demo/UndoDemo").then(module => ({ default: module.UndoDemo })));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Support = lazy(() => import("./pages/Support"));
 const FeatureDetail = lazy(() => import("./pages/FeatureDetail"));
@@ -324,6 +325,7 @@ const App = () => {
                         <Route path="/" element={<Index />} />
                         {/* Demo routes */}
                         <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
+                        <Route path="/demo/undo" element={<UndoDemo />} />
                         {/* Auth routes */}
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<Signup />} />

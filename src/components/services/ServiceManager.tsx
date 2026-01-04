@@ -10,6 +10,7 @@ import { ServiceDialog } from './ServiceDialog';
 import { Badge } from '@/components/ui/badge';
 import { logger } from '@/lib/logger';
 import { getErrorMessage } from '@/lib/error-utils';
+import { useServiceActionsWithUndo } from '@/hooks/useServiceActionsWithUndo';
 
 interface Service {
   id: string;
@@ -33,6 +34,9 @@ export function ServiceManager() {
   const [dialogCategory, setDialogCategory] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
+  // Undo functionality
+  const { deleteServiceWithUndo, toggleServiceStatusWithUndo } = useServiceActionsWithUndo();
 
   useEffect(() => {
     if (businessId) {
@@ -62,49 +66,33 @@ export function ServiceManager() {
   };
 
   const handleDelete = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
 
     // Optimistically remove from UI immediately
-    const previousServices = [...services];
     setServices(services.filter(s => s.id !== serviceId));
-    toast.success('Service deleted');
 
-    try {
-      const { error } = await supabase
-        .from('business_services')
-        .delete()
-        .eq('id', serviceId);
+    // Use undo functionality - will show toast with undo button
+    await deleteServiceWithUndo(service);
 
-      if (error) throw error;
-    } catch (error: unknown) {
-      // Rollback on error
-      setServices(previousServices);
-      logger.error('Error deleting service:', error);
-      toast.error('Failed to delete service');
-    }
+    // Reload services after undo window expires or action completes
+    setTimeout(() => loadServices(), 5500);
   };
 
   const handleToggleActive = async (serviceId: string, currentStatus: boolean) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
+
     // Optimistically toggle in UI immediately
-    const previousServices = [...services];
     setServices(services.map(s =>
       s.id === serviceId ? { ...s, is_active: !currentStatus } : s
     ));
-    toast.success(`Service ${!currentStatus ? 'activated' : 'deactivated'}`);
 
-    try {
-      const { error } = await supabase
-        .from('business_services')
-        .update({ is_active: !currentStatus })
-        .eq('id', serviceId);
+    // Use undo functionality - will show toast with undo button
+    await toggleServiceStatusWithUndo(service);
 
-      if (error) throw error;
-    } catch (error: unknown) {
-      // Rollback on error
-      setServices(previousServices);
-      logger.error('Error updating service:', error);
-      toast.error('Failed to update service');
-    }
+    // Reload services after undo window expires or action completes
+    setTimeout(() => loadServices(), 5500);
   };
 
   const handleEdit = (service: Service) => {

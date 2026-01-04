@@ -35,6 +35,7 @@ import {
 import { BookTemplate, Save, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
+import { useTreatmentActionsWithUndo } from "@/hooks/useTreatmentActionsWithUndo";
 
 interface TemplateItem {
   name: string;
@@ -183,6 +184,7 @@ interface TemplateListProps {
 
 export function TemplateList({ businessId }: TemplateListProps) {
   const queryClient = useQueryClient();
+  const { deleteTemplateWithUndo } = useTreatmentActionsWithUndo();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -204,24 +206,27 @@ export function TemplateList({ businessId }: TemplateListProps) {
     if (!deleteId) return;
 
     setDeleting(true);
+    setDeleteId(null);
+
     try {
-      const { error } = await supabase
-        .from("treatment_templates")
-        .delete()
-        .eq("id", deleteId);
+      // Find the template
+      const template = templates?.find(t => t.id === deleteId);
+      if (!template) return;
 
-      if (error) throw error;
+      // Use undo functionality - shows toast with undo button
+      await deleteTemplateWithUndo(template);
 
-      queryClient.invalidateQueries({ queryKey: ["treatment-templates"] });
-      toast.success("Template deleted");
-      setDeleteId(null);
+      // Refresh after undo window
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["treatment-templates"] });
+      }, 5500);
     } catch (error) {
       logger.error("Error deleting template:", error);
       toast.error("Failed to delete template");
     } finally {
       setDeleting(false);
     }
-  }, [deleteId, queryClient]);
+  }, [deleteId, queryClient, templates, deleteTemplateWithUndo]);
 
   if (isLoading) {
     return (
