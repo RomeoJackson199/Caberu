@@ -50,6 +50,52 @@ interface PendingAction<T = any> {
   toastId: string | number;
 }
 
+/**
+ * Cancel a pending undoable action identified by its actionId.
+ *
+ * @param actionId - The unique identifier of the pending action to cancel
+ */
+
+/**
+ * Schedule an action to run after a configurable undo delay and present an "Undo" toast.
+ *
+ * The provided `undo` function will be executed if the user chooses to undo before the delay elapses.
+ * If the action executes successfully, configured query keys will be invalidated and `onSuccess` will be called.
+ * If the action fails, the hook attempts to run `undo` as a rollback and calls `onError` on failure.
+ *
+ * @param options - Configuration for the undoable action:
+ *   - action: The operation to run after the undo delay.
+ *   - undo: The function to revert the operation if undone or when rollback is needed.
+ *   - message: Toast message shown when the action is scheduled.
+ *   - description: Optional toast description.
+ *   - undoDelay: Milliseconds to wait before executing `action` (default: 5000).
+ *   - invalidateQueries: Array of query key arrays to invalidate after successful action.
+ *   - onSuccess: Callback invoked with the action result after a successful execution.
+ *   - onUndo: Callback invoked after a successful undo.
+ *   - onError: Callback invoked if the action ultimately fails.
+ * @returns void
+ */
+
+/**
+ * Execute an action immediately with optimistic UI behavior and rollback on error.
+ *
+ * Shows a success toast immediately, runs `action`, invalidates configured query keys on success,
+ * and calls `rollback` plus an error toast if the action fails.
+ *
+ * @param options - Configuration for the optimistic action:
+ *   - action: The operation to execute immediately.
+ *   - rollback: Function to revert optimistic changes if `action` fails.
+ *   - message: Toast message shown immediately.
+ *   - description: Optional toast description.
+ *   - invalidateQueries: Array of query key arrays to invalidate after success.
+ *   - onSuccess: Callback invoked with the action result after success.
+ *   - onError: Callback invoked if the action fails.
+ * @returns void
+ */
+
+/**
+ * Cancel all pending undoable actions currently tracked by the manager.
+ */
 export function useUndoManager() {
   const queryClient = useQueryClient();
   const pendingActions = useRef<Map<string, PendingAction>>(new Map());

@@ -17,6 +17,13 @@ interface DemoItem {
   count: number;
 }
 
+/**
+ * Demo React component showcasing Gmail-style undo and optimistic update interactions for item operations.
+ *
+ * Renders a list of items with controls to increment (optimistic update), decrement (deletable with undo), delete (with undo), and reset all; destructive actions present an undo option for a short delay.
+ *
+ * @returns The component's JSX element for the Undo demo UI
+ */
 export function UndoDemo() {
   const { executeWithUndo, executeOptimistic } = useUndoManager();
   const [items, setItems] = useState<DemoItem[]>([
