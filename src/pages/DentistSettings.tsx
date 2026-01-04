@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard } from "lucide-react";
-import { AvailabilitySettings } from "@/components/enhanced/AvailabilitySettings";
+import { AvailabilitySettings } from "@/components/AvailabilitySettings";
 import DentistAdminBranding from "./DentistAdminBranding";
 import DentistAdminSecurity from "./DentistAdminSecurity";
 import DentistAdminProfile from "./DentistAdminProfile";
@@ -236,14 +236,7 @@ export default function DentistSettings() {
         </TabsContent>
 
         <TabsContent value="schedule" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t.scheduleAvailability || "Schedule & Availability"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AvailabilitySettings dentistId={dentistId} />
-            </CardContent>
-          </Card>
+          <AvailabilitySettings dentistId={dentistId} />
         </TabsContent>
 
         <TabsContent value="appointments" className="space-y-6">

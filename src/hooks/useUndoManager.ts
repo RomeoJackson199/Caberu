@@ -149,18 +149,22 @@ export function useUndoManager() {
             await undo();
             onUndo?.();
 
-            // Invalidate queries to refresh UI
-            if (invalidateQueries.length > 0) {
-              await Promise.all(
-                invalidateQueries.map(queryKey =>
-                  queryClient.invalidateQueries({ queryKey })
-                )
-              );
-            }
-
             toast.success('Action undone', {
               duration: 3000,
             });
+
+            // Invalidate queries to refresh UI (don't let this fail the undo)
+            if (invalidateQueries.length > 0) {
+              try {
+                await Promise.all(
+                  invalidateQueries.map(queryKey =>
+                    queryClient.invalidateQueries({ queryKey })
+                  )
+                );
+              } catch (queryError) {
+                console.warn('Query invalidation failed (non-fatal):', queryError);
+              }
+            }
           } catch (error) {
             console.error('Undo failed:', error);
             toast.error('Failed to undo action', {
