@@ -1,5 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useBlocker } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 
 interface UseUnsavedChangesOptions {
   when: boolean;
@@ -9,6 +8,7 @@ interface UseUnsavedChangesOptions {
 
 /**
  * Hook to warn users before navigating away from a page with unsaved changes
+ * Uses beforeunload event for browser navigation (refresh, close tab, etc.)
  *
  * @example
  * ```tsx
@@ -37,17 +37,6 @@ export function useUnsavedChanges({
     shouldBlockRef.current = when;
   }, [when]);
 
-  // Block navigation within the app
-  const blocker = useBlocker(
-    useCallback(
-      ({ currentLocation, nextLocation }) => {
-        // Only block if we have unsaved changes and we're navigating to a different route
-        return shouldBlockRef.current && currentLocation.pathname !== nextLocation.pathname;
-      },
-      []
-    )
-  );
-
   // Handle browser navigation (refresh, close tab, etc.)
   useEffect(() => {
     if (!when) return;
@@ -65,24 +54,10 @@ export function useUnsavedChanges({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [when, message]);
 
-  // Handle the blocker state
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      const shouldProceed = window.confirm(message);
-
-      if (shouldProceed) {
-        onNavigate?.();
-        blocker.proceed();
-      } else {
-        blocker.reset();
-      }
-    }
-  }, [blocker, message, onNavigate]);
-
   return {
-    isBlocked: blocker.state === 'blocked',
-    proceed: blocker.proceed,
-    reset: blocker.reset,
+    isBlocked: false,
+    proceed: () => {},
+    reset: () => {},
   };
 }
 
