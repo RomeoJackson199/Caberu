@@ -23,6 +23,18 @@ This application now includes Gmail-style undo functionality for critical user a
    - Action is committed to the server
    - Queries are invalidated and data refreshes
 
+## Available Undo Hooks
+
+The application provides specialized undo hooks for different domains:
+
+1. **`useUndoManager`** - Base hook for custom undo functionality
+2. **`useAppointmentActionsWithUndo`** - Appointment operations
+3. **`useInventoryActionsWithUndo`** - Inventory management
+4. **`usePatientActionsWithUndo`** - Patient management
+5. **`useServiceActionsWithUndo`** - Service management
+6. **`useTreatmentActionsWithUndo`** - Treatment plans & prescriptions
+7. **`useGenericCRUDWithUndo`** - Generic CRUD operations for any table
+
 ## Usage Examples
 
 ### 1. Appointment Actions with Undo
@@ -169,7 +181,188 @@ function PatientManager() {
 }
 ```
 
-### 4. Optimistic Updates Without Undo
+### 4. Patient Management with Undo
+
+```tsx
+import { usePatientActionsWithUndo } from '@/hooks/usePatientActionsWithUndo';
+
+function PatientManagement() {
+  const {
+    deletePatientWithUndo,
+    deleteNoteWithUndo,
+    deleteAllergyWithUndo,
+    archivePatientWithUndo,
+    bulkDeletePatientsWithUndo
+  } = usePatientActionsWithUndo();
+
+  const handleDeletePatient = async (patient) => {
+    await deletePatientWithUndo(patient);
+    // Toast shows: "John Smith deleted" with Undo button
+  };
+
+  const handleDeleteNote = async (note) => {
+    await deleteNoteWithUndo(note);
+    // Toast shows: "Note deleted: 'Allergy information'"
+  };
+
+  const handleArchive = async (patient) => {
+    await archivePatientWithUndo(patient);
+    // Soft delete - marks as archived instead of deleting
+  };
+
+  return (
+    <>
+      <button onClick={() => handleDeletePatient(patient)}>Delete</button>
+      <button onClick={() => handleArchive(patient)}>Archive</button>
+    </>
+  );
+}
+```
+
+### 5. Service Management with Undo
+
+```tsx
+import { useServiceActionsWithUndo } from '@/hooks/useServiceActionsWithUndo';
+
+function ServiceManager() {
+  const {
+    deleteServiceWithUndo,
+    toggleServiceStatusWithUndo,
+    updateServicePriceWithUndo,
+    bulkDeleteServicesWithUndo
+  } = useServiceActionsWithUndo();
+
+  const handleDelete = async (service) => {
+    await deleteServiceWithUndo(service);
+    // Toast shows: "Teeth Cleaning deleted"
+  };
+
+  const handleToggleStatus = async (service) => {
+    await toggleServiceStatusWithUndo(service);
+    // Toast shows: "Teeth Cleaning activated/deactivated"
+  };
+
+  const handlePriceChange = async (service, newPrice) => {
+    await updateServicePriceWithUndo(service, newPrice * 100); // Convert to cents
+    // Toast shows: "Service price updated: €50 → €60"
+  };
+
+  return (
+    <>
+      <button onClick={() => handleDelete(service)}>Delete</button>
+      <button onClick={() => handleToggleStatus(service)}>
+        {service.is_active ? 'Deactivate' : 'Activate'}
+      </button>
+    </>
+  );
+}
+```
+
+### 6. Treatment Plans & Prescriptions with Undo
+
+```tsx
+import { useTreatmentActionsWithUndo } from '@/hooks/useTreatmentActionsWithUndo';
+
+function TreatmentManager() {
+  const {
+    deleteTemplateWithUndo,
+    deleteTreatmentPlanWithUndo,
+    cancelTreatmentPlanWithUndo,
+    deletePrescriptionWithUndo,
+    cancelPrescriptionWithUndo,
+    completePrescriptionWithUndo
+  } = useTreatmentActionsWithUndo();
+
+  const handleDeleteTemplate = async (template) => {
+    await deleteTemplateWithUndo(template);
+    // Toast shows: "Template 'Root Canal Package' deleted"
+  };
+
+  const handleCancelPlan = async (plan) => {
+    await cancelTreatmentPlanWithUndo(plan);
+    // Changes status to 'cancelled' with undo option
+  };
+
+  const handleDeletePrescription = async (prescription, patientName) => {
+    await deletePrescriptionWithUndo(prescription, patientName);
+    // Toast shows: "Prescription deleted: Amoxicillin for John Smith"
+  };
+
+  const handleCompletePrescription = async (prescription) => {
+    await completePrescriptionWithUndo(prescription);
+    // Marks as completed with undo option
+  };
+
+  return (
+    <>
+      <button onClick={() => handleDeleteTemplate(template)}>Delete Template</button>
+      <button onClick={() => handleCancelPlan(plan)}>Cancel Plan</button>
+      <button onClick={() => handleDeletePrescription(prescription, patient.name)}>
+        Delete Prescription
+      </button>
+    </>
+  );
+}
+```
+
+### 7. Generic CRUD with Undo (For Any Table)
+
+The most flexible option - use for staff, invoices, or any other entity:
+
+```tsx
+import { useGenericCRUDWithUndo } from '@/hooks/useGenericCRUDWithUndo';
+
+function StaffManager() {
+  // Configure for staff members
+  const staffCrud = useGenericCRUDWithUndo({
+    tableName: 'staff_members',
+    entityName: 'staff member',
+    queryKeys: [['staff'], ['team-members']],
+    getDisplayName: (staff) => `${staff.first_name} ${staff.last_name}`,
+  });
+
+  // Configure for invoices
+  const invoiceCrud = useGenericCRUDWithUndo({
+    tableName: 'invoices',
+    entityName: 'invoice',
+    queryKeys: [['invoices']],
+    getDisplayName: (invoice) => `Invoice #${invoice.number}`,
+  });
+
+  const handleDeleteStaff = async (staff) => {
+    await staffCrud.deleteWithUndo(staff);
+  };
+
+  const handleToggleStaffActive = async (staff) => {
+    await staffCrud.toggleFieldWithUndo(staff, 'is_active', 'Staff member status changed');
+  };
+
+  const handleUpdateRole = async (staff, newRole) => {
+    await staffCrud.updateFieldWithUndo(staff, 'role', newRole, 'Staff role updated');
+  };
+
+  const handleArchiveStaff = async (staff) => {
+    await staffCrud.archiveWithUndo(staff);
+  };
+
+  const handleBulkDelete = async (selectedStaff) => {
+    await staffCrud.bulkDeleteWithUndo(selectedStaff);
+  };
+
+  return (
+    <>
+      <button onClick={() => handleDeleteStaff(staff)}>Delete</button>
+      <button onClick={() => handleToggleStaffActive(staff)}>Toggle Active</button>
+      <button onClick={() => handleArchiveStaff(staff)}>Archive</button>
+      <button onClick={() => handleBulkDelete(selectedStaff)}>
+        Delete Selected
+      </button>
+    </>
+  );
+}
+```
+
+### 8. Optimistic Updates Without Undo
 
 For actions that don't need undo but want optimistic updates:
 
@@ -259,6 +452,61 @@ Inventory-specific actions with undo.
 - `deleteItemWithUndo(item)` - Delete item with undo
 - `adjustQuantityWithUndo(itemId, name, oldQty, newQty, reason)` - Adjust quantity
 - `bulkDeleteWithUndo(items)` - Bulk delete with undo
+
+### `usePatientActionsWithUndo()`
+
+Patient management actions with undo.
+
+**Returns:**
+- `deletePatientWithUndo(patient)` - Delete patient with undo
+- `deleteNoteWithUndo(note)` - Delete patient note with undo
+- `deleteAllergyWithUndo(allergy, patientName?)` - Delete allergy record with undo
+- `archivePatientWithUndo(patient)` - Archive patient (soft delete) with undo
+- `bulkDeletePatientsWithUndo(patients)` - Bulk delete patients with undo
+
+### `useServiceActionsWithUndo()`
+
+Service management actions with undo.
+
+**Returns:**
+- `deleteServiceWithUndo(service)` - Delete service with undo
+- `toggleServiceStatusWithUndo(service, newStatus?)` - Toggle active status with undo
+- `updateServicePriceWithUndo(service, newPriceCents)` - Update price with undo
+- `bulkDeleteServicesWithUndo(services)` - Bulk delete services with undo
+- `bulkToggleServicesWithUndo(services, targetStatus)` - Bulk toggle status with undo
+
+### `useTreatmentActionsWithUndo()`
+
+Treatment plan and prescription actions with undo.
+
+**Returns:**
+- `deleteTemplateWithUndo(template)` - Delete treatment template with undo
+- `deleteTreatmentPlanWithUndo(plan)` - Delete treatment plan with undo
+- `cancelTreatmentPlanWithUndo(plan)` - Cancel treatment plan with undo
+- `deletePrescriptionWithUndo(prescription, patientName?)` - Delete prescription with undo
+- `cancelPrescriptionWithUndo(prescription)` - Cancel prescription with undo
+- `completePrescriptionWithUndo(prescription)` - Mark prescription complete with undo
+- `bulkDeleteTemplatesWithUndo(templates)` - Bulk delete templates with undo
+
+### `useGenericCRUDWithUndo(options)`
+
+Generic CRUD operations for any table.
+
+**Options:**
+- `tableName: string` - Supabase table name
+- `entityName: string` - Entity name for display (e.g., "staff member")
+- `queryKeys: string[][]` - Query keys to invalidate
+- `getDisplayName?: (entity) => string` - Function to get display name
+- `undoDelay?: number` - Custom undo delay (default: 5000ms)
+
+**Returns:**
+- `deleteWithUndo(entity)` - Delete entity with undo
+- `updateFieldWithUndo(entity, fieldName, newValue, message?)` - Update single field with undo
+- `updateFieldsWithUndo(entity, updates, message?)` - Update multiple fields with undo
+- `toggleFieldWithUndo(entity, fieldName, message?)` - Toggle boolean field with undo
+- `archiveWithUndo(entity, archiveField?)` - Archive entity with undo
+- `bulkDeleteWithUndo(entities)` - Bulk delete with undo
+- `bulkUpdateFieldWithUndo(entities, fieldName, newValue, message?)` - Bulk update field with undo
 
 ## Best Practices
 
