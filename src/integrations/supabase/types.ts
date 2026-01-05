@@ -3698,6 +3698,10 @@ export type Database = {
           used_seconds: number
         }[]
       }
+      dentist_has_patient_access: {
+        Args: { _patient_id: string; _user_id: string }
+        Returns: boolean
+      }
       ensure_daily_slots: {
         Args: { p_date: string; p_dentist_id: string }
         Returns: undefined
@@ -3807,6 +3811,7 @@ export type Database = {
         Args: { p_treatment_plan_id: string }
         Returns: Json
       }
+      get_user_profile_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3831,10 +3836,15 @@ export type Database = {
         Args: { _business_id: string; _user_id: string }
         Returns: boolean
       }
+      is_business_staff: {
+        Args: { _business_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_clinic_patient: {
         Args: { _business_id: string; _profile_id: string }
         Returns: boolean
       }
+      is_dentist: { Args: { _user_id: string }; Returns: boolean }
       is_dentist_patient: {
         Args: { patient_profile_id: string }
         Returns: boolean
