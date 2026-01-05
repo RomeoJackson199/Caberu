@@ -80,9 +80,6 @@ export const createAppointmentDateTime = (dateStr: string, timeStr: string): Dat
     // Create datetime string as if it's in Brussels
     const datetimeString = `${dateStr}T${timeStr}:00`;
 
-    // Parse as Brussels time and get UTC equivalent
-    const brusselsDate = new Date(datetimeString);
-
     // Get the UTC timestamp for this Brussels time
     // We need to determine the offset for this specific date (handles DST)
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -98,8 +95,6 @@ export const createAppointmentDateTime = (dateStr: string, timeStr: string): Dat
 
     // Create a date object that represents the Brussels time
     // Then calculate what UTC time that corresponds to
-    const testDate = new Date(`${dateStr}T12:00:00Z`);
-    const brusselsParts = formatter.formatToParts(testDate);
 
     // Get offset by comparing UTC noon to Brussels noon
     const utcNoon = new Date(`${dateStr}T12:00:00Z`);

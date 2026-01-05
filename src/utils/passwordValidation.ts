@@ -47,7 +47,7 @@ export const validatePassword = (password: string): PasswordStrength => {
     }
 
     // Special character
-    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/`~]/.test(password)) {
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\\/`~]/.test(password)) {
         feedback.push('Include at least one special character (!@#$%^&*...)');
     } else {
         score += 1;

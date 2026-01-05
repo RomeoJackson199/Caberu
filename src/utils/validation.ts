@@ -21,19 +21,10 @@ export const isValidImageUrl = (url: string): boolean => {
 
         if (!isAllowedDomain) return false;
 
-        // Check extension if path exists
-        const path = parsed.pathname.toLowerCase();
-        const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg']; // SVG is risky but user mentioned it; usually sanitize SVG content, but here we just check extension or disable SVG.
-        // User warned about malicious SVG. Safest to DISALLOW svg unless from trusted source or just validate extensions strictly.
-        // Let's stick to safe raster types.
-        const safeExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-
-        // If no extension, it might be a dynamic serving URL (e.g. /image?id=...), which is harder to check solely by extension. 
-        // But for Supabase storage, typically it has a path.
-        // Let's be permissive if it's from our trusted domain, but restricted otherwise.
-
+        // Extension validation could be added here in the future
+        // For now, we trust URLs from allowed domains (Supabase storage)
         return true;
-    } catch (e) {
+    } catch {
         return false;
     }
 };

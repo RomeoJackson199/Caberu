@@ -15,6 +15,7 @@ const SESSION_STORAGE_KEYS = [
 ] as const;
 
 // Keys that can use localStorage (non-sensitive preferences)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const LOCAL_STORAGE_KEYS = [
     'preferred-language',
     'analytics_consent',
