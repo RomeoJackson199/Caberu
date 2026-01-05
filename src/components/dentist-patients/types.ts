@@ -1,77 +1,21 @@
-// Patient management types - centralized type definitions
+/**
+ * Patient management types
+ * Re-exports from centralized types for backward compatibility
+ */
 
-export interface DentistPatient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  date_of_birth?: string;
-  address?: string;
-  medical_history?: string;
-  emergency_contact?: string;
-  profile_picture_url?: string | null;
-}
+// Re-export all patient types from centralized location
+export {
+  type Patient,
+  type PatientFlags,
+  type PatientAppointment,
+  type PatientWithFlags,
+  type PatientListItem,
+  type ConsultationContext,
+  type AppointmentGroup,
+  type AppointmentStatus,
+  type AppointmentUrgency,
+  getAppointmentGroup,
+} from '@/types/patient';
 
-export interface PatientAppointment {
-  id: string;
-  patient_id: string;
-  dentist_id: string;
-  business_id: string;
-  appointment_date: string;
-  duration_minutes: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  urgency: 'low' | 'medium' | 'high' | 'emergency';
-  reason?: string;
-  notes?: string;
-  consultation_notes?: string;
-  treatment_plan_id?: string;
-  amount_paid_cents?: number | null;
-  payment_status?: string;
-  completed_at?: string;
-  ai_summary?: string;
-  booking_source?: string;
-}
-
-export interface PatientFlags {
-  hasUnpaidBalance: boolean;
-  outstandingCents?: number;
-  hasUpcomingAppointment: boolean;
-  hasActiveTreatmentPlan: boolean;
-  lastVisitDate?: string;
-  nextAppointmentDate?: string;
-  totalAppointments: number;
-  completedAppointments: number;
-}
-
-export interface ConsultationContext {
-  appointmentId: string;
-  patientId: string;
-  dentistId: string;
-  startedAt: string;
-}
-
-// Appointment grouping for timeline
-export type AppointmentGroup = 'upcoming' | 'needs_completion' | 'completed' | 'cancelled';
-
-export function getAppointmentGroup(appointment: PatientAppointment): AppointmentGroup {
-  const now = new Date();
-  const appointmentDate = new Date(appointment.appointment_date);
-  
-  if (appointment.status === 'cancelled') {
-    return 'cancelled';
-  }
-  
-  // Completed appointments go to completed
-  if (appointment.status === 'completed') {
-    return 'completed';
-  }
-  
-  // Past but not completed = needs completion
-  if (appointmentDate < now) {
-    return 'needs_completion';
-  }
-  
-  // Future = upcoming
-  return 'upcoming';
-}
+// Keep DentistPatient as an alias for backward compatibility
+export type { Patient as DentistPatient } from '@/types/patient';
