@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/integrations/supabase/client";
 import { Bot, Send, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from '@/lib/logger';
@@ -24,7 +24,7 @@ interface AppointmentAIAssistantProps {
 export function AppointmentAIAssistant({ appointmentData, treatmentContext, hideSummary = false }: AppointmentAIAssistantProps) {
   const { hasFeature, loading } = useBusinessTemplate();
   const hasAIChat = !loading && hasFeature('aiChat');
-  
+
   // If AI chat is disabled or template is still loading, don't render
   if (loading || !hasAIChat) {
     return null;
@@ -89,14 +89,14 @@ export function AppointmentAIAssistant({ appointmentData, treatmentContext, hide
 
     try {
       abortControllerRef.current = new AbortController();
-      
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/appointment-ai-assistant`,
+        `${SUPABASE_URL}/functions/v1/appointment-ai-assistant`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
             action: "chat",
@@ -124,13 +124,13 @@ export function AppointmentAIAssistant({ appointmentData, treatmentContext, hide
 
       if (reader) {
         let buffer = "";
-        
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           buffer += decoder.decode(value, { stream: true });
-          
+
           let newlineIndex: number;
           while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
             let line = buffer.slice(0, newlineIndex);
@@ -167,10 +167,10 @@ export function AppointmentAIAssistant({ appointmentData, treatmentContext, hide
       }
     } catch (error: any) {
       console.error("Error in chat:", error);
-      
+
       // Remove placeholder message
       setMessages((prev) => prev.slice(0, -1));
-      
+
       toast({
         title: "Chat Error",
         description: error.message,
@@ -237,18 +237,17 @@ export function AppointmentAIAssistant({ appointmentData, treatmentContext, hide
                     <p className="text-xs mt-1">I have context from previous appointments and patient history</p>
                   </div>
                 )}
-                
+
                 {messages.map((msg, idx) => (
                   <div
                     key={idx}
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                        msg.role === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      }`}
+                      className={`max-w-[80%] rounded-lg px-4 py-2 ${msg.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                        }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
