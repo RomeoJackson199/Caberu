@@ -18,6 +18,13 @@ const sanitizeAIResponse = (response: string): string => {
     /You are a professional dental AI assistant/gi,
     /APPOINTMENT CONTEXT:/gi,
     /YOUR ROLE:/gi,
+    /edge function/gi,
+    /supabase\.functions\.invoke/gi,
+    /dental-ai-chat/gi,
+    /voice-call-ai/gi,
+    /appointment-ai-assistant/gi,
+    /\.invoke\(/gi,
+    /functions\//gi,
   ];
 
   let sanitized = response;
