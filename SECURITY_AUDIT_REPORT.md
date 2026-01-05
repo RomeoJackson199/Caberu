@@ -258,3 +258,39 @@ The following security practices were observed and commended:
 ---
 
 *This report was generated as part of an automated security audit. Manual verification is recommended for all findings.*
+
+---
+
+## Fixes Applied (2026-01-05)
+
+The following security fixes have been implemented in this commit:
+
+### Critical Fixes
+1. **Removed hardcoded Supabase API key** (`src/integrations/supabase/client.ts`)
+   - Now requires environment variables - fails fast if not configured
+
+2. **Fixed XSS vulnerability** (`src/components/settings/EmailTemplateEditor.tsx`)
+   - Added DOMPurify sanitization to email template preview
+
+3. **Cron job token security** (`supabase/migrations/20260105_security_fix_cron_tokens.sql`)
+   - Removed hardcoded tokens from cron job definitions
+   - Now uses secure vault references
+
+### Medium Fixes
+4. **CORS security** (`supabase/functions/_shared/cors.ts`)
+   - Created shared CORS utility with proper origin validation
+   - Updated critical Edge Functions to use secure CORS
+
+5. **RLS policy fixes** (`supabase/migrations/20260105_security_fix_rls_policies.sql`)
+   - Fixed `patient_preferences` - now requires business membership
+   - Fixed `security_audit_logs` - now restricted to own user_id
+   - Fixed `phone_usage_tracking` - now requires business membership
+   - Fixed `invitations` - now requires proper roles
+   - Fixed `reviews` - now requires completed appointment
+   - Fixed `slot_recommendations` - now requires business staff role
+
+### Post-Fix Checklist
+- [ ] Rotate the exposed Supabase anon key
+- [ ] Update environment variables in all deployments
+- [ ] Test all affected features
+- [ ] Monitor logs for authorization errors

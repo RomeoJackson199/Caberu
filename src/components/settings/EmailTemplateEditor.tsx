@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { Mail, Eye, Save, RotateCcw, Loader2, Code, Send } from "lucide-react";
+import DOMPurify from "dompurify";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Template types with their available variables
@@ -258,6 +259,7 @@ export function EmailTemplateEditor() {
     };
 
     // Generate preview HTML with sample data
+    // SECURITY: Sanitize HTML to prevent XSS attacks
     const getPreviewHtml = () => {
         let preview = bodyHtml;
         const sampleData: Record<string, string> = {
@@ -280,7 +282,16 @@ export function EmailTemplateEditor() {
             preview = preview.replace(new RegExp(`{{${key}}}`, "g"), value);
         });
 
-        return preview;
+        // Sanitize HTML to prevent XSS - allow email-safe tags only
+        return DOMPurify.sanitize(preview, {
+            ALLOWED_TAGS: ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                          'strong', 'b', 'em', 'i', 'u', 'a', 'br', 'hr',
+                          'table', 'thead', 'tbody', 'tr', 'th', 'td',
+                          'ul', 'ol', 'li', 'img'],
+            ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'class', 'target', 'rel',
+                          'width', 'height', 'border', 'cellpadding', 'cellspacing'],
+            ALLOW_DATA_ATTR: false,
+        });
     };
 
     const currentTemplate = TEMPLATE_TYPES[selectedType];
