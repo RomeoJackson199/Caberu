@@ -22,7 +22,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('[usePatientData] Fetching patients for dentist:', dentistId, 'business:', businessId);
+
 
       let appointmentQuery = supabase
         .from('appointments')
@@ -40,9 +40,9 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       }
 
       const { data: appointmentData, error: appointmentError } = await appointmentQuery;
-      
-      console.log('[usePatientData] Appointment data:', appointmentData, 'Error:', appointmentError);
-      
+
+
+
       if (appointmentError) throw appointmentError;
 
       const patientsFromAppointments = (appointmentData || [])
@@ -54,13 +54,13 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
         patient && self.findIndex(p => p?.id === patient.id) === index
       );
 
-      console.log('[usePatientData] Unique patients:', uniquePatients.length);
-      
+
+
       setPatients(uniquePatients);
-      
+
       // Fetch flags for all patients
       uniquePatients.forEach(patient => fetchPatientFlags(patient.id));
-      
+
       return uniquePatients;
     } catch (error) {
       console.error('[usePatientData] Error fetching patients:', error);
@@ -112,8 +112,8 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
           .eq('patient_id', patientId)
           .eq('dentist_id', dentistId);
         outstandingCents = (prs || [])
-          .filter((p: any) => p.status !== 'paid' && p.status !== 'cancelled')
-          .reduce((s: number, p: any) => s + (p.amount || 0), 0);
+          .filter((p) => p.status !== 'paid' && p.status !== 'cancelled')
+          .reduce((s: number, p) => s + (p.amount || 0), 0);
       } catch { }
 
       const flags: PatientFlags = {
@@ -136,7 +136,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
   }, [dentistId]);
 
   const fetchPatientAppointments = useCallback(async (
-    patientId: string, 
+    patientId: string,
     _loadMore: boolean = false // kept for API compatibility
   ): Promise<{ appointments: PatientAppointment[]; hasMore: boolean }> => {
     try {
@@ -161,11 +161,11 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       }
 
       const { data, error } = await query.order('appointment_date', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       const appointments = (data || []) as PatientAppointment[];
-      
+
       setAppointmentsCache(prev => ({
         ...prev,
         [patientId]: {
@@ -199,7 +199,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
     setAppointmentsCache(prev => {
       const cache = prev[patientId];
       if (!cache) return prev;
-      
+
       return {
         ...prev,
         [patientId]: {
@@ -221,7 +221,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
     setAppointmentsCache(prev => {
       const cache = prev[patientId];
       if (!cache) return prev;
-      
+
       return {
         ...prev,
         [patientId]: {

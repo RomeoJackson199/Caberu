@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import type { Appointment } from "@/types/shared";
 import { useNavigate } from "react-router-dom";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
@@ -32,7 +33,7 @@ function DentistAppointmentsManagementContent() {
     loading: dentistLoading
   } = useCurrentDentist(businessId);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [viewMode, setViewMode] = useState<"week" | "day" | "completed">("week");
   const [showStats, setShowStats] = useState(false);
   const [calendarSyncError, setCalendarSyncError] = useState<Error | null>(null);
@@ -180,21 +181,21 @@ function DentistAppointmentsManagementContent() {
     setCurrentDate(direction === "next" ? addDays(currentDate, daysToAdd) : subDays(currentDate, daysToAdd));
   };
 
-  const handleAppointmentClick = (appointment: any) => {
+  const handleAppointmentClick = (appointment: Appointment) => {
     // Determine if appointment is actionable (can enter consultation)
     const isPending = appointment.status === 'pending';
     const isCompleted = appointment.status === 'completed';
     const isCancelled = appointment.status === 'cancelled';
-    
+
     // Actionable = not pending, not completed, not cancelled
     const isActionable = !isPending && !isCompleted && !isCancelled && appointment.patient_id;
-    
+
     if (isActionable) {
       // Navigate directly to consultation mode
       navigate(`/dentist/patients?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`);
       return;
     }
-    
+
     // For non-actionable (pending/completed/cancelled), show the appointment details sidebar
     setSelectedAppointment(appointment);
     setViewMode("day");
@@ -623,7 +624,7 @@ function DentistAppointmentsManagementContent() {
                 </Card>
               ) : (
                 <div className="space-y-2">
-                  {completedAppointments.map((apt: any) => {
+                  {completedAppointments.map((apt) => {
                     // Null safety checks
                     const patientName = apt.patient
                       ? `${apt.patient.first_name || 'Unknown'} ${apt.patient.last_name || 'Patient'}`
@@ -679,7 +680,7 @@ function DentistAppointmentsManagementContent() {
               onStatusChange={handleStatusChange}
               onOptimisticUpdate={(appointmentId, updates) => {
                 // Update local state immediately for instant UI feedback
-                setSelectedAppointment((prev: any) => prev?.id === appointmentId ? { ...prev, ...updates } : prev);
+                setSelectedAppointment((prev) => prev?.id === appointmentId ? { ...prev, ...updates } : prev);
               }}
             />
           )}

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
+import type { Appointment } from "@/types/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -42,7 +43,7 @@ interface ChargeItem {
 }
 
 interface DentistAppointmentDetailProps {
-  appointment: any;
+  appointment: Appointment & { consultation_notes?: string; completed_at?: string; treatment_plan_id?: string; patient?: { first_name?: string; last_name?: string; email?: string; phone?: string } };
   onClose: () => void;
   onStatusChange?: (appointmentId: string, status: string) => void;
   /** Callback for optimistic UI updates - updates parent state immediately */
@@ -75,7 +76,7 @@ export function DentistAppointmentDetail({
 }: DentistAppointmentDetailProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const [showReschedule, setShowReschedule] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -92,7 +93,7 @@ export function DentistAppointmentDetail({
 
   // Sync notes when appointment changes or component mounts with fresh data
   useEffect(() => {
-    console.log('📝 Syncing notes from appointment:', appointment?.id, appointment?.consultation_notes?.slice(0, 50));
+
     setNotes(appointment?.consultation_notes || "");
     // Also trigger charges reload when appointment changes
     setChargesKey(prev => prev + 1);
@@ -102,53 +103,52 @@ export function DentistAppointmentDetail({
   useEffect(() => {
     const loadDraftCharges = async () => {
       if (!appointment?.id) return;
-      
-      console.log('📥 Loading draft charges for appointment:', appointment.id);
-      
+
+
+
       const { data, error } = await supabase
         .from('notes')
         .select('content')
         .eq('appointment_id', appointment.id)
         .eq('note_type', 'draft_charges')
         .maybeSingle();
-      
+
       if (error) {
-        console.error('❌ Error loading draft charges:', error);
         return;
       }
-      
-      console.log('📥 Draft charges data:', data);
-      
+
+
+
       if (data?.content) {
         try {
           const parsedCharges = JSON.parse(data.content);
-          console.log('✅ Parsed draft charges:', parsedCharges);
+
           setCharges(parsedCharges);
-        } catch (e) {
-          console.error('Error parsing draft charges:', e);
+        } catch {
+          // Invalid JSON in draft charges, ignore
         }
       } else {
-        console.log('ℹ️ No draft charges found');
+
         setCharges([]);
       }
     };
-    
+
     loadDraftCharges();
   }, [appointment?.id, chargesKey]);
 
   // Callback to reload draft data after save
   const handleDraftSaved = useCallback(() => {
-    console.log('🔄 Draft saved, triggering reload...');
+
     setChargesKey(prev => prev + 1);
   }, []);
 
   // Derive state from appointment data - must be before callbacks that use it
-  const state = useMemo<DentistAppointmentState>(() => 
+  const state = useMemo<DentistAppointmentState>(() =>
     deriveDentistState({
       status: appointment?.status || 'pending',
       appointment_date: appointment?.appointment_date,
       completed_at: appointment?.completed_at,
-    }), 
+    }),
     [appointment?.status, appointment?.appointment_date, appointment?.completed_at]
   );
 
@@ -208,7 +208,7 @@ export function DentistAppointmentDetail({
     enabled: !!appointment?.dentist_id,
   });
 
-  const dentistName = dentist 
+  const dentistName = dentist
     ? `Dr. ${dentist.first_name || ''} ${dentist.last_name || ''}`.trim()
     : undefined;
 
@@ -306,7 +306,7 @@ export function DentistAppointmentDetail({
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 sm:p-6 space-y-4">
-          
+
           {/* Section 2: Patient Safety Snapshot (read-only, always visible) */}
           <PatientSafetySnapshot patientId={appointment.patient_id} />
 
@@ -380,8 +380,8 @@ export function DentistAppointmentDetail({
           <>
             {/* Primary action: Start Consultation - only show when not in standalone mode */}
             {!standalone && (
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 onClick={() => navigate(`/dentist/patients?patientId=${appointment?.patient_id}&appointmentId=${appointment?.id}`)}
               >
                 <Stethoscope className="h-4 w-4 mr-2" />
@@ -389,9 +389,9 @@ export function DentistAppointmentDetail({
               </Button>
             )}
             {permissions.canReschedule && (
-              <Button 
-                variant="outline" 
-                className="w-full" 
+              <Button
+                variant="outline"
+                className="w-full"
                 onClick={() => setShowReschedule(true)}
               >
                 <Calendar className="h-4 w-4 mr-2" />
@@ -423,7 +423,7 @@ export function DentistAppointmentDetail({
             </div>
           </>
         )}
-        
+
         {/* COMPLETED_DRAFT: Only show profile link when not standalone (already in consultation) */}
         {state === 'COMPLETED_DRAFT' && !standalone && (
           <Button variant="ghost" className="w-full" onClick={handleViewProfile}>
@@ -431,7 +431,7 @@ export function DentistAppointmentDetail({
             View Patient Profile
           </Button>
         )}
-        
+
         {/* FINALIZED: Profile link with external indicator */}
         {state === 'FINALIZED' && !standalone && (
           <Button variant="secondary" className="w-full" onClick={handleViewProfile}>

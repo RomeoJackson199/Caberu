@@ -18,9 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { 
-  FileText, 
-  Search, 
+import {
+  FileText,
+  Search,
   Calendar,
   Stethoscope,
   Building2,
@@ -134,8 +134,8 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
   const { data: treatmentPlans, isLoading: loadingPlans, error: plansError } = useQuery({
     queryKey: ["patient-treatment-plans", patientId],
     queryFn: async () => {
-      console.log("[PatientRecordsTimeline] Fetching treatment plans for patientId:", patientId);
-      
+
+
       // Simple query first - no joins
       const { data, error } = await supabase
         .from("treatment_plans")
@@ -156,45 +156,45 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
         .neq("status", "draft")
         .order("updated_at", { ascending: false });
 
-      console.log("[PatientRecordsTimeline] Query result:", { data, error, patientId });
-      
+
+
       if (error) {
-        console.error("[PatientRecordsTimeline] Error fetching treatment plans:", error);
+
         throw error;
       }
-      
+
       // Fetch business and dentist info separately if we have plans
       if (data && data.length > 0) {
         const businessIds = [...new Set(data.map(p => p.business_id).filter(Boolean))];
         const dentistIds = [...new Set(data.map(p => p.dentist_id).filter(Boolean))];
-        
+
         const [businessesResult, dentistsResult] = await Promise.all([
-          businessIds.length > 0 
+          businessIds.length > 0
             ? supabase.from("businesses").select("id, name").in("id", businessIds)
             : { data: [] },
-          dentistIds.length > 0 
+          dentistIds.length > 0
             ? supabase.from("dentists").select("id, first_name, last_name").in("id", dentistIds)
             : { data: [] }
         ]);
-        
+
         const businessMap = new Map((businessesResult.data || []).map(b => [b.id, b]));
         const dentistMap = new Map((dentistsResult.data || []).map(d => [d.id, d]));
-        
+
         return data.map(plan => ({
           ...plan,
           businesses: plan.business_id ? businessMap.get(plan.business_id) || null : null,
           dentists: plan.dentist_id ? dentistMap.get(plan.dentist_id) || null : null
         }));
       }
-      
-      console.log("[PatientRecordsTimeline] Returning treatment plans:", data);
+
+
       return data || [];
     }
   });
-  
+
   // Log any query errors
   if (plansError) {
-    console.error("[PatientRecordsTimeline] Query error:", plansError);
+
   }
 
   // Combine and sort all records into a unified timeline
@@ -209,11 +209,11 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
         if (apt.treatment_plan_id) {
           return;
         }
-        
-        const dentistName = apt.dentists 
+
+        const dentistName = apt.dentists
           ? `Dr. ${apt.dentists.first_name || ''} ${apt.dentists.last_name || ''}`.trim()
           : undefined;
-        
+
         // Only include if there's meaningful finalized content
         const hasContent = apt.consultation_notes || apt.ai_summary || apt.reason;
         if (hasContent) {
@@ -262,14 +262,14 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
     // Add treatment plans (non-draft)
     if (treatmentPlans) {
       treatmentPlans.forEach((plan: any) => {
-        const dentistName = plan.dentists 
+        const dentistName = plan.dentists
           ? `Dr. ${plan.dentists.first_name || ''} ${plan.dentists.last_name || ''}`.trim()
           : undefined;
 
-        const statusLabel = plan.status === 'proposed' ? 'Proposed' 
-          : plan.status === 'completed' ? 'Completed' 
-          : plan.status === 'superseded' ? 'Superseded' 
-          : plan.status;
+        const statusLabel = plan.status === 'proposed' ? 'Proposed'
+          : plan.status === 'completed' ? 'Completed'
+            : plan.status === 'superseded' ? 'Superseded'
+              : plan.status;
 
         records.push({
           id: plan.id,
@@ -288,7 +288,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
     }
 
     // Sort by date (newest first)
-    return records.sort((a, b) => 
+    return records.sort((a, b) =>
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   }, [appointments, documents, treatmentPlans]);
@@ -367,47 +367,47 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
 
   const getRecordBadge = (type: TimelineRecord['type'], record?: TimelineRecord) => {
     const configs: Record<string, { label: string; className: string }> = {
-      appointment: { 
-        label: 'Completed visit', 
-        className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200' 
+      appointment: {
+        label: 'Completed visit',
+        className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200'
       },
-      prescription: { 
-        label: 'Issued prescription', 
-        className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200' 
+      prescription: {
+        label: 'Issued prescription',
+        className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200'
       },
-      invoice: { 
-        label: 'Final invoice', 
-        className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200' 
+      invoice: {
+        label: 'Final invoice',
+        className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200'
       },
-      document: { 
-        label: 'Document', 
-        className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200' 
+      document: {
+        label: 'Document',
+        className: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200'
       },
-      treatment_plan: { 
-        label: 'Treatment Plan', 
-        className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200' 
+      treatment_plan: {
+        label: 'Treatment Plan',
+        className: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200'
       },
     };
-    
+
     // For treatment plans, show status-based styling but simpler labels
     if (type === 'treatment_plan' && record?.planStatus) {
       const statusConfigs: Record<string, { label: string; className: string }> = {
-        proposed: { 
-          label: 'Treatment Plan', 
-          className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200' 
+        proposed: {
+          label: 'Treatment Plan',
+          className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200'
         },
-        completed: { 
-          label: 'Completed', 
-          className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200' 
+        completed: {
+          label: 'Completed',
+          className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200'
         },
-        superseded: { 
-          label: 'Superseded', 
-          className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200' 
+        superseded: {
+          label: 'Superseded',
+          className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200'
         },
       };
       return statusConfigs[record.planStatus] || configs.treatment_plan;
     }
-    
+
     return configs[type] || configs.document;
   };
 
@@ -515,7 +515,7 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
               const isClickable = record.linkedAppointmentId || record.documentPath || record.type === 'treatment_plan';
 
               return (
-                <Card 
+                <Card
                   key={`${record.type}-${record.id}`}
                   className={cn(
                     "relative transition-all duration-200",

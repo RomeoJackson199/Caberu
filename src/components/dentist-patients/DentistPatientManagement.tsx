@@ -54,7 +54,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
 
   // Initial fetch
   useEffect(() => {
-    console.log('[DentistPatientManagement] Fetching patients, dentistId:', dentistId, 'businessId:', businessId);
+
     fetchPatients();
   }, [fetchPatients]);
 
@@ -160,7 +160,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     // Close the plan detail sheet
     setShowPlanDetail(false);
     setSelectedPlanId(null);
-    
+
     // Enter consultation mode directly
     handleEnterConsultation(appointmentId);
   };
@@ -229,7 +229,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
     }
   }
 
-  console.log('[DentistPatientManagement] Render - patients:', patients.length, 'selectedPatient:', selectedPatient?.id);
+
 
   return (
     <div className="h-[calc(100vh-80px)] flex flex-col lg:flex-row gap-4 p-4">
@@ -322,7 +322,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
               onClose={() => setShowAppointmentDetail(false)}
               onStatusChange={handleOptimisticStatusChange}
               onOptimisticUpdate={(appointmentId, updates) => {
-                updateAppointmentOptimistically(selectedPatient.id, appointmentId, updates as any);
+                updateAppointmentOptimistically(selectedPatient.id, appointmentId, updates as Partial<PatientAppointment>);
               }}
             />
           )}

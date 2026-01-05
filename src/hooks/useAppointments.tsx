@@ -75,7 +75,7 @@ export async function createAppointmentWithNotification(appointmentData: {
   duration_minutes?: number;
   business_id?: string;
 }): Promise<Appointment> {
-  console.log('📧 createAppointmentWithNotification called with:', appointmentData);
+
 
   // Get business_id if not provided
   let businessId = appointmentData.business_id;
@@ -108,7 +108,7 @@ export async function createAppointmentWithNotification(appointmentData: {
       logger.error('Error resolving business_id:', err);
     }
   }
-  console.log('📧 Business ID resolved:', businessId);
+
 
   // Create the appointment
   const { data: appointment, error } = await supabase
@@ -123,10 +123,10 @@ export async function createAppointmentWithNotification(appointmentData: {
     .single();
 
   if (error) {
-    console.error('❌ Failed to create appointment:', error);
+    logger.error('Failed to create appointment:', error);
     throw error;
   }
-  console.log('✅ Appointment created:', appointment.id);
+
 
   // Fetch patient data separately for reliability
   const { data: patient, error: patientError } = await supabase
@@ -137,7 +137,7 @@ export async function createAppointmentWithNotification(appointmentData: {
 
   if (patientError) {
     logger.error('Failed to fetch patient data for appointment notification:', patientError);
-    console.error('❌ Failed to fetch patient data:', patientError);
+
   }
 
   // Fetch dentist data separately
@@ -149,11 +149,10 @@ export async function createAppointmentWithNotification(appointmentData: {
 
   if (dentistError) {
     logger.error('Failed to fetch dentist data for appointment notification:', dentistError);
-    console.error('❌ Failed to fetch dentist data:', dentistError);
+
   }
 
-  console.log('📧 Patient data:', patient);
-  console.log('📧 Dentist data:', dentist);
+
 
   // Sync to Google Calendar
   try {
@@ -168,11 +167,8 @@ export async function createAppointmentWithNotification(appointmentData: {
   // Send confirmation email to patient
   try {
     const dentistProfile = (dentist?.profiles as unknown) as { first_name: string; last_name: string } | null;
-    
-    console.log('📧 Checking email conditions:', {
-      patientEmail: patient?.email,
-      dentistProfile: dentistProfile
-    });
+
+
 
     if (patient?.email && dentistProfile) {
       const appointmentDate = new Date(appointment.appointment_date);
@@ -238,8 +234,8 @@ export async function createAppointmentWithNotification(appointmentData: {
         </div>
       `;
 
-      console.log('📧 Sending email to:', patient.email);
-      
+
+
       const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email-notification', {
         body: {
           to: patient.email,
@@ -254,18 +250,18 @@ export async function createAppointmentWithNotification(appointmentData: {
           isSystemNotification: true
         }
       });
-      
+
       if (emailError) {
-        console.error('❌ Email sending failed:', emailError);
+        logger.error('Email sending failed:', emailError);
       } else {
-        console.log('✅ Email sent successfully:', emailResult);
+
         logger.info(`✅ Confirmation email sent to ${patient.email} for appointment ${appointment.id}`);
       }
     } else {
-      console.warn('⚠️ Cannot send email - missing patient email or dentist profile');
+      logger.warn('Cannot send email - missing patient email or dentist profile');
     }
   } catch (emailError: any) {
-    console.error('❌ Exception during email sending:', emailError);
+
     // Check if it's an email limit error and show popup
     if (!handleEmailError(emailError)) {
       logger.error('Failed to send appointment confirmation email:', emailError);

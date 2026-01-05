@@ -23,7 +23,7 @@ export async function savePracticeConsent(practiceId: string): Promise<boolean> 
         // Get consent data from sessionStorage (auth-sensitive)
         const consentJson = sessionStorage.getItem('pending_practice_consent');
         if (!consentJson) {
-            console.log('No pending practice consent found');
+
             return false;
         }
 
@@ -48,7 +48,7 @@ export async function savePracticeConsent(practiceId: string): Promise<boolean> 
 
         // Clear the pending consent
         sessionStorage.removeItem('pending_practice_consent');
-        console.log('Practice consent saved successfully');
+
         return true;
     } catch (error) {
         console.error('Error saving practice consent:', error);
@@ -83,7 +83,7 @@ export async function savePatientConsent(
             return false;
         }
 
-        console.log('Patient consent saved successfully');
+
         return true;
     } catch (error) {
         console.error('Error saving patient consent:', error);
@@ -112,7 +112,7 @@ export async function withdrawPatientConsent(
             return false;
         }
 
-        console.log('Patient consent withdrawn successfully');
+
         return true;
     } catch (error) {
         console.error('Error withdrawing patient consent:', error);
