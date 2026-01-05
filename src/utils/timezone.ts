@@ -77,25 +77,6 @@ export const formatClinicTime = (
  * @returns UTC Date object
  */
 export const createAppointmentDateTime = (dateStr: string, timeStr: string): Date => {
-    // Create datetime string as if it's in Brussels
-    const datetimeString = `${dateStr}T${timeStr}:00`;
-
-    // Get the UTC timestamp for this Brussels time
-    // We need to determine the offset for this specific date (handles DST)
-    const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: CLINIC_TIMEZONE,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-
-    // Create a date object that represents the Brussels time
-    // Then calculate what UTC time that corresponds to
-
     // Get offset by comparing UTC noon to Brussels noon
     const utcNoon = new Date(`${dateStr}T12:00:00Z`);
     const brusselsNoonStr = utcNoon.toLocaleString('en-US', { timeZone: CLINIC_TIMEZONE });
