@@ -3,42 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
-import { AIWritingAssistant } from "@/components/AIWritingAssistant";
-import { PrescriptionManager } from "@/components/PrescriptionManager";
-import { TreatmentPlanManager } from "@/components/TreatmentPlanManager";
-import { AppointmentConfirmationWidget } from "@/components/AppointmentConfirmationWidget";
 import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
-import { 
-  Search, 
-  Calendar, 
-  Clock, 
-  Plus,
-  Edit,
-  Save,
-  X,
-  CheckCircle,
-  Stethoscope,
-  Pill,
-  FileText,
-  AlertTriangle,
-  User,
-  BookOpen,
-  Eye
+import {
+  Search,
+  Calendar
 } from "lucide-react";
-import { format } from "date-fns";
-import { generateSymptomSummary } from "@/lib/symptoms";
-import { AIConversationDialog } from "@/components/AIConversationDialog";
 import { CompletionSheet } from "@/components/CompletionSheet";
 import { AppointmentList } from "@/components/optimized/AppointmentList";
 import { AppointmentStats } from "@/components/optimized/AppointmentStats";
-import { logger } from '@/lib/logger';
 
 interface Appointment {
   id: string;

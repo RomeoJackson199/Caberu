@@ -483,7 +483,9 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 					if (mapped) {
 						await createRecall({ appointmentId: appointment.id, patientId: appointment.patient_id, dentistId, treatmentKey: mapped.key as any, treatmentLabel: mapped.label, baseDateISO: appointment.appointment_date });
 					}
-				} catch {}
+				} catch (error) {
+					// Ignore recall creation errors - non-critical
+				}
 			}
 
 			// 8) Final total override audit

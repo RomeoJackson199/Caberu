@@ -26,13 +26,16 @@ module.exports = {
     },
   },
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-  },
-  globals: {
-    'ts-jest': {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: '<rootDir>/tsconfig.test.json',
-    },
+    }],
+    '^.+\\.(js|jsx)$': ['ts-jest', {
+      tsconfig: '<rootDir>/tsconfig.test.json',
+    }],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-markdown|remark-.*|unified|unist-.*|vfile|bail|is-plain-obj|trough|property-information|hast-.*|space-separated-tokens|comma-separated-tokens|mdast-.*|escape-string-regexp|micromark.*|decode-named-character-reference|character-entities|ccount|markdown-table|zwitch|longest-streak|devlop)/)',
+  ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   moduleDirectories: ['node_modules', 'src'],

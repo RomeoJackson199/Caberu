@@ -1,8 +1,28 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import userEvent from '@testing-library/user-event';
 import { DentalChatbot } from '../DentalChatbot';
 import { useToast } from '@/hooks/use-toast';
+
+// Create a new QueryClient for each test
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+// Helper function to render with providers
+const renderWithProviders = (ui: React.ReactElement) => {
+  const queryClient = createTestQueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+};
 
 // Mock dependencies
 jest.mock('@/hooks/use-toast');
@@ -11,17 +31,21 @@ jest.mock('@/integrations/supabase/client', () => ({
     from: jest.fn(() => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => ({
-          single: jest.fn(() => Promise.resolve({ 
-            data: { 
+          single: jest.fn(() => Promise.resolve({
+            data: {
               id: 'test-user',
               role: 'patient',
               email: 'test@example.com'
-            }, 
-            error: null 
+            },
+            error: null
           }))
         }))
       })),
       insert: jest.fn(() => Promise.resolve({ data: null, error: null }))
+    })),
+    rpc: jest.fn(() => Promise.resolve({
+      data: false,
+      error: null
     })),
     functions: {
       invoke: jest.fn(() => Promise.resolve({
@@ -49,7 +73,7 @@ describe('DentalChatbot', () => {
   });
 
   it('renders chatbot interface', () => {
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     expect(screen.getByText(/dental assistant/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/type your message/i)).toBeInTheDocument();
@@ -58,7 +82,7 @@ describe('DentalChatbot', () => {
 
   it('allows user to type and send messages', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -71,7 +95,7 @@ describe('DentalChatbot', () => {
 
   it('sends message on Enter key press', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     
@@ -82,7 +106,7 @@ describe('DentalChatbot', () => {
 
   it('shows AI response after sending message', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -97,7 +121,7 @@ describe('DentalChatbot', () => {
 
   it('shows loading state while AI is processing', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -121,7 +145,7 @@ describe('DentalChatbot', () => {
     });
 
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -148,7 +172,7 @@ describe('DentalChatbot', () => {
     });
 
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -175,7 +199,7 @@ describe('DentalChatbot', () => {
     });
 
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -197,7 +221,7 @@ describe('DentalChatbot', () => {
     (supabase.functions.invoke as unknown as jest.Mock).mockRejectedValue(new Error('Service unavailable'));
 
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -216,7 +240,7 @@ describe('DentalChatbot', () => {
 
   it('shows conversation history', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -235,7 +259,7 @@ describe('DentalChatbot', () => {
   });
 
   it.skip('provides quick action buttons', () => {
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     expect(screen.getByText(/book appointment/i)).toBeInTheDocument();
     expect(screen.getByText(/emergency/i)).toBeInTheDocument();
@@ -244,7 +268,7 @@ describe('DentalChatbot', () => {
 
   it.skip('handles quick action button clicks', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const emergencyButton = screen.getByText(/emergency/i);
     await user.click(emergencyButton);
@@ -253,7 +277,7 @@ describe('DentalChatbot', () => {
   });
 
   it('shows user profile information', async () => {
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     await waitFor(() => {
       expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
@@ -261,7 +285,7 @@ describe('DentalChatbot', () => {
   });
 
   it('handles chat window resizing', () => {
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const chatContainer = screen.getByRole('main');
     expect(chatContainer).toBeInTheDocument();
@@ -269,7 +293,7 @@ describe('DentalChatbot', () => {
 
   it('shows typing indicator when AI is responding', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     const sendButton = screen.getByRole('button', { name: /send/i });
@@ -282,7 +306,7 @@ describe('DentalChatbot', () => {
 
   it('handles empty message submission', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const sendButton = screen.getByRole('button', { name: /send/i });
     await user.click(sendButton);
@@ -292,7 +316,7 @@ describe('DentalChatbot', () => {
   });
 
   it('provides accessibility features', () => {
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     expect(messageInput).toHaveAttribute('aria-label');
@@ -303,7 +327,7 @@ describe('DentalChatbot', () => {
 
   it('handles keyboard navigation', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     const messageInput = screen.getByPlaceholderText(/type your message/i);
     messageInput.focus();
@@ -315,7 +339,7 @@ describe('DentalChatbot', () => {
 
   it('shows conversation export option', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     await waitFor(async () => {
       const exportButton = screen.getByText(/export conversation/i);
@@ -331,7 +355,7 @@ describe('DentalChatbot', () => {
 
   it('handles conversation clearing', async () => {
     const user = userEvent.setup();
-    render(<DentalChatbot user={null} />);
+    renderWithProviders(<DentalChatbot user={null} />);
     
     await waitFor(async () => {
       const clearButton = screen.getByText(/clear conversation/i);
