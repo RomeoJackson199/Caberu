@@ -25,7 +25,8 @@ import { withErrorBoundary } from '@/components/ErrorBoundary';
 export interface Appointment {
   id: string;
   patient_id: string;
-  dentist_id: string;
+  dentist_id?: string;
+  business_id?: string;
   appointment_date: string;
   duration_minutes: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';

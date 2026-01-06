@@ -43,6 +43,8 @@ import { logger } from '@/lib/logger';
 interface Appointment {
   id: string;
   patient_id: string;
+  dentist_id?: string;
+  business_id?: string;
   patient_name?: string;
   appointment_date: string;
   duration_minutes: number;

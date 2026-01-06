@@ -64,18 +64,23 @@ export function usePatientTags({ businessId, patientId }: UsePatientTagsOptions)
 
       if (error) throw error;
       
-      interface TagAssignmentRow {
-        id: string;
-        patient_id: string;
-        tag_id: string;
-        patient_tags: PatientTag;
-      }
-      const assignments = (data || []).map((d: TagAssignmentRow) => ({
-        id: d.id,
-        patient_id: d.patient_id,
-        tag_id: d.tag_id,
-        tag: d.patient_tags,
-      }));
+      // Handle the joined data which returns an array for patient_tags
+      const assignments = (data || []).map((d: { id: string; patient_id: string; tag_id: string; patient_tags: { id: string; name: string; color: string; description: string | null }[] | { id: string; name: string; color: string; description: string | null } | null }) => {
+        // Handle both array and object responses from Supabase join
+        const tagData = Array.isArray(d.patient_tags) ? d.patient_tags[0] : d.patient_tags;
+        return {
+          id: d.id,
+          patient_id: d.patient_id,
+          tag_id: d.tag_id,
+          tag: tagData ? {
+            id: tagData.id,
+            business_id: '', // Not returned from join but not needed for display
+            name: tagData.name,
+            color: tagData.color,
+            description: tagData.description || undefined,
+          } as PatientTag : undefined,
+        };
+      });
 
       setPatientTags(assignments);
     } catch {
