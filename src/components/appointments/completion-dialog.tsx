@@ -138,14 +138,12 @@ export function CompletionDialog({
   // Fetch treatment plans on mount
   useEffect(() => {
     const fetchTreatmentPlans = async () => {
-      console.log('Fetching treatment plans for patient:', appointment.patient_id);
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('treatment_plans')
         .select('*')
         .eq('patient_id', appointment.patient_id)
         .in('status', ['active', 'draft']); // Include draft plans too
 
-      console.log('Treatment plans result:', data, error);
       if (data) {
         setTreatmentPlans(data);
       }
@@ -469,7 +467,6 @@ export function CompletionDialog({
       let treatmentPlanId = formData.selectedTreatmentPlan;
 
       if (formData.createNewTreatmentPlan && formData.newTreatmentPlanForm.title.trim()) {
-        console.log('Creating new treatment plan...');
         const { data: newPlan, error: planError } = await supabase
           .from('treatment_plans')
           .insert({
@@ -488,18 +485,13 @@ export function CompletionDialog({
           .select()
           .single();
 
-        if (planError) {
-          console.error('Treatment plan insert error:', planError);
-        }
         if (newPlan) {
           treatmentPlanId = newPlan.id;
-          console.log('Created treatment plan:', treatmentPlanId);
         }
       }
 
       // 6. Update appointment status
-      console.log('Updating appointment status to completed...');
-      const { error: updateError } = await supabase
+      await supabase
         .from('appointments')
         .update({
           status: 'completed',
@@ -507,12 +499,6 @@ export function CompletionDialog({
           consultation_notes: formData.consultationNotes || formData.notes || null
         })
         .eq('id', appointment.id);
-
-      if (updateError) {
-        console.error('Appointment update error:', updateError);
-      } else {
-        console.log('Appointment marked as completed successfully!');
-      }
 
       // 7. Schedule follow-up if needed
       if (formData.followUpNeeded && formData.followUpDate) {

@@ -25,6 +25,51 @@ interface DemoDataResult {
   error?: string;
 }
 
+interface DemoPatient {
+  id: string;
+  business_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  date_of_birth: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  insurance_provider: string | null;
+  insurance_policy_number: string | null;
+  medical_notes: string;
+  created_by: string;
+}
+
+interface DemoAppointment {
+  id: string;
+  business_id: string;
+  patient_id: string;
+  dentist_id: string;
+  appointment_date: string;
+  reason: string;
+  urgency: typeof urgencyLevels[number];
+  status: string;
+  notes: string;
+  duration_minutes: number;
+}
+
+interface DemoMedicalRecord {
+  id: string;
+  business_id: string;
+  patient_id: string;
+  record_date: string;
+  diagnosis: string;
+  treatment: string;
+  prescriptions: string | null;
+  notes: string;
+  created_by: string;
+}
+
 // Sample patient data
 const firstNames = [
   "Sarah", "John", "Emily", "Michael", "Jessica", "David", "Amanda", "Robert",
@@ -101,8 +146,8 @@ async function createDemoPatients(
   businessId: string,
   userId: string,
   count: number
-): Promise<any[]> {
-  const patients: any[] = [];
+): Promise<DemoPatient[]> {
+  const patients: Omit<DemoPatient, 'id'>[] = [];
 
   for (let i = 0; i < count; i++) {
     const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
@@ -150,10 +195,10 @@ async function createDemoPatients(
 async function createDemoAppointments(
   businessId: string,
   userId: string,
-  patients: any[],
+  patients: DemoPatient[],
   count: number
-): Promise<any[]> {
-  const appointments: any[] = [];
+): Promise<DemoAppointment[]> {
+  const appointments: Omit<DemoAppointment, 'id'>[] = [];
 
   // Create past appointments (completed)
   const pastCount = Math.floor(count * 0.4);
@@ -231,9 +276,9 @@ async function createDemoAppointments(
 async function createDemoMedicalRecords(
   businessId: string,
   userId: string,
-  patients: any[]
-): Promise<any[]> {
-  const records: any[] = [];
+  patients: DemoPatient[]
+): Promise<DemoMedicalRecord[]> {
+  const records: Omit<DemoMedicalRecord, 'id'>[] = [];
 
   // Create 2-3 medical records per patient
   for (const patient of patients) {
@@ -318,12 +363,12 @@ export async function generateDemoData(
         medicalRecordsCreated: medicalRecords.length,
       },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("❌ Error generating demo data:", error);
     return {
       success: false,
       message: "Failed to generate demo data",
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -364,12 +409,12 @@ export async function clearDemoData(
       success: true,
       message: "Demo data cleared successfully",
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("❌ Error clearing demo data:", error);
     return {
       success: false,
       message: "Failed to clear demo data",
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }

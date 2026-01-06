@@ -260,8 +260,7 @@ export async function createAppointmentWithNotification(appointmentData: {
     } else {
       logger.warn('Cannot send email - missing patient email or dentist profile');
     }
-  } catch (emailError: any) {
-
+  } catch (emailError: unknown) {
     // Check if it's an email limit error and show popup
     if (!handleEmailError(emailError)) {
       logger.error('Failed to send appointment confirmation email:', emailError);
