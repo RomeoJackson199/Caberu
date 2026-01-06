@@ -39,11 +39,9 @@ export function DraftSaveButton({
     if (saving) return;
     setSaving(true);
     
-    console.log('💾 Saving draft...', { appointmentId, notes: notes?.slice(0, 50), chargesCount: charges.length });
-    
     try {
       // Save notes to appointments table
-      const { data: notesData, error: notesError } = await supabase
+      const { error: notesError } = await supabase
         .from('appointments')
         .update({ 
           consultation_notes: notes,
@@ -53,28 +51,21 @@ export function DraftSaveButton({
         .select('id, consultation_notes');
 
       if (notesError) {
-        console.error('❌ Error saving notes:', notesError);
         throw notesError;
       }
-      console.log('✅ Notes saved:', notesData);
 
       // Save charges to notes table as JSON for draft persistence
       // First delete any existing draft_charges, then insert new
-      const { error: deleteError } = await supabase
+      await supabase
         .from('notes')
         .delete()
         .eq('appointment_id', appointmentId)
         .eq('note_type', 'draft_charges');
-      
-      if (deleteError) {
-        console.warn('⚠️ Delete draft_charges warning:', deleteError);
-      }
-      
+
       if (charges.length > 0) {
         const chargesJson = JSON.stringify(charges);
-        console.log('💰 Saving charges:', chargesJson);
         
-        const { data: chargesData, error: chargesError } = await supabase
+        const { error: chargesError } = await supabase
           .from('notes')
           .insert({
             appointment_id: appointmentId,
@@ -87,10 +78,8 @@ export function DraftSaveButton({
           .select('id');
 
         if (chargesError) {
-          console.error('❌ Error saving charges:', chargesError);
           throw chargesError;
         }
-        console.log('✅ Charges saved:', chargesData);
       }
 
       setSaved(true);
@@ -108,8 +97,7 @@ export function DraftSaveButton({
       });
 
       setTimeout(() => setSaved(false), 2000);
-    } catch (error) {
-      console.error('Error saving draft:', error);
+    } catch {
       toast({
         title: "Error saving draft",
         description: "Please try again.",

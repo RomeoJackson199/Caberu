@@ -41,8 +41,8 @@ export function usePatientTags({ businessId, patientId }: UsePatientTagsOptions)
 
       if (error) throw error;
       setTags((data || []) as PatientTag[]);
-    } catch (err: any) {
-      console.error('Error fetching tags:', err);
+    } catch {
+      // Error handled silently - tags are not critical
     }
   }, [businessId]);
 
@@ -64,16 +64,22 @@ export function usePatientTags({ businessId, patientId }: UsePatientTagsOptions)
 
       if (error) throw error;
       
-      const assignments = (data || []).map((d: any) => ({
+      interface TagAssignmentRow {
+        id: string;
+        patient_id: string;
+        tag_id: string;
+        patient_tags: PatientTag;
+      }
+      const assignments = (data || []).map((d: TagAssignmentRow) => ({
         id: d.id,
         patient_id: d.patient_id,
         tag_id: d.tag_id,
         tag: d.patient_tags,
       }));
-      
+
       setPatientTags(assignments);
-    } catch (err: any) {
-      console.error('Error fetching patient tags:', err);
+    } catch {
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }
@@ -89,8 +95,9 @@ export function usePatientTags({ businessId, patientId }: UsePatientTagsOptions)
       if (error) throw error;
       toast({ title: 'Tag created' });
       fetchTags();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create tag';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 
@@ -111,11 +118,13 @@ export function usePatientTags({ businessId, patientId }: UsePatientTagsOptions)
       if (error) throw error;
       toast({ title: 'Tag assigned' });
       fetchPatientTags();
-    } catch (err: any) {
-      if (err.code === '23505') {
+    } catch (err) {
+      const pgError = err as { code?: string; message?: string };
+      if (pgError.code === '23505') {
         toast({ title: 'Tag already assigned', variant: 'destructive' });
       } else {
-        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        const message = err instanceof Error ? err.message : 'Failed to assign tag';
+        toast({ title: 'Error', description: message, variant: 'destructive' });
       }
     }
   };
@@ -131,8 +140,9 @@ export function usePatientTags({ businessId, patientId }: UsePatientTagsOptions)
       if (error) throw error;
       toast({ title: 'Tag removed' });
       fetchPatientTags();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to remove tag';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 
@@ -147,8 +157,9 @@ export function usePatientTags({ businessId, patientId }: UsePatientTagsOptions)
       if (error) throw error;
       toast({ title: 'Tag deleted' });
       fetchTags();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete tag';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 

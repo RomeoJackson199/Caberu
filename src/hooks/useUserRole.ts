@@ -59,7 +59,7 @@ export function useUserRole() {
           if (membershipError) {
             logger.error('Error fetching business_members:', membershipError);
           } else {
-            businessRoles = membershipData?.map((m: any) => m.role) || [];
+            businessRoles = membershipData?.map((m: { role: string }) => m.role) || [];
             logger.info('useUserRole: Roles from business_members table', {
               businessRoles,
               count: businessRoles.length
@@ -72,8 +72,8 @@ export function useUserRole() {
 
         // Add roles from user_roles table
         if (userRolesData && Array.isArray(userRolesData)) {
-          userRolesData.forEach((r: any) => {
-            if (r.role) allRoles.add(r.role as AppRole);
+          userRolesData.forEach((r: { role: AppRole }) => {
+            if (r.role) allRoles.add(r.role);
           });
         }
 
@@ -91,8 +91,9 @@ export function useUserRole() {
         logger.info('useUserRole: Final combined roles', { finalRoles });
         setRoles(finalRoles);
 
-      } catch (e: any) {
-        setError(e.message);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Failed to fetch roles';
+        setError(message);
         logger.error('Error in useUserRole:', e);
         setRoles([]);
       } finally {
@@ -107,7 +108,7 @@ export function useUserRole() {
   const isAdmin = hasRole('admin');
   const isDentist = hasRole('dentist') || hasRole('provider');
   // Handle legacy 'customer' role as 'patient' during transition
-  const isPatient = hasRole('patient') || (roles as any).includes('customer');
+  const isPatient = hasRole('patient') || (roles as string[]).includes('customer');
   const isStaff = hasRole('staff');
 
   // Log computed flags for debugging

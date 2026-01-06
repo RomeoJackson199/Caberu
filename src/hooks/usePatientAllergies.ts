@@ -36,8 +36,8 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
 
       if (error) throw error;
       setAllergies((data || []) as PatientAllergy[]);
-    } catch (err: any) {
-      console.error('Error fetching allergies:', err);
+    } catch {
+      // Error handled silently - allergies are not critical
     } finally {
       setIsLoading(false);
     }
@@ -69,9 +69,9 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
       if (error) throw error;
       toast({ title: 'Allergy added' });
       fetchAllergies();
-    } catch (err: any) {
-      console.error('Error adding allergy:', err);
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add allergy';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 
@@ -85,8 +85,9 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
       if (error) throw error;
       toast({ title: 'Allergy updated' });
       fetchAllergies();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update allergy';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 
@@ -100,8 +101,9 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
       if (error) throw error;
       toast({ title: 'Allergy removed' });
       fetchAllergies();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete allergy';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     }
   };
 

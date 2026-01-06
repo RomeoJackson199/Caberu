@@ -2,17 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
   FileText, Upload, DollarSign, Calendar,
-  Plus, Trash2, Loader2, Check, Cloud, CloudOff
+  Plus, Trash2, Loader2, Check
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AppointmentImagingTab } from "@/components/imaging";
-import { cn } from "@/lib/utils";
 import { ExpandableNotesEditor } from "./ExpandableNotesEditor";
 
 interface ChargeItem {
@@ -96,7 +93,6 @@ export function ConsultationWorkspace({
 
   // Sync charges when external prop changes
   useEffect(() => {
-    console.log('🔄 ConsultationWorkspace: syncing charges from props', existingCharges);
     setCharges(existingCharges);
     lastSavedChargesRef.current = JSON.stringify(existingCharges);
   }, [existingCharges]);
@@ -117,8 +113,7 @@ export function ConsultationWorkspace({
         setNotesSaved(true);
         onNotesChange?.(notes);
         setTimeout(() => setNotesSaved(false), 2000);
-      } catch (error) {
-        console.error('Error saving notes:', error);
+      } catch {
         toast({
           title: "Failed to save notes",
           description: "Your notes will be saved automatically when you try again.",
@@ -165,8 +160,7 @@ export function ConsultationWorkspace({
         setChargesSaved(true);
         onChargesChange?.(charges);
         setTimeout(() => setChargesSaved(false), 2000);
-      } catch (error) {
-        console.error('Error saving charges:', error);
+      } catch {
         toast({
           title: "Failed to save charges",
           description: "Your charges will be saved automatically when you try again.",
