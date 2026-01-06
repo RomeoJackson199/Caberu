@@ -64,7 +64,7 @@ export function usePaginatedPatients({
             }
 
             if (data && data.length > 0) {
-                const newPatients = data.map((p: any) => ({
+                const newPatients = data.map((p: Patient & { has_more?: boolean }) => ({
                     id: p.id,
                     first_name: p.first_name,
                     last_name: p.last_name,
@@ -94,12 +94,13 @@ export function usePaginatedPatients({
                 }
                 setHasMore(false);
             }
-        } catch (err: any) {
-            logger.error('Error fetching patients:', err);
-            setError(err);
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error('Failed to load patients');
+            logger.error('Error fetching patients:', error);
+            setError(error);
             toast({
                 title: 'Error loading patients',
-                description: err.message || 'Failed to load patients',
+                description: error.message,
                 variant: 'destructive',
             });
         } finally {

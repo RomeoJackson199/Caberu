@@ -85,13 +85,13 @@ export function usePatientBadgeCounts() {
           if (unpaid > 0) {
             await emitAnalyticsEvent('pnav_badge_view', '', { item: 'billing', count: unpaid });
           }
-        } catch (error) {
-          // Analytics errors shouldn't break the app, but log for debugging
-          console.error('Failed to emit badge analytics:', error);
+        } catch {
+          // Analytics errors shouldn't break the app
         }
-      } catch (e: any) {
+      } catch (e) {
         if (isMounted) {
-          setError(e?.message || 'Failed to load badges');
+          const message = e instanceof Error ? e.message : 'Failed to load badges';
+          setError(message);
           setLoading(false);
         }
       }

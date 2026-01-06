@@ -41,8 +41,8 @@ export function useCommunicationLogs({ patientId, businessId, limit = 20 }: UseC
 
       if (error) throw error;
       setLogs((data || []) as CommunicationLog[]);
-    } catch (err: any) {
-      console.error('Error fetching communication logs:', err);
+    } catch {
+      // Error handled silently
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +67,9 @@ export function useCommunicationLogs({ patientId, businessId, limit = 20 }: UseC
         .update({ last_contact_at: new Date().toISOString() })
         .eq('id', log.patient_id);
         
-    } catch (err: any) {
-      toast({ title: 'Error logging communication', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to log communication';
+      toast({ title: 'Error logging communication', description: message, variant: 'destructive' });
     }
   };
 

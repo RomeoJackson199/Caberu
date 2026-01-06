@@ -71,8 +71,7 @@ export function useImaging() {
 
             if (error) throw error;
             return (data || []) as ImagingSet[];
-        } catch (error: any) {
-            console.error('Error fetching imaging sets:', error);
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Failed to load imaging data',
@@ -93,8 +92,7 @@ export function useImaging() {
 
             if (error) throw error;
             return data?.url || null;
-        } catch (error: any) {
-            console.error('Error getting signed URL:', error);
+        } catch {
             return null;
         }
     }, []);
@@ -153,11 +151,11 @@ export function useImaging() {
             });
 
             return data.imagingSet as ImagingSet;
-        } catch (error: any) {
-            console.error('Error uploading imaging:', error);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to upload images';
             toast({
                 title: 'Upload Failed',
-                description: error.message || 'Failed to upload images',
+                description: message,
                 variant: 'destructive'
             });
             return null;
@@ -182,8 +180,7 @@ export function useImaging() {
                 description: 'Imaging set deleted successfully'
             });
             return true;
-        } catch (error: any) {
-            console.error('Error deleting imaging set:', error);
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Failed to delete imaging set',
@@ -208,8 +205,7 @@ export function useImaging() {
                 description: 'File deleted successfully'
             });
             return true;
-        } catch (error: any) {
-            console.error('Error deleting imaging file:', error);
+        } catch {
             toast({
                 title: 'Error',
                 description: 'Failed to delete file',
@@ -227,8 +223,7 @@ export function useImaging() {
 
             if (error) throw error;
             return data;
-        } catch (error: any) {
-            console.error('Error getting workflow flags:', error);
+        } catch {
             return null;
         }
     }, []);

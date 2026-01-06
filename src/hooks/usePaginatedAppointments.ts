@@ -75,7 +75,7 @@ export function usePaginatedAppointments({
             }
 
             if (data && data.length > 0) {
-                const newAppointments = data.map((a: any) => ({
+                const newAppointments = data.map((a: Appointment & { has_more?: boolean }) => ({
                     id: a.id,
                     appointment_date: a.appointment_date,
                     duration_minutes: a.duration_minutes,
@@ -110,12 +110,13 @@ export function usePaginatedAppointments({
                 }
                 setHasMore(false);
             }
-        } catch (err: any) {
-            logger.error('Error fetching appointments:', err);
-            setError(err);
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error('Failed to load appointments');
+            logger.error('Error fetching appointments:', error);
+            setError(error);
             toast({
                 title: 'Error loading appointments',
-                description: err.message || 'Failed to load appointments',
+                description: error.message,
                 variant: 'destructive',
             });
         } finally {

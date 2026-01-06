@@ -162,7 +162,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           await switchBusiness(formattedMemberships[0].business_id);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error loading memberships:', error);
       toast.error('Failed to load business memberships');
     } finally {
@@ -217,9 +217,10 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
         // Reload memberships to refresh any template-related data
         await loadMemberships();
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error switching business:', error);
-      toast.error(error.message || 'Failed to switch business');
+      const message = error instanceof Error ? error.message : 'Failed to switch business';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
