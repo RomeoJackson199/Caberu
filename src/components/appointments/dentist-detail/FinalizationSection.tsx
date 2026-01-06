@@ -78,8 +78,6 @@ export function FinalizationSection({
   // Send email notification to patient
   const sendFinalizationEmail = async () => {
     try {
-      console.log('📧 Sending finalization email for patient:', patientId);
-      
       // Get patient's user_id for notification
       const { data: patient, error: patientError } = await supabase
         .from('profiles')
@@ -93,11 +91,8 @@ export function FinalizationSection({
       }
 
       if (!patient?.user_id) {
-        console.error('No user_id found for patient:', patientId);
         return;
       }
-
-      console.log('📧 Patient found:', { email: patient.email, firstName: patient.first_name });
 
       const formattedDate = appointmentDate 
         ? format(new Date(appointmentDate), 'MMMM d, yyyy')
@@ -137,7 +132,7 @@ export function FinalizationSection({
         false // Don't send email again, we already did it directly
       );
       
-      console.log('✅ Finalization notification sent successfully');
+      // Finalization notification sent successfully
     } catch (error) {
       console.error('Error sending finalization email:', error);
       // Don't fail the finalization if email fails
@@ -146,13 +141,6 @@ export function FinalizationSection({
 
   const handleFinalize = async () => {
     setIsLoading(true);
-    
-    console.log('🏁 Starting finalization...', { 
-      appointmentId, 
-      chargesCount: charges.length, 
-      totalCents,
-      notes: notes?.slice(0, 50) 
-    });
     
     const completedAtTime = new Date().toISOString();
     
@@ -183,12 +171,9 @@ export function FinalizationSection({
         .eq('id', appointmentId);
 
       if (updateError) throw updateError;
-      console.log('✅ Appointment updated to completed');
 
       // 2. Create payment request if there are charges
       if (totalCents > 0) {
-        console.log('💰 Creating payment request for', totalCents, 'cents');
-        
         // Get patient email for payment request
         const { data: patientData } = await supabase
           .from('profiles')
@@ -196,27 +181,13 @@ export function FinalizationSection({
           .eq('id', patientId)
           .single();
 
-        console.log('👤 Patient data:', patientData);
-
         if (patientData?.email) {
-          const formattedDate = appointmentDate 
+          const formattedDate = appointmentDate
             ? format(new Date(appointmentDate), 'MMMM d, yyyy')
             : format(new Date(), 'MMMM d, yyyy');
-          
+
           const description = `Appointment on ${formattedDate}${charges.length > 0 ? ' - ' + charges.map(c => c.description).join(', ') : ''}`;
           const patientName = [patientData.first_name, patientData.last_name].filter(Boolean).join(' ') || 'Patient';
-
-          console.log('📧 Calling create-payment-request edge function...', {
-            patient_id: patientId,
-            amount: totalCents,
-            patient_email: patientData.email,
-            send_now: true,
-            items: charges.map(c => ({
-              description: c.description,
-              unit_price_cents: c.amount_cents,
-              quantity: 1,
-            })),
-          });
 
           // Create payment request via edge function (sends email automatically)
           const { data: paymentResult, error: paymentError } = await supabase.functions.invoke('create-payment-request', {
@@ -238,16 +209,10 @@ export function FinalizationSection({
           });
 
           if (paymentError) {
-            console.error('❌ Payment request error:', paymentError);
+            console.error('Payment request error:', paymentError);
             // Don't fail finalization if payment request fails
-          } else {
-            console.log('✅ Payment request created:', paymentResult);
           }
-        } else {
-          console.warn('⚠️ No patient email found, skipping payment request');
         }
-      } else {
-        console.log('ℹ️ No charges, skipping payment request');
       }
 
       // 3. Create clinical notes record
@@ -260,7 +225,6 @@ export function FinalizationSection({
           note_type: 'consultation',
           created_by: dentistId,
         });
-        console.log('✅ Clinical notes saved');
       }
 
       // 4. Send email notification to patient

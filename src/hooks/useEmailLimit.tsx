@@ -3,7 +3,7 @@ import { EmailLimitDialog } from '@/components/subscription/EmailLimitDialog';
 import { useNavigate } from 'react-router-dom';
 
 interface EmailLimitContextType {
-    checkEmailError: (error: any) => boolean;
+    checkEmailError: (error: unknown) => boolean;
     showEmailLimitPopup: (emailsSent?: number, emailLimit?: number) => void;
 }
 
@@ -17,8 +17,11 @@ export function dispatchEmailLimitError(emailsSent: number, emailLimit: number) 
 }
 
 // Helper to check if an error is email limit related and dispatch if so
-export function handleEmailError(error: any): boolean {
-    const errorMessage = error?.message || error?.error || (typeof error === 'string' ? error : JSON.stringify(error));
+export function handleEmailError(error: unknown): boolean {
+    const err = error as { message?: string; error?: string } | string | null;
+    const errorMessage = (typeof err === 'object' && err !== null)
+        ? (err.message || err.error || JSON.stringify(err))
+        : (typeof err === 'string' ? err : '');
 
     if (errorMessage.includes('Email limit exceeded')) {
         const match = errorMessage.match(/(\d+)\/(\d+)/);
@@ -58,7 +61,7 @@ export function EmailLimitProvider({ children }: { children: ReactNode }) {
         setIsOpen(true);
     }, []);
 
-    const checkEmailError = useCallback((error: any): boolean => {
+    const checkEmailError = useCallback((error: unknown): boolean => {
         return handleEmailError(error);
     }, []);
 

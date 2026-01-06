@@ -71,7 +71,6 @@ export function CancelSubscriptionSection() {
             setLoading(true);
 
             if (!businessId) {
-                console.log('No businessId provided');
                 return;
             }
 
@@ -83,11 +82,8 @@ export function CancelSubscriptionSection() {
                 .single();
 
             if (error) {
-                console.log('Business fetch error:', error);
                 return;
             }
-
-            console.log('Business subscription data:', business);
 
             if (business?.subscription_status && business?.subscription_ends_at) {
                 // Show subscription for any status (active, cancelled, cancelling)

@@ -356,7 +356,7 @@ END:VCALENDAR`;
         throw messageError;
       }
 
-      console.log(`✅ Created patient message for ${event.event}`);
+      // Patient message created successfully
     } catch (error) {
       console.error('Error creating patient message:', error);
       // Don't fail the whole email process if message creation fails
