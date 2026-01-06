@@ -110,6 +110,7 @@ export interface PatientAppointment {
     ai_summary?: string;
     booking_source?: string;
     created_at?: string;
+    updated_at?: string;
 }
 
 /**

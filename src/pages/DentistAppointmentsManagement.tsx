@@ -238,7 +238,7 @@ function DentistAppointmentsManagementContent() {
       if (selectedAppointment?.id === appointmentId) {
         setSelectedAppointment({
           ...selectedAppointment,
-          status: newStatus
+          status: newStatus as Appointment['status']
         });
       }
 

@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import type { Appointment } from "@/types/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -42,8 +41,31 @@ interface ChargeItem {
   amount_cents: number;
 }
 
+// Flexible appointment type that works with various appointment sources
+interface DetailAppointment {
+  id: string;
+  patient_id: string;
+  dentist_id?: string;
+  business_id?: string;
+  appointment_date: string;
+  duration_minutes?: number;
+  status: string;
+  notes?: string | null;
+  reason?: string | null;
+  consultation_notes?: string | null;
+  completed_at?: string | null;
+  treatment_plan_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  patient?: { first_name?: string; last_name?: string; email?: string; phone?: string };
+}
+
 interface DentistAppointmentDetailProps {
-  appointment: Appointment & { consultation_notes?: string; completed_at?: string; treatment_plan_id?: string; patient?: { first_name?: string; last_name?: string; email?: string; phone?: string } };
+  appointment: DetailAppointment;
+  /** Fallback dentist ID if not in appointment */
+  dentistIdOverride?: string;
+  /** Fallback business ID if not in appointment */
+  businessIdOverride?: string;
   onClose: () => void;
   onStatusChange?: (appointmentId: string, status: string) => void;
   /** Callback for optimistic UI updates - updates parent state immediately */
@@ -68,6 +90,8 @@ interface DentistAppointmentDetailProps {
  */
 export function DentistAppointmentDetail({
   appointment,
+  dentistIdOverride,
+  businessIdOverride,
   onClose,
   onStatusChange,
   onOptimisticUpdate,
@@ -76,6 +100,10 @@ export function DentistAppointmentDetail({
 }: DentistAppointmentDetailProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Resolve dentist and business IDs from appointment or overrides
+  const dentistId = appointment.dentist_id || dentistIdOverride || '';
+  const businessId = appointment.business_id || businessIdOverride || '';
 
   const [showReschedule, setShowReschedule] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -147,7 +175,7 @@ export function DentistAppointmentDetail({
     deriveDentistState({
       status: appointment?.status || 'pending',
       appointment_date: appointment?.appointment_date,
-      completed_at: appointment?.completed_at,
+      completed_at: appointment?.completed_at ?? null,
     }),
     [appointment?.status, appointment?.appointment_date, appointment?.completed_at]
   );
@@ -296,7 +324,11 @@ export function DentistAppointmentDetail({
 
       {/* Section 1: Header - Context & State (always visible) */}
       <AppointmentHeader
-        appointment={appointment}
+        appointment={{
+          ...appointment,
+          reason: appointment.reason ?? undefined,
+          notes: appointment.notes ?? undefined,
+        }}
         state={state}
         dentistName={dentistName}
         dentistSpecialization={dentist?.specialization}
@@ -316,8 +348,8 @@ export function DentistAppointmentDetail({
               <ConsultationWorkspace
                 appointmentId={appointment.id}
                 patientId={appointment.patient_id}
-                dentistId={appointment.dentist_id}
-                businessId={appointment.business_id}
+                dentistId={dentistId}
+                businessId={businessId}
                 isEditable={true}
                 existingNotes={notes}
                 existingCharges={charges}
@@ -330,8 +362,8 @@ export function DentistAppointmentDetail({
               <TreatmentPlanSection
                 appointmentId={appointment.id}
                 patientId={appointment.patient_id}
-                dentistId={appointment.dentist_id}
-                businessId={appointment.business_id}
+                dentistId={dentistId}
+                businessId={businessId}
                 existingPlanId={appointment.treatment_plan_id}
                 isEditable={true}
               />
@@ -343,10 +375,10 @@ export function DentistAppointmentDetail({
             <FinalizedAddendum
               appointmentId={appointment.id}
               patientId={appointment.patient_id}
-              dentistId={appointment.dentist_id}
-              businessId={appointment.business_id}
-              originalNotes={appointment.consultation_notes}
-              originalCompletedAt={appointment.completed_at}
+              dentistId={dentistId}
+              businessId={businessId}
+              originalNotes={appointment.consultation_notes ?? undefined}
+              originalCompletedAt={appointment.completed_at ?? undefined}
             />
           )}
 
@@ -354,8 +386,8 @@ export function DentistAppointmentDetail({
           <FinalizationSection
             appointmentId={appointment.id}
             patientId={appointment.patient_id}
-            dentistId={appointment.dentist_id}
-            businessId={appointment.business_id}
+            dentistId={dentistId}
+            businessId={businessId}
             state={state}
             notes={notes}
             charges={charges}

@@ -3676,6 +3676,14 @@ export type Database = {
         Args: { p_business_id: string; p_patient_id: string }
         Returns: undefined
       }
+      can_access_profile: {
+        Args: { target_profile_id: string }
+        Returns: boolean
+      }
+      can_modify_profile: {
+        Args: { target_profile_id: string }
+        Returns: boolean
+      }
       can_view_profile_in_user_business: {
         Args: { _target_profile_id: string; _viewer_user_id: string }
         Returns: boolean
@@ -3796,6 +3804,7 @@ export type Database = {
           phone: string
         }[]
       }
+      get_my_profile_id: { Args: never; Returns: string }
       get_system_stats: {
         Args: never
         Returns: {
@@ -3812,6 +3821,14 @@ export type Database = {
         Returns: Json
       }
       get_user_profile_id: { Args: { _user_id: string }; Returns: string }
+      has_business_access: {
+        Args: { target_business_id: string }
+        Returns: boolean
+      }
+      has_business_access_via_membership: {
+        Args: { target_business_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3832,10 +3849,9 @@ export type Database = {
         Args: { p_business_id: string; p_profile_id: string }
         Returns: boolean
       }
-      is_business_owner: {
-        Args: { _business_id: string; _user_id: string }
-        Returns: boolean
-      }
+      is_business_owner:
+        | { Args: { _business_id: string; _user_id: string }; Returns: boolean }
+        | { Args: { target_business_id: string }; Returns: boolean }
       is_business_staff: {
         Args: { _business_id: string; _user_id: string }
         Returns: boolean
@@ -3851,6 +3867,14 @@ export type Database = {
       }
       is_dentist_patient_norec: {
         Args: { patient_profile_id: string }
+        Returns: boolean
+      }
+      is_member_of_business: {
+        Args: { target_business_id: string }
+        Returns: boolean
+      }
+      is_member_of_business_with_role: {
+        Args: { allowed_roles: string[]; target_business_id: string }
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
