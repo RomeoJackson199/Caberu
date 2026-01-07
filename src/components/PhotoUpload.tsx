@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Upload, Camera, Image, X } from "lucide-react";
 import { AiDisclaimer } from "@/components/AiDisclaimer";
 import { logger } from '@/lib/logger';
+import { validateFileName, generateSecureFileName } from '@/lib/fileValidation';
 
 interface PhotoUploadProps {
   onComplete: (photoUrl: string) => void;
@@ -24,6 +25,17 @@ export const PhotoUpload = ({ onComplete, onCancel }: PhotoUploadProps) => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // SECURITY: Validate file name for path traversal attacks
+      const fileNameValidation = validateFileName(file.name);
+      if (!fileNameValidation.valid) {
+        toast({
+          title: "Nom de fichier invalide",
+          description: fileNameValidation.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
@@ -64,12 +76,13 @@ export const PhotoUpload = ({ onComplete, onCancel }: PhotoUploadProps) => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error("User not authenticated");
 
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // SECURITY: Use secure UUID-based filename to prevent enumeration
+      const secureFileName = generateSecureFileName(selectedFile.name);
+      const storagePath = `${user.id}/${secureFileName}`;
 
       const { data, error } = await supabase.storage
         .from('dental-photos')
-        .upload(fileName, selectedFile, {
+        .upload(storagePath, selectedFile, {
           cacheControl: '3600',
           upsert: false
         });

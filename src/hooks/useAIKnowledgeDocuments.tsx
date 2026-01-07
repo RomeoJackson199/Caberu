@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { validateFileName, generateSecureFileName } from '@/lib/fileValidation';
 
 export interface AIKnowledgeDocument {
   id: string;
@@ -60,6 +61,17 @@ export const useAIKnowledgeDocuments = (businessId: string | undefined) => {
       return false;
     }
 
+    // SECURITY: Validate file name for path traversal attacks
+    const fileNameValidation = validateFileName(file.name);
+    if (!fileNameValidation.valid) {
+      toast({
+        title: 'Invalid file name',
+        description: fileNameValidation.error,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     // Validate file type
     const allowedTypes = ['text/plain', 'application/pdf', 'text/markdown', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     if (!allowedTypes.includes(file.type)) {
@@ -83,13 +95,13 @@ export const useAIKnowledgeDocuments = (businessId: string | undefined) => {
 
     setIsUploading(true);
     try {
-      // Upload file to storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${businessId}/${Date.now()}-${file.name}`;
+      // SECURITY: Use secure UUID-based filename to prevent enumeration
+      const secureFileName = generateSecureFileName(file.name);
+      const storagePath = `${businessId}/${secureFileName}`;
       
       const { error: uploadError } = await supabase.storage
         .from('ai-knowledge-documents')
-        .upload(fileName, file);
+        .upload(storagePath, file);
 
       if (uploadError) throw uploadError;
 
@@ -118,7 +130,7 @@ export const useAIKnowledgeDocuments = (businessId: string | undefined) => {
         .insert({
           business_id: businessId,
           file_name: file.name,
-          file_path: fileName,
+          file_path: storagePath,
           file_type: file.type,
           content: content.substring(0, 50000), // Limit to 50k chars
           status: 'active',
