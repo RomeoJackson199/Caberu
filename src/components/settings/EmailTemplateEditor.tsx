@@ -283,15 +283,21 @@ export function EmailTemplateEditor() {
         });
 
         // Sanitize HTML to prevent XSS - allow email-safe tags only
-        return DOMPurify.sanitize(preview, {
+        // SECURITY: Removed 'style' attribute to prevent CSS injection attacks
+        // Validate href URLs to only allow safe protocols (https, mailto)
+        const sanitized = DOMPurify.sanitize(preview, {
             ALLOWED_TAGS: ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
                           'strong', 'b', 'em', 'i', 'u', 'a', 'br', 'hr',
                           'table', 'thead', 'tbody', 'tr', 'th', 'td',
                           'ul', 'ol', 'li', 'img'],
-            ALLOWED_ATTR: ['href', 'src', 'alt', 'style', 'class', 'target', 'rel',
+            ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'target', 'rel',
                           'width', 'height', 'border', 'cellpadding', 'cellspacing'],
             ALLOW_DATA_ATTR: false,
+            // Hook to validate href attributes - only allow safe protocols
+            ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
+        
+        return sanitized;
     };
 
     const currentTemplate = TEMPLATE_TYPES[selectedType];
