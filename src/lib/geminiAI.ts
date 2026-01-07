@@ -1,47 +1,14 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+/**
+ * SECURITY: All AI API calls are now routed through server-side edge functions.
+ * The Gemini API key is stored securely as an edge function secret.
+ * This prevents exposure of the API key in client-side code.
+ */
+
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentBusinessId } from '@/lib/businessScopedSupabase';
 import { TimeSlot } from './appointmentAvailability';
 import { PatientPreferences } from './smartScheduling';
-import { format, getDay } from 'date-fns';
-
-// Slot usage statistics interface (simplified inline)
-interface SlotUsageStats {
-  time_slot: string;
-  day_of_week: number;
-  hour_of_day: number;
-  booking_rate: number;
-  recent_booking_rate: number;
-  total_bookings: number;
-  recent_bookings: number;
-  is_underutilized: boolean;
-}
-
-interface UnderutilizedSlot {
-  time_slot: string;
-  day_of_week: number;
-  booking_rate: number;
-  recent_booking_rate: number;
-  total_bookings: number;
-}
-
-// Stub functions - slot tracking was unused elsewhere, provide minimal implementation
-async function getSlotUsageStatistics(_dentistId: string): Promise<SlotUsageStats[]> {
-  return [];
-}
-
-async function getUnderutilizedSlots(_dentistId: string, _threshold: number): Promise<UnderutilizedSlot[]> {
-  return [];
-}
-
-// Initialize Gemini AI
-const getGeminiAI = () => {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('VITE_GEMINI_API_KEY is not configured. Please add it to your .env file.');
-  }
-  return new GoogleGenerativeAI(apiKey);
-};
+import { format } from 'date-fns';
 
 export interface GeminiSlotRecommendation {
   time: string;
@@ -61,8 +28,8 @@ export interface GeminiAnalysis {
 }
 
 /**
- * Uses Gemini AI to analyze appointment patterns and recommend slots
- * This is the REAL AI making intelligent decisions about slot distribution
+ * Uses AI to analyze appointment patterns and recommend slots
+ * All AI calls are proxied through secure edge functions
  */
 export async function getGeminiSlotRecommendations(
   dentistId: string,
@@ -71,219 +38,62 @@ export async function getGeminiSlotRecommendations(
   availableSlots: TimeSlot[],
   patientPreferences: PatientPreferences | null
 ): Promise<GeminiAnalysis> {
-  const dayOfWeek = getDay(date);
-  let slotStats: SlotUsageStats[] = [];
-
   try {
-    // Get slot usage statistics
-    slotStats = await getSlotUsageStatistics(dentistId);
-    const underutilizedSlots = await getUnderutilizedSlots(dentistId, 50);
+    const businessId = await getCurrentBusinessId();
 
-    // Prepare data for Gemini
-    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
-
-    // Build context for AI
-    const context = buildGeminiContext(
-      availableSlots,
-      slotStats,
-      underutilizedSlots,
-      patientPreferences,
-      dayName
-    );
-
-    // Call Gemini AI
-    const genAI = getGeminiAI();
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-    const prompt = `You are an AI scheduling assistant for a dental practice. Your goal is to help BALANCE the dentist's schedule by promoting time slots that are booked LESS frequently.
-
-**Current Situation:**
-${context}
-
-**Your Task:**
-Analyze the available time slots and recommend which ones to promote to the patient. Focus on:
-1. **Under-utilized slots** (booking rate < 50%) should be PRIORITIZED and promoted
-2. **Balance** - help distribute appointments more evenly throughout the day/week
-3. **Patient preferences** - consider what times the patient usually prefers, but gently guide them toward under-utilized slots if possible
-4. **Practical considerations** - some slots are naturally less popular (very early, late) so be realistic
-
-**Output Format (JSON):**
-{
-  "recommendations": [
-    {
-      "time": "09:00",
-      "score": 85,
-      "reasons": ["Under-utilized slot", "Good for patients", "Helps balance schedule"],
-      "aiReasoning": "This 9 AM slot is rarely booked (only 25% utilization) and would help balance your schedule. It's a good morning time that most patients find convenient.",
-      "shouldPromote": true
-    }
-  ],
-  "summary": "Your dentist's schedule shows that morning slots are under-utilized. I'm recommending these times to help balance the schedule.",
-  "distributionStrategy": "Focus on promoting morning appointments (9-11 AM) which have low booking rates.",
-  "balanceScore": 65
-}
-
-**Important:**
-- Score slots from 0-100 (higher = better for schedule balance)
-- Give HIGHER scores to under-utilized slots (they need promotion)
-- Be persuasive but honest in your reasoning
-- Provide 3-5 top recommendations
-- Include at least one under-utilized slot in top 3 if available`;
-
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
-
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Failed to parse AI response');
-    }
-
-    let aiAnalysis;
-    try {
-      aiAnalysis = JSON.parse(jsonMatch[0]);
-    } catch (error) {
-      console.error('Failed to parse AI JSON response:', error);
-      throw new Error('Failed to parse AI response: ' + (error instanceof Error ? error.message : 'Invalid JSON'));
-    }
-
-    // Enrich recommendations with actual slot data
-    const enrichedRecommendations = aiAnalysis.recommendations.map((rec: any) => {
-      const slot = availableSlots.find(s => s.time === rec.time);
-      const stats = slotStats.find(s => s.time_slot === rec.time && s.day_of_week === dayOfWeek);
-
-      return {
-        ...rec,
-        isUnderutilized: stats ? stats.recent_booking_rate < 50 : false,
-        bookingRate: stats ? stats.recent_booking_rate : 0,
-        available: slot?.available || false
-      };
+    // Call the secure edge function (API key is server-side only)
+    const { data, error } = await supabase.functions.invoke('ai-slot-recommendations', {
+      body: {
+        dentistId,
+        patientId,
+        date: format(date, 'yyyy-MM-dd'),
+        availableSlots,
+        patientPreferences,
+        businessId,
+      },
     });
 
-    // Log this AI recommendation for learning
-    await logAIRecommendation(
-      patientId,
-      dentistId,
-      date,
-      enrichedRecommendations,
-      aiAnalysis.summary
-    );
+    if (error) {
+      console.error('Error calling AI edge function:', error);
+      return getFallbackRecommendations(availableSlots);
+    }
 
-    return {
-      recommendations: enrichedRecommendations,
-      summary: aiAnalysis.summary,
-      distributionStrategy: aiAnalysis.distributionStrategy,
-      balanceScore: aiAnalysis.balanceScore
-    };
-
+    return data as GeminiAnalysis;
   } catch (error) {
-    console.error('Error getting Gemini recommendations:', error);
-
-    // Fallback to rule-based if AI fails
-    return getFallbackRecommendations(availableSlots, dayOfWeek, slotStats);
+    console.error('Error getting AI recommendations:', error);
+    return getFallbackRecommendations(availableSlots);
   }
-}
-
-/**
- * Builds context string for Gemini AI
- */
-function buildGeminiContext(
-  availableSlots: TimeSlot[],
-  slotStats: SlotUsageStats[],
-  underutilizedSlots: any[],
-  patientPreferences: PatientPreferences | null,
-  dayName: string
-): string {
-  const availableTimes = availableSlots
-    .filter(s => s.available)
-    .map(s => s.time)
-    .join(', ');
-
-  const underutilizedInfo = underutilizedSlots
-    .slice(0, 5)
-    .map(s => `${s.time_slot} (${s.recent_booking_rate.toFixed(1)}% booked)`)
-    .join(', ');
-
-  const preferredTimes = patientPreferences?.preferred_time_of_day?.join(', ') || 'no preference';
-
-  const statsOverview = slotStats.length > 0
-    ? `Average booking rate: ${(slotStats.reduce((sum, s) => sum + s.recent_booking_rate, 0) / slotStats.length).toFixed(1)}%`
-    : 'No historical data yet';
-
-  return `
-**Day:** ${dayName}
-**Available Times:** ${availableTimes}
-**Under-utilized Slots (need promotion):** ${underutilizedInfo || 'None identified yet'}
-**Patient Usually Prefers:** ${preferredTimes}
-**Overall Statistics:** ${statsOverview}
-**Number of tracked slots:** ${slotStats.length}
-`;
 }
 
 /**
  * Fallback recommendations if AI fails
  */
-function getFallbackRecommendations(
-  availableSlots: TimeSlot[],
-  dayOfWeek: number,
-  slotStats: SlotUsageStats[]
-): GeminiAnalysis {
+function getFallbackRecommendations(availableSlots: TimeSlot[]): GeminiAnalysis {
   const recommendations = availableSlots
     .filter(slot => slot.available)
     .map(slot => {
-      const stats = slotStats.find(s =>
-        s.time_slot === slot.time && s.day_of_week === dayOfWeek
-      );
-
-      const isUnderutilized = stats ? stats.recent_booking_rate < 50 : false;
-      const bookingRate = stats ? stats.recent_booking_rate : 0;
-
-      // Parse hour from time string (e.g., "09:00" -> 9)
       const hour = parseInt(slot.time.split(':')[0], 10);
-
-      // If no historical data, use time-of-day heuristics
       let score = 50;
       let reasons: string[] = [];
       let shouldPromote = false;
 
-      if (isUnderutilized) {
-        // Has stats and is underutilized
-        score = 80;
-        reasons = ['Under-utilized time slot', 'Helps balance schedule'];
+      if (hour >= 9 && hour <= 11) {
+        score = 75;
+        reasons = ['Popular morning time', 'Good for most patients'];
         shouldPromote = true;
-      } else if (!stats) {
-        // No historical data - use smart defaults based on time of day
-        if (hour >= 9 && hour <= 11) {
-          // Morning slots are generally popular
-          score = 75;
-          reasons = ['Popular morning time', 'Good for most patients'];
-          shouldPromote = true;
-        } else if (hour >= 14 && hour <= 16) {
-          // Early afternoon is also good
-          score = 70;
-          reasons = ['Convenient afternoon time', 'Good availability'];
-          shouldPromote = true;
-        } else if (hour >= 8 && hour < 9) {
-          // Early morning
-          score = 60;
-          reasons = ['Early morning slot', 'Beat the rush'];
-          shouldPromote = false;
-        } else if (hour >= 16 && hour < 18) {
-          // Late afternoon
-          score = 65;
-          reasons = ['After-work hours', 'Convenient for working professionals'];
-          shouldPromote = false;
-        } else {
-          score = 50;
-          reasons = ['Available slot'];
-          shouldPromote = false;
-        }
+      } else if (hour >= 14 && hour <= 16) {
+        score = 70;
+        reasons = ['Convenient afternoon time', 'Good availability'];
+        shouldPromote = true;
+      } else if (hour >= 8 && hour < 9) {
+        score = 60;
+        reasons = ['Early morning slot', 'Beat the rush'];
+      } else if (hour >= 16 && hour < 18) {
+        score = 65;
+        reasons = ['After-work hours', 'Convenient for working professionals'];
       } else {
-        // Has stats but well-utilized
         score = 50;
         reasons = ['Available slot'];
-        shouldPromote = false;
       }
 
       return {
@@ -291,19 +101,18 @@ function getFallbackRecommendations(
         score,
         reasons,
         aiReasoning: shouldPromote
-          ? `This ${slot.time} slot is recommended based on scheduling patterns and is a convenient time for most patients.`
+          ? `This ${slot.time} slot is recommended based on scheduling patterns.`
           : `This is an available time slot.`,
-        isUnderutilized,
-        bookingRate,
-        shouldPromote
+        isUnderutilized: false,
+        bookingRate: 0,
+        shouldPromote,
       };
     })
     .sort((a, b) => b.score - a.score);
 
-  // Ensure at least top 3 slots are promoted if we have that many
+  // Force promote top 3 if none promoted
   const promotedCount = recommendations.filter(r => r.shouldPromote).length;
   if (promotedCount === 0 && recommendations.length > 0) {
-    // Force promote top 3 slots
     recommendations.slice(0, Math.min(3, recommendations.length)).forEach(rec => {
       rec.shouldPromote = true;
       rec.score = Math.max(rec.score, 70);
@@ -315,51 +124,12 @@ function getFallbackRecommendations(
 
   return {
     recommendations,
-    summary: promotedCount > 0 || recommendations.length > 0
-      ? `I've highlighted ${Math.max(promotedCount, Math.min(3, recommendations.length))} time slots that work well based on scheduling patterns.`
+    summary: recommendations.length > 0
+      ? `I've highlighted ${Math.max(promotedCount, Math.min(3, recommendations.length))} time slots based on scheduling patterns.`
       : 'Showing available slots.',
-    distributionStrategy: 'Recommending optimal time slots based on time-of-day preferences and scheduling patterns.',
-    balanceScore: 50
+    distributionStrategy: 'Recommending optimal time slots based on time-of-day preferences.',
+    balanceScore: 50,
   };
-}
-
-/**
- * Logs AI recommendation to database for learning
- */
-async function logAIRecommendation(
-  patientId: string,
-  dentistId: string,
-  date: Date,
-  recommendations: GeminiSlotRecommendation[],
-  aiReasoning: string
-): Promise<string | null> {
-  const businessId = await getCurrentBusinessId();
-
-  try {
-    const { data, error } = await supabase
-      .from('slot_recommendations')
-      .insert({
-        business_id: businessId,
-        patient_id: patientId,
-        dentist_id: dentistId,
-        recommended_slots: recommendations,
-        ai_model_used: 'gemini-pro',
-        ai_reasoning: aiReasoning,
-        selected_date: format(date, 'yyyy-MM-dd')
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('Error logging AI recommendation:', error);
-      return null;
-    }
-
-    return data.id;
-  } catch (error) {
-    console.error('Error logging AI recommendation:', error);
-    return null;
-  }
 }
 
 /**
@@ -378,7 +148,7 @@ export async function updateAIRecommendationSelection(
         selected_slot: selectedTime,
         appointment_id: appointmentId,
         was_ai_recommended: wasAIRecommended,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', recommendationId);
   } catch (error) {
@@ -397,9 +167,9 @@ export async function getAIRecommendationSuccessRate(
   success_rate: number;
   completed_appointments: number;
 }> {
-  const businessId = await getCurrentBusinessId();
-
   try {
+    const businessId = await getCurrentBusinessId();
+
     const { data, error } = await supabase
       .from('slot_recommendations')
       .select('was_ai_recommended, appointment_completed')
@@ -411,7 +181,7 @@ export async function getAIRecommendationSuccessRate(
         total_recommendations: 0,
         accepted_recommendations: 0,
         success_rate: 0,
-        completed_appointments: 0
+        completed_appointments: 0,
       };
     }
 
@@ -423,7 +193,7 @@ export async function getAIRecommendationSuccessRate(
       total_recommendations: total,
       accepted_recommendations: accepted,
       success_rate: total > 0 ? (accepted / total) * 100 : 0,
-      completed_appointments: completed
+      completed_appointments: completed,
     };
   } catch (error) {
     console.error('Error getting AI success rate:', error);
@@ -431,41 +201,53 @@ export async function getAIRecommendationSuccessRate(
       total_recommendations: 0,
       accepted_recommendations: 0,
       success_rate: 0,
-      completed_appointments: 0
+      completed_appointments: 0,
     };
   }
 }
 
 /**
- * Simple function to test if Gemini AI is configured
+ * Test if AI service is configured and working
  */
 export async function testGeminiConnection(): Promise<{
   success: boolean;
   message: string;
 }> {
   try {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
+    // Test by calling the edge function with minimal data
+    const { data, error } = await supabase.functions.invoke('ai-slot-recommendations', {
+      body: {
+        dentistId: 'test',
+        patientId: 'test',
+        date: new Date().toISOString().split('T')[0],
+        availableSlots: [{ time: '09:00', available: true }],
+        patientPreferences: null,
+        businessId: 'test',
+      },
+    });
+
+    if (error) {
+      // 401/403 means auth required, which is expected for test
+      if (error.message?.includes('Unauthorized') || error.message?.includes('Access denied')) {
+        return {
+          success: true,
+          message: 'AI service is configured (authentication required for actual use)',
+        };
+      }
       return {
         success: false,
-        message: 'VITE_GEMINI_API_KEY is not configured'
+        message: `AI service error: ${error.message}`,
       };
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-    const result = await model.generateContent('Say "hello" if you can hear me');
-    const response = result.response.text();
-
     return {
       success: true,
-      message: `Gemini AI connected successfully! Response: ${response}`
+      message: 'AI service connected successfully!',
     };
   } catch (error) {
     return {
       success: false,
-      message: `Failed to connect to Gemini AI: ${error instanceof Error ? error.message : 'Unknown error'}`
+      message: `Failed to connect to AI service: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
   }
 }

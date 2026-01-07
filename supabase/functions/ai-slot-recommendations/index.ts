@@ -12,36 +12,93 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Validate authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Supabase client with user's auth token
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error('Auth error:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const { dentistId, patientId, date, availableSlots } = await req.json();
+    const { dentistId, patientId, date, availableSlots, businessId } = await req.json();
 
-    console.log('AI slot recommendation request:', { dentistId, patientId, date, slotsCount: availableSlots?.length });
+    // SECURITY: Validate required fields
+    if (!dentistId || !patientId || !date || !availableSlots) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Get Supabase client
-    const supabaseClient = createClient(
+    // SECURITY: Verify user has access to this business (if businessId provided)
+    if (businessId) {
+      const { data: membership } = await supabaseClient
+        .from('business_members')
+        .select('id')
+        .eq('business_id', businessId)
+        .maybeSingle();
+
+      if (!membership) {
+        console.error('User does not have access to business:', businessId);
+        return new Response(
+          JSON.stringify({ error: 'Access denied' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    console.log('AI slot recommendation request:', { 
+      dentistId, 
+      patientId, 
+      date, 
+      slotsCount: availableSlots?.length,
+      userId: user.id 
+    });
+
+    // Get slot usage statistics using service role for internal query
+    const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get slot usage statistics
-    const { data: slotStats } = await supabaseClient
+    const { data: slotStats } = await serviceClient
       .from('slot_usage_statistics')
       .select('*')
       .eq('dentist_id', dentistId)
       .order('recent_booking_rate', { ascending: true });
 
     // Get patient preferences
-    const { data: patientPrefs } = await supabaseClient
+    const { data: patientPrefs } = await serviceClient
       .from('patient_preferences')
       .select('*')
       .eq('patient_id', patientId)
       .maybeSingle();
 
-    // Prepare context for AI
+    // Prepare context for AI - NO sensitive patient data included
     const dayOfWeek = new Date(date).getDay();
     const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
 
@@ -55,7 +112,7 @@ serve(async (req) => {
 
     const availableTimesStr = availableSlots.map((s: any) => s.time).join(', ');
 
-    // Build prompt for AI
+    // Build prompt for AI - anonymized, no personal data
     const prompt = `You are an AI scheduling assistant for a dental practice. Your goal is to help BALANCE the dentist's schedule by promoting time slots that are booked LESS frequently.
 
 **Current Situation:**
@@ -85,7 +142,7 @@ Analyze the available time slots and recommend which ones to promote to the pati
 
     console.log('Calling Lovable AI with prompt length:', prompt.length);
 
-    // Call Lovable AI
+    // Call Lovable AI - API key is server-side only, never exposed to client
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -131,19 +188,23 @@ Analyze the available time slots and recommend which ones to promote to the pati
 
     const aiAnalysis = JSON.parse(jsonMatch[0]);
 
-    // Log recommendation for analytics
-    await supabaseClient
-      .from('ai_slot_recommendations')
-      .insert({
-        patient_id: patientId,
-        dentist_id: dentistId,
-        recommended_slots: aiAnalysis.showSlots || [],
-        ai_model_used: 'google/gemini-2.5-flash',
-        ai_reasoning: aiAnalysis.summary,
-        selected_date: date
-      });
+    // Log recommendation for analytics - use service client
+    try {
+      await serviceClient
+        .from('ai_slot_recommendations')
+        .insert({
+          patient_id: patientId,
+          dentist_id: dentistId,
+          recommended_slots: aiAnalysis.showSlots || [],
+          ai_model_used: 'google/gemini-2.5-flash',
+          ai_reasoning: aiAnalysis.summary,
+          selected_date: date
+        });
+    } catch (logError) {
+      console.error('Failed to log recommendation (non-critical):', logError);
+    }
 
-    console.log('AI code generated - show these slots:', aiAnalysis.showSlots);
+    console.log('AI recommendation generated - show these slots:', aiAnalysis.showSlots);
 
     return new Response(
       JSON.stringify({
