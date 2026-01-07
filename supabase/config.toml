@@ -91,7 +91,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.database-api]
-verify_jwt = false
+verify_jwt = false  # We handle auth manually to support both JWT and API key
 
 [functions.apply-promo-code]
 verify_jwt = true
