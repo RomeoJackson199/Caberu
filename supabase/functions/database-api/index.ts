@@ -1,20 +1,105 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-};
+// SECURITY: Allowed tables for read operations (whitelist approach)
+const READ_ALLOWED_TABLES = new Set([
+  'profiles', 'appointments', 'dentists', 'businesses', 'business_services',
+  'appointment_types', 'dentist_availability', 'dentist_vacation_days',
+  'patient_allergies', 'business_members', 'patient_preferences', 
+  'appointment_reminders', 'notes', 'communication_logs', 'patient_documents',
+  'appointment_slots', 'provider_business_map'
+]);
+
+// SECURITY: Allowed tables for write operations (very restricted)
+const WRITE_ALLOWED_TABLES = new Set([
+  'appointments', 'notes', 'communication_logs', 'appointment_reminders',
+  'reschedule_suggestions', 'slot_recommendations'
+]);
+
+// SECURITY: Validate table name to prevent SQL injection and unauthorized access
+function validateTable(table: string, action: string): { valid: boolean; error?: string } {
+  if (!table || typeof table !== 'string') {
+    return { valid: false, error: 'Table name is required' };
+  }
+  
+  // Only allow alphanumeric and underscores
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(table)) {
+    return { valid: false, error: 'Invalid table name format' };
+  }
+  
+  const isReadAction = ['read_table'].includes(action);
+  const isWriteAction = ['insert_record', 'update_record', 'delete_record'].includes(action);
+  
+  if (isReadAction && !READ_ALLOWED_TABLES.has(table)) {
+    return { valid: false, error: `Table "${table}" is not accessible` };
+  }
+  
+  if (isWriteAction && !WRITE_ALLOWED_TABLES.has(table)) {
+    return { valid: false, error: `Write operations not allowed on table "${table}"` };
+  }
+  
+  return { valid: true };
+}
+
+// SECURITY: Validate API key or JWT for authentication
+async function validateAuth(req: Request, supabase: any): Promise<{ valid: boolean; error?: string; userId?: string }> {
+  const authHeader = req.headers.get('authorization');
+  
+  if (!authHeader) {
+    return { valid: false, error: 'Authorization header required' };
+  }
+  
+  // Check for API key authentication (for ElevenLabs/MCP integration)
+  const apiKey = Deno.env.get('DATABASE_API_SECRET') || Deno.env.get('ELEVENLABS_API_KEY');
+  if (apiKey) {
+    const providedKey = authHeader.replace('Bearer ', '');
+    if (providedKey === apiKey) {
+      console.log('Auth: API key validated');
+      return { valid: true };
+    }
+  }
+  
+  // Check for JWT authentication
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Validate JWT using Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      console.error('JWT validation failed:', error?.message);
+      return { valid: false, error: 'Invalid or expired token' };
+    }
+    
+    console.log('Auth: JWT validated for user:', user.id);
+    return { valid: true, userId: user.id };
+  }
+  
+  return { valid: false, error: 'Invalid authorization format' };
+}
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
+  // Handle CORS preflight
+  const preflightResponse = handleCorsPreflightSafe(req);
+  if (preflightResponse) return preflightResponse;
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  // SECURITY: Validate authentication for all requests
+  const authResult = await validateAuth(req, supabase);
+  if (!authResult.valid) {
+    console.error('Authentication failed:', authResult.error);
+    return new Response(
+      JSON.stringify({ success: false, error: authResult.error }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
   // Handle GET requests with query parameters
   if (req.method === 'GET') {
@@ -30,7 +115,7 @@ serve(async (req) => {
             documentation: 'See README.md for usage examples',
             available_actions: {
               read_only_get: ['read_table', 'list_appointments', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times'],
-              all_actions_post: ['read_table', 'insert_record', 'update_record', 'delete_record', 'list_appointments', 'create_appointment', 'update_appointment', 'delete_appointment', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'custom_query']
+              all_actions_post: ['read_table', 'insert_record', 'update_record', 'delete_record', 'list_appointments', 'create_appointment', 'update_appointment', 'delete_appointment', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times', 'get_patient', 'get_dentist']
             },
             example: '?action=search_patients&name=John'
           }),
@@ -52,6 +137,16 @@ serve(async (req) => {
       switch (action) {
         case 'read_table': {
           const { table, columns = '*', limit = 100 } = params;
+          
+          // SECURITY: Validate table access
+          const tableValidation = validateTable(table, 'read_table');
+          if (!tableValidation.valid) {
+            return new Response(
+              JSON.stringify({ success: false, error: tableValidation.error }),
+              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          
           let query = supabase.from(table).select(columns);
           
           // Apply filters from query params
@@ -352,7 +447,7 @@ serve(async (req) => {
           error: 'Request body is required. Please provide a JSON payload with an "action" field.',
           available_actions: {
             read_only_get: ['read_table', 'list_appointments', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times'],
-            all_actions_post: ['read_table', 'insert_record', 'update_record', 'delete_record', 'list_appointments', 'create_appointment', 'update_appointment', 'delete_appointment', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times', 'custom_query']
+            all_actions_post: ['read_table', 'insert_record', 'update_record', 'delete_record', 'list_appointments', 'create_appointment', 'update_appointment', 'delete_appointment', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times', 'get_patient', 'get_dentist']
           },
           example: { action: 'search_patients', name: 'John' }
         }),
@@ -379,8 +474,8 @@ serve(async (req) => {
     if (!action) {
       const known = new Set([
         'read_table', 'list_appointments', 'create_appointment', 'update_appointment', 'delete_appointment',
-        'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times', 'custom_query',
-        'execute_query', 'get_patient'
+        'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times',
+        'get_patient', 'get_dentist'
       ]);
       for (const k of Object.keys(incoming || {})) {
         const key = (k || '').toString().trim();
@@ -444,7 +539,7 @@ serve(async (req) => {
           hint: 'We attempted to infer the action but could not. Provide "action" or include patient_id, dentist_id, and appointment_date to create an appointment.',
           available_actions: {
             read_only_get: ['read_table', 'list_appointments', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times'],
-            all_actions_post: ['read_table', 'insert_record', 'update_record', 'delete_record', 'list_appointments', 'create_appointment', 'update_appointment', 'delete_appointment', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times', 'custom_query'],
+            all_actions_post: ['read_table', 'insert_record', 'update_record', 'delete_record', 'list_appointments', 'create_appointment', 'update_appointment', 'delete_appointment', 'search_patients', 'lookup_patient_by_phone', 'search_dentists', 'get_available_times', 'get_patient', 'get_dentist'],
           },
           example: { action: 'search_patients', name: 'John' },
         }),
@@ -455,9 +550,19 @@ serve(async (req) => {
     let result;
 
     switch (action) {
-      // Read any table
+      // Read any table (with security validation)
       case 'read_table': {
         const { table, columns = '*', filter, order_by, ascending = true, limit = 100 } = params;
+        
+        // SECURITY: Validate table access
+        const tableValidation = validateTable(table, 'read_table');
+        if (!tableValidation.valid) {
+          return new Response(
+            JSON.stringify({ success: false, error: tableValidation.error }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         let query = supabase.from(table).select(columns);
 
         if (filter) {
