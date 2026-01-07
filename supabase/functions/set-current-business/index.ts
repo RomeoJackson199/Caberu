@@ -75,6 +75,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Verify the business exists first (security check)
+    const { data: businessExists, error: businessExistsError } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('id', targetBusinessId)
+      .single();
+
+    if (businessExistsError || !businessExists) {
+      return new Response(JSON.stringify({ error: 'Business not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Verify membership
     const { data: membership, error: membershipError } = await supabase
       .from('business_members')
@@ -84,14 +98,26 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     // If not a member, allow guests (patients) to set context for browsing/booking
+    // Guest access is read-only and controlled by RLS on data tables
     if (!membership) {
-      await supabase
+      const { error: sessionError } = await supabase
         .from('session_business')
         .upsert({
           user_id: user.id,
           business_id: targetBusinessId,
           updated_at: new Date().toISOString(),
         });
+
+      if (sessionError) {
+        console.error('Session upsert error for guest:', sessionError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to set business context' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
 
       return new Response(
         JSON.stringify({
