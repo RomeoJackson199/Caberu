@@ -3822,6 +3822,10 @@ export type Database = {
       }
       get_user_business_ids: { Args: never; Returns: string[] }
       get_user_profile_id: { Args: { _user_id: string }; Returns: string }
+      has_active_consent: {
+        Args: { p_patient_id: string; p_practice_id: string }
+        Returns: boolean
+      }
       has_business_access: {
         Args: { target_business_id: string }
         Returns: boolean
@@ -3835,6 +3839,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_valid_health_consent: {
+        Args: { p_patient_id: string; p_practice_id: string }
         Returns: boolean
       }
       increment_email_count: {
