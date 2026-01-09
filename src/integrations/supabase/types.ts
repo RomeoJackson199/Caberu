@@ -3820,6 +3820,7 @@ export type Database = {
         Args: { p_treatment_plan_id: string }
         Returns: Json
       }
+      get_user_business_ids: { Args: never; Returns: string[] }
       get_user_profile_id: { Args: { _user_id: string }; Returns: string }
       has_business_access: {
         Args: { target_business_id: string }
