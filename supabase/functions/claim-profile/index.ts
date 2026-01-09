@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
-};
+// CORS configuration - secure origins only (HIPAA/GDPR compliant)
+import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+
+// Helper to get CORS headers from request
+const getRequestCorsHeaders = (req: Request) => getCorsHeaders(req.headers.get('Origin'));
 
 interface Body {
   email: string;
@@ -13,6 +13,9 @@ interface Body {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   console.log('Claim profile function called:', req.method, req.url);
 
   if (req.method === 'OPTIONS') {
