@@ -316,7 +316,7 @@ serve(async (req) => {
           console.log('Attempting phone lookup...');
           if (phoneRaw) {
             const r1 = await supabase
-              .from('profiles')
+              .from('secure_profiles_view')
               .select('id, first_name, last_name, email, phone, date_of_birth')
               .eq('phone', phoneRaw)
               .maybeSingle();
@@ -324,7 +324,7 @@ serve(async (req) => {
           }
           if (!patient && normalizedPhone) {
             const r2 = await supabase
-              .from('profiles')
+              .from('secure_profiles_view')
               .select('id, first_name, last_name, email, phone, date_of_birth')
               .eq('phone', normalizedPhone)
               .maybeSingle();
@@ -335,7 +335,7 @@ serve(async (req) => {
         // Strategy 2: name + DOB
         if (!patient && firstName && lastName && dobISO) {
           const res = await supabase
-            .from('profiles')
+            .from('secure_profiles_view')
             .select('id, first_name, last_name, email, phone, date_of_birth')
             .eq('date_of_birth', dobISO)
             .ilike('first_name', `${firstName}%`)
@@ -347,7 +347,7 @@ serve(async (req) => {
         // Strategy 3: name-only fuzzy
         if (!patient && firstName && lastName) {
           const res = await supabase
-            .from('profiles')
+            .from('secure_profiles_view')
             .select('id, first_name, last_name, email, phone, date_of_birth')
             .ilike('first_name', `${firstName}%`)
             .ilike('last_name', `${lastName}%`)
@@ -774,7 +774,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
   if (phone) {
     console.log('Attempting phone lookup...');
     let res = await supabase
-      .from('profiles')
+      .from('secure_profiles_view')
       .select('id, first_name, last_name, email, phone, date_of_birth')
       .eq('phone', phone)
       .maybeSingle();
@@ -783,7 +783,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
 
     if (!patient && normalizedPhone && normalizedPhone !== phone) {
       res = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name, email, phone, date_of_birth')
         .eq('phone', normalizedPhone)
         .maybeSingle();
@@ -794,7 +794,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
     // Try searching in phone field with LIKE for partial matches
     if (!patient && normalizedPhone) {
       res = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name, email, phone, date_of_birth')
         .ilike('phone', `%${normalizedPhone}%`)
         .maybeSingle();
@@ -807,7 +807,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
   if (!patient && firstName && lastName && dobISO) {
     console.log('Attempting name + DOB lookup...');
     const res = await supabase
-      .from('profiles')
+      .from('secure_profiles_view')
       .select('id, first_name, last_name, email, phone, date_of_birth')
       .eq('date_of_birth', dobISO)
       .ilike('first_name', `${firstName}%`)
@@ -821,7 +821,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
   if (!patient && firstName && lastName) {
     console.log('Attempting name-only lookup...');
     const res = await supabase
-      .from('profiles')
+      .from('secure_profiles_view')
       .select('id, first_name, last_name, email, phone, date_of_birth')
       .ilike('first_name', `${firstName}%`)
       .ilike('last_name', `${lastName}%`)
@@ -851,7 +851,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
       if ((authError as any).code === 'email_exists') {
         console.log('Email exists, attempting to find existing profile...');
         let pr = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id, first_name, last_name, email, phone')
           .eq('email', tempEmail)
           .maybeSingle();
@@ -859,7 +859,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
 
         if (!patient && phone) {
           pr = await supabase
-            .from('profiles')
+            .from('secure_profiles_view')
             .select('id, first_name, last_name, email, phone')
             .eq('phone', phone)
             .maybeSingle();
@@ -868,7 +868,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
 
         if (!patient && normalizedPhone) {
           pr = await supabase
-            .from('profiles')
+            .from('secure_profiles_view')
             .select('id, first_name, last_name, email, phone')
             .eq('phone', normalizedPhone)
             .maybeSingle();
@@ -885,7 +885,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
       console.log('Auth user created, fetching profile...');
       await new Promise(resolve => setTimeout(resolve, 100));
       const { data: newProfile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name, email, phone')
         .eq('user_id', authUser.user.id)
         .maybeSingle();
@@ -1051,7 +1051,7 @@ async function getPatientInfo(supabase: any, args: any, callerPhone: string, bus
   
   const searchPhone = phone || callerPhone;
   
-  let query = supabase.from('profiles').select('id, first_name, last_name, phone, email, date_of_birth');
+  let query = supabase.from('secure_profiles_view').select('id, first_name, last_name, phone, email, date_of_birth');
   
   if (searchPhone) {
     query = query.eq('phone', searchPhone);

@@ -471,7 +471,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'search_patients': {
-        let query = supabase.from('profiles').select(`
+        let query = supabase.from('secure_profiles_view').select(`
           id, first_name, last_name, email, phone, date_of_birth, address, medical_history, created_at
         `);
 
@@ -525,7 +525,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_patient': {
         const { data: patient, error: patientError } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('*')
           .eq('id', args.patient_id)
           .single();
@@ -562,7 +562,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'lookup_patient_by_phone': {
         const { data: patient, error } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id, first_name, last_name, email, phone, date_of_birth')
           .eq('phone', args.phone)
           .maybeSingle();

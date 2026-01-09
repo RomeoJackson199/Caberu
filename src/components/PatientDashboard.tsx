@@ -240,7 +240,7 @@ const PatientDashboardComponent = ({
       const {
         data: profile,
         error
-      } = await supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+      } = await supabase.from('secure_profiles_view').select('*').eq('user_id', user.id).maybeSingle();
       if (error) {
         console.error('Error fetching user profile:', error);
         setError(`Database error: ${error.message}`);
@@ -266,7 +266,17 @@ const PatientDashboardComponent = ({
           setError(`Failed to create user profile: ${createError.message}`);
           return;
         }
-        setUserProfile(newProfile);
+        const { data: reloadedProfile, error: reloadError } = await supabase
+          .from('secure_profiles_view')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (reloadError) {
+          console.error('Error reloading profile:', reloadError);
+          setError(`Failed to reload user profile: ${reloadError.message}`);
+          return;
+        }
+        setUserProfile(reloadedProfile || newProfile);
       } else {
         setUserProfile(profile);
       }
