@@ -14,6 +14,8 @@ export interface ProfileData {
   profile_picture_url?: string;
 }
 
+const PROFILE_READ_SOURCE = 'secure_profiles_view';
+
 // Profanity word list (can be expanded)
 const PROFANITY_LIST = [
   'fuck', 'shit', 'ass', 'bitch', 'damn', 'bastard', 'crap', 'piss',
@@ -229,7 +231,7 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
 
     // Verify the save by reading back
     const { data: verifyData, error: verifyError } = await supabase
-      .from('profiles')
+      .from(PROFILE_READ_SOURCE)
       .select('first_name, last_name, phone, date_of_birth, medical_history, address, emergency_contact, ai_opt_out')
       .eq('user_id', user.id)
       .maybeSingle();
@@ -252,7 +254,7 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
   try {
     // Try to load from database first
     const { data, error } = await supabase
-      .from('profiles')
+      .from(PROFILE_READ_SOURCE)
       .select('first_name, last_name, phone, date_of_birth, medical_history, address, emergency_contact, ai_opt_out, profile_picture_url')
       .eq('user_id', user.id)
       .maybeSingle();
@@ -286,7 +288,7 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
 export const testDatabaseConnection = async () => {
   try {
     const { data, error } = await supabase
-      .from('profiles')
+      .from(PROFILE_READ_SOURCE)
       .select('count')
       .limit(1);
 

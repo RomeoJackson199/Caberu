@@ -178,7 +178,7 @@ export const HealthData = ({
         }
       } else if (mode === 'dentist' && patientId) {
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('*')
           .eq('id', patientId)
           .single();

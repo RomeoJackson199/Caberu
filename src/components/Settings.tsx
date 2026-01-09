@@ -240,7 +240,7 @@ export const Settings = ({ user }: SettingsProps) => {
   };
 
 const handleDownloadData = async () => {
-  const { data: profile } = await supabase.from('profiles').select('id,*').eq('user_id', user.id).single();
+  const { data: profile } = await supabase.from('secure_profiles_view').select('id,*').eq('user_id', user.id).single();
   const profileId = profile?.id;
   const { data: appointments } = profileId ? await supabase.from('appointments').select('*').eq('patient_id', profileId) : { data: [] } as any;
   const { data: notes } = profileId ? await supabase.from('notes').select('*').eq('patient_id', profileId) : { data: [] } as any;
