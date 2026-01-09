@@ -34,13 +34,11 @@ interface PatientContext {
   treatment_plans?: TreatmentPlan[];
 }
 
-// CORS configuration - permissive for all environments
-const getCorsHeaders = () => {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
+// CORS configuration - secure origins only (HIPAA/GDPR compliant)
+import { getCorsHeaders as getSecureCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+
+const getCorsHeaders = (requestOrigin: string | null = null) => {
+  return getSecureCorsHeaders(requestOrigin);
 };
 
 const corsHeaders = getCorsHeaders();
@@ -107,6 +105,9 @@ const sanitizeAIResponse = (response: string): string => {
 };
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

@@ -2,10 +2,11 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// CORS configuration - secure origins only (HIPAA/GDPR compliant)
+import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+
+// Helper to get CORS headers from request
+const getRequestCorsHeaders = (req: Request) => getCorsHeaders(req.headers.get('Origin'));
 
 // Tool definitions for OpenAI function calling
 const tools = [
@@ -171,6 +172,9 @@ const sanitizeAIResponse = (response: string): string => {
 // systemPrompt will be dynamically generated inside the serve function with dentist info
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

@@ -36,9 +36,9 @@ verify_jwt = true
 [functions.send-import-invitations]
 verify_jwt = true
 
-[functions.dev-claim-bypass]
-verify_jwt = false
-
+## SECURITY: dev-claim-bypass removed - was a security risk
+## [functions.dev-claim-bypass]
+## verify_jwt = false
 [functions.claim-profile]
 verify_jwt = false
 
