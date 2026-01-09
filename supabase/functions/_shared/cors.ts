@@ -73,18 +73,15 @@ export function jsonResponseSafe(
   });
 }
 
-// Legacy support - for gradual migration
-// TODO: Remove after all functions are updated to use safe versions
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-};
+// SECURITY NOTE: The insecure wildcard corsHeaders export has been removed.
+// All functions should use getCorsHeaders() with origin validation instead.
+// If you see this error, update your function to import and use:
+//   - getCorsHeaders(origin) for headers
+//   - handleCorsPreflightSafe(req) for OPTIONS requests
 
 export default {
   getCorsHeaders,
   handleCorsPreflightSafe,
   jsonResponseSafe,
-  corsHeaders,
   ALLOWED_ORIGINS,
 };
