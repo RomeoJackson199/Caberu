@@ -129,6 +129,45 @@ serve(async (req) => {
         console.error('🚨 SECURITY: Patient context missing patient ID - potential data leak risk');
         throw new Error('Invalid patient context - missing patient identifier');
       }
+      
+      // 🔒 GDPR/HIPAA: Check patient consent before AI processing of health data
+      if (business_id) {
+        try {
+          const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+          const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+          const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+          const consentClient = createClient(supabaseUrl, supabaseKey);
+          
+          const patientId = patient_context.patient?.id || patient_context.patient_id;
+          
+          // Check for valid health data consent
+          const { data: hasConsent, error: consentError } = await consentClient
+            .rpc('has_valid_health_consent', {
+              p_patient_id: patientId,
+              p_practice_id: business_id
+            });
+          
+          if (consentError) {
+            console.warn('🔒 CONSENT: Error checking consent, proceeding with caution:', consentError.message);
+            // Log but don't block - consent table might not exist in all deployments
+          } else if (hasConsent === false) {
+            console.warn('🔒 CONSENT: Patient has not consented to health data AI processing');
+            return new Response(JSON.stringify({ 
+              response: "I cannot access this patient's health data as they have not provided consent for AI-assisted processing. Please ensure the patient has granted consent for health data processing before using AI consultation features.",
+              suggestions: ["Request patient consent", "Review consent settings"],
+              urgency_detected: false,
+              emergency_detected: false,
+              consent_required: true
+            }), {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        } catch (consentCheckError) {
+          console.warn('🔒 CONSENT: Could not verify consent, proceeding:', consentCheckError);
+          // Don't block if consent check fails - might be legacy deployment
+        }
+      }
     }
 
     // 🔒 SECURITY: Sanitize patient context to remove any accidental cross-patient data
