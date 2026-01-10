@@ -410,7 +410,10 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           .insert(dentistPayload);
       }
 
-      // Verify the update by refetching the profile to ensure database commit
+      // Wait a moment to ensure database transaction is fully committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Verify the update by refetching the profile with cache bypass
       const { data: verifyProfile, error: verifyError } = await supabase
         .from('profiles')
         .select('onboarding_completed')
@@ -427,11 +430,8 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         description: "Your account has been set up successfully.",
       });
 
-      // Close the modal and let the orchestrator handle the state refresh
+      // Close the modal - orchestrator will refetch and update state
       onClose();
-
-      // Navigate to portal to trigger a fresh mount of components
-      window.location.href = '/portal';
     } catch (error: any) {
       console.error('Onboarding error:', error);
       toast({
