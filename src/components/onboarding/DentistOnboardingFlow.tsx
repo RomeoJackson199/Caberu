@@ -331,7 +331,10 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         })
         .eq('user_id', userId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw new Error(`Failed to update profile: ${updateError.message}`);
+      }
 
       // Update existing business record (business should already exist from /create-business)
       // First check profile.business_id, then check if they OWN a business
@@ -407,13 +410,28 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           .insert(dentistPayload);
       }
 
+      // Verify the update by refetching the profile to ensure database commit
+      const { data: verifyProfile, error: verifyError } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('user_id', userId)
+        .single();
+
+      if (verifyError || !verifyProfile?.onboarding_completed) {
+        console.error('Failed to verify onboarding completion:', verifyError);
+        throw new Error('Onboarding update verification failed. Please try again.');
+      }
+
       toast({
         title: "Welcome to Caberu!",
         description: "Your account has been set up successfully.",
       });
 
+      // Close the modal and let the orchestrator handle the state refresh
       onClose();
-      window.location.reload(); // Refresh to apply new role
+
+      // Navigate to portal to trigger a fresh mount of components
+      window.location.href = '/portal';
     } catch (error: any) {
       console.error('Onboarding error:', error);
       toast({
