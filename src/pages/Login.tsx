@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Shield, Sparkles, Zap, Clock } from "lucide-react";
+import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
+import { useDespiaNative, useBiometricAuth, useHaptics, useStorageVault } from '@/hooks/useDespia';
 
 
 
@@ -26,6 +27,62 @@ const Login = () => {
     email: "",
     password: "",
   });
+
+  // Native Apple features
+  const isNative = useDespiaNative();
+  const biometrics = useBiometricAuth();
+  const haptics = useHaptics();
+  const { value: savedCredentials, save: saveCredentials } = useStorageVault<{ email: string; token: string }>('biometric_credentials');
+
+  // Biometric login handler
+  const handleBiometricLogin = async () => {
+    if (!biometrics.isAvailable) return;
+
+    haptics.impact();
+    const result = await biometrics.authenticate();
+
+    if (result.authenticated && savedCredentials) {
+      haptics.success();
+      setIsLoading(true);
+
+      try {
+        // Use stored refresh token to restore session
+        const { data, error } = await supabase.auth.refreshSession({
+          refresh_token: savedCredentials.token
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Welcome back!",
+          description: "Signed in with Face ID",
+        });
+        navigate("/select-business");
+      } catch (error) {
+        haptics.error();
+        toast({
+          title: "Biometric login failed",
+          description: "Please sign in with your email and password",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (!result.authenticated) {
+      haptics.error();
+      toast({
+        title: "Authentication failed",
+        description: result.error || "Please try again",
+        variant: "destructive",
+      });
+    } else if (!savedCredentials) {
+      haptics.warning();
+      toast({
+        title: "No saved credentials",
+        description: "Sign in once with email to enable biometric login",
+      });
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -148,6 +205,23 @@ const Login = () => {
       // REMOVED: session_business deletion was breaking business context
       // The BusinessPicker will show naturally if needed via App.tsx logic
 
+      // Save credentials for biometric login (if native app)
+      if (isNative && biometrics.isAvailable) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.refresh_token && session.user?.email) {
+            await saveCredentials({
+              email: session.user.email,
+              token: session.refresh_token
+            }, true); // locked = true requires biometric to access
+          }
+        } catch (err) {
+          // Don't fail login if credential saving fails
+          logger.error("Failed to save biometric credentials:", err);
+        }
+      }
+
+      haptics.success();
       toast({
         title: "Welcome back!",
         description: "You've successfully signed in.",
@@ -304,6 +378,20 @@ const Login = () => {
 
             <div className="rounded-2xl border bg-card p-6 shadow-sm">
               <div className="space-y-4">
+                {/* Biometric Sign In (Native iOS only) */}
+                {isNative && biometrics.isAvailable && savedCredentials && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBiometricLogin}
+                    disabled={isLoading || biometrics.isAuthenticating}
+                    className="w-full h-12 border-2 hover:bg-accent bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200"
+                  >
+                    <Fingerprint className="mr-2 h-5 w-5 text-blue-600" />
+                    {biometrics.isAuthenticating ? 'Authenticating...' : 'Sign in with Face ID'}
+                  </Button>
+                )}
+
                 {/* Google Sign In */}
                 <Button
                   type="button"

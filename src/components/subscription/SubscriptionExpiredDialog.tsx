@@ -1,20 +1,67 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, CreditCard, LogOut, Sparkles } from 'lucide-react';
+import { AlertTriangle, CreditCard, LogOut, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useDespiaNative, useInAppPurchases, useHaptics } from '@/hooks/useDespia';
 
 interface SubscriptionExpiredDialogProps {
     onReactivate: () => void;
     onLogout: () => void;
     planName?: string;
+    userId?: string;
+    productId?: string;
 }
 
 export function SubscriptionExpiredDialog({
     onReactivate,
     onLogout,
-    planName = 'subscription'
+    planName = 'subscription',
+    userId = '',
+    productId = 'caberu_pro_monthly'
 }: SubscriptionExpiredDialogProps) {
+    const isNative = useDespiaNative();
+    const haptics = useHaptics();
+    const [isRestoring, setIsRestoring] = useState(false);
+
+    const { purchase, restore, isPurchasing } = useInAppPurchases({
+        userId,
+        onPurchaseComplete: (result) => {
+            if (result.status === 'success') {
+                haptics.success();
+                onReactivate();
+            } else {
+                haptics.error();
+            }
+        },
+        onRestoreComplete: (products) => {
+            setIsRestoring(false);
+            if (products.length > 0) {
+                haptics.success();
+                onReactivate();
+            } else {
+                haptics.warning();
+            }
+        }
+    });
+
+    const handleReactivate = async () => {
+        haptics.impact();
+        if (isNative && userId) {
+            // Use in-app purchase on iOS
+            await purchase(productId);
+        } else {
+            // Use web payment flow
+            onReactivate();
+        }
+    };
+
+    const handleRestore = async () => {
+        haptics.impact();
+        setIsRestoring(true);
+        await restore();
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
             <motion.div
@@ -60,15 +107,39 @@ export function SubscriptionExpiredDialog({
                         <Button
                             className="w-full"
                             size="lg"
-                            onClick={onReactivate}
+                            onClick={handleReactivate}
+                            disabled={isPurchasing}
                         >
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            Reactivate Subscription
+                            {isPurchasing ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <CreditCard className="mr-2 h-4 w-4" />
+                            )}
+                            {isPurchasing ? 'Processing...' : 'Reactivate Subscription'}
                         </Button>
+
+                        {/* Restore purchases option for iOS */}
+                        {isNative && (
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={handleRestore}
+                                disabled={isRestoring || isPurchasing}
+                            >
+                                {isRestoring ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                )}
+                                {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+                            </Button>
+                        )}
+
                         <Button
                             variant="ghost"
                             className="w-full text-muted-foreground hover:text-destructive"
                             onClick={onLogout}
+                            disabled={isPurchasing || isRestoring}
                         >
                             <LogOut className="mr-2 h-4 w-4" />
                             Log Out
