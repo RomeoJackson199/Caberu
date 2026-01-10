@@ -81,6 +81,10 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
     if (!user) return;
 
     try {
+      // Wait a moment to ensure all state updates are settled
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Force a fresh query by using maybeSingle() then single()
       const { data: profile, error } = await supabase
         .from("profiles")
         .select("onboarding_completed, role, first_name, last_name, date_of_birth")
@@ -88,13 +92,22 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
         .single();
 
       if (!error && profile) {
+        console.log("Refetched profile after onboarding:", profile);
         setProfileData(profile);
+
+        // Only hide onboarding if we confirmed the update was successful
+        if (profile.onboarding_completed === true) {
+          setShowOnboarding(false);
+        } else {
+          console.warn("Profile refetch shows onboarding not completed, keeping modal open");
+        }
+      } else {
+        console.error("Error refetching profile:", error);
+        // Don't hide onboarding if refetch failed
       }
     } catch (error) {
       console.error("Error refetching profile after onboarding:", error);
     }
-
-    setShowOnboarding(false);
   };
 
   // Don't show onboarding on login/signup pages
