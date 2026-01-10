@@ -1,10 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 
 // 🔒 SECURITY: Sanitize AI response to prevent system prompt leaks
 const sanitizeAIResponse = (response: string): string => {
@@ -40,9 +36,11 @@ const sanitizeAIResponse = (response: string): string => {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
+  const preflightResponse = handleCorsPreflightSafe(req);
+  if (preflightResponse) return preflightResponse;
 
   try {
     const { action, appointmentData, messages, treatmentContext } = await req.json();
