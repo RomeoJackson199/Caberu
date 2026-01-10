@@ -367,6 +367,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -392,6 +399,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -525,6 +539,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -721,6 +742,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "businesses_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       chat_messages: {
@@ -830,10 +858,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "communication_logs_sent_by_fkey"
             columns: ["sent_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1055,10 +1097,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dentist_invitations_invitee_profile_id_fkey"
+            columns: ["invitee_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dentist_invitations_inviter_profile_id_fkey"
             columns: ["inviter_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_invitations_inviter_profile_id_fkey"
+            columns: ["inviter_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1207,6 +1263,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1516,6 +1579,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "imaging_sets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
@@ -1534,6 +1604,13 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1620,6 +1697,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       messages: {
@@ -1676,10 +1760,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1765,6 +1863,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1925,10 +2030,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_allergies_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1985,6 +2104,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_consents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -2052,10 +2178,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -2141,6 +2281,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_preferences_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_preferences_preferred_dentist_id_fkey"
             columns: ["preferred_dentist_id"]
             isOneToOne: false
@@ -2187,10 +2334,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_tag_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_tag_assignments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_tag_assignments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
           {
@@ -2423,6 +2584,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payment_requests_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -2441,6 +2609,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -2556,15 +2731,19 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          address_encrypted: string | null
           ai_opt_out: boolean
           avatar_url: string | null
           bio: string | null
           business_id: string | null
           created_at: string
           date_of_birth: string | null
+          date_of_birth_encrypted: string | null
           email: string | null
           emergency_contact: string | null
+          emergency_contact_encrypted: string | null
           first_name: string | null
+          first_name_encrypted: string | null
           google_calendar_connected: boolean | null
           google_calendar_refresh_token: string | null
           id: string
@@ -2572,11 +2751,14 @@ export type Database = {
           is_vip: boolean | null
           last_contact_at: string | null
           last_name: string | null
+          last_name_encrypted: string | null
           medical_history: string | null
+          medical_history_encrypted: string | null
           next_recall_date: string | null
           onboarding_completed: boolean | null
           patient_status: string | null
           phone: string | null
+          phone_encrypted: string | null
           profile_completion_status: string
           profile_picture_url: string | null
           role: string | null
@@ -2585,15 +2767,19 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_encrypted?: string | null
           ai_opt_out?: boolean
           avatar_url?: string | null
           bio?: string | null
           business_id?: string | null
           created_at?: string
           date_of_birth?: string | null
+          date_of_birth_encrypted?: string | null
           email?: string | null
           emergency_contact?: string | null
+          emergency_contact_encrypted?: string | null
           first_name?: string | null
+          first_name_encrypted?: string | null
           google_calendar_connected?: boolean | null
           google_calendar_refresh_token?: string | null
           id?: string
@@ -2601,11 +2787,14 @@ export type Database = {
           is_vip?: boolean | null
           last_contact_at?: string | null
           last_name?: string | null
+          last_name_encrypted?: string | null
           medical_history?: string | null
+          medical_history_encrypted?: string | null
           next_recall_date?: string | null
           onboarding_completed?: boolean | null
           patient_status?: string | null
           phone?: string | null
+          phone_encrypted?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
           role?: string | null
@@ -2614,15 +2803,19 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_encrypted?: string | null
           ai_opt_out?: boolean
           avatar_url?: string | null
           bio?: string | null
           business_id?: string | null
           created_at?: string
           date_of_birth?: string | null
+          date_of_birth_encrypted?: string | null
           email?: string | null
           emergency_contact?: string | null
+          emergency_contact_encrypted?: string | null
           first_name?: string | null
+          first_name_encrypted?: string | null
           google_calendar_connected?: boolean | null
           google_calendar_refresh_token?: string | null
           id?: string
@@ -2630,11 +2823,14 @@ export type Database = {
           is_vip?: boolean | null
           last_contact_at?: string | null
           last_name?: string | null
+          last_name_encrypted?: string | null
           medical_history?: string | null
+          medical_history_encrypted?: string | null
           next_recall_date?: string | null
           onboarding_completed?: boolean | null
           patient_status?: string | null
           phone?: string | null
+          phone_encrypted?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
           role?: string | null
@@ -2863,6 +3059,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_recommendations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
@@ -3316,6 +3519,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       treatment_templates: {
@@ -3505,6 +3715,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       public_businesses_view: {
@@ -3536,6 +3753,111 @@ export type Database = {
           template_type?: string | null
         }
         Relationships: []
+      }
+      secure_profiles_view: {
+        Row: {
+          address: string | null
+          ai_opt_out: boolean | null
+          avatar_url: string | null
+          bio: string | null
+          business_id: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact: string | null
+          first_name: string | null
+          google_calendar_connected: boolean | null
+          google_calendar_refresh_token: string | null
+          id: string | null
+          import_session_id: string | null
+          is_vip: boolean | null
+          last_contact_at: string | null
+          last_name: string | null
+          medical_history: string | null
+          next_recall_date: string | null
+          onboarding_completed: boolean | null
+          patient_status: string | null
+          phone: string | null
+          profile_completion_status: string | null
+          profile_picture_url: string | null
+          role: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: never
+          ai_opt_out?: boolean | null
+          avatar_url?: string | null
+          bio?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          date_of_birth?: never
+          email?: string | null
+          emergency_contact?: never
+          first_name?: never
+          google_calendar_connected?: boolean | null
+          google_calendar_refresh_token?: string | null
+          id?: string | null
+          import_session_id?: string | null
+          is_vip?: boolean | null
+          last_contact_at?: string | null
+          last_name?: never
+          medical_history?: never
+          next_recall_date?: string | null
+          onboarding_completed?: boolean | null
+          patient_status?: string | null
+          phone?: never
+          profile_completion_status?: string | null
+          profile_picture_url?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: never
+          ai_opt_out?: boolean | null
+          avatar_url?: string | null
+          bio?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          date_of_birth?: never
+          email?: string | null
+          emergency_contact?: never
+          first_name?: never
+          google_calendar_connected?: boolean | null
+          google_calendar_refresh_token?: string | null
+          id?: string | null
+          import_session_id?: string | null
+          is_vip?: boolean | null
+          last_contact_at?: string | null
+          last_name?: never
+          medical_history?: never
+          next_recall_date?: string | null
+          onboarding_completed?: boolean | null
+          patient_status?: string | null
+          phone?: never
+          profile_completion_status?: string | null
+          profile_picture_url?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       secure_treatment_plans_view: {
         Row: {
@@ -3632,6 +3954,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
         ]
