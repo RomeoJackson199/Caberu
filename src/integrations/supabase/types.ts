@@ -1786,6 +1786,7 @@ export type Database = {
         Row: {
           appointment_id: string | null
           content: string
+          content_encrypted: string | null
           created_at: string | null
           created_by: string | null
           dentist_id: string | null
@@ -1794,11 +1795,13 @@ export type Database = {
           note_type: string | null
           patient_id: string | null
           title: string | null
+          title_encrypted: string | null
           updated_at: string | null
         }
         Insert: {
           appointment_id?: string | null
           content: string
+          content_encrypted?: string | null
           created_at?: string | null
           created_by?: string | null
           dentist_id?: string | null
@@ -1807,11 +1810,13 @@ export type Database = {
           note_type?: string | null
           patient_id?: string | null
           title?: string | null
+          title_encrypted?: string | null
           updated_at?: string | null
         }
         Update: {
           appointment_id?: string | null
           content?: string
+          content_encrypted?: string | null
           created_at?: string | null
           created_by?: string | null
           dentist_id?: string | null
@@ -1820,6 +1825,7 @@ export type Database = {
           note_type?: string | null
           patient_id?: string | null
           title?: string | null
+          title_encrypted?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1976,33 +1982,39 @@ export type Database = {
       patient_allergies: {
         Row: {
           allergy_name: string
+          allergy_name_encrypted: string | null
           business_id: string
           created_at: string
           created_by: string | null
           id: string
           notes: string | null
+          notes_encrypted: string | null
           patient_id: string
           severity: string
           updated_at: string
         }
         Insert: {
           allergy_name: string
+          allergy_name_encrypted?: string | null
           business_id: string
           created_at?: string
           created_by?: string | null
           id?: string
           notes?: string | null
+          notes_encrypted?: string | null
           patient_id: string
           severity?: string
           updated_at?: string
         }
         Update: {
           allergy_name?: string
+          allergy_name_encrypted?: string | null
           business_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
           notes?: string | null
+          notes_encrypted?: string | null
           patient_id?: string
           severity?: string
           updated_at?: string
