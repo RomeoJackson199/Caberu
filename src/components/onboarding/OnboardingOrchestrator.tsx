@@ -76,7 +76,24 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
     setShowOnboarding(shouldShowOnboarding);
   }, [profileData, isDentist, rolesLoading, location.pathname]);
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = async () => {
+    // Refetch profile data to get the updated onboarding status
+    if (!user) return;
+
+    try {
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("onboarding_completed, role, first_name, last_name, date_of_birth")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!error && profile) {
+        setProfileData(profile);
+      }
+    } catch (error) {
+      console.error("Error refetching profile after onboarding:", error);
+    }
+
     setShowOnboarding(false);
   };
 
