@@ -295,6 +295,8 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
   const handleComplete = async () => {
     setLoading(true);
     try {
+      console.log('[ONBOARDING] Starting completion process...');
+
       // Get current profile with business_id
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -302,7 +304,11 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         .eq('user_id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('[ONBOARDING] Failed to fetch profile:', profileError);
+        throw profileError;
+      }
+      console.log('[ONBOARDING] Profile fetched:', profile);
 
       // Build business hours object
       const businessHours: Record<string, { open: string; close: string; isOpen: boolean }> = {
@@ -318,6 +324,16 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       const fullAddress = `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`;
 
       // Update profile with onboarding data
+      console.log('[ONBOARDING] Updating profile with data:', {
+        onboarding_completed: true,
+        role: 'dentist',
+        first_name: data.firstName,
+        last_name: data.lastName,
+        date_of_birth: data.dateOfBirth,
+        phone: data.practicePhone,
+        address: fullAddress,
+      });
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -332,9 +348,11 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         .eq('user_id', userId);
 
       if (updateError) {
-        console.error('Profile update error:', updateError);
+        console.error('[ONBOARDING] ❌ Profile update failed:', updateError);
+        console.error('[ONBOARDING] Error details:', JSON.stringify(updateError, null, 2));
         throw new Error(`Failed to update profile: ${updateError.message}`);
       }
+      console.log('[ONBOARDING] ✅ Profile updated successfully');
 
       // Update existing business record (business should already exist from /create-business)
       // First check profile.business_id, then check if they OWN a business
@@ -411,19 +429,32 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       }
 
       // Wait a moment to ensure database transaction is fully committed
+      console.log('[ONBOARDING] Waiting 500ms for DB commit...');
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Verify the update by refetching the profile with cache bypass
+      console.log('[ONBOARDING] Verifying profile update...');
       const { data: verifyProfile, error: verifyError } = await supabase
         .from('profiles')
-        .select('onboarding_completed')
+        .select('onboarding_completed, first_name, last_name, date_of_birth, role')
         .eq('user_id', userId)
         .single();
 
+      console.log('[ONBOARDING] Verification result:', {
+        data: verifyProfile,
+        error: verifyError
+      });
+
       if (verifyError || !verifyProfile?.onboarding_completed) {
-        console.error('Failed to verify onboarding completion:', verifyError);
-        throw new Error('Onboarding update verification failed. Please try again.');
+        console.error('[ONBOARDING] ❌ Verification failed!', {
+          error: verifyError,
+          onboarding_completed: verifyProfile?.onboarding_completed,
+          fullProfile: verifyProfile
+        });
+        throw new Error('Onboarding update verification failed. Please check the console for details.');
       }
+
+      console.log('[ONBOARDING] ✅ Verification successful! Profile confirmed updated.');
 
       toast({
         title: "Welcome to Caberu!",
@@ -431,6 +462,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       });
 
       // Close the modal - orchestrator will refetch and update state
+      console.log('[ONBOARDING] Closing modal...');
       onClose();
     } catch (error: any) {
       console.error('Onboarding error:', error);

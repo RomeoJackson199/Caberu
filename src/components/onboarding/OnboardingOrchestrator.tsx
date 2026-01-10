@@ -26,6 +26,8 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
 
     const checkOnboardingStatus = async () => {
       try {
+        console.log('[ORCHESTRATOR] Checking onboarding status for user:', user.id);
+
         // Fetch user profile to check onboarding status and required fields
         const { data: profile, error } = await supabase
           .from("profiles")
@@ -34,13 +36,14 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
           .single();
 
         if (error) {
-          console.error("Error fetching profile:", error);
+          console.error("[ORCHESTRATOR] Error fetching profile:", error);
           return;
         }
 
+        console.log('[ORCHESTRATOR] Profile data:', profile);
         setProfileData(profile);
       } catch (error) {
-        console.error("Error in onboarding orchestrator:", error);
+        console.error("[ORCHESTRATOR] Error in onboarding orchestrator:", error);
       }
     };
 
@@ -60,6 +63,16 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
       location.pathname.includes("/dentist") ||
       location.pathname.includes("/portal");
 
+    console.log('[ORCHESTRATOR] Evaluating onboarding conditions:', {
+      pathname: location.pathname,
+      isDentistRoute,
+      hasCompletedOnboarding,
+      hasMissingFields,
+      profileRole,
+      isDentist,
+      profileData
+    });
+
     // Show onboarding for:
     // 1. Users with isDentist role (dentist, provider, owner, admin via business_members)
     //    who haven't completed onboarding OR have missing required fields
@@ -72,6 +85,8 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
       // Case 3: New user with null role on dentist route
       (profileRole === null && (!hasCompletedOnboarding || hasMissingFields))
     );
+
+    console.log('[ORCHESTRATOR] Decision: shouldShowOnboarding =', shouldShowOnboarding);
 
     setShowOnboarding(shouldShowOnboarding);
   }, [profileData, isDentist, rolesLoading, location.pathname]);
