@@ -60,17 +60,16 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
       location.pathname.includes("/dentist") ||
       location.pathname.includes("/portal");
 
-    // Show onboarding for:
-    // 1. Users with isDentist role (dentist, provider, owner, admin via business_members)
-    //    who haven't completed onboarding OR have missing required fields
-    // 2. Users with null role on dentist routes (new users who need to set up)
+    // ONLY show onboarding for users who are CONFIRMED to be dentists/providers
+    // Do NOT show onboarding for users with null role - they might be patients
+    // visiting dentist routes. Onboarding should only trigger for:
+    // 1. Users with isDentist flag (from user_roles or business_members with owner/admin/dentist role)
+    // 2. Users with profile.role === "dentist"
     const shouldShowOnboarding = isDentistRoute && (
-      // Case 1: Known dentist/owner/admin with incomplete onboarding
+      // Case 1: Known dentist/owner/admin with incomplete onboarding or missing fields
       (isDentist && (!hasCompletedOnboarding || hasMissingFields)) ||
-      // Case 2: Profile role is dentist with incomplete onboarding
-      (profileRole === "dentist" && (!hasCompletedOnboarding || hasMissingFields)) ||
-      // Case 3: New user with null role on dentist route
-      (profileRole === null && (!hasCompletedOnboarding || hasMissingFields))
+      // Case 2: Profile role is explicitly dentist with incomplete onboarding
+      (profileRole === "dentist" && (!hasCompletedOnboarding || hasMissingFields))
     );
 
     setShowOnboarding(shouldShowOnboarding);
