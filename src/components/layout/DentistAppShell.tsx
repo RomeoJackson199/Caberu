@@ -104,7 +104,7 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
       if (!user) return;
       const {
         data
-      } = await supabase.from('profiles').select('first_name, last_name, email, profile_picture_url').eq('user_id', user.id).maybeSingle();
+      } = await supabase.from('secure_profiles_view').select('first_name, last_name, email, profile_picture_url').eq('user_id', user.id).maybeSingle();
       const full = `${data?.first_name ?? ''} ${data?.last_name ?? ''}`.trim();
       setUserName(full || data?.email || '');
       const fi = (data?.first_name?.[0] || '').toUpperCase();

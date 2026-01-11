@@ -109,7 +109,7 @@ export const AppointmentDialog: React.FC<AppointmentDialogProps> = ({
   const fetchPatients = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name, email, phone')
         .eq('role', 'patient')
         .order('first_name');

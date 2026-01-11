@@ -112,7 +112,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 				if (dentErr) {
 					logger.error('Failed to fetch dentist data:', dentErr);
 				} else if (dent?.profile_id && isMounted) {
-					const { data: prof, error: profErr } = await sb.from('profiles').select('first_name, last_name').eq('id', dent.profile_id).single();
+					const { data: prof, error: profErr } = await sb.from('secure_profiles_view').select('first_name, last_name').eq('id', dent.profile_id).single();
 					if (profErr) {
 						logger.error('Failed to fetch dentist profile:', profErr);
 					} else if (isMounted) {
@@ -120,7 +120,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 					}
 				}
 
-				const { data: pat, error: patErr } = await sb.from('profiles').select('first_name, last_name').eq('id', appointment.patient_id).single();
+				const { data: pat, error: patErr } = await sb.from('secure_profiles_view').select('first_name, last_name').eq('id', appointment.patient_id).single();
 				if (patErr) {
 					logger.error('Failed to fetch patient data:', patErr);
 				} else if (isMounted) {

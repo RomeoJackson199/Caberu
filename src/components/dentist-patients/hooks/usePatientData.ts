@@ -28,7 +28,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
         .from('appointments')
         .select(`
           patient_id,
-          profiles!appointments_patient_id_fkey (
+          secure_profiles_view!appointments_patient_id_fkey (
             id, first_name, last_name, email, phone, date_of_birth,
             address, medical_history, emergency_contact, profile_picture_url
           )
@@ -46,7 +46,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       if (appointmentError) throw appointmentError;
 
       const patientsFromAppointments = (appointmentData || [])
-        .map(apt => Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles)
+        .map(apt => Array.isArray(apt.secure_profiles_view) ? apt.secure_profiles_view[0] : apt.secure_profiles_view)
         .filter(Boolean) as DentistPatient[];
 
       // Remove duplicates
