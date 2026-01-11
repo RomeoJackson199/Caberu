@@ -44,6 +44,9 @@ import {
   type Contact,
 } from '@/lib/despia';
 
+// Re-export types that components may need
+export type { HapticType } from '@/lib/despia';
+
 // ============================================
 // CORE HOOK - Check if running in native context
 // ============================================
