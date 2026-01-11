@@ -80,7 +80,7 @@ export function FinalizationSection({
     try {
       // Get patient's user_id for notification
       const { data: patient, error: patientError } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('user_id, first_name, email')
         .eq('id', patientId)
         .single();
@@ -176,7 +176,7 @@ export function FinalizationSection({
       if (totalCents > 0) {
         // Get patient email for payment request
         const { data: patientData } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('email, first_name, last_name')
           .eq('id', patientId)
           .single();
@@ -280,7 +280,7 @@ export function FinalizationSection({
       // Notify patient about the decision
       try {
         const { data: patient } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('user_id, first_name')
           .eq('id', patientId)
           .single();

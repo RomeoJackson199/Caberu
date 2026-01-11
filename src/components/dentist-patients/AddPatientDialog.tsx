@@ -92,7 +92,7 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
     try {
       // Check if patient already exists
       const { data: existingPatient } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name')
         .eq('email', inviteEmail.trim().toLowerCase())
         .maybeSingle();

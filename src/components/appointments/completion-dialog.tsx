@@ -420,7 +420,7 @@ export function CompletionDialog({
         } else {
           // Payment not received - create payment request
           const { data: patientProfile } = await supabase
-            .from('profiles')
+            .from('secure_profiles_view')
             .select('email, first_name, last_name')
             .eq('id', appointment.patient_id)
             .single();
@@ -515,7 +515,7 @@ export function CompletionDialog({
 
       // 8. Send email notification
       const { data: patientProfile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('user_id, email, first_name, last_name')
         .eq('id', appointment.patient_id)
         .single();

@@ -283,7 +283,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
         const ids = highNoShowEntries.map(([id]) => id);
         let enriched: Array<{ id: string; name: string; count: number; user_id?: string }> = [];
         if (ids.length) {
-          const { data: profs } = await supabase.from('profiles').select('id, first_name, last_name, user_id').in('id', ids);
+          const { data: profs } = await supabase.from('secure_profiles_view').select('id, first_name, last_name, user_id').in('id', ids);
           const nameMap = new Map((profs || []).map(p => [p.id, `${p.first_name} ${p.last_name}`.trim()]));
           const userIdMap = new Map((profs || []).map(p => [p.id, p.user_id || undefined]));
           enriched = highNoShowEntries.map(([id, count]) => ({ id, name: nameMap.get(id) || id, count: count as number, user_id: userIdMap.get(id) }));
@@ -315,7 +315,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
         if (plans && plans.length) {
           const planPatientIds = Array.from(new Set(plans.map(p => p.patient_id)));
           if (planPatientIds.length) {
-            const { data: profs2 } = await supabase.from('profiles').select('id, first_name, last_name, user_id').in('id', planPatientIds);
+            const { data: profs2 } = await supabase.from('secure_profiles_view').select('id, first_name, last_name, user_id').in('id', planPatientIds);
             (profs2 || []).forEach(p => patientIdToName.set(p.id, `${p.first_name} ${p.last_name}`.trim()));
           }
           (plans || []).filter(p => (p.status || '').toLowerCase() !== 'completed').forEach(p => {

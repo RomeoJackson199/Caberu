@@ -119,12 +119,12 @@ export function AppointmentCompletionModal({ open, onOpenChange, appointment, de
 					dentist_id: appt.dentist_id,
 					amount: patientCents,
 					description: `Appointment ${appointment.id} patient share`,
-					patient_email: (await sb.from('profiles').select('email').eq('id', appt.patient_id).single()).data?.email
+					patient_email: (await sb.from('secure_profiles_view').select('email').eq('id', appt.patient_id).single()).data?.email
 				}
 			});
 			if (error) throw error;
 			// Create notification to patient if possible
-			const { data: profile } = await sb.from('profiles').select('user_id, first_name, last_name').eq('id', appt.patient_id).single();
+			const { data: profile } = await sb.from('secure_profiles_view').select('user_id, first_name, last_name').eq('id', appt.patient_id).single();
 			if (profile?.user_id && pr?.payment_url) {
 				await sb.from('notifications').insert({
 					user_id: profile.user_id,
