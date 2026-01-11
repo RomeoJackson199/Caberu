@@ -318,17 +318,29 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       const fullAddress = `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`;
 
       // Update profile with onboarding data
+      // Only include date_of_birth if it has a value (empty string would fail date validation)
+      const profileUpdate: Record<string, any> = {
+        onboarding_completed: true,
+        role: 'dentist',
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone: data.practicePhone,
+        address: fullAddress,
+      };
+      
+      // Only set date_of_birth if a valid date was provided
+      if (data.dateOfBirth && data.dateOfBirth.trim() !== '') {
+        profileUpdate.date_of_birth = data.dateOfBirth;
+      }
+
+      console.log('Saving profile with data:', { 
+        dateOfBirth: data.dateOfBirth, 
+        profileUpdate 
+      });
+
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({
-          onboarding_completed: true,
-          role: 'dentist',
-          first_name: data.firstName,
-          last_name: data.lastName,
-          date_of_birth: data.dateOfBirth,
-          phone: data.practicePhone,
-          address: fullAddress,
-        })
+        .update(profileUpdate)
         .eq('user_id', userId);
 
       if (updateError) {
