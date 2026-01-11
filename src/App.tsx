@@ -67,6 +67,7 @@ const About = lazy(() => import("./pages/About"));
 const Claim = lazy(() => import("./pages/Claim"));
 // PublicBooking removed - unused
 const BookAppointmentAI = lazy(() => import("./pages/BookAppointmentAI"));
+const DowntimePage = lazy(() => import("./pages/DowntimePage"));
 const BusinessPortal = lazy(() => import("./pages/BusinessPortal"));
 import { BookingRouteHandler } from "./components/booking/BookingRouteHandler";
 import { logger } from '@/lib/logger';
@@ -397,6 +398,9 @@ const App = () => {
                         <Route path="/smart-book-appointment" element={<Navigate to="/book-appointment" replace />} />
                         {/* Business portal route - must come before catch-all */}
                         <Route path="/clinic/:slug" element={<BusinessPortal />} />
+                        {/* Downtime/Error pages */}
+                        <Route path="/downtime" element={<DowntimePage type="error" />} />
+                        <Route path="/maintenance" element={<DowntimePage type="maintenance" estimatedTime="30 minutes" />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
