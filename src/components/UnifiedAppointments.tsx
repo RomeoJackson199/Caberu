@@ -157,7 +157,7 @@ export function UnifiedAppointments({
         .from('appointments')
         .select(`
           *,
-          patient:profiles!appointments_patient_id_fkey (
+          patient:secure_profiles_view!appointments_patient_id_fkey (
             id,
             first_name,
             last_name,
@@ -211,7 +211,7 @@ export function UnifiedAppointments({
     if (patientId) {
       // If viewing as a patient, only that patient can book
       const { data } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name, email')
         .eq('id', patientId)
         .single();
@@ -223,7 +223,7 @@ export function UnifiedAppointments({
       // Load all patients for dentist view
       let query = supabase
         .from('appointments')
-        .select(`patient_id, patient:profiles!appointments_patient_id_fkey ( id, first_name, last_name, email )`)
+        .select(`patient_id, patient:secure_profiles_view!appointments_patient_id_fkey ( id, first_name, last_name, email )`)
         .eq('dentist_id', dentistId);
 
       if (businessId) {

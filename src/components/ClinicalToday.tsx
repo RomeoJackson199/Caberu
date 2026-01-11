@@ -71,7 +71,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 							reason,
 							status,
 							urgency,
-							profiles!appointments_patient_id_fkey (
+							profiles:secure_profiles_view!appointments_patient_id_fkey (
 								first_name,
 								last_name
 							)

@@ -142,7 +142,7 @@ export function QuickAppointmentDialog({
         .from("appointments")
         .select(`
           patient_id,
-          profiles!appointments_patient_id_fkey (
+          profiles:secure_profiles_view!appointments_patient_id_fkey (
             id,
             first_name,
             last_name,

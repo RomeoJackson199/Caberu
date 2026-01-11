@@ -78,7 +78,7 @@ export function NextAppointmentWidget({ dentistId }: NextAppointmentWidgetProps)
             consultation_notes,
             notes,
             patient_name,
-            profiles!appointments_patient_id_fkey (
+            profiles:secure_profiles_view!appointments_patient_id_fkey (
               first_name,
               last_name,
               email,
