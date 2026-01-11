@@ -91,7 +91,7 @@ function DentistAppointmentsManagementContent() {
         .from("appointments")
         .select(`
           *,
-          patient:profiles!appointments_patient_id_fkey(id, first_name, last_name, email)
+          patient:secure_profiles_view!appointments_patient_id_fkey(id, first_name, last_name, email)
         `)
         .eq("dentist_id", dentistId)
         .eq("business_id", businessId)

@@ -123,7 +123,7 @@ export function WeeklyCalendarView({
 
       if (patientIds.length) {
         const { data: profiles } = await supabase
-          .from("profiles")
+          .from("secure_profiles_view")
           .select("id, first_name, last_name, email")
           .in("id", patientIds);
         const map = new Map((profiles || []).map((p: any) => [p.id, p]));
