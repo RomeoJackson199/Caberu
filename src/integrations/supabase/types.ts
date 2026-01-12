@@ -3778,8 +3778,6 @@ export type Database = {
           email: string | null
           emergency_contact: string | null
           first_name: string | null
-          google_calendar_connected: boolean | null
-          google_calendar_refresh_token: string | null
           id: string | null
           is_vip: boolean | null
           last_contact_at: string | null
@@ -3806,8 +3804,6 @@ export type Database = {
           email?: string | null
           emergency_contact?: never
           first_name?: never
-          google_calendar_connected?: boolean | null
-          google_calendar_refresh_token?: string | null
           id?: string | null
           is_vip?: boolean | null
           last_contact_at?: string | null
@@ -3834,8 +3830,6 @@ export type Database = {
           email?: string | null
           emergency_contact?: never
           first_name?: never
-          google_calendar_connected?: boolean | null
-          google_calendar_refresh_token?: string | null
           id?: string | null
           is_vip?: boolean | null
           last_contact_at?: string | null
