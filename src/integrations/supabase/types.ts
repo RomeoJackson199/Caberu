@@ -3781,7 +3781,6 @@ export type Database = {
           google_calendar_connected: boolean | null
           google_calendar_refresh_token: string | null
           id: string | null
-          import_session_id: string | null
           is_vip: boolean | null
           last_contact_at: string | null
           last_name: string | null
@@ -3803,14 +3802,13 @@ export type Database = {
           bio?: string | null
           business_id?: string | null
           created_at?: string | null
-          date_of_birth?: never
+          date_of_birth?: string | null
           email?: string | null
           emergency_contact?: never
           first_name?: never
           google_calendar_connected?: boolean | null
           google_calendar_refresh_token?: string | null
           id?: string | null
-          import_session_id?: string | null
           is_vip?: boolean | null
           last_contact_at?: string | null
           last_name?: never
@@ -3832,14 +3830,13 @@ export type Database = {
           bio?: string | null
           business_id?: string | null
           created_at?: string | null
-          date_of_birth?: never
+          date_of_birth?: string | null
           email?: string | null
           emergency_contact?: never
           first_name?: never
           google_calendar_connected?: boolean | null
           google_calendar_refresh_token?: string | null
           id?: string | null
-          import_session_id?: string | null
           is_vip?: boolean | null
           last_contact_at?: string | null
           last_name?: never
@@ -4047,6 +4044,7 @@ export type Database = {
           used_seconds: number
         }[]
       }
+      clean_encrypted_display: { Args: { input_text: string }; Returns: string }
       dentist_has_patient_access: {
         Args: { _patient_id: string; _user_id: string }
         Returns: boolean
