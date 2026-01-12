@@ -56,36 +56,36 @@ BEGIN
 
   -- Encrypt PHI fields if they have values
   IF NEW.first_name IS NOT NULL AND NEW.first_name != '' THEN
-    NEW.first_name_encrypted := encode(pgp_sym_encrypt(NEW.first_name::text, encryption_key), 'base64');
+    NEW.first_name_encrypted := pgp_sym_encrypt(NEW.first_name::text, encryption_key);
     NEW.first_name := '***ENCRYPTED***';
   END IF;
 
   IF NEW.last_name IS NOT NULL AND NEW.last_name != '' THEN
-    NEW.last_name_encrypted := encode(pgp_sym_encrypt(NEW.last_name::text, encryption_key), 'base64');
+    NEW.last_name_encrypted := pgp_sym_encrypt(NEW.last_name::text, encryption_key);
     NEW.last_name := '***ENCRYPTED***';
   END IF;
 
   IF NEW.phone IS NOT NULL AND NEW.phone != '' THEN
-    NEW.phone_encrypted := encode(pgp_sym_encrypt(NEW.phone::text, encryption_key), 'base64');
+    NEW.phone_encrypted := pgp_sym_encrypt(NEW.phone::text, encryption_key);
     NEW.phone := '***ENCRYPTED***';
   END IF;
 
   IF NEW.date_of_birth IS NOT NULL THEN
-    NEW.date_of_birth_encrypted := encode(pgp_sym_encrypt(NEW.date_of_birth::text, encryption_key), 'base64');
+    NEW.date_of_birth_encrypted := pgp_sym_encrypt(NEW.date_of_birth::text, encryption_key);
   END IF;
 
   IF NEW.medical_history IS NOT NULL AND NEW.medical_history != '' THEN
-    NEW.medical_history_encrypted := encode(pgp_sym_encrypt(NEW.medical_history::text, encryption_key), 'base64');
+    NEW.medical_history_encrypted := pgp_sym_encrypt(NEW.medical_history::text, encryption_key);
     NEW.medical_history := '***ENCRYPTED***';
   END IF;
 
   IF NEW.address IS NOT NULL AND NEW.address != '' THEN
-    NEW.address_encrypted := encode(pgp_sym_encrypt(NEW.address::text, encryption_key), 'base64');
+    NEW.address_encrypted := pgp_sym_encrypt(NEW.address::text, encryption_key);
     NEW.address := '***ENCRYPTED***';
   END IF;
 
   IF NEW.emergency_contact IS NOT NULL AND NEW.emergency_contact != '' THEN
-    NEW.emergency_contact_encrypted := encode(pgp_sym_encrypt(NEW.emergency_contact::text, encryption_key), 'base64');
+    NEW.emergency_contact_encrypted := pgp_sym_encrypt(NEW.emergency_contact::text, encryption_key);
     NEW.emergency_contact := '***ENCRYPTED***';
   END IF;
 
@@ -102,17 +102,11 @@ BEGIN
   encryption_key := private.get_app_key();
 
   IF NEW.content IS NOT NULL AND NEW.content != '' THEN
-    NEW.content_encrypted := encode(
-      pgp_sym_encrypt(NEW.content::text, encryption_key),
-      'base64'
-    );
+    NEW.content_encrypted := pgp_sym_encrypt(NEW.content::text, encryption_key);
   END IF;
 
   IF NEW.title IS NOT NULL AND NEW.title != '' THEN
-    NEW.title_encrypted := encode(
-      pgp_sym_encrypt(NEW.title::text, encryption_key),
-      'base64'
-    );
+    NEW.title_encrypted := pgp_sym_encrypt(NEW.title::text, encryption_key);
   END IF;
 
   RETURN NEW;
@@ -128,17 +122,11 @@ BEGIN
   encryption_key := private.get_app_key();
 
   IF NEW.allergy_name IS NOT NULL AND NEW.allergy_name != '' THEN
-    NEW.allergy_name_encrypted := encode(
-      pgp_sym_encrypt(NEW.allergy_name::text, encryption_key),
-      'base64'
-    );
+    NEW.allergy_name_encrypted := pgp_sym_encrypt(NEW.allergy_name::text, encryption_key);
   END IF;
 
   IF NEW.notes IS NOT NULL AND NEW.notes != '' THEN
-    NEW.notes_encrypted := encode(
-      pgp_sym_encrypt(NEW.notes::text, encryption_key),
-      'base64'
-    );
+    NEW.notes_encrypted := pgp_sym_encrypt(NEW.notes::text, encryption_key);
   END IF;
 
   RETURN NEW;
@@ -154,11 +142,11 @@ BEGIN
   encryption_key := private.get_app_key();
 
   IF NEW.diagnosis IS NOT NULL AND NEW.diagnosis != '' THEN
-    NEW.diagnosis_encrypted := encode(pgp_sym_encrypt(NEW.diagnosis::text, encryption_key), 'base64');
+    NEW.diagnosis_encrypted := pgp_sym_encrypt(NEW.diagnosis::text, encryption_key);
   END IF;
 
   IF NEW.description IS NOT NULL AND NEW.description != '' THEN
-    NEW.description_encrypted := encode(pgp_sym_encrypt(NEW.description::text, encryption_key), 'base64');
+    NEW.description_encrypted := pgp_sym_encrypt(NEW.description::text, encryption_key);
   END IF;
 
   RETURN NEW;
@@ -174,7 +162,7 @@ BEGIN
   encryption_key := private.get_app_key();
 
   IF NEW.findings IS NOT NULL AND NEW.findings != '' THEN
-    NEW.findings_encrypted := encode(pgp_sym_encrypt(NEW.findings::text, encryption_key), 'base64');
+    NEW.findings_encrypted := pgp_sym_encrypt(NEW.findings::text, encryption_key);
   END IF;
 
   RETURN NEW;
@@ -223,48 +211,48 @@ SELECT
   email,
   -- Decrypt PHI fields, handling both encrypted and plaintext data
   CASE
-    WHEN first_name_encrypted IS NOT NULL AND first_name_encrypted != '' THEN
-      pgp_sym_decrypt(decode(first_name_encrypted, 'base64'), private.get_app_key())
+    WHEN first_name_encrypted IS NOT NULL AND first_name_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(first_name_encrypted, private.get_app_key())
     WHEN first_name IS NOT NULL AND first_name != '***ENCRYPTED***' THEN
       first_name
     ELSE NULL
   END as first_name,
   CASE
-    WHEN last_name_encrypted IS NOT NULL AND last_name_encrypted != '' THEN
-      pgp_sym_decrypt(decode(last_name_encrypted, 'base64'), private.get_app_key())
+    WHEN last_name_encrypted IS NOT NULL AND last_name_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(last_name_encrypted, private.get_app_key())
     WHEN last_name IS NOT NULL AND last_name != '***ENCRYPTED***' THEN
       last_name
     ELSE NULL
   END as last_name,
   CASE
-    WHEN phone_encrypted IS NOT NULL AND phone_encrypted != '' THEN
-      pgp_sym_decrypt(decode(phone_encrypted, 'base64'), private.get_app_key())
+    WHEN phone_encrypted IS NOT NULL AND phone_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(phone_encrypted, private.get_app_key())
     WHEN phone IS NOT NULL AND phone != '***ENCRYPTED***' THEN
       phone
     ELSE NULL
   END as phone,
   CASE
-    WHEN date_of_birth_encrypted IS NOT NULL AND date_of_birth_encrypted != '' THEN
-      pgp_sym_decrypt(decode(date_of_birth_encrypted, 'base64'), private.get_app_key())::date
+    WHEN date_of_birth_encrypted IS NOT NULL AND date_of_birth_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(date_of_birth_encrypted, private.get_app_key())::date
     ELSE date_of_birth
   END as date_of_birth,
   CASE
-    WHEN address_encrypted IS NOT NULL AND address_encrypted != '' THEN
-      pgp_sym_decrypt(decode(address_encrypted, 'base64'), private.get_app_key())
+    WHEN address_encrypted IS NOT NULL AND address_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(address_encrypted, private.get_app_key())
     WHEN address IS NOT NULL AND address != '***ENCRYPTED***' THEN
       address
     ELSE NULL
   END as address,
   CASE
-    WHEN medical_history_encrypted IS NOT NULL AND medical_history_encrypted != '' THEN
-      pgp_sym_decrypt(decode(medical_history_encrypted, 'base64'), private.get_app_key())
+    WHEN medical_history_encrypted IS NOT NULL AND medical_history_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(medical_history_encrypted, private.get_app_key())
     WHEN medical_history IS NOT NULL AND medical_history != '***ENCRYPTED***' THEN
       medical_history
     ELSE NULL
   END as medical_history,
   CASE
-    WHEN emergency_contact_encrypted IS NOT NULL AND emergency_contact_encrypted != '' THEN
-      pgp_sym_decrypt(decode(emergency_contact_encrypted, 'base64'), private.get_app_key())
+    WHEN emergency_contact_encrypted IS NOT NULL AND emergency_contact_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(emergency_contact_encrypted, private.get_app_key())
     WHEN emergency_contact IS NOT NULL AND emergency_contact != '***ENCRYPTED***' THEN
       emergency_contact
     ELSE NULL
@@ -299,13 +287,13 @@ SELECT
   patient_id,
   dentist_id,
   CASE
-    WHEN diagnosis_encrypted IS NOT NULL AND diagnosis_encrypted != '' THEN
-      pgp_sym_decrypt(decode(diagnosis_encrypted, 'base64'), private.get_app_key())
+    WHEN diagnosis_encrypted IS NOT NULL AND diagnosis_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(diagnosis_encrypted, private.get_app_key())
     ELSE diagnosis
   END as diagnosis,
   CASE
-    WHEN description_encrypted IS NOT NULL AND description_encrypted != '' THEN
-      pgp_sym_decrypt(decode(description_encrypted, 'base64'), private.get_app_key())
+    WHEN description_encrypted IS NOT NULL AND description_encrypted != '\x'::bytea THEN
+      pgp_sym_decrypt(description_encrypted, private.get_app_key())
     ELSE description
   END as description,
   status,
