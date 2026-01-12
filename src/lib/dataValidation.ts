@@ -60,6 +60,7 @@ export function hasRequiredFields(
 
 /**
  * Get a patient's full name with fallback
+ * If name is not available, tries to extract a display name from email
  */
 export function getPatientName(patient: PatientLike | null | undefined): string {
   if (!patient) return 'Unknown Patient';
@@ -67,7 +68,24 @@ export function getPatientName(patient: PatientLike | null | undefined): string 
   const firstName = patient.first_name || patient.firstName || '';
   const lastName = patient.last_name || patient.lastName || '';
 
-  if (!firstName && !lastName) return 'Unknown Patient';
+  if (!firstName && !lastName) {
+    // Try to extract a display name from email
+    const email = (patient as { email?: string }).email;
+    if (email) {
+      const localPart = email.split('@')[0];
+      // Convert email local part to a readable name (e.g., "john.doe" -> "John Doe")
+      const readable = localPart
+        .replace(/[._-]+/g, ' ')
+        .replace(/\d+/g, '')
+        .trim()
+        .split(' ')
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      return readable || 'Unknown Patient';
+    }
+    return 'Unknown Patient';
+  }
   if (!firstName) return lastName;
   if (!lastName) return firstName;
 
