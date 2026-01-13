@@ -374,6 +374,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -407,6 +414,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -547,6 +561,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -749,6 +770,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "businesses_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       chat_messages: {
@@ -865,6 +893,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "communication_logs_sent_by_fkey"
             columns: ["sent_by"]
             isOneToOne: false
@@ -877,6 +912,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1104,6 +1146,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dentist_invitations_invitee_profile_id_fkey"
+            columns: ["invitee_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "dentist_invitations_inviter_profile_id_fkey"
             columns: ["inviter_profile_id"]
             isOneToOne: false
@@ -1116,6 +1165,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_invitations_inviter_profile_id_fkey"
+            columns: ["inviter_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1271,6 +1327,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1586,6 +1649,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "imaging_sets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
@@ -1612,6 +1682,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1704,6 +1781,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       messages: {
@@ -1767,6 +1851,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "messages_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
             isOneToOne: false
@@ -1779,6 +1870,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1877,6 +1975,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2049,6 +2154,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "patient_allergies_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -2061,6 +2173,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2124,6 +2243,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_consents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2197,6 +2323,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "patient_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
@@ -2209,6 +2342,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2300,6 +2440,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_preferences_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "patient_preferences_preferred_dentist_id_fkey"
             columns: ["preferred_dentist_id"]
             isOneToOne: false
@@ -2353,6 +2500,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_tag_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "patient_tag_assignments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -2365,6 +2519,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_tag_assignments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "patient_tag_assignments_tag_id_fkey"
@@ -2603,6 +2764,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "payment_requests_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -2629,6 +2797,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3079,6 +3254,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_recommendations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3538,6 +3720,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       treatment_templates: {
@@ -3734,6 +3923,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       public_businesses_view: {
@@ -3781,6 +3977,7 @@ export type Database = {
           phone: string | null
           role: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -3796,6 +3993,7 @@ export type Database = {
           phone?: string | null
           role?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -3811,6 +4009,7 @@ export type Database = {
           phone?: string | null
           role?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -3917,6 +4116,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["user_id"]
           },
         ]
       }
