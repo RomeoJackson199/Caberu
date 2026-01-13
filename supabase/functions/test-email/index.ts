@@ -19,6 +19,8 @@ serve(async (req) => {
 
     console.log('Testing email send to:', email);
 
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
     // Test sending email directly
     const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email-notification', {
       body: {
@@ -31,7 +33,10 @@ serve(async (req) => {
         `,
         messageType: 'system',
         isSystemNotification: true
-      }
+      },
+      headers: {
+        Authorization: `Bearer ${supabaseServiceKey}`,
+      },
     });
 
     if (emailError) {

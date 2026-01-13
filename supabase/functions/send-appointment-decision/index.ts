@@ -123,6 +123,9 @@ serve(async (req) => {
                     messageType: 'system',
                     isSystemNotification: true,
                 },
+                headers: {
+                    Authorization: `Bearer ${supabaseServiceKey}`,
+                },
             });
 
             if (!emailError) {
@@ -185,7 +188,10 @@ serve(async (req) => {
                             type: 'appointment',
                             notificationId: notificationData.id,
                             requireInteraction: decision !== 'approved' // Require interaction for declined appointments
-                        }
+                        },
+                        headers: {
+                            Authorization: `Bearer ${supabaseServiceKey}`,
+                        },
                     });
 
                     if (!pushError && pushData?.success) {
