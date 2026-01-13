@@ -579,7 +579,7 @@ const PatientDashboardComponent = ({
         </div>
       </DialogContent>
     </Dialog>
-  </PatientAppShell>;
+  </PatientAppShell>
 };
 
 // Export with error boundary for better stability
