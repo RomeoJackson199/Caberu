@@ -3,6 +3,44 @@ import { Notification, NotificationPreferences, NotificationTemplate } from '../
 import { logger } from '@/lib/logger';
 
 export class NotificationService {
+  // Send push notification via Edge Function
+  static async sendPushNotification(
+    userId: string,
+    title: string,
+    message: string,
+    options?: {
+      url?: string;
+      type?: string;
+      notificationId?: string;
+      requireInteraction?: boolean;
+    }
+  ): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-notifications', {
+        body: {
+          userId,
+          title,
+          message,
+          url: options?.url || '/',
+          type: options?.type || 'general',
+          notificationId: options?.notificationId,
+          requireInteraction: options?.requireInteraction || false
+        }
+      });
+
+      if (error) {
+        logger.error('Push notification error:', error);
+        return false;
+      }
+
+      logger.info('Push notification sent:', data);
+      return data?.success || false;
+    } catch (error) {
+      logger.error('Failed to send push notification:', error);
+      return false;
+    }
+  }
+
   // Get all notifications for a user
   static async getNotifications(userId: string, limit = 50, offset = 0): Promise<Notification[]> {
     const { data, error } = await supabase
@@ -104,6 +142,14 @@ export class NotificationService {
 
     // Send email notification if enabled
     await this.sendEmailNotification(userId, title, message, type, sendEmail, metadata);
+
+    // Send push notification (non-blocking)
+    this.sendPushNotification(userId, title, message, {
+      url: actionUrl,
+      type,
+      notificationId: data.id,
+      requireInteraction: category === 'urgent' || category === 'error'
+    }).catch(err => logger.error('Push notification failed silently:', err));
 
     return data.id;
   }
