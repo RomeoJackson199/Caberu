@@ -27,10 +27,10 @@ export { SegmentedControl } from './SegmentedControl';
 export type { SegmentedControlOption, SegmentedControlProps } from './SegmentedControl';
 
 // Existing Mobile Components
-export { default as MobileBottomNav } from './MobileBottomNav';
-export { default as MobileCard } from './MobileCard';
-export { default as MobileHeader } from './MobileHeader';
-export { default as MobileOptimizations } from './MobileOptimizations';
-export { default as MobilePageWrapper } from './MobilePageWrapper';
-export { default as MobileSheet } from './MobileSheet';
-export { default as PWAFeatures } from './PWAFeatures';
+export { MobileBottomNav } from './MobileBottomNav';
+export { MobileCard } from './MobileCard';
+export { MobileHeader } from './MobileHeader';
+export { MobileOptimizations } from './MobileOptimizations';
+export { MobilePageWrapper } from './MobilePageWrapper';
+export { MobileSheet } from './MobileSheet';
+export { PWAFeatures } from './PWAFeatures';
