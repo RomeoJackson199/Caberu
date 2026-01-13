@@ -113,6 +113,14 @@ export interface BiometricAuthResult {
  */
 export async function authenticateWithBiometrics(): Promise<BiometricAuthResult> {
   if (!isDespiaNative()) {
+    // Check for secure context (HTTPS or localhost)
+    if (!window.isSecureContext) {
+      return {
+        authenticated: false,
+        error: 'Biometric authentication requires HTTPS or localhost'
+      };
+    }
+
     // Check for WebAuthn as fallback
     if (window.PublicKeyCredential) {
       try {
@@ -206,11 +214,17 @@ async function registerWebAuthnCredential(storageKey: string): Promise<Biometric
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const userId = crypto.getRandomValues(new Uint8Array(16));
 
+    // Get valid relying party ID (hostname without port, or 'localhost' for local IPs)
+    const hostname = window.location.hostname;
+    const rpId = hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')
+      ? undefined  // Let browser use default (current origin)
+      : hostname;
+
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
       challenge,
       rp: {
         name: 'Caberu',
-        id: window.location.hostname,
+        ...(rpId && { id: rpId }),  // Only set ID if it's a valid domain
       },
       user: {
         id: userId,
