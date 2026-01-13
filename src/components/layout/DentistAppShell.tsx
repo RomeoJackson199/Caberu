@@ -161,7 +161,8 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </header>
+      </div>
+    </header>
 
       {/* Main Content - with header and bottom nav offset */}
       <main className="min-h-screen pt-[60px] pb-[80px]">
