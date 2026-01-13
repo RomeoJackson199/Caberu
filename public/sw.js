@@ -34,6 +34,132 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+
+  // Test notification from the app
+  if (event.data && event.data.type === 'TEST_NOTIFICATION') {
+    self.registration.showNotification('Test Notification', {
+      body: 'This is a test notification from Caberu',
+      icon: '/logo.png',
+      badge: '/badge.png',
+      tag: 'test-notification',
+      data: {
+        url: '/'
+      }
+    });
+  }
+});
+
+// Push event - handle incoming push notifications
+self.addEventListener('push', (event) => {
+  console.log('Service Worker: Push event received', event);
+
+  let notificationData = {
+    title: 'Caberu Notification',
+    body: 'You have a new notification',
+    icon: '/logo.png',
+    badge: '/badge.png',
+    data: {}
+  };
+
+  // Parse the push payload
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = {
+        title: data.title || notificationData.title,
+        body: data.message || data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        tag: data.tag || 'notification',
+        requireInteraction: data.requireInteraction || false,
+        actions: data.actions || [],
+        data: {
+          url: data.url || '/',
+          notification_id: data.notification_id,
+          type: data.type,
+          ...data.data
+        }
+      };
+    } catch (error) {
+      console.error('Service Worker: Failed to parse push data', error);
+    }
+  }
+
+  // Show the notification
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      requireInteraction: notificationData.requireInteraction,
+      actions: notificationData.actions,
+      data: notificationData.data,
+      vibrate: [200, 100, 200],
+      timestamp: Date.now()
+    })
+  );
+});
+
+// Notification click event
+self.addEventListener('notificationclick', (event) => {
+  console.log('Service Worker: Notification clicked', event);
+
+  event.notification.close();
+
+  // Handle action button clicks
+  if (event.action) {
+    console.log('Service Worker: Action clicked', event.action);
+  }
+
+  // Get the URL from the notification data
+  const urlToOpen = event.notification.data?.url || '/';
+
+  // Open the app or focus existing window
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then((clientList) => {
+      // Check if there's already a window open
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus().then(() => {
+            // Navigate to the URL if needed
+            if (client.navigate && urlToOpen !== '/') {
+              return client.navigate(urlToOpen);
+            }
+            return client;
+          });
+        }
+      }
+
+      // If no window is open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Notification close event
+self.addEventListener('notificationclose', (event) => {
+  console.log('Service Worker: Notification closed', event);
+});
+
+// Sync event - for background sync
+self.addEventListener('sync', (event) => {
+  console.log('Service Worker: Sync event', event.tag);
+
+  if (event.tag === 'sync-notifications') {
+    event.waitUntil(
+      fetch('/api/notifications/sync', {
+        method: 'POST'
+      }).catch((error) => {
+        console.error('Service Worker: Failed to sync notifications', error);
+      })
+    );
+  }
 });
 
 // Fetch handling
