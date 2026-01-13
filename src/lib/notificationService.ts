@@ -68,7 +68,7 @@ export class NotificationService {
     return data?.length || 0;
   }
 
-  // Create a new notification with email sending only
+  // Create a new notification with email and push sending
   static async createNotification(
     userId: string,
     title: string,
@@ -78,7 +78,8 @@ export class NotificationService {
     actionUrl?: string,
     metadata?: Record<string, unknown>,
     expiresAt?: string,
-    sendEmail = true
+    sendEmail = true,
+    sendPush = true
   ): Promise<string> {
     const { data, error } = await supabase
       .from('notifications')
@@ -105,7 +106,47 @@ export class NotificationService {
     // Send email notification if enabled
     await this.sendEmailNotification(userId, title, message, type, sendEmail, metadata);
 
+    // Send push notification if enabled
+    if (sendPush) {
+      await this.sendPushNotification(userId, title, message, type, actionUrl, data.id);
+    }
+
     return data.id;
+  }
+
+  // Send push notification to user's devices
+  static async sendPushNotification(
+    userId: string,
+    title: string,
+    message: string,
+    type: Notification['type'],
+    url?: string,
+    notificationId?: string
+  ): Promise<void> {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: userId,
+          payload: {
+            title,
+            message,
+            url: url || '/',
+            type,
+            notification_id: notificationId,
+            requireInteraction: type === 'emergency',
+          }
+        }
+      });
+
+      if (error) {
+        logger.error('Failed to send push notification:', error);
+      } else {
+        logger.info('Push notification sent:', data);
+      }
+    } catch (error) {
+      // Don't throw - push notification failure shouldn't break the flow
+      logger.error('Push notification error:', error);
+    }
   }
 
   // Send email notification only
