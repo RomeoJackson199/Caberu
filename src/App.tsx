@@ -32,6 +32,9 @@ import { NetworkStatus, SessionTimeoutWarning } from "@/components/stability";
 import { ConfirmationProvider } from "@/components/stability/ConfirmationDialogs";
 import { RouteProgressBar } from "@/components/RouteProgressBar";
 import { KeyboardShortcutsGuide } from "@/components/KeyboardShortcutsGuide";
+import { SmartNotificationBanner } from "@/components/notifications/SmartNotificationBanner";
+import { NotificationPermissionPrompt } from "@/components/notifications/NotificationPermissionPrompt";
+import { initializePushNotifications } from "@/lib/pushNotifications";
 
 // Force resync: 2025-12-07T19:03
 
@@ -193,11 +196,14 @@ const App = () => {
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => {
         initializeErrorReporting();
+        // Initialize push notifications after error reporting
+        initializePushNotifications().catch(console.error);
       });
     } else {
       // Fallback for browsers without requestIdleCallback
       setTimeout(() => {
         initializeErrorReporting();
+        initializePushNotifications().catch(console.error);
       }, 100);
     }
   }, []);
@@ -310,6 +316,8 @@ const App = () => {
                 <PWAInstallPrompt />
                 <NetworkStatus />
                 <SessionTimeoutWarning />
+                <SmartNotificationBanner />
+                <NotificationPermissionPrompt />
                 <ConfirmationProvider>
                 <BrowserRouter>
                   <RouteProgressBar />

@@ -16,6 +16,7 @@ import { RoleSwitcherMenu } from "@/components/RoleSwitcher";
 import { UserTour, useUserTour } from "@/components/UserTour";
 import { useTemplate } from "@/contexts/TemplateContext";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export type PatientSection = 'home' | 'assistant' | 'care' | 'appointments' | 'payments' | 'messages' | 'settings';
 
@@ -151,6 +152,9 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Notifications */}
+            <NotificationBell />
+
             {onBookAppointment && <Button variant="gradient" size="icon" onClick={onBookAppointment} className="min-h-[44px] min-w-[44px]" aria-label="Book appointment">
               <Calendar className="h-5 w-5" />
               <span className="sr-only">Book appointment</span>

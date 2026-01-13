@@ -14,6 +14,7 @@ import { useTemplateNavigation } from "@/hooks/useTemplateNavigation";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'inventory' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services';
 interface DentistAppShellProps {
   activeSection: DentistSection;
@@ -131,8 +132,12 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
             <span className="text-sm font-semibold truncate">{branding.clinicName || t.dentalPortal || 'Dental Portal'}</span>
           </div>
 
-          {/* User Avatar */}
-          <DropdownMenu>
+          <div className="flex items-center gap-2">
+            {/* Notifications */}
+            <NotificationBell />
+
+            {/* User Avatar */}
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="min-h-[44px] min-w-[44px]">
                 <Avatar className="h-7 w-7">
@@ -252,6 +257,9 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
 
         {/* Right Section: Search, Notifications, User */}
         <div className="ml-auto flex items-center gap-3">
+          {/* Notifications */}
+          <NotificationBell />
+
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
