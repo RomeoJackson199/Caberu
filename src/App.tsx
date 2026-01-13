@@ -189,6 +189,7 @@ const queryClient = new QueryClient({
 const App = () => {
   const [showBusinessPicker, setShowBusinessPicker] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Initialize error reporting on mount - deferred to avoid blocking
   useEffect(() => {
@@ -297,6 +298,101 @@ const App = () => {
     };
   }, []);
 
+  // Fetch notifications when user is logged in
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchNotifications = async () => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile || !isMounted) return;
+
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', profile.id)
+          .eq('is_read', false)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) {
+          logger.error('Error fetching notifications:', error);
+          return;
+        }
+
+        if (isMounted && data) {
+          setNotifications(data);
+        }
+      } catch (error) {
+        logger.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+
+    // Set up real-time subscription for new notifications
+    const channel = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      channel.unsubscribe();
+    };
+  }, [user]);
+
+  // Handle notification dismissal
+  const handleNotificationDismiss = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+
+      if (error) {
+        logger.error('Error dismissing notification:', error);
+        return;
+      }
+
+      // Optimistically update local state
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      logger.error('Error dismissing notification:', error);
+    }
+  };
+
+  // Handle notification action
+  const handleNotificationAction = (notification: any) => {
+    // Mark as read
+    handleNotificationDismiss(notification.id);
+
+    // Handle navigation based on action_url
+    if (notification.action_url) {
+      window.location.href = notification.action_url;
+    }
+  };
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -316,7 +412,13 @@ const App = () => {
                 <PWAInstallPrompt />
                 <NetworkStatus />
                 <SessionTimeoutWarning />
-                <SmartNotificationBanner />
+                <SmartNotificationBanner
+                  notifications={notifications}
+                  onDismiss={handleNotificationDismiss}
+                  onAction={handleNotificationAction}
+                  maxVisible={3}
+                  position="top"
+                />
                 <NotificationPermissionPrompt />
                 <ConfirmationProvider>
                 <BrowserRouter>
