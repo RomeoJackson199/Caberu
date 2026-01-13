@@ -1,13 +1,28 @@
+import { useState, useEffect } from 'react';
 import { SmartNotificationBanner } from './SmartNotificationBanner';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Global notification banner wrapper that fetches notifications
  * and displays them using SmartNotificationBanner
  */
 export function GlobalNotificationBanner() {
-  const { notifications, markAsRead } = useNotifications();
+  const [userId, setUserId] = useState<string>("");
+
+  // Get current user ID
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUserId();
+  }, []);
+
+  const { notifications, markAsRead } = useNotifications(userId);
   const navigate = useNavigate();
 
   const handleDismiss = (id: string) => {
@@ -28,6 +43,11 @@ export function GlobalNotificationBanner() {
 
   // Only show unread notifications in the banner
   const unreadNotifications = notifications.filter(n => !n.is_read);
+
+  // Don't render if no user is logged in
+  if (!userId) {
+    return null;
+  }
 
   return (
     <SmartNotificationBanner

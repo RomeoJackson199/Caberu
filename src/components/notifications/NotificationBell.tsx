@@ -14,19 +14,33 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { Notification } from "@/types/common";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationBellProps {
   className?: string;
 }
 
 export function NotificationBell({ className }: NotificationBellProps) {
+  const [userId, setUserId] = useState<string>("");
+
+  // Get current user ID
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUserId();
+  }, []);
+
   const {
     notifications,
     unreadCount,
     markAsRead,
     markAllAsRead,
     isLoading,
-  } = useNotifications();
+  } = useNotifications(userId);
 
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -69,6 +83,11 @@ export function NotificationBell({ className }: NotificationBellProps) {
   };
 
   const recentNotifications = notifications.slice(0, 5);
+
+  // Don't render if no user is logged in
+  if (!userId) {
+    return null;
+  }
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
