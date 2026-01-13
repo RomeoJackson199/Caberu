@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, Variants } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 export interface LiquidGlassProps {
@@ -75,14 +75,14 @@ export const LiquidGlass = ({
     ? 'before:absolute before:inset-0 before:rounded-[inherit] before:p-[1px] before:bg-gradient-to-br before:from-white/50 before:via-white/20 before:to-transparent before:-z-10 before:blur-sm'
     : '';
 
-  const animationVariants = {
+  const animationVariants: Variants = {
     initial: { opacity: 0, scale: 0.95, y: 10 },
     animate: {
       opacity: 1,
       scale: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         damping: 20,
         stiffness: 300,
       },
@@ -91,7 +91,7 @@ export const LiquidGlass = ({
       ? {
           scale: 1.02,
           transition: {
-            type: 'spring',
+            type: 'spring' as const,
             damping: 15,
             stiffness: 400,
           },
@@ -101,7 +101,7 @@ export const LiquidGlass = ({
       ? {
           scale: 0.98,
           transition: {
-            type: 'spring',
+            type: 'spring' as const,
             damping: 20,
             stiffness: 400,
           },
@@ -197,13 +197,17 @@ export const LiquidGlassCard = ({
   );
 };
 
-export interface LiquidGlassButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface LiquidGlassButtonProps {
+  children?: React.ReactNode;
   variant?: 'default' | 'frosted' | 'vibrant';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 export const LiquidGlassButton = ({
@@ -215,7 +219,8 @@ export const LiquidGlassButton = ({
   rightIcon,
   className,
   disabled,
-  ...props
+  onClick,
+  type = 'button',
 }: LiquidGlassButtonProps) => {
   const sizeClasses = {
     sm: 'px-4 py-2 text-sm',
@@ -225,6 +230,7 @@ export const LiquidGlassButton = ({
 
   return (
     <motion.button
+      type={type}
       className={cn(
         'relative rounded-xl font-medium backdrop-blur-xl border transition-all duration-200',
         'active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed',
@@ -242,7 +248,7 @@ export const LiquidGlassButton = ({
       whileHover={{ scale: disabled ? 1 : 1.02 }}
       whileTap={{ scale: disabled ? 1 : 0.98 }}
       disabled={disabled}
-      {...props}
+      onClick={onClick}
     >
       {leftIcon && <span>{leftIcon}</span>}
       <span>{children}</span>
