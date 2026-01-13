@@ -93,7 +93,32 @@ export function useHaptics() {
 export function useBiometricAuth() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [lastResult, setLastResult] = useState<BiometricAuthResult | null>(null);
+  const [isAvailable, setIsAvailable] = useState(false);
   const isNative = useDespiaNative();
+
+  // Check biometric availability (native or WebAuthn)
+  useEffect(() => {
+    const checkAvailability = async () => {
+      if (isNative) {
+        setIsAvailable(true);
+        return;
+      }
+
+      // Check for WebAuthn support
+      if (window.PublicKeyCredential) {
+        try {
+          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          setIsAvailable(available);
+        } catch {
+          setIsAvailable(false);
+        }
+      } else {
+        setIsAvailable(false);
+      }
+    };
+
+    checkAvailability();
+  }, [isNative]);
 
   const authenticate = useCallback(async (): Promise<BiometricAuthResult> => {
     setIsAuthenticating(true);
@@ -107,7 +132,7 @@ export function useBiometricAuth() {
   }, []);
 
   return {
-    isAvailable: isNative,
+    isAvailable,
     isAuthenticating,
     lastResult,
     authenticate,
