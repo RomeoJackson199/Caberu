@@ -3769,98 +3769,50 @@ export type Database = {
       secure_profiles_view: {
         Row: {
           address: string | null
-          ai_opt_out: boolean | null
           avatar_url: string | null
-          bio: string | null
-          business_id: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
           emergency_contact: string | null
           first_name: string | null
           id: string | null
-          is_vip: boolean | null
-          last_contact_at: string | null
           last_name: string | null
           medical_history: string | null
-          next_recall_date: string | null
-          onboarding_completed: boolean | null
-          patient_status: string | null
           phone: string | null
-          profile_completion_status: string | null
-          profile_picture_url: string | null
           role: string | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
-          address?: never
-          ai_opt_out?: boolean | null
+          address?: string | null
           avatar_url?: string | null
-          bio?: string | null
-          business_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
-          emergency_contact?: never
-          first_name?: never
+          emergency_contact?: string | null
+          first_name?: string | null
           id?: string | null
-          is_vip?: boolean | null
-          last_contact_at?: string | null
-          last_name?: never
-          medical_history?: never
-          next_recall_date?: string | null
-          onboarding_completed?: boolean | null
-          patient_status?: string | null
-          phone?: never
-          profile_completion_status?: string | null
-          profile_picture_url?: string | null
+          last_name?: string | null
+          medical_history?: string | null
+          phone?: string | null
           role?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
-          address?: never
-          ai_opt_out?: boolean | null
+          address?: string | null
           avatar_url?: string | null
-          bio?: string | null
-          business_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
-          emergency_contact?: never
-          first_name?: never
+          emergency_contact?: string | null
+          first_name?: string | null
           id?: string | null
-          is_vip?: boolean | null
-          last_contact_at?: string | null
-          last_name?: never
-          medical_history?: never
-          next_recall_date?: string | null
-          onboarding_completed?: boolean | null
-          patient_status?: string | null
-          phone?: never
-          profile_completion_status?: string | null
-          profile_picture_url?: string | null
+          last_name?: string | null
+          medical_history?: string | null
+          phone?: string | null
           role?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "public_businesses_view"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       secure_treatment_plans_view: {
         Row: {
