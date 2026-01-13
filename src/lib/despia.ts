@@ -118,15 +118,19 @@ export async function authenticateWithBiometrics(): Promise<BiometricAuthResult>
       try {
         const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
         if (!available) {
-          return { authenticated: false, error: 'Biometrics not available' };
+          return { authenticated: false, error: 'Biometrics not available on this device' };
         }
-        // For web, we'd need to implement full WebAuthn flow
-        return { authenticated: false, error: 'Use native app for biometric auth' };
-      } catch {
-        return { authenticated: false, error: 'Biometrics check failed' };
+
+        // Implement WebAuthn authentication
+        return await authenticateWithWebAuthn();
+      } catch (error) {
+        return {
+          authenticated: false,
+          error: error instanceof Error ? error.message : 'Biometrics check failed'
+        };
       }
     }
-    return { authenticated: false, error: 'Biometrics not supported' };
+    return { authenticated: false, error: 'Biometrics not supported on this browser' };
   }
 
   return new Promise((resolve) => {
@@ -140,6 +144,141 @@ export async function authenticateWithBiometrics(): Promise<BiometricAuthResult>
 
     despia('bioauth://');
   });
+}
+
+/**
+ * WebAuthn authentication for web browsers
+ * Provides biometric authentication fallback using platform authenticators
+ */
+async function authenticateWithWebAuthn(): Promise<BiometricAuthResult> {
+  const credentialStorageKey = 'webauthn_credential_id';
+  const storedCredentialId = localStorage.getItem(credentialStorageKey);
+
+  try {
+    // If no credential exists, register a new one
+    if (!storedCredentialId) {
+      return await registerWebAuthnCredential(credentialStorageKey);
+    }
+
+    // Authenticate with existing credential
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+
+    const publicKeyCredentialRequestOptions: PublicKeyCredentialRequestOptions = {
+      challenge,
+      allowCredentials: [{
+        id: base64ToArrayBuffer(storedCredentialId),
+        type: 'public-key',
+        transports: ['internal'],
+      }],
+      timeout: 60000,
+      userVerification: 'required',
+    };
+
+    const credential = await navigator.credentials.get({
+      publicKey: publicKeyCredentialRequestOptions,
+    }) as PublicKeyCredential | null;
+
+    if (credential) {
+      return {
+        authenticated: true,
+        biometryType: 'fingerprint', // WebAuthn uses platform authenticator
+      };
+    }
+
+    return { authenticated: false, error: 'Authentication cancelled' };
+  } catch (error) {
+    // If authentication fails, try to re-register
+    if (error instanceof Error && error.name === 'NotAllowedError') {
+      return { authenticated: false, error: 'Authentication cancelled by user' };
+    }
+
+    // Re-register if credential is invalid
+    localStorage.removeItem(credentialStorageKey);
+    return await registerWebAuthnCredential(credentialStorageKey);
+  }
+}
+
+/**
+ * Register a new WebAuthn credential
+ */
+async function registerWebAuthnCredential(storageKey: string): Promise<BiometricAuthResult> {
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+
+    const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
+      challenge,
+      rp: {
+        name: 'Caberu',
+        id: window.location.hostname,
+      },
+      user: {
+        id: userId,
+        name: 'user@caberu.app',
+        displayName: 'Caberu User',
+      },
+      pubKeyCredParams: [
+        { alg: -7, type: 'public-key' },  // ES256
+        { alg: -257, type: 'public-key' }, // RS256
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        userVerification: 'required',
+        requireResidentKey: false,
+      },
+      timeout: 60000,
+      attestation: 'none',
+    };
+
+    const credential = await navigator.credentials.create({
+      publicKey: publicKeyCredentialCreationOptions,
+    }) as PublicKeyCredential | null;
+
+    if (credential) {
+      // Store credential ID for future authentication
+      const credentialId = arrayBufferToBase64(credential.rawId);
+      localStorage.setItem(storageKey, credentialId);
+
+      return {
+        authenticated: true,
+        biometryType: 'fingerprint',
+      };
+    }
+
+    return { authenticated: false, error: 'Failed to create credential' };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'NotAllowedError') {
+      return { authenticated: false, error: 'Registration cancelled by user' };
+    }
+    return {
+      authenticated: false,
+      error: error instanceof Error ? error.message : 'Registration failed',
+    };
+  }
+}
+
+/**
+ * Helper: Convert ArrayBuffer to Base64
+ */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Helper: Convert Base64 to ArrayBuffer
+ */
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
 }
 
 // ============================================
