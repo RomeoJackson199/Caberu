@@ -88,6 +88,9 @@ serve(async (req) => {
         patientId: profileId,
         dentistId: null,
       },
+      headers: {
+        Authorization: `Bearer ${supabaseServiceKey}`,
+      },
     });
 
     if (emailError) {

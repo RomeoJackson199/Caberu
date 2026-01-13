@@ -112,11 +112,11 @@ serve(async (req) => {
               message: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <h2 style="color: #2D5D7B;">Appointment Reminder</h2>
-                  
+
                   <p>Hello ${patient.first_name},</p>
-                  
+
                   <p>This is a friendly reminder that your dental appointment is coming up ${reminderText}.</p>
-                  
+
                   <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <h3 style="margin: 0 0 12px 0; color: #1e293b;">Appointment Details:</h3>
                     <table style="width: 100%;">
@@ -140,14 +140,14 @@ serve(async (req) => {
                       ` : ''}
                     </table>
                   </div>
-                  
+
                   <div style="background: #dbeafe; padding: 16px; border-radius: 8px; margin: 20px 0;">
                     <p style="margin: 0; color: #1e40af;">
-                      <strong>Important:</strong> Please arrive 10 minutes early for check-in. 
+                      <strong>Important:</strong> Please arrive 10 minutes early for check-in.
                       If you need to reschedule, please contact us at least 24 hours in advance.
                     </p>
                   </div>
-                  
+
                   <p style="color: #64748b; font-size: 14px; margin-top: 24px;">
                     Thank you for choosing our dental practice. We look forward to seeing you soon!
                   </p>
@@ -157,6 +157,9 @@ serve(async (req) => {
               patientId: patient.id,
               dentistId: appointment.dentist_id,
               isSystemNotification: true,
+            },
+            headers: {
+              Authorization: `Bearer ${supabaseServiceKey}`,
             },
           }
         );

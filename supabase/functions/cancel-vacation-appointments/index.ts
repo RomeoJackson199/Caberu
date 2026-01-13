@@ -161,6 +161,9 @@ ${dentistName}'s Office`;
                             messageType: 'system',
                             isSystemNotification: true,
                         },
+                        headers: {
+                            Authorization: `Bearer ${supabaseServiceKey}`,
+                        },
                     });
 
                     if (!emailError) {
