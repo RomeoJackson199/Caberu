@@ -24,13 +24,14 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       setLoading(true);
 
 
+      // Use profiles table directly instead of view to avoid FK ambiguity
       let appointmentQuery = supabase
         .from('appointments')
         .select(`
           patient_id,
-          secure_profiles_view!appointments_patient_id_fkey (
+          profiles!fk_appointments_patient (
             id, first_name, last_name, email, phone, date_of_birth,
-            address, medical_history, emergency_contact, profile_picture_url
+            address, medical_history, emergency_contact, avatar_url
           )
         `)
         .eq('dentist_id', dentistId);
@@ -46,7 +47,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       if (appointmentError) throw appointmentError;
 
       const patientsFromAppointments = (appointmentData || [])
-        .map(apt => Array.isArray(apt.secure_profiles_view) ? apt.secure_profiles_view[0] : apt.secure_profiles_view)
+        .map(apt => Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles)
         .filter(Boolean) as DentistPatient[];
 
       // Remove duplicates
