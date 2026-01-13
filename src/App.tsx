@@ -309,18 +309,11 @@ const App = () => {
 
     const fetchNotifications = async () => {
       try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!profile || !isMounted) return;
-
+        // notifications.user_id references auth.users.id directly
         const { data, error } = await supabase
           .from('notifications')
           .select('*')
-          .eq('user_id', profile.id)
+          .eq('user_id', user.id)
           .eq('is_read', false)
           .order('created_at', { ascending: false })
           .limit(10);

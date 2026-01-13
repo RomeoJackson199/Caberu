@@ -41,13 +41,13 @@ export function SmartNotificationBanner({
     const activeNotifications = notifications
       .filter(n => !dismissedIds.has(n.id) && !n.is_read)
       .sort((a, b) => {
-        // Priority mapping: handle both UI values and DB values
-        const priorityOrder: Record<string, number> = { urgent: 4, high: 3, normal: 2, medium: 2, low: 1 };
-        const aPriority = priorityOrder[a.priority as string] || 0;
-        const bPriority = priorityOrder[b.priority as string] || 0;
-        
+        // Category-based priority (database uses category: info, warning, success, error, urgent)
+        const categoryOrder: Record<string, number> = { urgent: 5, error: 4, warning: 3, success: 2, info: 1 };
+        const aPriority = categoryOrder[a.category as string] || 0;
+        const bPriority = categoryOrder[b.category as string] || 0;
+
         if (aPriority !== bPriority) return bPriority - aPriority;
-        
+
         // Then by creation date (newest first)
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       })
@@ -75,15 +75,15 @@ export function SmartNotificationBanner({
     onDismiss?.(id);
   };
 
-  const getNotificationIcon = (type: string, priority: string) => {
+  const getNotificationIcon = (type: string, category: string) => {
     const iconProps = {
       className: cn(
         "h-4 w-4",
-        priority === 'urgent' && "text-red-500 animate-pulse",
-        priority === 'high' && "text-orange-500",
-        priority === 'normal' && "text-blue-500",
-        priority === 'medium' && "text-blue-500", // Backward compatibility
-        priority === 'low' && "text-gray-500"
+        category === 'urgent' && "text-red-500 animate-pulse",
+        category === 'error' && "text-red-500",
+        category === 'warning' && "text-orange-500",
+        category === 'success' && "text-green-500",
+        category === 'info' && "text-blue-500"
       )
     };
 
@@ -92,8 +92,7 @@ export function SmartNotificationBanner({
         return <Calendar {...iconProps} />;
       case 'payment':
         return <CreditCard {...iconProps} />;
-      case 'urgent':
-      case 'warning':
+      case 'emergency':
         return <AlertTriangle {...iconProps} />;
       default:
         return <Bell {...iconProps} />;
@@ -101,14 +100,18 @@ export function SmartNotificationBanner({
   };
 
   const getBannerStyle = (notification: any) => {
-    const { priority } = notification;
-    
-    switch (priority) {
+    const { category } = notification;
+
+    switch (category) {
       case 'urgent':
         return "bg-red-50 border-red-200 text-red-900";
-      case 'high':
+      case 'error':
+        return "bg-red-50 border-red-200 text-red-900";
+      case 'warning':
         return "bg-orange-50 border-orange-200 text-orange-900";
-      case 'medium':
+      case 'success':
+        return "bg-green-50 border-green-200 text-green-900";
+      case 'info':
         return "bg-blue-50 border-blue-200 text-blue-900";
       default:
         return "bg-gray-50 border-gray-200 text-gray-900";
@@ -141,7 +144,7 @@ export function SmartNotificationBanner({
           }}
         >
           <div className="flex-shrink-0">
-            {getNotificationIcon(notification.type, notification.priority)}
+            {getNotificationIcon(notification.type, notification.category)}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -149,7 +152,7 @@ export function SmartNotificationBanner({
               <h4 className="font-medium text-sm truncate">
                 {notification.title}
               </h4>
-              {notification.priority === 'urgent' && (
+              {notification.category === 'urgent' && (
                 <Badge variant="destructive" className="text-xs px-1 py-0">
                   URGENT
                 </Badge>
