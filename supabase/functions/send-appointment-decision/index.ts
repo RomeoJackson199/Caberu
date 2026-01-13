@@ -69,24 +69,28 @@ serve(async (req) => {
             );
         }
 
-        // Get patient email separately
+        // Get patient profile with user_id
         let patientEmail = null;
+        let patientUserId = null;
+        let patientName = '';
         try {
             const { data: patientProfile } = await supabase
                 .from('profiles')
-                .select('email, first_name, last_name')
+                .select('email, first_name, last_name, user_id')
                 .eq('id', appointment.patient_id)
                 .single();
 
             patientEmail = patientProfile?.email;
+            patientUserId = patientProfile?.user_id;
+            patientName = `${patientProfile?.first_name || ''} ${patientProfile?.last_name || ''}`.trim();
             console.log('Patient profile:', patientProfile);
         } catch (profileError) {
             console.error('Failed to get patient profile:', profileError);
         }
 
-        if (!patientEmail) {
+        if (!patientEmail || !patientUserId) {
             return new Response(
-                JSON.stringify({ success: true, message: 'No patient email found, skipping notification' }),
+                JSON.stringify({ success: true, message: 'No patient email or user ID found, skipping notification' }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
@@ -131,11 +135,82 @@ serve(async (req) => {
             console.error('Failed to invoke email function:', emailCatchError);
         }
 
+        // Create in-app notification and send push notification
+        let notificationCreated = false;
+        let pushSent = false;
+        try {
+            // Create notification in database
+            const notificationTitle = decision === 'approved'
+                ? 'Appointment Confirmed ✅'
+                : 'Appointment Request Update ❌';
+
+            const notificationMessage = decision === 'approved'
+                ? `Great news! Your appointment has been confirmed for ${formattedDate} at ${formattedTime}.`
+                : `Your appointment request for ${formattedDate} at ${formattedTime} could not be confirmed. Please book a new appointment.`;
+
+            const { data: notificationData, error: notificationError } = await supabase
+                .from('notifications')
+                .insert({
+                    user_id: patientUserId,
+                    type: 'appointment',
+                    category: decision === 'approved' ? 'success' : 'warning',
+                    title: notificationTitle,
+                    message: notificationMessage,
+                    action_url: `/appointments/${appointment_id}`,
+                    metadata: {
+                        appointment_id: appointment_id,
+                        decision: decision,
+                        appointment_date: appointment.appointment_date,
+                        formatted_date: formattedDate,
+                        formatted_time: formattedTime
+                    },
+                    is_read: false,
+                    created_at: new Date().toISOString(),
+                })
+                .select('id')
+                .single();
+
+            if (!notificationError && notificationData) {
+                notificationCreated = true;
+                console.log('In-app notification created:', notificationData.id);
+
+                // Send push notification
+                try {
+                    const { data: pushData, error: pushError } = await supabase.functions.invoke('send-push-notifications', {
+                        body: {
+                            userId: patientUserId,
+                            title: notificationTitle,
+                            message: notificationMessage,
+                            url: `/appointments/${appointment_id}`,
+                            type: 'appointment',
+                            notificationId: notificationData.id,
+                            requireInteraction: decision !== 'approved' // Require interaction for declined appointments
+                        }
+                    });
+
+                    if (!pushError && pushData?.success) {
+                        pushSent = true;
+                        console.log('Push notification sent successfully');
+                    } else {
+                        console.error('Push notification error:', pushError);
+                    }
+                } catch (pushCatchError) {
+                    console.error('Failed to send push notification:', pushCatchError);
+                }
+            } else {
+                console.error('Notification creation error:', notificationError);
+            }
+        } catch (notificationCatchError) {
+            console.error('Failed to create notification:', notificationCatchError);
+        }
+
         return new Response(
             JSON.stringify({
                 success: true,
                 message: emailSent ? `Email sent to ${patientEmail}` : 'Appointment processed but email not sent',
                 email_sent: emailSent,
+                notification_created: notificationCreated,
+                push_sent: pushSent,
                 appointment_id: appointment_id,
                 decision: decision
             }),
