@@ -1,9 +1,44 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 
 // Web Push library for Deno
 import webpush from 'npm:web-push@3.6.7';
+
+// Inline CORS configuration (to avoid shared module import issues)
+const ALLOWED_ORIGINS = [
+  'https://caberu.be',
+  'https://www.caberu.be',
+  'https://app.caberu.be',
+  'https://supabase.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+];
+
+function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
+  const origin = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)
+    ? requestOrigin
+    : ALLOWED_ORIGINS[0];
+
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+function handleCorsPreflightSafe(req: Request): Response | null {
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.get('Origin');
+    return new Response(null, {
+      status: 204,
+      headers: getCorsHeaders(origin),
+    });
+  }
+  return null;
+}
 
 interface PushNotificationRequest {
   userId: string;
