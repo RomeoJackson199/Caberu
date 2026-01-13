@@ -32,7 +32,7 @@ import { NetworkStatus, SessionTimeoutWarning } from "@/components/stability";
 import { ConfirmationProvider } from "@/components/stability/ConfirmationDialogs";
 import { RouteProgressBar } from "@/components/RouteProgressBar";
 import { KeyboardShortcutsGuide } from "@/components/KeyboardShortcutsGuide";
-import { SmartNotificationBanner } from "@/components/notifications/SmartNotificationBanner";
+import { GlobalNotificationBanner } from "@/components/notifications/GlobalNotificationBanner";
 import { NotificationPermissionPrompt } from "@/components/notifications/NotificationPermissionPrompt";
 import { initializePushNotifications } from "@/lib/pushNotifications";
 
@@ -316,7 +316,7 @@ const App = () => {
                 <PWAInstallPrompt />
                 <NetworkStatus />
                 <SessionTimeoutWarning />
-                <SmartNotificationBanner />
+                <GlobalNotificationBanner />
                 <NotificationPermissionPrompt />
                 <ConfirmationProvider>
                 <BrowserRouter>
