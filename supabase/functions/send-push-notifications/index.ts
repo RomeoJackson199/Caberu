@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Inline CORS configuration (to avoid shared module import issues)
+// Inline CORS configuration
 const ALLOWED_ORIGINS = [
   'https://caberu.be',
   'https://www.caberu.be',
@@ -57,8 +57,201 @@ interface PushSubscription {
   auth_key: string;
 }
 
-// Helper function to create JWT for VAPID
-async function createVapidJWT(audience: string, subject: string, privateKeyBase64: string): Promise<string> {
+// ============================================================================
+// Web Push Encryption Implementation (RFC 8291)
+// ============================================================================
+
+// Base64URL decode
+function base64UrlDecode(input: string): Uint8Array {
+  // Add padding if needed
+  let base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4 !== 0) {
+    base64 += '=';
+  }
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Base64URL encode
+function base64UrlEncode(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Concatenate Uint8Arrays
+function concatUint8Arrays(...arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
+// HKDF implementation using Web Crypto API
+async function hkdf(
+  ikm: Uint8Array,
+  salt: Uint8Array,
+  info: Uint8Array,
+  length: number
+): Promise<Uint8Array> {
+  // Import IKM as HKDF key
+  const key = await crypto.subtle.importKey(
+    'raw',
+    ikm,
+    'HKDF',
+    false,
+    ['deriveBits']
+  );
+
+  // Derive bits
+  const derived = await crypto.subtle.deriveBits(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: salt,
+      info: info,
+    },
+    key,
+    length * 8
+  );
+
+  return new Uint8Array(derived);
+}
+
+// Create info for HKDF (Web Push specific)
+function createInfo(type: string, clientPublicKey: Uint8Array, serverPublicKey: Uint8Array): Uint8Array {
+  const encoder = new TextEncoder();
+  const typeBytes = encoder.encode(type);
+
+  // Format: "Content-Encoding: <type>\0" + "P-256\0" + client_key_length (2 bytes) + client_key + server_key_length (2 bytes) + server_key
+  const parts = [
+    encoder.encode('Content-Encoding: '),
+    typeBytes,
+    new Uint8Array([0]), // null byte
+    encoder.encode('P-256'),
+    new Uint8Array([0]), // null byte
+    new Uint8Array([0, clientPublicKey.length]), // 2 byte length
+    clientPublicKey,
+    new Uint8Array([0, serverPublicKey.length]), // 2 byte length
+    serverPublicKey,
+  ];
+
+  return concatUint8Arrays(...parts);
+}
+
+// Encrypt payload for Web Push (RFC 8291 / aes128gcm)
+async function encryptPayload(
+  payload: string,
+  p256dhKey: string,
+  authSecret: string
+): Promise<{ encryptedPayload: Uint8Array; localPublicKey: Uint8Array }> {
+  const encoder = new TextEncoder();
+  const payloadBytes = encoder.encode(payload);
+
+  // Decode client's public key and auth secret
+  const clientPublicKeyBytes = base64UrlDecode(p256dhKey);
+  const authSecretBytes = base64UrlDecode(authSecret);
+
+  // Generate ephemeral ECDH key pair for this message
+  const localKeyPair = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveBits']
+  );
+
+  // Export the local public key in raw format
+  const localPublicKeyRaw = await crypto.subtle.exportKey('raw', localKeyPair.publicKey);
+  const localPublicKeyBytes = new Uint8Array(localPublicKeyRaw);
+
+  // Import the client's public key
+  const clientPublicKey = await crypto.subtle.importKey(
+    'raw',
+    clientPublicKeyBytes,
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  );
+
+  // Perform ECDH to get shared secret
+  const sharedSecretBuffer = await crypto.subtle.deriveBits(
+    { name: 'ECDH', public: clientPublicKey },
+    localKeyPair.privateKey,
+    256
+  );
+  const sharedSecret = new Uint8Array(sharedSecretBuffer);
+
+  // Generate a random 16-byte salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // Derive PRK using HKDF with auth secret as salt
+  const authInfo = encoder.encode('Content-Encoding: auth\0');
+  const prk = await hkdf(sharedSecret, authSecretBytes, authInfo, 32);
+
+  // Derive content encryption key (CEK)
+  const cekInfo = createInfo('aesgcm', clientPublicKeyBytes, localPublicKeyBytes);
+  const cek = await hkdf(prk, salt, cekInfo, 16);
+
+  // Derive nonce
+  const nonceInfo = createInfo('nonce', clientPublicKeyBytes, localPublicKeyBytes);
+  const nonce = await hkdf(prk, salt, nonceInfo, 12);
+
+  // Add padding (RFC 8291 requires at least 2 bytes of padding)
+  // Format: padding_length (1 byte) + padding + payload
+  const paddingLength = 0; // Minimum padding
+  const paddedPayload = concatUint8Arrays(
+    new Uint8Array([paddingLength]),
+    new Uint8Array(paddingLength),
+    payloadBytes
+  );
+
+  // Import CEK for AES-GCM
+  const aesKey = await crypto.subtle.importKey(
+    'raw',
+    cek,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+
+  // Encrypt with AES-128-GCM
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: nonce },
+    aesKey,
+    paddedPayload
+  );
+
+  // Build aes128gcm encrypted content encoding format
+  // Format: salt (16 bytes) + record_size (4 bytes) + key_id_length (1 byte) + key_id (public key) + ciphertext
+  const recordSize = new Uint8Array(4);
+  new DataView(recordSize.buffer).setUint32(0, 4096, false); // Big endian
+
+  const encryptedPayload = concatUint8Arrays(
+    salt,
+    recordSize,
+    new Uint8Array([localPublicKeyBytes.length]),
+    localPublicKeyBytes,
+    new Uint8Array(ciphertext)
+  );
+
+  return { encryptedPayload, localPublicKey: localPublicKeyBytes };
+}
+
+// Create VAPID JWT for authorization
+async function createVapidJWT(
+  audience: string,
+  subject: string,
+  privateKeyBase64: string
+): Promise<string> {
   const header = { alg: 'ES256', typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);
   const payload = {
@@ -68,36 +261,81 @@ async function createVapidJWT(audience: string, subject: string, privateKeyBase6
   };
 
   const encoder = new TextEncoder();
-  const headerB64 = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const payloadB64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const headerB64 = base64UrlEncode(encoder.encode(JSON.stringify(header)));
+  const payloadB64 = base64UrlEncode(encoder.encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
-  // Import private key
-  const privateKeyBytes = Uint8Array.from(atob(privateKeyBase64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-  
-  const key = await crypto.subtle.importKey(
-    'pkcs8',
-    privateKeyBytes,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  );
+  // Decode private key (expected in raw or PKCS8 format)
+  const privateKeyBytes = base64UrlDecode(privateKeyBase64);
 
-  const signature = await crypto.subtle.sign(
+  // Try to import as raw first (32 bytes), otherwise as PKCS8
+  let key: CryptoKey;
+  if (privateKeyBytes.length === 32) {
+    // Raw EC private key - need to construct JWK
+    // This is the d parameter of the key
+    const jwk = {
+      kty: 'EC',
+      crv: 'P-256',
+      d: base64UrlEncode(privateKeyBytes),
+      // We need x and y but don't have them - derive from d
+      // For now, try PKCS8 format
+    };
+    throw new Error('Raw private key format not fully supported, please use PKCS8');
+  } else {
+    // PKCS8 format
+    key = await crypto.subtle.importKey(
+      'pkcs8',
+      privateKeyBytes,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+  }
+
+  // Sign with ECDSA
+  const signatureBuffer = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     key,
     encoder.encode(unsignedToken)
   );
 
-  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  // Web Crypto returns DER-encoded signature, but JWT needs raw r||s format
+  // DER format: 0x30 [total-length] 0x02 [r-length] [r] 0x02 [s-length] [s]
+  const derSignature = new Uint8Array(signatureBuffer);
+  let signature: Uint8Array;
 
+  if (derSignature[0] === 0x30) {
+    // DER encoded - convert to raw
+    const rLength = derSignature[3];
+    const rStart = 4;
+    const rEnd = rStart + rLength;
+    const sLength = derSignature[rEnd + 1];
+    const sStart = rEnd + 2;
+
+    // Extract r and s, removing any leading zeros
+    let r = derSignature.slice(rStart, rEnd);
+    let s = derSignature.slice(sStart, sStart + sLength);
+
+    // Pad or trim to 32 bytes each
+    if (r.length > 32) r = r.slice(r.length - 32);
+    if (s.length > 32) s = s.slice(s.length - 32);
+
+    const rPadded = new Uint8Array(32);
+    const sPadded = new Uint8Array(32);
+    rPadded.set(r, 32 - r.length);
+    sPadded.set(s, 32 - s.length);
+
+    signature = concatUint8Arrays(rPadded, sPadded);
+  } else {
+    // Already in raw format (64 bytes)
+    signature = derSignature;
+  }
+
+  const signatureB64 = base64UrlEncode(signature);
   return `${unsignedToken}.${signatureB64}`;
 }
 
-// Send web push notification using fetch
+// Send Web Push notification with proper encryption
 async function sendWebPushNotification(
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   payload: string,
@@ -108,32 +346,41 @@ async function sendWebPushNotification(
   const url = new URL(subscription.endpoint);
   const audience = `${url.protocol}//${url.host}`;
 
+  // Encrypt the payload
+  const { encryptedPayload } = await encryptPayload(
+    payload,
+    subscription.keys.p256dh,
+    subscription.keys.auth
+  );
+
+  // Build headers
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/octet-stream',
     'Content-Encoding': 'aes128gcm',
     'TTL': '86400',
   };
 
-  // Add authorization if VAPID keys are provided
+  // Add VAPID authorization
   if (vapidPublicKey && vapidPrivateKey) {
     try {
       const jwt = await createVapidJWT(audience, vapidSubject, vapidPrivateKey);
       headers['Authorization'] = `vapid t=${jwt}, k=${vapidPublicKey}`;
     } catch (e) {
-      console.warn('Failed to create VAPID JWT, sending without auth:', e);
+      console.warn('Failed to create VAPID JWT:', e);
+      // Continue without VAPID - some push services don't require it
     }
   }
 
   const response = await fetch(subscription.endpoint, {
     method: 'POST',
     headers,
-    body: payload,
+    body: encryptedPayload,
   });
 
   return response;
 }
 
-// 🔒 SECURITY: Audit logging helper for HIPAA compliance
+// Audit logging helper for HIPAA compliance
 async function logAuditEvent(
   supabase: any,
   action: string,
@@ -158,7 +405,6 @@ async function logAuditEvent(
     });
   } catch (error) {
     console.error('Failed to log audit event:', error);
-    // Don't fail the request if audit logging fails, but log the error
   }
 }
 
@@ -182,42 +428,38 @@ serve(async (req) => {
       throw new Error('Supabase credentials not configured');
     }
 
-    // 🔒 SECURITY: Check authentication
+    // Authentication check
     const authHeader = req.headers.get('authorization');
     let callerId: string | null = null;
     let isServiceRole = false;
 
-    // Check if this is a service role call (internal trigger)
     if (authHeader?.includes(supabaseServiceKey || '')) {
       isServiceRole = true;
       console.log('🔐 Service role access - internal trigger');
     } else if (authHeader) {
-      // Validate user token
       const userClient = createClient(supabaseUrl, supabaseAnonKey || supabaseServiceKey, {
         global: { headers: { Authorization: authHeader } }
       });
-      
+
       const { data: { user }, error: authError } = await userClient.auth.getUser();
-      
+
       if (authError || !user) {
         console.error('🚫 Authentication failed:', authError?.message);
-        
-        // Audit failed auth attempt
+
         const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
         await logAuditEvent(serviceClient, 'push_notification_auth_failed', null, 'unknown', {
           error: authError?.message || 'Invalid token',
         }, req);
-        
+
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      
+
       callerId = user.id;
       console.log(`🔐 Authenticated user: ${callerId}`);
     } else {
-      // No auth header at all
       console.error('🚫 No authorization header provided');
       return new Response(JSON.stringify({ error: 'Authorization required' }), {
         status: 401,
@@ -248,43 +490,30 @@ serve(async (req) => {
       throw new Error('title and message are required');
     }
 
-    // 🔒 SECURITY: Authorization check - who can send to whom?
-    // Service role: can send to anyone (system notifications)
-    // Regular user: can only send to themselves OR must be a business member sending to their patients
+    // Authorization check
     if (!isServiceRole && callerId !== userId) {
-      // Create service client for authorization check
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // Check if caller is a business member who can notify this patient
+
       const { data: callerProfile } = await supabase
         .from('profiles')
         .select('id, role')
         .eq('user_id', callerId)
         .single();
-      
+
       if (!callerProfile || !['dentist', 'admin', 'staff', 'super_admin'].includes(callerProfile.role)) {
         console.error(`🚫 Unauthorized: User ${callerId} cannot send notifications to ${userId}`);
-        
+
         await logAuditEvent(supabase, 'push_notification_unauthorized', callerId, userId, {
           reason: 'User not authorized to send notifications to this target',
           caller_role: callerProfile?.role || 'unknown',
         }, req);
-        
+
         return new Response(JSON.stringify({ error: 'Not authorized to send notifications to this user' }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      
-      // Additional check: verify the target user is a patient of the caller's business
-      const { data: hasAccess } = await supabase
-        .rpc('has_business_access', { 
-          _business_id: null, // This would need the business context
-          _user_id: callerId 
-        });
-      
-      // For now, allow staff/admin/dentist roles to send notifications
-      // A more strict check would verify business membership
+
       console.log(`✅ Authorized: ${callerProfile.role} sending notification to patient`);
     }
 
@@ -292,13 +521,12 @@ serve(async (req) => {
     console.log(`📝 Title: ${title}`);
     console.log(`📝 Message: ${message}`);
 
-    // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 🔒 HIPAA: Audit log the notification attempt
+    // Audit log the notification attempt
     await logAuditEvent(supabase, 'push_notification_sent', callerId, userId, {
       title,
-      message: message.substring(0, 100), // Truncate for audit
+      message: message.substring(0, 100),
       type,
       is_service_role: isServiceRole,
     }, req);
@@ -310,7 +538,6 @@ serve(async (req) => {
       .eq('user_id', userId)
       .single();
 
-    // Default to enabled if no preferences exist
     const pushEnabled = preferences?.push_enabled ?? true;
 
     if (!pushEnabled) {
@@ -335,7 +562,6 @@ serve(async (req) => {
       const quietStart = startHour * 60 + startMin;
       const quietEnd = endHour * 60 + endMin;
 
-      // Handle overnight quiet hours (e.g., 22:00 to 07:00)
       const inQuietHours = quietStart > quietEnd
         ? currentTime >= quietStart || currentTime < quietEnd
         : currentTime >= quietStart && currentTime < quietEnd;
@@ -381,7 +607,7 @@ serve(async (req) => {
     const payload = JSON.stringify({
       title,
       message,
-      body: message, // Alias for compatibility
+      body: message,
       url,
       icon,
       badge,
@@ -392,6 +618,18 @@ serve(async (req) => {
       actions,
       timestamp: Date.now()
     });
+
+    // Check if VAPID keys are configured
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error('❌ VAPID keys not configured');
+      return new Response(JSON.stringify({
+        error: 'VAPID keys not configured on server',
+        success: false
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Send push notification to all active subscriptions
     const results = await Promise.allSettled(
@@ -405,29 +643,29 @@ serve(async (req) => {
             }
           };
 
-          if (vapidPublicKey && vapidPrivateKey) {
-            const response = await sendWebPushNotification(
-              pushSubscription,
-              payload,
-              vapidPublicKey,
-              vapidPrivateKey,
-              'mailto:support@caberu.be'
-            );
+          const response = await sendWebPushNotification(
+            pushSubscription,
+            payload,
+            vapidPublicKey,
+            vapidPrivateKey,
+            'mailto:support@caberu.be'
+          );
 
-            if (!response.ok) {
-              // If subscription is expired or invalid, mark it as inactive
-              if (response.status === 404 || response.status === 410) {
-                console.log(`🗑️ Marking subscription as inactive: ${sub.id}`);
-                await supabase
-                  .from('push_subscriptions')
-                  .update({ is_active: false })
-                  .eq('id', sub.id);
-              }
-              throw new Error(`Push failed with status ${response.status}`);
+          console.log(`Push response status: ${response.status} for endpoint: ${sub.endpoint.substring(0, 50)}...`);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Push error response: ${errorText}`);
+
+            // If subscription is expired or invalid, mark it as inactive
+            if (response.status === 404 || response.status === 410) {
+              console.log(`🗑️ Marking subscription as inactive: ${sub.id}`);
+              await supabase
+                .from('push_subscriptions')
+                .update({ is_active: false })
+                .eq('id', sub.id);
             }
-          } else {
-            // Fallback: just log that VAPID keys aren't configured
-            console.warn('VAPID keys not configured, push notification may not work');
+            throw new Error(`Push failed with status ${response.status}: ${errorText}`);
           }
 
           console.log(`✅ Push sent to endpoint: ${sub.endpoint.substring(0, 50)}...`);
@@ -443,15 +681,22 @@ serve(async (req) => {
     // Count successes and failures
     const successful = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
+    const errors = results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map(r => r.reason?.message || 'Unknown error');
 
     console.log(`📊 Push notification results: ${successful} sent, ${failed} failed`);
+    if (errors.length > 0) {
+      console.log(`📊 Errors: ${errors.join(', ')}`);
+    }
 
     return new Response(JSON.stringify({
-      success: true,
+      success: successful > 0,
       message: `Push notifications sent`,
       sent: successful,
       failed: failed,
-      total: subscriptions.length
+      total: subscriptions.length,
+      errors: errors.length > 0 ? errors : undefined
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -104,7 +104,7 @@ export class PushNotificationService {
   }
 
   // Subscribe to push notifications
-  async subscribe(): Promise<PushSubscription | null> {
+  async subscribe(forceResubscribe = false): Promise<PushSubscription | null> {
     try {
       // Request permission first
       const permission = await this.requestPermission();
@@ -119,27 +119,44 @@ export class PushNotificationService {
         this.registration = await this.registerServiceWorker();
       }
 
-      // Check if already subscribed
-      const existingSubscription = await this.registration.pushManager.getSubscription();
-      if (existingSubscription) {
-        console.log('Already subscribed to push notifications');
-        return existingSubscription;
-      }
-
-      // Subscribe to push notifications
+      // Get VAPID key
       const vapidKey = await this.getVapidPublicKey();
       if (!vapidKey) {
-        console.warn('VAPID public key not configured');
+        console.warn('VAPID public key not configured - cannot subscribe');
         return null;
       }
 
+      // Check if already subscribed
+      const existingSubscription = await this.registration.pushManager.getSubscription();
+
+      if (existingSubscription && !forceResubscribe) {
+        console.log('Already subscribed to push notifications');
+        // Ensure subscription is saved to database
+        await this.saveSubscription(existingSubscription);
+        return existingSubscription;
+      }
+
+      // Unsubscribe from existing subscription if force resubscribe
+      if (existingSubscription && forceResubscribe) {
+        console.log('Force resubscribe - unsubscribing from existing subscription');
+        try {
+          await existingSubscription.unsubscribe();
+        } catch (e) {
+          console.warn('Failed to unsubscribe from existing subscription:', e);
+        }
+      }
+
+      // Subscribe to push notifications with the new VAPID key
       const applicationServerKey = urlBase64ToUint8Array(vapidKey);
+
+      console.log('Creating new push subscription...');
       const subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as BufferSource
       });
 
       console.log('Push subscription successful:', subscription);
+      console.log('Endpoint:', subscription.endpoint);
 
       // Save subscription to database
       await this.saveSubscription(subscription);
@@ -327,4 +344,49 @@ export async function initializePushNotifications(): Promise<boolean> {
     console.error('Failed to initialize push notifications:', error);
     return false;
   }
+}
+
+// Debug function to test push notifications - can be called from browser console
+export async function testPushNotifications(): Promise<void> {
+  console.log('=== Push Notification Debug ===');
+
+  const service = pushNotificationService;
+
+  // Check support
+  console.log('1. Browser support:', service.isSupported());
+  if (!service.isSupported()) {
+    console.error('Push notifications not supported in this browser');
+    return;
+  }
+
+  // Check permission
+  console.log('2. Permission status:', service.getPermission());
+
+  // Check service worker
+  const registration = await navigator.serviceWorker.getRegistration();
+  console.log('3. Service worker registered:', !!registration);
+
+  // Check subscription
+  const subscription = await service.getSubscription();
+  console.log('4. Current subscription:', subscription ? 'Active' : 'None');
+  if (subscription) {
+    console.log('   Endpoint:', subscription.endpoint);
+  }
+
+  // Test local notification via service worker
+  if (registration && service.getPermission() === 'granted') {
+    console.log('5. Sending test notification via service worker...');
+    registration.active?.postMessage({ type: 'TEST_NOTIFICATION' });
+    console.log('   Test notification sent! Check if it appears.');
+  } else {
+    console.log('5. Cannot send test notification - permission not granted or no service worker');
+  }
+
+  console.log('=== End Debug ===');
+}
+
+// Make test function available globally for console debugging
+if (typeof window !== 'undefined') {
+  (window as any).testPushNotifications = testPushNotifications;
+  (window as any).pushNotificationService = pushNotificationService;
 }
