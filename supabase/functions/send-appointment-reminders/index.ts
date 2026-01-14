@@ -31,6 +31,8 @@ serve(async (req) => {
           patient_id,
           dentist_id,
           profiles!appointments_patient_id_fkey (
+            id,
+            user_id,
             email,
             first_name,
             last_name,
@@ -168,19 +170,52 @@ serve(async (req) => {
           console.error(`Error sending email for reminder ${reminder.id}:`, emailError);
           await supabase
             .from("appointment_reminders")
-            .update({ 
-              status: "failed", 
-              error_message: emailError.message 
+            .update({
+              status: "failed",
+              error_message: emailError.message
             })
             .eq("id", reminder.id);
           results.failed++;
           results.errors.push(`Reminder ${reminder.id}: ${emailError.message}`);
         } else {
+          // Also send push notification if patient has a user_id
+          if (patient.user_id) {
+            try {
+              const { error: pushError } = await supabase.functions.invoke(
+                "send-push-notifications",
+                {
+                  body: {
+                    userId: patient.user_id,
+                    title: `Appointment Reminder`,
+                    message: `Your appointment with Dr. ${dentist.first_name} ${dentist.last_name} is ${reminderText} on ${formattedDate} at ${formattedTime}`,
+                    url: '/appointments',
+                    tag: `appointment-reminder-${reminder.id}`,
+                    type: 'appointment_reminder',
+                    requireInteraction: reminder.reminder_type === '2h' || reminder.reminder_type === '1h',
+                  },
+                  headers: {
+                    Authorization: `Bearer ${supabaseServiceKey}`,
+                  },
+                }
+              );
+
+              if (pushError) {
+                console.warn(`Push notification failed for reminder ${reminder.id}:`, pushError.message);
+                // Don't fail the reminder if push fails, email was still sent
+              } else {
+                console.log(`Push notification sent for reminder ${reminder.id}`);
+              }
+            } catch (pushErr) {
+              console.warn(`Push notification error for reminder ${reminder.id}:`, pushErr);
+              // Don't fail the reminder if push fails, email was still sent
+            }
+          }
+
           await supabase
             .from("appointment_reminders")
-            .update({ 
-              status: "sent", 
-              sent_at: new Date().toISOString() 
+            .update({
+              status: "sent",
+              sent_at: new Date().toISOString()
             })
             .eq("id", reminder.id);
           results.sent++;
