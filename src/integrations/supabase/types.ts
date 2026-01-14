@@ -2907,29 +2907,32 @@ export type Database = {
       }
       push_subscriptions: {
         Row: {
-          auth: string
+          auth_key: string
           created_at: string
           endpoint: string
           id: string
-          p256dh: string
+          is_active: boolean
+          p256dh_key: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          auth: string
+          auth_key: string
           created_at?: string
           endpoint: string
           id?: string
-          p256dh: string
+          is_active?: boolean
+          p256dh_key: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          auth?: string
+          auth_key?: string
           created_at?: string
           endpoint?: string
           id?: string
-          p256dh?: string
+          is_active?: boolean
+          p256dh_key?: string
           updated_at?: string
           user_id?: string
         }

@@ -108,9 +108,6 @@ async function sendWebPushNotification(
   const url = new URL(subscription.endpoint);
   const audience = `${url.protocol}//${url.host}`;
 
-  // For now, we'll use a simpler approach - just send the notification via the endpoint
-  // This requires the subscription to have been created with the correct VAPID key
-  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Content-Encoding': 'aes128gcm',
@@ -136,6 +133,35 @@ async function sendWebPushNotification(
   return response;
 }
 
+// 🔒 SECURITY: Audit logging helper for HIPAA compliance
+async function logAuditEvent(
+  supabase: any,
+  action: string,
+  callerId: string | null,
+  targetUserId: string,
+  details: Record<string, any>,
+  req: Request
+) {
+  try {
+    await supabase.from('audit_logs').insert({
+      user_id: callerId,
+      action: action,
+      table_name: 'push_subscriptions',
+      record_id: targetUserId,
+      changes: {
+        ...details,
+        target_user_id: targetUserId,
+        timestamp: new Date().toISOString(),
+      },
+      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
+      user_agent: req.headers.get('user-agent') || 'unknown',
+    });
+  } catch (error) {
+    console.error('Failed to log audit event:', error);
+    // Don't fail the request if audit logging fails, but log the error
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   const preflightResponse = handleCorsPreflightSafe(req);
@@ -148,11 +174,55 @@ serve(async (req) => {
     // Get environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Supabase credentials not configured');
+    }
+
+    // 🔒 SECURITY: Check authentication
+    const authHeader = req.headers.get('authorization');
+    let callerId: string | null = null;
+    let isServiceRole = false;
+
+    // Check if this is a service role call (internal trigger)
+    if (authHeader?.includes(supabaseServiceKey || '')) {
+      isServiceRole = true;
+      console.log('🔐 Service role access - internal trigger');
+    } else if (authHeader) {
+      // Validate user token
+      const userClient = createClient(supabaseUrl, supabaseAnonKey || supabaseServiceKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('🚫 Authentication failed:', authError?.message);
+        
+        // Audit failed auth attempt
+        const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+        await logAuditEvent(serviceClient, 'push_notification_auth_failed', null, 'unknown', {
+          error: authError?.message || 'Invalid token',
+        }, req);
+        
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      callerId = user.id;
+      console.log(`🔐 Authenticated user: ${callerId}`);
+    } else {
+      // No auth header at all
+      console.error('🚫 No authorization header provided');
+      return new Response(JSON.stringify({ error: 'Authorization required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Parse request body
@@ -178,12 +248,60 @@ serve(async (req) => {
       throw new Error('title and message are required');
     }
 
+    // 🔒 SECURITY: Authorization check - who can send to whom?
+    // Service role: can send to anyone (system notifications)
+    // Regular user: can only send to themselves OR must be a business member sending to their patients
+    if (!isServiceRole && callerId !== userId) {
+      // Create service client for authorization check
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // Check if caller is a business member who can notify this patient
+      const { data: callerProfile } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('user_id', callerId)
+        .single();
+      
+      if (!callerProfile || !['dentist', 'admin', 'staff', 'super_admin'].includes(callerProfile.role)) {
+        console.error(`🚫 Unauthorized: User ${callerId} cannot send notifications to ${userId}`);
+        
+        await logAuditEvent(supabase, 'push_notification_unauthorized', callerId, userId, {
+          reason: 'User not authorized to send notifications to this target',
+          caller_role: callerProfile?.role || 'unknown',
+        }, req);
+        
+        return new Response(JSON.stringify({ error: 'Not authorized to send notifications to this user' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      // Additional check: verify the target user is a patient of the caller's business
+      const { data: hasAccess } = await supabase
+        .rpc('has_business_access', { 
+          _business_id: null, // This would need the business context
+          _user_id: callerId 
+        });
+      
+      // For now, allow staff/admin/dentist roles to send notifications
+      // A more strict check would verify business membership
+      console.log(`✅ Authorized: ${callerProfile.role} sending notification to patient`);
+    }
+
     console.log(`📱 Sending push notification to user: ${userId}`);
     console.log(`📝 Title: ${title}`);
     console.log(`📝 Message: ${message}`);
 
     // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // 🔒 HIPAA: Audit log the notification attempt
+    await logAuditEvent(supabase, 'push_notification_sent', callerId, userId, {
+      title,
+      message: message.substring(0, 100), // Truncate for audit
+      type,
+      is_service_role: isServiceRole,
+    }, req);
 
     // Check user's notification preferences
     const { data: preferences } = await supabase

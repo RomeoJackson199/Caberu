@@ -1,39 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
-
-// 🔒 SECURITY: Sanitize AI response to prevent system prompt leaks
-const sanitizeAIResponse = (response: string): string => {
-  if (!response) return response;
-
-  const sensitivePatterns = [
-    /LOVABLE_API_KEY/gi,
-    /SUPABASE_SERVICE_ROLE_KEY/gi,
-    /Bearer\s+[A-Za-z0-9_\-\.]+/gi,
-    /system prompt/gi,
-    /You are a professional dental AI assistant/gi,
-    /APPOINTMENT CONTEXT:/gi,
-    /YOUR ROLE:/gi,
-    /edge function/gi,
-    /supabase\.functions\.invoke/gi,
-    /dental-ai-chat/gi,
-    /voice-call-ai/gi,
-    /appointment-ai-assistant/gi,
-    /\.invoke\(/gi,
-    /functions\//gi,
-  ];
-
-  let sanitized = response;
-
-  sensitivePatterns.forEach(pattern => {
-    if (pattern.test(sanitized)) {
-      console.warn('🚨 SECURITY: Blocked attempt to leak system prompt in appointment assistant');
-      sanitized = "I'm here to help with treatment planning. How can I assist you?";
-    }
-  });
-
-  return sanitized.trim();
-};
+// 🔒 SECURITY: Import AI sanitization for prompt injection protection
+import { sanitizeAIInput, isMessageSafe, sanitizeAIResponse } from '../_shared/aiSanitization.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
