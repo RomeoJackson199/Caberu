@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Notification, NotificationPreferences } from '../types/common';
 import { NotificationService } from '../lib/notificationService';
 import { logger } from '@/lib/logger';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseNotificationsReturn {
   notifications: Notification[];
@@ -15,7 +16,17 @@ interface UseNotificationsReturn {
   refreshNotifications: () => Promise<void>;
 }
 
-export const useNotifications = (userId: string): UseNotificationsReturn => {
+export const useNotifications = (userIdProp?: string): UseNotificationsReturn => {
+  const [userId, setUserId] = useState<string | null>(userIdProp || null);
+  
+  // Get current user if not provided
+  useEffect(() => {
+    if (!userIdProp) {
+      supabase.auth.getUser().then(({ data }) => {
+        setUserId(data.user?.id || null);
+      });
+    }
+  }, [userIdProp]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);

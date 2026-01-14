@@ -112,9 +112,10 @@ export class PushNotificationService {
         return null;
       }
 
+      const applicationServerKey = urlBase64ToUint8Array(this.VAPID_PUBLIC_KEY);
       const subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(this.VAPID_PUBLIC_KEY)
+        applicationServerKey: applicationServerKey as BufferSource
       });
 
       console.log('Push subscription successful:', subscription);
@@ -133,7 +134,7 @@ export class PushNotificationService {
   async unsubscribe(): Promise<boolean> {
     try {
       if (!this.registration) {
-        this.registration = await navigator.serviceWorker.getRegistration();
+        this.registration = await navigator.serviceWorker.getRegistration() ?? null;
       }
 
       if (!this.registration) {
@@ -184,7 +185,7 @@ export class PushNotificationService {
   async getSubscription(): Promise<PushSubscription | null> {
     try {
       if (!this.registration) {
-        this.registration = await navigator.serviceWorker.getRegistration();
+        this.registration = await navigator.serviceWorker.getRegistration() ?? null;
       }
 
       if (!this.registration) {
@@ -277,7 +278,6 @@ export class PushNotificationService {
     await this.registration.showNotification(title, {
       icon: '/logo.png',
       badge: '/badge.png',
-      vibrate: [200, 100, 200],
       ...options
     });
   }
