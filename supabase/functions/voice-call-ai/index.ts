@@ -4,6 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // CORS configuration - secure origins only (HIPAA/GDPR compliant)
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+// 🔒 SECURITY: Import AI input sanitization for prompt injection protection
+import { sanitizeAIInput, isMessageSafe, sanitizeAIResponse } from '../_shared/aiSanitization.ts';
 
 // Helper to get CORS headers from request
 const getRequestCorsHeaders = (req: Request) => getCorsHeaders(req.headers.get('Origin'));
@@ -375,12 +377,30 @@ serve(async (req) => {
     }
 
     // Original OpenAI conversation flow
-    const { message, conversation_history = [], caller_phone, business_id } = body;
+    const { message: rawMessage, conversation_history = [], caller_phone, business_id } = body;
     
-    console.log('Voice call AI request:', { message, caller_phone, business_id });
+    console.log('Voice call AI request:', { rawMessage, caller_phone, business_id });
 
-    if (!message) {
+    if (!rawMessage) {
       throw new Error('No message provided');
+    }
+    
+    // 🔒 SECURITY: Check for critical injection patterns that should block the request
+    if (!isMessageSafe(rawMessage)) {
+      console.warn('🚨 SECURITY: Blocked request with critical prompt injection pattern in voice call');
+      return new Response(
+        JSON.stringify({ 
+          response: "I'm sorry, I didn't understand that. How can I help you with your appointment today?",
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // 🔒 SECURITY: Sanitize input to prevent prompt injection attacks
+    const { sanitized: message, wasModified } = sanitizeAIInput(rawMessage);
+    
+    if (wasModified) {
+      console.warn('⚠️ SECURITY: Voice call input was sanitized due to potential injection patterns');
     }
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {

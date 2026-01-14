@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { sanitizeAIInput, isMessageSafe, sanitizeAIResponse as sanitizeResponse } from "../_shared/aiSanitization.ts";
 
 // Add type definitions at the top of the file
 interface MedicalRecord {
@@ -188,11 +189,32 @@ serve(async (req) => {
       throw new Error('Invalid message format');
     }
     
-    // Sanitize input to prevent injection attacks
-    const sanitizedMessage = message
-      .trim()
-      .replace(/[<>]/g, '') // Basic XSS protection
-      .substring(0, 2000); // Limit message length
+    // 🔒 SECURITY: Check for critical injection patterns that should block the request
+    if (!isMessageSafe(message)) {
+      console.warn('🚨 SECURITY: Blocked request with critical prompt injection pattern');
+      return new Response(JSON.stringify({ 
+        response: "I'm sorry, I couldn't process that message. Please rephrase your question about dental care.",
+        suggestions: ["Ask about appointments", "Describe your symptoms", "Request information"],
+        urgency_detected: false,
+        emergency_detected: false,
+        prompt_injection_detected: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // 🔒 SECURITY: Sanitize input to prevent prompt injection attacks
+    const { sanitized: sanitizedMessage, wasModified, suspiciousPatterns } = sanitizeAIInput(message);
+    
+    // Log if input was modified for security monitoring
+    if (wasModified) {
+      console.warn('⚠️ SECURITY: User input was sanitized due to potential injection patterns');
+    }
+    
+    if (suspiciousPatterns.length > 0) {
+      // Log suspicious patterns for security review (but don't block)
+      console.log('📋 SECURITY: Suspicious patterns detected:', suspiciousPatterns);
+    }
     
     if (sanitizedMessage.length === 0) {
       throw new Error('Message cannot be empty');
