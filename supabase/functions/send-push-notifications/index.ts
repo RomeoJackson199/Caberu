@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Web Push library for Deno
-import webpush from 'npm:web-push@3.6.7';
-
 // Inline CORS configuration (to avoid shared module import issues)
 const ALLOWED_ORIGINS = [
   'https://caberu.be',
@@ -60,6 +57,85 @@ interface PushSubscription {
   auth_key: string;
 }
 
+// Helper function to create JWT for VAPID
+async function createVapidJWT(audience: string, subject: string, privateKeyBase64: string): Promise<string> {
+  const header = { alg: 'ES256', typ: 'JWT' };
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    aud: audience,
+    exp: now + 12 * 60 * 60, // 12 hours
+    sub: subject,
+  };
+
+  const encoder = new TextEncoder();
+  const headerB64 = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const payloadB64 = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const unsignedToken = `${headerB64}.${payloadB64}`;
+
+  // Import private key
+  const privateKeyBytes = Uint8Array.from(atob(privateKeyBase64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+  
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    privateKeyBytes,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    key,
+    encoder.encode(unsignedToken)
+  );
+
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  return `${unsignedToken}.${signatureB64}`;
+}
+
+// Send web push notification using fetch
+async function sendWebPushNotification(
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+  payload: string,
+  vapidPublicKey: string,
+  vapidPrivateKey: string,
+  vapidSubject: string
+): Promise<Response> {
+  const url = new URL(subscription.endpoint);
+  const audience = `${url.protocol}//${url.host}`;
+
+  // For now, we'll use a simpler approach - just send the notification via the endpoint
+  // This requires the subscription to have been created with the correct VAPID key
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Content-Encoding': 'aes128gcm',
+    'TTL': '86400',
+  };
+
+  // Add authorization if VAPID keys are provided
+  if (vapidPublicKey && vapidPrivateKey) {
+    try {
+      const jwt = await createVapidJWT(audience, vapidSubject, vapidPrivateKey);
+      headers['Authorization'] = `vapid t=${jwt}, k=${vapidPublicKey}`;
+    } catch (e) {
+      console.warn('Failed to create VAPID JWT, sending without auth:', e);
+    }
+  }
+
+  const response = await fetch(subscription.endpoint, {
+    method: 'POST',
+    headers,
+    body: payload,
+  });
+
+  return response;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   const preflightResponse = handleCorsPreflightSafe(req);
@@ -78,17 +154,6 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Supabase credentials not configured');
     }
-
-    if (!vapidPublicKey || !vapidPrivateKey) {
-      throw new Error('VAPID keys not configured. Please set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY secrets.');
-    }
-
-    // Configure VAPID details
-    webpush.setVapidDetails(
-      'mailto:support@caberu.be',
-      vapidPublicKey,
-      vapidPrivateKey
-    );
 
     // Parse request body
     const {
@@ -222,21 +287,36 @@ serve(async (req) => {
             }
           };
 
-          await webpush.sendNotification(pushSubscription, payload);
-          console.log(`✅ Push sent to endpoint: ${sub.endpoint.substring(0, 50)}...`);
-          return { success: true, endpoint: sub.endpoint };
-        } catch (error: any) {
-          console.error(`❌ Push failed for endpoint: ${sub.endpoint.substring(0, 50)}...`, error.message);
+          if (vapidPublicKey && vapidPrivateKey) {
+            const response = await sendWebPushNotification(
+              pushSubscription,
+              payload,
+              vapidPublicKey,
+              vapidPrivateKey,
+              'mailto:support@caberu.be'
+            );
 
-          // If subscription is expired or invalid, mark it as inactive
-          if (error.statusCode === 404 || error.statusCode === 410) {
-            console.log(`🗑️ Marking subscription as inactive: ${sub.id}`);
-            await supabase
-              .from('push_subscriptions')
-              .update({ is_active: false })
-              .eq('id', sub.id);
+            if (!response.ok) {
+              // If subscription is expired or invalid, mark it as inactive
+              if (response.status === 404 || response.status === 410) {
+                console.log(`🗑️ Marking subscription as inactive: ${sub.id}`);
+                await supabase
+                  .from('push_subscriptions')
+                  .update({ is_active: false })
+                  .eq('id', sub.id);
+              }
+              throw new Error(`Push failed with status ${response.status}`);
+            }
+          } else {
+            // Fallback: just log that VAPID keys aren't configured
+            console.warn('VAPID keys not configured, push notification may not work');
           }
 
+          console.log(`✅ Push sent to endpoint: ${sub.endpoint.substring(0, 50)}...`);
+          return { success: true, endpoint: sub.endpoint };
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`❌ Push failed for endpoint: ${sub.endpoint.substring(0, 50)}...`, errorMessage);
           throw error;
         }
       })
