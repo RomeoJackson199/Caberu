@@ -27,9 +27,7 @@ export interface PushSubscriptionData {
 export class PushNotificationService {
   private static instance: PushNotificationService;
   private registration: ServiceWorkerRegistration | null = null;
-
-  // VAPID public key - In production, this should come from environment variables
-  private readonly VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
+  private vapidPublicKey: string | null = null;
 
   private constructor() {}
 
@@ -38,6 +36,28 @@ export class PushNotificationService {
       PushNotificationService.instance = new PushNotificationService();
     }
     return PushNotificationService.instance;
+  }
+
+  // Fetch VAPID public key from edge function
+  private async getVapidPublicKey(): Promise<string | null> {
+    if (this.vapidPublicKey) {
+      return this.vapidPublicKey;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('get-vapid-key');
+      
+      if (error) {
+        console.error('Failed to fetch VAPID key:', error);
+        return null;
+      }
+
+      this.vapidPublicKey = data?.publicKey || null;
+      return this.vapidPublicKey;
+    } catch (error) {
+      console.error('Error fetching VAPID key:', error);
+      return null;
+    }
   }
 
   // Check if push notifications are supported
@@ -107,12 +127,13 @@ export class PushNotificationService {
       }
 
       // Subscribe to push notifications
-      if (!this.VAPID_PUBLIC_KEY) {
+      const vapidKey = await this.getVapidPublicKey();
+      if (!vapidKey) {
         console.warn('VAPID public key not configured');
         return null;
       }
 
-      const applicationServerKey = urlBase64ToUint8Array(this.VAPID_PUBLIC_KEY);
+      const applicationServerKey = urlBase64ToUint8Array(vapidKey);
       const subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as BufferSource
