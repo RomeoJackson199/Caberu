@@ -2914,6 +2914,7 @@ export type Database = {
           is_active: boolean
           p256dh_key: string
           updated_at: string
+          user_agent: string | null
           user_id: string
         }
         Insert: {
@@ -2924,6 +2925,7 @@ export type Database = {
           is_active?: boolean
           p256dh_key: string
           updated_at?: string
+          user_agent?: string | null
           user_id: string
         }
         Update: {
@@ -2934,6 +2936,7 @@ export type Database = {
           is_active?: boolean
           p256dh_key?: string
           updated_at?: string
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
