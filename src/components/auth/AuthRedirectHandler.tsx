@@ -120,22 +120,35 @@ export function AuthRedirectHandler() {
         });
 
         // Check for pending signup user type from OAuth flow
-        // If user signed up as business owner via OAuth, we need to update their profile
+        // If user signed up as business owner via OAuth, we need to initialize their business owner data
         const pendingUserType = sessionStorage.getItem('pending_signup_user_type');
         if (pendingUserType === 'owner') {
           sessionStorage.removeItem('pending_signup_user_type');
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            // Update the profile to be a dentist
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({ role: 'dentist' })
-              .eq('user_id', user.id);
+            // Call RPC to initialize business owner data (profile, business, dentist, business_members)
+            const { data: result, error: rpcError } = await supabase.rpc('initialize_oauth_business_owner');
 
-            if (updateError) {
-              logger.error('AuthRedirectHandler: Failed to update profile role for OAuth business owner', updateError);
+            if (rpcError) {
+              logger.error('AuthRedirectHandler: Failed to initialize OAuth business owner', rpcError);
+              toast({
+                title: "Setup Error",
+                description: "Failed to initialize your business account. Please contact support.",
+                variant: "destructive",
+              });
+            } else if (result?.success) {
+              logger.info('AuthRedirectHandler: Successfully initialized OAuth business owner', result);
+              toast({
+                title: "Account Setup Complete",
+                description: "Your business owner account is ready!",
+              });
             } else {
-              logger.info('AuthRedirectHandler: Updated profile role to dentist for OAuth business owner');
+              logger.error('AuthRedirectHandler: RPC returned failure', result);
+              toast({
+                title: "Setup Warning",
+                description: result?.error || "There was an issue setting up your account.",
+                variant: "destructive",
+              });
             }
 
             // Redirect to create-business for business owners

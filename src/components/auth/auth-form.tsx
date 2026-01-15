@@ -166,6 +166,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({
             phone: formData.phone,
             health_data_consent: true,
             health_data_consent_at: new Date().toISOString(),
+            role_type: 'patient',
           },
         },
       });
