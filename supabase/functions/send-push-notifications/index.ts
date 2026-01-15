@@ -250,7 +250,8 @@ async function encryptPayload(
 async function createVapidJWT(
   audience: string,
   subject: string,
-  privateKeyBase64: string
+  privateKeyBase64: string,
+  publicKeyBase64: string
 ): Promise<string> {
   const header = { alg: 'ES256', typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);
@@ -268,19 +269,36 @@ async function createVapidJWT(
   // Decode private key (expected in raw or PKCS8 format)
   const privateKeyBytes = base64UrlDecode(privateKeyBase64);
 
-  // Try to import as raw first (32 bytes), otherwise as PKCS8
+  // Import the key
   let key: CryptoKey;
   if (privateKeyBytes.length === 32) {
-    // Raw EC private key - need to construct JWK
-    // This is the d parameter of the key
+    // Raw EC private key (32 bytes = just the 'd' parameter)
+    // We need to use JWK format with the public key components
+    const publicKeyBytes = base64UrlDecode(publicKeyBase64);
+    
+    // Public key is 65 bytes: 0x04 + x (32 bytes) + y (32 bytes)
+    if (publicKeyBytes.length !== 65 || publicKeyBytes[0] !== 0x04) {
+      throw new Error('Invalid public key format for VAPID');
+    }
+    
+    const x = publicKeyBytes.slice(1, 33);
+    const y = publicKeyBytes.slice(33, 65);
+    
     const jwk = {
       kty: 'EC',
       crv: 'P-256',
+      x: base64UrlEncode(x),
+      y: base64UrlEncode(y),
       d: base64UrlEncode(privateKeyBytes),
-      // We need x and y but don't have them - derive from d
-      // For now, try PKCS8 format
     };
-    throw new Error('Raw private key format not fully supported, please use PKCS8');
+    
+    key = await crypto.subtle.importKey(
+      'jwk',
+      jwk,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
   } else {
     // PKCS8 format
     key = await crypto.subtle.importKey(
@@ -363,7 +381,7 @@ async function sendWebPushNotification(
   // Add VAPID authorization
   if (vapidPublicKey && vapidPrivateKey) {
     try {
-      const jwt = await createVapidJWT(audience, vapidSubject, vapidPrivateKey);
+      const jwt = await createVapidJWT(audience, vapidSubject, vapidPrivateKey, vapidPublicKey);
       headers['Authorization'] = `vapid t=${jwt}, k=${vapidPublicKey}`;
     } catch (e) {
       console.warn('Failed to create VAPID JWT:', e);
