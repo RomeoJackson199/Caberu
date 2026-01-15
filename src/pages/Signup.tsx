@@ -123,6 +123,11 @@ const Signup = () => {
           emailRedirectTo: userType === "business"
             ? `${window.location.origin}/create-business`
             : `${window.location.origin}/auth-redirect`,
+          // Pass role_type so the handle_new_user trigger knows whether to create
+          // a patient profile or a business owner with associated business/dentist records
+          data: {
+            role_type: userType === "client" ? "patient" : "owner",
+          },
         },
       });
 
@@ -190,6 +195,12 @@ const Signup = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Store the user type in sessionStorage so we can retrieve it after OAuth redirect
+      // This is needed because OAuth doesn't allow us to pass custom metadata directly
+      if (userType) {
+        sessionStorage.setItem('pending_signup_user_type', userType === "client" ? "patient" : "owner");
+      }
+
       // Determine redirect based on user type
       const redirectTo = userType === "business"
         ? `${window.location.origin}/create-business`

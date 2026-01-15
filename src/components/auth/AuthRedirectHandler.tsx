@@ -119,6 +119,35 @@ export function AuthRedirectHandler() {
           membershipsCount: memberships.length
         });
 
+        // Check for pending signup user type from OAuth flow
+        // If user signed up as business owner via OAuth, we need to update their profile
+        const pendingUserType = sessionStorage.getItem('pending_signup_user_type');
+        if (pendingUserType === 'owner') {
+          sessionStorage.removeItem('pending_signup_user_type');
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            // Update the profile to be a dentist
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ role: 'dentist' })
+              .eq('user_id', user.id);
+
+            if (updateError) {
+              logger.error('AuthRedirectHandler: Failed to update profile role for OAuth business owner', updateError);
+            } else {
+              logger.info('AuthRedirectHandler: Updated profile role to dentist for OAuth business owner');
+            }
+
+            // Redirect to create-business for business owners
+            sessionStorage.removeItem(REDIRECT_KEY);
+            navigate('/create-business', { replace: true });
+            return;
+          }
+        } else if (pendingUserType === 'patient') {
+          sessionStorage.removeItem('pending_signup_user_type');
+          // Patient signup via OAuth - profile is already set correctly, continue normal flow
+        }
+
         // Priority 1: Super Admin -> /super-admin
         if (isSuperAdmin) {
           logger.info('AuthRedirectHandler: Redirecting super admin to /super-admin');
