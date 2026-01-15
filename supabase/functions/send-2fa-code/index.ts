@@ -96,11 +96,12 @@ serve(async (req) => {
     `;
 
     // Send email via centralized send-email-notification function (uses SendGrid)
+    // Note: No Authorization header needed - send-email-notification has verify_jwt=false
+    // and handles auth internally via isSystemNotification flag
     const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseServiceKey}`,
       },
       body: JSON.stringify({
         to: email,
