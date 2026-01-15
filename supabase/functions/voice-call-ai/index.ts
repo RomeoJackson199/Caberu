@@ -136,40 +136,7 @@ const tools = [
   }
 ];
 
-// 🔒 SECURITY: Sanitize AI response to prevent system prompt leaks
-const sanitizeAIResponse = (response: string): string => {
-  if (!response) return response;
-
-  // List of sensitive patterns that should never appear in responses
-  const sensitivePatterns = [
-    /CRITICAL SECURITY/gi,
-    /OPENAI_API_KEY/gi,
-    /SUPABASE_SERVICE_ROLE_KEY/gi,
-    /Bearer\s+[A-Za-z0-9_\-\.]+/gi, // API tokens
-    /system prompt/gi,
-    /You are a helpful dental receptionist/gi,
-    /CRITICAL SECURITY RULES:/gi,
-    /edge function/gi,
-    /supabase\.functions\.invoke/gi,
-    /dental-ai-chat/gi,
-    /voice-call-ai/gi,
-    /appointment-ai-assistant/gi,
-    /\.invoke\(/gi,
-    /functions\//gi,
-  ];
-
-  let sanitized = response;
-
-  // Check for sensitive patterns and replace with safe message
-  sensitivePatterns.forEach(pattern => {
-    if (pattern.test(sanitized)) {
-      console.warn('🚨 SECURITY: Blocked attempt to leak system prompt in voice call');
-      sanitized = "I'm here to help you with appointments and clinic information. How can I assist you today?";
-    }
-  });
-
-  return sanitized.trim();
-};
+// Note: sanitizeAIResponse is imported from _shared/aiSanitization.ts
 
 // systemPrompt will be dynamically generated inside the serve function with dentist info
 
