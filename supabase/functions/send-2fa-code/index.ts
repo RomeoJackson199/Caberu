@@ -96,12 +96,13 @@ serve(async (req) => {
     `;
 
     // Send email via centralized send-email-notification function (uses SendGrid)
-    // Note: Both functions have verify_jwt = false, so no Authorization header needed
+    // Note: Function-to-function calls require the apikey header even when verify_jwt=false
     // The send-email-notification function handles auth internally via isSystemNotification flag
     const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email-notification`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'apikey': Deno.env.get('SUPABASE_ANON_KEY') || '',
       },
       body: JSON.stringify({
         to: email,
