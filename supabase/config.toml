@@ -31,7 +31,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.send-email-notification]
-verify_jwt = true
+verify_jwt = false  # Handles auth internally; called server-to-server by other edge functions
 
 [functions.send-import-invitations]
 verify_jwt = true
@@ -49,10 +49,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-2fa-code]
-verify_jwt = true
+verify_jwt = false  # Must be accessible for password recovery (user not logged in)
 
 [functions.verify-2fa-code]
-verify_jwt = true
+verify_jwt = false  # Must be accessible for password recovery (user not logged in)
 
 [functions.generate-appointment-summary]
 verify_jwt = true
