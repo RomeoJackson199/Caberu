@@ -104,10 +104,10 @@ async function hkdf(
   info: Uint8Array,
   length: number
 ): Promise<Uint8Array> {
-  // Import IKM as HKDF key
+  // Import IKM as HKDF key - use ArrayBuffer to avoid TypeScript issues
   const key = await crypto.subtle.importKey(
     'raw',
-    ikm,
+    ikm.buffer.slice(ikm.byteOffset, ikm.byteOffset + ikm.byteLength) as ArrayBuffer,
     'HKDF',
     false,
     ['deriveBits']
@@ -118,8 +118,8 @@ async function hkdf(
     {
       name: 'HKDF',
       hash: 'SHA-256',
-      salt: salt,
-      info: info,
+      salt: salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength) as ArrayBuffer,
+      info: info.buffer.slice(info.byteOffset, info.byteOffset + info.byteLength) as ArrayBuffer,
     },
     key,
     length * 8
@@ -176,7 +176,7 @@ async function encryptPayload(
   // Import the client's public key
   const clientPublicKey = await crypto.subtle.importKey(
     'raw',
-    clientPublicKeyBytes,
+    clientPublicKeyBytes.buffer.slice(clientPublicKeyBytes.byteOffset, clientPublicKeyBytes.byteOffset + clientPublicKeyBytes.byteLength) as ArrayBuffer,
     { name: 'ECDH', namedCurve: 'P-256' },
     false,
     []
@@ -217,7 +217,7 @@ async function encryptPayload(
   // Import CEK for AES-GCM
   const aesKey = await crypto.subtle.importKey(
     'raw',
-    cek,
+    cek.buffer.slice(cek.byteOffset, cek.byteOffset + cek.byteLength) as ArrayBuffer,
     { name: 'AES-GCM' },
     false,
     ['encrypt']
@@ -225,7 +225,7 @@ async function encryptPayload(
 
   // Encrypt with AES-128-GCM
   const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: nonce },
+    { name: 'AES-GCM', iv: nonce.buffer.slice(nonce.byteOffset, nonce.byteOffset + nonce.byteLength) as ArrayBuffer },
     aesKey,
     paddedPayload
   );
@@ -285,7 +285,7 @@ async function createVapidJWT(
     // PKCS8 format
     key = await crypto.subtle.importKey(
       'pkcs8',
-      privateKeyBytes,
+      privateKeyBytes.buffer.slice(privateKeyBytes.byteOffset, privateKeyBytes.byteOffset + privateKeyBytes.byteLength) as ArrayBuffer,
       { name: 'ECDSA', namedCurve: 'P-256' },
       false,
       ['sign']
@@ -374,7 +374,7 @@ async function sendWebPushNotification(
   const response = await fetch(subscription.endpoint, {
     method: 'POST',
     headers,
-    body: encryptedPayload,
+    body: encryptedPayload.buffer.slice(encryptedPayload.byteOffset, encryptedPayload.byteOffset + encryptedPayload.byteLength) as ArrayBuffer,
   });
 
   return response;

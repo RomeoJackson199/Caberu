@@ -43,7 +43,8 @@ export function NotificationPermissionPrompt() {
   const handleEnableNotifications = async () => {
     setLoading(true);
     try {
-      const subscription = await pushNotificationService.subscribe();
+      // Force resubscribe to ensure we're using the latest VAPID key
+      const subscription = await pushNotificationService.subscribe(true);
 
       if (subscription) {
         setPermission("granted");
@@ -74,9 +75,10 @@ export function NotificationPermissionPrompt() {
       }
     } catch (error) {
       console.error("Failed to enable notifications:", error);
+      const errorMessage = error instanceof Error ? error.message : "Please try again or check your browser settings.";
       toast({
         title: "Failed to enable notifications",
-        description: "Please try again or check your browser settings.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

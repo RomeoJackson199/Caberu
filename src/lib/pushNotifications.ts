@@ -122,31 +122,43 @@ export class PushNotificationService {
       // Get VAPID key
       const vapidKey = await this.getVapidPublicKey();
       if (!vapidKey) {
-        console.warn('VAPID public key not configured - cannot subscribe');
-        return null;
+        console.error('VAPID public key not configured - cannot subscribe');
+        throw new Error('Push notifications are not configured. Please contact support.');
       }
 
       // Check if already subscribed
       const existingSubscription = await this.registration.pushManager.getSubscription();
 
-      if (existingSubscription && !forceResubscribe) {
-        console.log('Already subscribed to push notifications');
-        // Ensure subscription is saved to database
-        await this.saveSubscription(existingSubscription);
-        return existingSubscription;
-      }
-
-      // Unsubscribe from existing subscription if force resubscribe
-      if (existingSubscription && forceResubscribe) {
-        console.log('Force resubscribe - unsubscribing from existing subscription');
-        try {
-          await existingSubscription.unsubscribe();
-        } catch (e) {
-          console.warn('Failed to unsubscribe from existing subscription:', e);
+      if (existingSubscription) {
+        // Check if the existing subscription uses the correct VAPID key
+        // If force resubscribe or keys may have changed, unsubscribe first
+        console.log('Found existing subscription, checking if valid...');
+        
+        if (forceResubscribe) {
+          console.log('Force resubscribe requested - unsubscribing from existing subscription');
+          try {
+            await existingSubscription.unsubscribe();
+          } catch (e) {
+            console.warn('Failed to unsubscribe from existing subscription:', e);
+          }
+        } else {
+          // Try to save/update the existing subscription
+          try {
+            await this.saveSubscription(existingSubscription);
+            console.log('Existing subscription is valid and saved');
+            return existingSubscription;
+          } catch (saveError) {
+            console.warn('Failed to save existing subscription, will resubscribe:', saveError);
+            try {
+              await existingSubscription.unsubscribe();
+            } catch (e) {
+              console.warn('Failed to unsubscribe:', e);
+            }
+          }
         }
       }
 
-      // Subscribe to push notifications with the new VAPID key
+      // Subscribe to push notifications with the VAPID key
       const applicationServerKey = urlBase64ToUint8Array(vapidKey);
 
       console.log('Creating new push subscription...');
