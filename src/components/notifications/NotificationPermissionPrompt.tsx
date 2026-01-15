@@ -5,16 +5,40 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { pushNotificationService } from "@/lib/pushNotifications";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 export function NotificationPermissionPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    
+    checkAuth();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const checkNotificationStatus = async () => {
+      // Only check notification status if user is authenticated
+      if (!isAuthenticated) {
+        setShowPrompt(false);
+        return;
+      }
+
       // Check if push notifications are supported
       if (!pushNotificationService.isSupported()) {
         return;
@@ -38,7 +62,7 @@ export function NotificationPermissionPrompt() {
     };
 
     checkNotificationStatus();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleEnableNotifications = async () => {
     setLoading(true);
