@@ -56,9 +56,10 @@ export function BusinessCreationAuth({ onComplete }: BusinessCreationAuthProps) 
           email,
           password,
           options: {
-            data: { 
+            data: {
               first_name: firstName,
               last_name: lastName,
+              role_type: 'owner',
             },
             emailRedirectTo: `${window.location.origin}/create-business`,
           },
