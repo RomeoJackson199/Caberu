@@ -6,10 +6,6 @@ export type {
   LiquidGlassButtonProps,
 } from './LiquidGlass';
 
-// Pull to Refresh
-export { PullToRefresh } from './PullToRefresh';
-export type { PullToRefreshProps } from './PullToRefresh';
-
 // Context Menu
 export { ContextMenu } from './ContextMenu';
 export type { ContextMenuItem, ContextMenuProps } from './ContextMenu';
