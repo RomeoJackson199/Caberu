@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthForm } from "@/components/auth/auth-form";
-import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2 } from "lucide-react";

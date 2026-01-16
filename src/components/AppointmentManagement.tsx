@@ -37,7 +37,7 @@ import { generateSymptomSummary } from "@/lib/symptoms";
 import { AIConversationDialog } from "@/components/AIConversationDialog";
 import { CompletionSheet } from "@/components/CompletionSheet";
 import { AppointmentList } from "@/components/optimized/AppointmentList";
-import { AppointmentStats } from "@/components/optimized/AppointmentStats";
+import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { logger } from '@/lib/logger';
 
 interface Appointment {

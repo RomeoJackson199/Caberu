@@ -8,7 +8,7 @@ import { AddUserDialog } from "@/components/admin/AddUserDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Mail, Calendar, Shield, Users as UsersIcon, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { logger } from '@/lib/logger';
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useLanguage } from "@/hooks/useLanguage";

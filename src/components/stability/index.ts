@@ -32,18 +32,15 @@ export { SessionTimeoutWarning } from "./SessionTimeoutWarning";
 // Calendar Sync
 export { CalendarSyncStatus, CalendarSyncStatusCompact } from "./CalendarSyncStatus";
 
-// Loading States (re-export from SkeletonLoader for convenience)
+// Loading States (re-export skeleton components for convenience)
 export {
   Skeleton,
-  TableSkeleton,
-  CardSkeleton,
-  ListSkeleton,
-  FormSkeleton,
-  ProfileSkeleton,
-  DashboardStatsSkeleton,
-  CalendarSkeleton,
-  ChartSkeleton,
-  AppointmentCardSkeleton,
-  PatientCardSkeleton,
-  TextSkeleton,
-} from "../SkeletonLoader";
+  SkeletonText,
+  SkeletonCard,
+  SkeletonAvatar,
+  SkeletonButton,
+  SkeletonImage,
+  SkeletonList,
+  SkeletonTable,
+  SkeletonStats,
+} from "../ui/skeleton";

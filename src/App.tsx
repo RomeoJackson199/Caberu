@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SeoManager } from "./lib/seo";
 import AuthCallbackHandler from "./components/AuthCallbackHandler";
-import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DentistPortal } from "@/pages/DentistPortal";
 import { PatientPortalNav } from "@/components/patients/PatientPortalNav";
 import { RoleBasedRouter } from "@/components/RoleBasedRouter";
@@ -65,7 +65,6 @@ const FeatureDetail = lazy(() => import("./pages/FeatureDetail"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const AIInfo = lazy(() => import("./pages/AIInfo"));
 const UnifiedDashboard = lazy(() => import("./components/UnifiedDashboard"));
-const LanguageTest = lazy(() => import("./components/LanguageTest").then(module => ({ default: module.LanguageTest })));
 const About = lazy(() => import("./pages/About"));
 const Claim = lazy(() => import("./pages/Claim"));
 // PublicBooking removed - unused
@@ -488,7 +487,6 @@ const App = () => {
                         <Route path="/payment-cancelled" element={<PaymentCancelled />} />
                         <Route path="/support" element={<Support />} />
                         <Route path="/features/:id" element={<FeatureDetail />} />
-                        <Route path="/language-test" element={<LanguageTest />} />
                         <Route path="/chat" element={<Chat />} />
                         <Route path="/messages" element={<Messages />} />
                         <Route path="/invite" element={<Invite />} />
