@@ -200,10 +200,13 @@ export function AuthRedirectHandler() {
             navigate('/dentist/dashboard', { replace: true });
             return;
           } else {
-            // Dentist with memberships but no business selected - wait for business picker
-            logger.info('AuthRedirectHandler: Dentist waiting for business selection', {
+            // Dentist with memberships but no business selected - redirect to dashboard anyway
+            // The dashboard will handle business selection if needed
+            logger.info('AuthRedirectHandler: Dentist with memberships, redirecting to dashboard', {
               membershipsCount: memberships.length
             });
+            sessionStorage.removeItem(REDIRECT_KEY);
+            navigate('/dentist/dashboard', { replace: true });
             return;
           }
         }
