@@ -110,3 +110,6 @@ verify_jwt = true
 
 [functions.cancel-vacation-appointments]
 verify_jwt = true
+
+[functions.reset-password-with-code]
+verify_jwt = false  # Must be accessible for password recovery (user not logged in)

@@ -8,6 +8,7 @@ const ALLOWED_ORIGINS = [
   'https://caberu.be',
   'https://www.caberu.be',
   'https://app.caberu.be',
+  'https://dentibot.lovable.app',
   // Supabase Studio for development
   'https://supabase.com',
   // Local development
@@ -17,14 +18,29 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
 ];
 
+// Dynamic origin matching for Lovable preview domains
+export function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  
+  // Check static list first
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  
+  // Allow Lovable preview domains (*.lovableproject.com and *.lovable.app)
+  if (origin.match(/^https:\/\/[a-z0-9-]+\.lovableproject\.com$/)) return true;
+  if (origin.match(/^https:\/\/[a-z0-9-]+--[a-z0-9-]+\.lovable\.app$/)) return true;
+  if (origin.match(/^https:\/\/[a-z0-9-]+\.lovable\.app$/)) return true;
+  
+  return false;
+}
+
 /**
  * Get CORS headers with proper origin validation
  * @param requestOrigin - The Origin header from the incoming request
  * @returns CORS headers object
  */
 export function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
-  // Check if the request origin is in our allowed list
-  const origin = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)
+  // Check if the request origin is in our allowed list (including dynamic Lovable domains)
+  const origin = requestOrigin && isAllowedOrigin(requestOrigin)
     ? requestOrigin
     : ALLOWED_ORIGINS[0]; // Default to primary domain
 
@@ -86,5 +102,6 @@ export default {
   handleCorsPreflightSafe,
   jsonResponseSafe,
   corsHeaders,
+  isAllowedOrigin,
   ALLOWED_ORIGINS,
 };
