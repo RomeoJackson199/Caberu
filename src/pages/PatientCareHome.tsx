@@ -195,13 +195,13 @@ export default function PatientCareHome() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-100 text-green-800 border-green-300';
+        return 'bg-success/10 text-success border-success/20';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+        return 'bg-warning/10 text-warning border-warning/20';
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-300';
+        return 'bg-error/10 text-error border-error/20';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -264,14 +264,14 @@ export default function PatientCareHome() {
   return (
     <div className="space-y-6">
       {/* Header with TimeGreeting */}
-      <div className="flex items-center justify-between">
-        <TimeGreeting 
-          name={user?.user_metadata?.first_name} 
-          showDate={true} 
+      <div className="flex items-center justify-between mb-2">
+        <TimeGreeting
+          name={user?.user_metadata?.first_name}
+          showDate={true}
         />
         <Button
           size="lg"
-          className="gap-2"
+          className="gap-2 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
           onClick={() => { try { localStorage.setItem('pd_section', 'assistant'); } catch (e) { console.error('Failed to save section preference:', e); } window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } })); navigate('/dashboard'); }}
           aria-label={t.bookAppointment}
         >
@@ -282,26 +282,29 @@ export default function PatientCareHome() {
 
       {/* Stats Cards with AnimatedStatCard */}
       {loading ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardContent className="pt-6">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-8 w-8 rounded-lg" />
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1, duration: 0.3 }}
+            >
+              <Card className="overflow-hidden">
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-24 skeleton-shimmer" />
+                      <Skeleton className="h-8 w-8 rounded-lg skeleton-shimmer" />
+                    </div>
+                    <Skeleton className="h-8 w-20 skeleton-shimmer" />
+                    <Skeleton className="h-3 w-32 skeleton-shimmer" />
                   </div>
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
-        </motion.div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <AnimatedStatCard
@@ -390,65 +393,78 @@ export default function PatientCareHome() {
           </motion.div>
         ) : upcomingAppointments.length > 0 ? (
           <div className="space-y-3">
-            {upcomingAppointments.map((appointment) => (
-              <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className={getStatusColor(appointment.status)}>
-                          {appointment.status}
-                        </Badge>
-                        {appointment.reason && (
-                          <span className="text-sm font-medium">{appointment.reason}</span>
+            {upcomingAppointments.map((appointment, index) => (
+              <motion.div
+                key={appointment.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+              >
+                <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-primary/20 hover:border-l-primary">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={`${getStatusColor(appointment.status)} font-semibold transition-colors`}>
+                            {appointment.status}
+                          </Badge>
+                          {appointment.reason && (
+                            <span className="text-sm font-medium text-foreground">{appointment.reason}</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4 text-primary" />
+                            <span>{format(new Date(appointment.appointment_date), 'MMMM d, yyyy')}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4 text-primary" />
+                            <span>{format(new Date(appointment.appointment_date), 'h:mm a')}</span>
+                          </div>
+                        </div>
+                        {appointment.dentists && (
+                          <p className="text-sm font-medium">
+                            with Dr. {getProviderName(appointment.dentists)}
+                          </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{format(new Date(appointment.appointment_date), 'MMMM d, yyyy')}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{format(new Date(appointment.appointment_date), 'h:mm a')}</span>
-                        </div>
-                      </div>
-                      {appointment.dentists && (
-                        <p className="text-sm mt-2">
-                          with Dr. {getProviderName(appointment.dentists)}
-                        </p>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/care/appointments`)}
+                        aria-label="View appointment details"
+                        className="shrink-0 hover:bg-primary hover:text-primary-foreground transition-colors"
+                      >
+                        View Details
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/care/appointments`)}
-                      aria-label="View appointment details"
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         ) : (
-          <Card>
+          <Card className="border-dashed">
             <CardContent className="pt-6">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  You don't have any upcoming appointments. Book one now to get started!
-                </AlertDescription>
-              </Alert>
-              <Button
-                className="mt-4 w-full"
-                onClick={() => { try { localStorage.setItem('pd_section', 'assistant'); } catch (e) { console.error('Failed to save section preference:', e); } window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } })); navigate('/dashboard'); }}
-                aria-label="Book your first appointment"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Book Your First Appointment
-              </Button>
+              <div className="flex flex-col items-center text-center py-8">
+                <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 relative">
+                  <Calendar className="h-12 w-12 text-primary/60" />
+                  <div className="absolute inset-0 rounded-full bg-primary/5 animate-ping" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No Appointments Yet</h3>
+                <p className="text-muted-foreground max-w-sm mb-6">
+                  Get started by booking your first appointment. We're here to help with all your dental needs!
+                </p>
+                <Button
+                  size="lg"
+                  className="shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+                  onClick={() => { try { localStorage.setItem('pd_section', 'assistant'); } catch (e) { console.error('Failed to save section preference:', e); } window.dispatchEvent(new CustomEvent('dashboard:changeSection', { detail: { section: 'assistant' } })); navigate('/dashboard'); }}
+                  aria-label="Book your first appointment"
+                >
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Book Your First Appointment
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

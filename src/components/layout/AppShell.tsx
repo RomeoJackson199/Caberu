@@ -562,7 +562,7 @@ export function AppShell() {
                 variant="outline"
                 onClick={() => handleNav("/clinical/schedule")}
                 aria-label={t.navSchedule}
-                className="group-data-[state=collapsed]:h-10 group-data-[state=collapsed]:w-10 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 group-data-[state=collapsed]:[&>span]:sr-only bg-background/50 hover:bg-background/80"
+                className="group-data-[state=collapsed]:h-10 group-data-[state=collapsed]:w-10 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 group-data-[state=collapsed]:[&>span]:sr-only bg-background/50 hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <Calendar className="h-4 w-4" />
                 <span>{t.navSchedule}</span>
@@ -572,7 +572,7 @@ export function AppShell() {
                 variant="outline"
                 onClick={() => handleNav("/clinical/patients")}
                 aria-label={t.navPatients}
-                className="group-data-[state=collapsed]:h-10 group-data-[state=collapsed]:w-10 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 group-data-[state=collapsed]:[&>span]:sr-only bg-background/50 hover:bg-background/80"
+                className="group-data-[state=collapsed]:h-10 group-data-[state=collapsed]:w-10 group-data-[state=collapsed]:justify-center group-data-[state=collapsed]:px-0 group-data-[state=collapsed]:[&>span]:sr-only bg-background/50 hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 <Users className="h-4 w-4" />
                 <span>{t.navPatients}</span>
@@ -583,17 +583,17 @@ export function AppShell() {
           <nav aria-label="Primary" onKeyDown={onKeyDownNav} ref={navRef}>
             {groups.map((group) => (
               <section key={group.id} aria-labelledby={`group-${group.id}`}>
-                <SidebarGroup>
-                  <SidebarGroupLabel className="flex items-center justify-between pr-8 text-xs font-medium text-muted-foreground/70 uppercase tracking-wider" role="button" tabIndex={0} aria-expanded={!!openGroups[group.id]} aria-controls={`group-content-${group.id}`} onClick={() => toggleGroup(group.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(group.id); } }}>
-                    <span className="flex items-center gap-2" id={`group-${group.id}`}>
-                      {group.id === "clinical" && <Stethoscope className="h-3 w-3" />}
-                      {group.id === "business" && <BarChart3 className="h-3 w-3" />}
-                      {group.id === "operations" && <Boxes className="h-3 w-3" />}
-                      {group.id === "admin" && <Shield className="h-3 w-3" />}
+                <SidebarGroup className="px-2">
+                  <SidebarGroupLabel className="flex items-center justify-between pr-8 text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider hover:text-foreground transition-colors cursor-pointer rounded-md px-2 py-2 hover:bg-muted/50" role="button" tabIndex={0} aria-expanded={!!openGroups[group.id]} aria-controls={`group-content-${group.id}`} onClick={() => toggleGroup(group.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGroup(group.id); } }}>
+                    <span className="flex items-center gap-2.5" id={`group-${group.id}`}>
+                      {group.id === "clinical" && <Stethoscope className="h-3.5 w-3.5" />}
+                      {group.id === "business" && <BarChart3 className="h-3.5 w-3.5" />}
+                      {group.id === "operations" && <Boxes className="h-3.5 w-3.5" />}
+                      {group.id === "admin" && <Shield className="h-3.5 w-3.5" />}
                       <span>{group.label}</span>
                     </span>
                     <SidebarGroupAction aria-hidden="true">
-                      <ChevronDown className={cn("h-3 w-3 transition-transform opacity-50", openGroups[group.id] ? "rotate-0" : "-rotate-90")} />
+                      <ChevronDown className={cn("h-3.5 w-3.5 transition-all duration-200", openGroups[group.id] ? "rotate-0 text-primary" : "-rotate-90 opacity-50")} />
                     </SidebarGroupAction>
                   </SidebarGroupLabel>
                   <div
@@ -622,15 +622,20 @@ export function AppShell() {
                                   aria-label={ariaLabel}
                                   onClick={() => handleNav(item.to)}
                                   className={cn(
-                                    "rounded-md transition-all duration-200",
-                                    active ? "bg-primary/10 text-primary font-medium shadow-sm" : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                                    "rounded-lg transition-all duration-200 relative overflow-hidden",
+                                    active
+                                      ? "bg-primary/15 text-primary font-semibold shadow-sm border-l-2 border-l-primary hover:bg-primary/20"
+                                      : "hover:bg-muted/70 text-muted-foreground hover:text-foreground hover:translate-x-0.5"
                                   )}
                                 >
                                   {item.icon}
                                   <span>{item.label}</span>
+                                  {active && (
+                                    <span className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
+                                  )}
                                 </SidebarMenuButton>
                                 {typeof item.badge === 'number' && item.badge > 0 && (
-                                  <SidebarMenuBadge className="bg-red-500 text-white animate-pulse" aria-label={`${item.label}, ${item.badge} due`}>{item.badge}</SidebarMenuBadge>
+                                  <SidebarMenuBadge className="bg-red-500 text-white font-semibold shadow-sm animate-pulse" aria-label={`${item.label}, ${item.badge} due`}>{item.badge}</SidebarMenuBadge>
                                 )}
                               </SidebarMenuItem>
                             );

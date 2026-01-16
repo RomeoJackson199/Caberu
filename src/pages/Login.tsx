@@ -371,10 +371,8 @@ const Login = () => {
           </div>
 
           <div className="space-y-6">
-
-
-            <div className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="space-y-4">
+            <div className="rounded-2xl border bg-card p-8 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <div className="space-y-5">
                 {/* Biometric Sign In (Native iOS only) */}
                 {isNative && biometrics.isAvailable && savedCredentials && (
                   <Button
@@ -395,7 +393,7 @@ const Login = () => {
                   variant="outline"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
-                  className="w-full h-12 border-2 hover:bg-accent"
+                  className="w-full h-12 border-2 hover:bg-accent transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -416,16 +414,16 @@ const Login = () => {
                 </div>
 
                 {/* Email/Password Form */}
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="name@email.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="h-12"
+                      className="h-14 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                       required
                       autoFocus
                       autoComplete="email"
@@ -434,10 +432,10 @@ const Login = () => {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                       <Link
                         to="/forgot-password"
-                        className="text-xs text-primary hover:underline"
+                        className="text-xs text-primary hover:underline transition-colors"
                       >
                         Forgot?
                       </Link>
@@ -448,21 +446,21 @@ const Login = () => {
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="h-12"
+                      className="h-14 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                       required
                       autoComplete="current-password"
                     />
                   </div>
 
                   {authError && (
-                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 animate-slide-in">
                       <p className="text-sm text-destructive font-medium">{authError}</p>
                     </div>
                   )}
 
                   <Button
                     type="submit"
-                    className="h-12 w-full text-base font-semibold"
+                    className="h-14 w-full text-base font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
                     disabled={isLoading}
                   >
                     {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continue"}
