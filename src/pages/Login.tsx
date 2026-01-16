@@ -202,9 +202,6 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      // REMOVED: session_business deletion was breaking business context
-      // The BusinessPicker will show naturally if needed via App.tsx logic
-
       // Save credentials for biometric login (if native app)
       if (isNative && biometrics.isAvailable) {
         try {
@@ -227,8 +224,8 @@ const Login = () => {
         description: "You've successfully signed in.",
       });
 
-      // Navigate to select-business page after successful login
-      navigate("/select-business");
+      // Navigate to auth-redirect which handles role-based routing and onboarding checks
+      navigate("/auth-redirect");
     } catch (error) {
       logger.error("Error completing login:", error);
     }
