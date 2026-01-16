@@ -7,12 +7,15 @@ import { useTheme } from "next-themes";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User as UserIcon, Mic, MicOff, CheckCircle, Calendar } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, Bot, Calendar } from "lucide-react";
 import { ChatMessage } from "@/types/chat";
 import { format } from "date-fns";
+import { ChatMessageBubble } from "./ChatMessageBubble";
+import { ChatLoadingIndicator } from "./ChatLoadingIndicator";
+import { generateBotResponse } from "./aiUtils";
+import { WIDGET_CODES, DENTIST_NAMES, LANGUAGE_NAMES } from "./constants";
 import {
   PrivacyConsentWidget,
   InlineCalendarWidget,
@@ -34,17 +37,6 @@ import { AppointmentSuccessWidget } from "./AppointmentSuccessWidget";
 import { createAppointmentDateTime } from "@/lib/timezone";
 import { logger } from '@/lib/logger';
 import { useNavigate } from "react-router-dom";
-
-// Widget code mapping
-const WIDGET_CODES: Record<string, string> = {
-  '89902': 'recommend-dentist',
-  '77843': 'pay-now',
-  '66754': 'reschedule',
-  '55621': 'cancel-appointment',
-  '44598': 'prescription-refill',
-  '33476': 'view-appointments',
-  '12345': 'booking-ready',
-};
 
 interface UserProfile {
   id: string;
@@ -340,145 +332,6 @@ export const InteractiveDentalChat = ({
     saveMessage(botMessage);
   };
 
-  const detectAndExtractCodes = (text: string): { 
-    cleanedText: string; 
-    detectedWidgets: string[];
-    recommendedDentists: string[];
-    recommendedService?: string;
-    symptomSummary?: string;
-  } => {
-    let cleanedText = text;
-    const detectedWidgets: string[] = [];
-    const recommendedDentists: string[] = [];
-    let recommendedService: string | undefined;
-    let symptomSummary: string | undefined;
-    
-    // Extract [[SERVICE:...]] tag
-    const serviceMatch = cleanedText.match(/\[\[SERVICE:([^\]]+)\]\]/);
-    if (serviceMatch) {
-      recommendedService = serviceMatch[1].trim();
-      cleanedText = cleanedText.replace(/\[\[SERVICE:[^\]]+\]\]\s*/g, '');
-    }
-    
-    // Extract [[SYMPTOMS:...]] tag
-    const symptomsMatch = cleanedText.match(/\[\[SYMPTOMS:([^\]]+)\]\]/);
-    if (symptomsMatch) {
-      symptomSummary = symptomsMatch[1].trim();
-      cleanedText = cleanedText.replace(/\[\[SYMPTOMS:[^\]]+\]\]\s*/g, '');
-    }
-    
-    // Detect and remove widget codes from text
-    Object.entries(WIDGET_CODES).forEach(([code, widget]) => {
-      const codeRegex = new RegExp(`\\b${code}\\b\\s*`, 'g');
-      if (codeRegex.test(cleanedText)) {
-        detectedWidgets.push(widget);
-        // Remove the code from the displayed text
-        cleanedText = cleanedText.replace(codeRegex, '');
-      }
-    });
-    
-    // Extract dentist recommendations from text
-    const dentistNames = [
-      'Virginie Pauwels',
-      'Emeline Hubin', 
-      'Firdaws Benhsain',
-      'Justine Peters',
-      'Anne-Sophie Haas'
-    ];
-    
-    dentistNames.forEach(name => {
-      if (cleanedText.toLowerCase().includes(name.toLowerCase())) {
-        recommendedDentists.push(name);
-      }
-    });
-    
-    return { cleanedText, detectedWidgets, recommendedDentists, recommendedService, symptomSummary };
-  };
-
-  const generateBotResponse = async (
-    userMessage: string,
-    history: ChatMessage[]
-  ): Promise<{ message: ChatMessage; fallback: boolean; suggestions: string[]; recommendedDentists: string[]; recommendedService?: string; symptomSummary?: string }> => {
-    try {
-      // Get business_id - fallback to first available business if not in context
-      let effectiveBusinessId = businessId;
-      if (!effectiveBusinessId) {
-        const { data: businesses } = await supabase
-          .from('businesses')
-          .select('id')
-          .limit(1)
-          .single();
-        effectiveBusinessId = businesses?.id || null;
-      }
-
-      logger.debug('Sending AI request with business_id:', effectiveBusinessId);
-
-      // Use business context for AI customization
-      const aiResponse = await supabase.functions.invoke('dental-ai-chat', {
-        body: {
-          message: userMessage,
-          conversation_history: history,
-          user_profile: userProfile || (user ? {
-            name: user.email?.split('@')[0] || 'Patient',
-            email: user.email
-          } : {
-            name: 'Guest',
-            email: null
-          }),
-          business_id: effectiveBusinessId
-        }
-      });
-
-      if (aiResponse.error) {
-        logger.error('AI function error:', aiResponse.error);
-        // If backend returned a JSON body, try to use it instead of failing hard
-        if (!aiResponse.data) {
-          throw aiResponse.error;
-        }
-      }
-
-      const serverData = (aiResponse as any).data || {};
-      const responseText = serverData.response || serverData.fallback_response || "";
-      if (!responseText) {
-        throw new Error('Empty AI response');
-      }
-
-      // Detect and extract widget codes from AI response (no forced codes)
-      const { cleanedText, detectedWidgets, recommendedDentists, recommendedService, symptomSummary } = detectAndExtractCodes(responseText);
-
-      const result = {
-        id: crypto.randomUUID(),
-        session_id: sessionId as any,
-        message: cleanedText,
-        is_bot: true,
-        message_type: 'text',
-        created_at: new Date().toISOString(),
-      } as ChatMessage;
-      return {
-        message: result,
-        fallback: Boolean(aiResponse.data?.fallback_response && !aiResponse.data?.response),
-        suggestions: detectedWidgets,
-        recommendedDentists: recommendedDentists,
-        recommendedService,
-        symptomSummary
-      };
-    } catch (error) {
-      logger.error('Error generating AI response:', error);
-      return {
-        message: {
-          id: crypto.randomUUID(),
-          session_id: sessionId as any,
-          message: "I'm sorry, I couldn't process your request.",
-          is_bot: true,
-          message_type: 'text',
-          created_at: new Date().toISOString(),
-        } as ChatMessage,
-        fallback: true,
-        suggestions: [],
-        recommendedDentists: []
-      };
-    }
-  };
 
   const handleSuggestions = (suggestions: string[], recommendedDentists?: string[], recommendedService?: string, symptomSummary?: string) => {
     if (!suggestions || suggestions.length === 0) {
@@ -1086,7 +939,14 @@ You'll receive a confirmation email shortly.`;
 
     const history = [...messages, userMessage].slice(-10);
 
-    const { message: botResponse, fallback, suggestions, recommendedDentists, recommendedService, symptomSummary } = await generateBotResponse(userMessage.message, history);
+    const { message: botResponse, fallback, suggestions, recommendedDentists, recommendedService, symptomSummary } = await generateBotResponse(
+      userMessage.message,
+      history,
+      sessionId,
+      userProfile,
+      user,
+      businessId
+    );
 
     setMessages(prev => [...prev, botResponse]);
     await saveMessage(botResponse);
@@ -1101,18 +961,12 @@ You'll receive a confirmation email shortly.`;
   const handleLanguageChange = (lang: string) => {
     changeLanguage(lang as 'en' | 'fr' | 'nl');
     localStorage.setItem('preferred-language', lang);
-    
-    const langNames = {
-      en: 'English',
-      fr: 'French', 
-      nl: 'Dutch'
-    };
-    
-    addBotMessage(`✅ Language changed to ${langNames[lang as keyof typeof langNames]} successfully!`);
-    
+
+    addBotMessage(`✅ Language changed to ${LANGUAGE_NAMES[lang as keyof typeof LANGUAGE_NAMES]} successfully!`);
+
     toast({
       title: "Success",
-      description: `Language changed to ${langNames[lang as keyof typeof langNames]}`
+      description: `Language changed to ${LANGUAGE_NAMES[lang as keyof typeof LANGUAGE_NAMES]}`
     });
   };
 
@@ -1724,87 +1578,11 @@ You'll receive a confirmation email shortly.`;
       
       <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-background to-muted/20">
         <div className="space-y-4 max-w-4xl mx-auto pb-4">
-          {messages.map((message) => {
-            const timestamp = message.created_at ? new Date(message.created_at) : null;
-            const timestampAlignment = message.is_bot
-              ? "self-start text-left"
-              : "self-end text-right";
+          {messages.map((message) => (
+            <ChatMessageBubble key={message.id} message={message} />
+          ))}
 
-            return (
-              <div
-                key={message.id}
-                className={`flex ${message.is_bot ? "justify-start" : "justify-end"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
-              >
-                <div
-                  className={`flex items-start gap-3 max-w-[85%] ${
-                    message.is_bot ? "" : "flex-row-reverse"
-                  }`}
-                >
-                  <div className="flex-shrink-0 mt-1">
-                    {message.is_bot ? (
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10 shadow-sm">
-                        <Bot className="w-5 h-5 text-primary" />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary/80 to-secondary flex items-center justify-center shadow-sm">
-                        <UserIcon className="w-5 h-5 text-secondary-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  <Card className={`border-none shadow-md ${
-                    message.is_bot
-                      ? "bg-card/80 backdrop-blur-sm"
-                      : "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground"
-                  }`}>
-                    <CardContent className="p-4 flex flex-col gap-2">
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.message}</div>
-                      {timestamp && (
-                        <time
-                          dateTime={timestamp.toISOString()}
-                          title={format(timestamp, "PPpp")}
-                          className={`text-xs text-muted-foreground ${timestampAlignment}`}
-                        >
-                          {format(timestamp, "p")}
-                        </time>
-                      )}
-                      {message.message_type === 'success' && (
-                        <Badge
-                          variant="secondary"
-                          className={`bg-green-100 text-green-800 border-green-200 ${
-                            message.is_bot ? "self-start" : "self-end"
-                          }`}
-                        >
-                          <span aria-hidden="true" className="mr-1">
-                            ✓
-                          </span>
-                          Success
-                        </Badge>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            );
-          })}
-          
-          {isLoading && (
-            <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="flex items-start gap-3 max-w-[85%]">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10 shadow-sm">
-                  <Bot className="w-5 h-5 text-primary" />
-                </div>
-                <Card className="bg-card/80 backdrop-blur-sm border-none shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce"></div>
-                      <div className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                      <div className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
+          {isLoading && <ChatLoadingIndicator />}
           
           {activeWidget && (
             <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
