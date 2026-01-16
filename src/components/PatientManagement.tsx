@@ -3,12 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
   Users,
@@ -17,11 +13,7 @@ import {
   Calendar,
   FileText,
   Plus,
-  Pill,
   ClipboardList as ClipboardListIcon,
-  Eye,
-  Edit,
-  Trash2,
   Phone,
   Mail,
   MapPin,
@@ -29,20 +21,9 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
 import { CompletionSheet } from "@/components/CompletionSheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PatientPaymentHistory } from "@/components/PatientPaymentHistory";
@@ -52,69 +33,27 @@ import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { logger } from '@/lib/logger';
 import { sanitizeText } from '@/utils/sanitize';
+import {
+  Patient,
+  Appointment,
+  TreatmentPlan,
+  Prescription,
+  PatientNote,
+  PatientManagementProps,
+  PatientFlags,
+  TreatmentForm,
+  PrescriptionForm,
+  NoteForm,
+  getAge,
+  PatientListItem,
+  TreatmentPlanFormSheet,
+  PrescriptionFormSheet,
+  NoteFormSheet,
+  AppointmentsList,
+  PrescriptionsSection,
+  TreatmentPlansSection
+} from "@/components/patient-management";
 
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  date_of_birth?: string;
-  address?: string;
-  medical_history?: string;
-  emergency_contact?: string;
-  profile_picture_url?: string;
-}
-
-interface Appointment {
-  id: string;
-  appointment_date: string;
-  duration_minutes: number;
-  status: string;
-  urgency: string;
-  reason?: string;
-  consultation_notes?: string;
-}
-
-interface TreatmentPlan {
-  id: string;
-  title: string;
-  description?: string;
-  diagnosis?: string;
-  status: string;
-  priority: string;
-  estimated_cost?: number;
-  estimated_duration_weeks?: number;
-  start_date?: string;
-  end_date?: string;
-  notes?: string;
-  created_at: string;
-}
-
-interface Prescription {
-  id: string;
-  medication_name: string;
-  dosage: string;
-  frequency: string;
-  duration_days?: number;
-  instructions?: string;
-  status: string;
-  prescribed_date: string;
-  created_at: string;
-}
-
-interface PatientNote {
-  id: string;
-  title: string;
-  content: string;
-  note_type: string;
-  is_private: boolean;
-  created_at: string;
-}
-
-interface PatientManagementProps {
-  dentistId: string;
-}
 
 function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -136,15 +75,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const appointmentsPerPage = 3;
 
   // Flags per patient for badges
-  const [patientFlags, setPatientFlags] = useState<Record<string, {
-    hasUnpaidBalance: boolean;
-    outstandingCents?: number;
-    hasUpcomingAppointment: boolean;
-    hasActiveTreatmentPlan: boolean;
-    lastVisitDate?: string;
-    nextAppointmentDate?: string;
-    nextAppointmentStatus?: string;
-  }>>({});
+  const [patientFlags, setPatientFlags] = useState<Record<string, PatientFlags>>({});
 
   // Editing state for inline edit flows
   const [editingTreatmentId, setEditingTreatmentId] = useState<string | null>(null);
@@ -431,25 +362,6 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
       || patient.id.toLowerCase().includes(search);
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'active': return 'bg-blue-100 text-blue-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getAge = (dob?: string) => {
-    if (!dob) return null;
-    const birth = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return age;
-  };
 
   const openEditTreatment = (plan: TreatmentPlan) => {
     setEditingTreatmentId(plan.id);
@@ -723,52 +635,13 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
         <CardContent className="p-0">
           <div className="max-h-[500px] overflow-y-auto">
             {filteredPatients.map((patient) => (
-              <div
+              <PatientListItem
                 key={patient.id}
-                className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${selectedPatient?.id === patient.id ? 'bg-dental-primary/10 border-dental-primary' : ''
-                  }`}
+                patient={patient}
+                isSelected={selectedPatient?.id === patient.id}
+                patientFlags={patientFlags[patient.id]}
                 onClick={() => setSelectedPatient(patient)}
-              >
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-12 w-12 flex-shrink-0">
-                    <AvatarImage src={patient.profile_picture_url || undefined} />
-                    <AvatarFallback className="bg-dental-primary/10 text-dental-primary">
-                      {patient.first_name?.[0]}{patient.last_name?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium truncate">
-                        {patient.first_name} {patient.last_name}
-                      </p>
-                      {/* Medical alerts */}
-                      {patient.medical_history && patient.medical_history.toLowerCase().includes('allerg') && (
-                        <Badge variant="destructive" className="text-[10px] px-2 py-0.5">Allergies</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground truncate mt-1">
-                      <span>{patient.phone || 'No phone'}</span>
-                      {patientFlags[patient.id]?.lastVisitDate && (
-                        <span>• Last: {format(new Date(patientFlags[patient.id]!.lastVisitDate as string), 'PP')}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap mt-2">
-                      {patientFlags[patient.id]?.hasUpcomingAppointment && (
-                        <Badge variant="outline" className="text-[10px] px-2 py-0.5">Upcoming</Badge>
-                      )}
-                      {patientFlags[patient.id]?.hasActiveTreatmentPlan && (
-                        <Badge variant="outline" className="text-[10px] px-2 py-0.5">Active Plan</Badge>
-                      )}
-                      {patientFlags[patient.id]?.hasUnpaidBalance && (
-                        <Badge variant="destructive" className="text-[10px] px-2 py-0.5">
-                          Unpaid {patientFlags[patient.id]?.outstandingCents ? `€${(patientFlags[patient.id]!.outstandingCents! / 100).toFixed(2)}` : ''}
-                        </Badge>
-                      )}
-
-                    </div>
-                  </div>
-                </div>
-              </div>
+              />
             ))}
           </div>
         </CardContent>
@@ -816,227 +689,42 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Slide-up sheets for add actions (opened by + menu) */}
-                    <Sheet open={showTreatmentDialog} onOpenChange={setShowTreatmentDialog}>
-                      <SheetContent side="bottom" className="sm:max-w-lg">
-                        <SheetHeader>
-                          <SheetTitle>{editingTreatmentId ? 'Edit Treatment Plan' : 'Add Treatment Plan'}</SheetTitle>
-                        </SheetHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="title">Title *</Label>
-                            <Input
-                              id="title"
-                              value={treatmentForm.title}
-                              onChange={(e) => setTreatmentForm(prev => ({ ...prev, title: e.target.value }))}
-                              placeholder="e.g., Root Canal Treatment"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea
-                              id="description"
-                              value={treatmentForm.description}
-                              onChange={(e) => setTreatmentForm(prev => ({ ...prev, description: e.target.value }))}
-                              placeholder="Treatment details..."
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="diagnosis">Diagnosis</Label>
-                            <Textarea
-                              id="diagnosis"
-                              value={treatmentForm.diagnosis}
-                              onChange={(e) => setTreatmentForm(prev => ({ ...prev, diagnosis: e.target.value }))}
-                              placeholder="Clinical findings and diagnosis..."
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="priority">Priority</Label>
-                              <Select
-                                value={treatmentForm.priority}
-                                onValueChange={(value) => setTreatmentForm(prev => ({ ...prev, priority: value }))}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="low">Low</SelectItem>
-                                  <SelectItem value="medium">Medium</SelectItem>
-                                  <SelectItem value="high">High</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label htmlFor="cost">Estimated Cost ($)</Label>
-                              <Input
-                                id="cost"
-                                type="number"
-                                value={treatmentForm.estimated_cost}
-                                onChange={(e) => setTreatmentForm(prev => ({ ...prev, estimated_cost: e.target.value }))}
-                                placeholder="0.00"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor="duration">Duration (weeks)</Label>
-                            <Input
-                              id="duration"
-                              type="number"
-                              value={treatmentForm.estimated_duration_weeks}
-                              onChange={(e) => setTreatmentForm(prev => ({ ...prev, estimated_duration_weeks: e.target.value }))}
-                              placeholder="e.g., 4"
-                            />
-                          </div>
-                          <div className="flex justify-end space-x-2 pt-4">
-                            <Button variant="outline" onClick={() => { setShowTreatmentDialog(false); setEditingTreatmentId(null); }}>
-                              Cancel
-                            </Button>
-                            <Button onClick={handleAddTreatmentPlan} disabled={!treatmentForm.title}>
-                              {editingTreatmentId ? 'Save Changes' : 'Add Treatment Plan'}
-                            </Button>
-                          </div>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
+                    {/* Form sheets for add/edit actions */}
+                    <TreatmentPlanFormSheet
+                      open={showTreatmentDialog}
+                      onOpenChange={(open) => {
+                        setShowTreatmentDialog(open);
+                        if (!open) setEditingTreatmentId(null);
+                      }}
+                      form={treatmentForm}
+                      onFormChange={setTreatmentForm}
+                      onSubmit={handleAddTreatmentPlan}
+                      isEditing={!!editingTreatmentId}
+                    />
 
-                    <Sheet open={showPrescriptionDialog} onOpenChange={setShowPrescriptionDialog}>
-                      <SheetContent side="bottom" className="sm:max-w-lg">
-                        <SheetHeader>
-                          <SheetTitle>{editingPrescriptionId ? 'Edit Prescription' : 'Add Prescription'}</SheetTitle>
-                        </SheetHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="medication">Medication Name *</Label>
-                            <Input
-                              id="medication"
-                              value={prescriptionForm.medication_name}
-                              onChange={(e) => setPrescriptionForm(prev => ({ ...prev, medication_name: e.target.value }))}
-                              placeholder="e.g., Amoxicillin"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="dosage">Dosage *</Label>
-                              <Input
-                                id="dosage"
-                                value={prescriptionForm.dosage}
-                                onChange={(e) => setPrescriptionForm(prev => ({ ...prev, dosage: e.target.value }))}
-                                placeholder="e.g., 500mg"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="frequency">Frequency *</Label>
-                              <Input
-                                id="frequency"
-                                value={prescriptionForm.frequency}
-                                onChange={(e) => setPrescriptionForm(prev => ({ ...prev, frequency: e.target.value }))}
-                                placeholder="e.g., 3 times daily"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor="duration_days">Duration (days)</Label>
-                            <Input
-                              id="duration_days"
-                              type="number"
-                              value={prescriptionForm.duration_days}
-                              onChange={(e) => setPrescriptionForm(prev => ({ ...prev, duration_days: e.target.value }))}
-                              placeholder="e.g., 7"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="instructions">Instructions</Label>
-                            <Textarea
-                              id="instructions"
-                              value={prescriptionForm.instructions}
-                              onChange={(e) => setPrescriptionForm(prev => ({ ...prev, instructions: e.target.value }))}
-                              placeholder="Take with food, avoid alcohol, etc..."
-                            />
-                          </div>
-                          <div className="flex justify-end space-x-2 pt-4">
-                            <Button variant="outline" onClick={() => { setShowPrescriptionDialog(false); setEditingPrescriptionId(null); }}>
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleAddPrescription}
-                              disabled={!prescriptionForm.medication_name || !prescriptionForm.dosage || !prescriptionForm.frequency}
-                            >
-                              {editingPrescriptionId ? 'Save Changes' : 'Add Prescription'}
-                            </Button>
-                          </div>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
+                    <PrescriptionFormSheet
+                      open={showPrescriptionDialog}
+                      onOpenChange={(open) => {
+                        setShowPrescriptionDialog(open);
+                        if (!open) setEditingPrescriptionId(null);
+                      }}
+                      form={prescriptionForm}
+                      onFormChange={setPrescriptionForm}
+                      onSubmit={handleAddPrescription}
+                      isEditing={!!editingPrescriptionId}
+                    />
 
-                    <Sheet open={showNoteDialog} onOpenChange={setShowNoteDialog}>
-                      <SheetContent side="bottom" className="sm:max-w-lg">
-                        <SheetHeader>
-                          <SheetTitle>{editingNoteId ? 'Edit Note' : 'Add Note'}</SheetTitle>
-                        </SheetHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="note_title">Title *</Label>
-                            <Input
-                              id="note_title"
-                              value={noteForm.title}
-                              onChange={(e) => setNoteForm(prev => ({ ...prev, title: e.target.value }))}
-                              placeholder="Note title..."
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="note_content">Content *</Label>
-                            <Textarea
-                              id="note_content"
-                              value={noteForm.content}
-                              onChange={(e) => setNoteForm(prev => ({ ...prev, content: e.target.value }))}
-                              placeholder="Write your note here..."
-                              className="min-h-[120px]"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="note_type">Type</Label>
-                              <Select
-                                value={noteForm.note_type}
-                                onValueChange={(value) => setNoteForm(prev => ({ ...prev, note_type: value }))}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="general">General</SelectItem>
-                                  <SelectItem value="consultation">Consultation</SelectItem>
-                                  <SelectItem value="follow_up">Follow-up</SelectItem>
-                                  <SelectItem value="reminder">Reminder</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex items-center space-x-2 pt-6">
-                              <input
-                                type="checkbox"
-                                id="private"
-                                checked={noteForm.is_private}
-                                onChange={(e) => setNoteForm(prev => ({ ...prev, is_private: e.target.checked }))}
-                                className="rounded border-muted-foreground"
-                              />
-                              <Label htmlFor="private" className="text-sm">Private note</Label>
-                            </div>
-                          </div>
-                          <div className="flex justify-end space-x-2 pt-4">
-                            <Button variant="outline" onClick={() => { setShowNoteDialog(false); setEditingNoteId(null); }}>
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleAddNote}
-                              disabled={!noteForm.title || !noteForm.content}
-                            >
-                              {editingNoteId ? 'Save Changes' : 'Add Note'}
-                            </Button>
-                          </div>
-                        </div>
-                      </SheetContent>
-                    </Sheet>
+                    <NoteFormSheet
+                      open={showNoteDialog}
+                      onOpenChange={(open) => {
+                        setShowNoteDialog(open);
+                        if (!open) setEditingNoteId(null);
+                      }}
+                      form={noteForm}
+                      onFormChange={setNoteForm}
+                      onSubmit={handleAddNote}
+                      isEditing={!!editingNoteId}
+                    />
 
                     {/* Unified + menu */}
                     <DropdownMenu>
@@ -1140,77 +828,8 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
               </CardContent>
             </Card>
 
-            {/* Appointments Section - Custom Implementation */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5 text-dental-primary" />
-                  <span>Appointments</span>
-                  <Badge variant="outline">{appointments.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {appointments.length > 0 ? (
-                  <div className="space-y-3">
-                    {appointments
-                      .filter(apt => apt.status !== 'cancelled')
-                      .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime())
-                      .slice(0, appointmentsPage === 1 ? 3 : 10)
-                      .map((appointment) => (
-                        <div key={appointment.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <p className="font-medium">
-                                  {format(new Date(appointment.appointment_date), 'PPP')}
-                                </p>
-                                <Badge className={getStatusColor(appointment.status)}>
-                                  {appointment.status}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                {format(new Date(appointment.appointment_date), 'p')}
-                                {appointment.duration_minutes && ` • ${appointment.duration_minutes} minutes`}
-                              </p>
-                              {appointment.reason && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                  Reason: {appointment.reason}
-                                </p>
-                              )}
-                              {appointment.consultation_notes && (
-                                <div className="mt-2 p-2 bg-muted rounded text-sm">
-                                  {appointment.consultation_notes}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                    {appointments.filter(apt => apt.status !== 'cancelled').length > 3 && (
-                      <div className="flex justify-center pt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => setAppointmentsPage(appointmentsPage === 1 ? 2 : 1)}
-                        >
-                          {appointmentsPage === 1 ? 'View All' : 'Show Less'}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No appointments found</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Appointments Section */}
+            <AppointmentsList appointments={appointments} />
 
             {/* Collapsible Sections */}
             <Accordion type="single" collapsible value={accordionValue} onValueChange={(val) => {
@@ -1220,179 +839,19 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
               }
             }} className="w-full">
               {hasFeature('prescriptions') && (
-                <AccordionItem value="prescriptions">
-                  <Card className="glass-card">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Pill className="h-5 w-5 text-dental-primary" />
-                          <span>Prescriptions</span>
-                          <Badge variant="outline">{prescriptions.length}</Badge>
-                        </div>
-                        <AccordionTrigger className="py-0" />
-                      </CardTitle>
-                    </CardHeader>
-                    <AccordionContent>
-                      <CardContent>
-                        {prescriptions.length > 0 ? (
-                          <div className="space-y-3">
-                            {prescriptions
-                              .slice()
-                              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                              .map((prescription) => (
-                                <div key={prescription.id} className="p-3 border rounded-lg group">
-                                  <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="font-medium">{prescription.medication_name}</h4>
-                                        <Badge className={getStatusColor(prescription.status)}>
-                                          {prescription.status}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground">
-                                        {prescription.dosage} - {prescription.frequency}
-                                      </p>
-                                      {prescription.duration_days && (
-                                        <p className="text-sm">Duration: {prescription.duration_days} days</p>
-                                      )}
-                                      {prescription.instructions && (
-                                        <p className="text-sm mt-2 bg-muted p-2 rounded">
-                                          {sanitizeText(prescription.instructions)}
-                                        </p>
-                                      )}
-                                      <p className="text-xs text-muted-foreground mt-2">
-                                        Prescribed: {format(new Date(prescription.prescribed_date), 'PPP')}
-                                      </p>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
-                                      <Button size="icon" variant="ghost" onClick={() => openEditPrescription(prescription)}>
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button size="icon" variant="ghost">
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete prescription?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              This action cannot be undone.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeletePrescription(prescription.id)}>Delete</AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-center py-4">
-                            No prescriptions found
-                          </p>
-                        )}
-                        <div className="pt-3 flex justify-end">
-                          <Button size="sm" variant="ghost">View All</Button>
-                        </div>
-                      </CardContent>
-                    </AccordionContent>
-                  </Card>
-                </AccordionItem>
+                <PrescriptionsSection
+                  prescriptions={prescriptions}
+                  onEdit={openEditPrescription}
+                  onDelete={handleDeletePrescription}
+                />
               )}
 
               {hasFeature('treatmentPlans') && (
-                <AccordionItem value="treatments">
-                  <Card className="glass-card">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <ClipboardListIcon className="h-5 w-5 text-dental-primary" />
-                          <span>Treatment Plans</span>
-                          <Badge variant="outline">{treatmentPlans.length}</Badge>
-                        </div>
-                        <AccordionTrigger className="py-0" />
-                      </CardTitle>
-                    </CardHeader>
-                    <AccordionContent>
-                      <CardContent>
-                        {treatmentPlans.length > 0 ? (
-                          <div className="space-y-3">
-                            {treatmentPlans
-                              .slice()
-                              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                              .map((plan) => (
-                                <div key={plan.id} className="p-3 border rounded-lg group">
-                                  <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="font-medium">{plan.title}</h4>
-                                        <Badge className={getStatusColor(plan.status)}>
-                                          {plan.status}
-                                        </Badge>
-                                      </div>
-                                      {plan.description && (
-                                        <p className="text-sm text-muted-foreground mt-1">{sanitizeText(plan.description)}</p>
-                                      )}
-                                      {plan.diagnosis && (
-                                        <p className="text-sm mt-2 bg-muted p-2 rounded">
-                                          <span className="font-medium">Diagnosis:</span> {sanitizeText(plan.diagnosis)}
-                                        </p>
-                                      )}
-                                      <div className="flex space-x-4 mt-2 text-sm">
-                                        {plan.estimated_cost && (
-                                          <span>Cost: ${plan.estimated_cost}</span>
-                                        )}
-                                        {plan.estimated_duration_weeks && (
-                                          <span>Duration: {plan.estimated_duration_weeks} weeks</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
-                                      <Button size="icon" variant="ghost" onClick={() => openEditTreatment(plan)}>
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button size="icon" variant="ghost">
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete treatment plan?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              This action cannot be undone.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteTreatment(plan.id)}>Delete</AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-center py-4">
-                            No treatment plans found
-                          </p>
-                        )}
-                        <div className="pt-3 flex justify-end">
-                          <Button size="sm" variant="ghost">View All</Button>
-                        </div>
-                      </CardContent>
-                    </AccordionContent>
-                  </Card>
-                </AccordionItem>
+                <TreatmentPlansSection
+                  treatmentPlans={treatmentPlans}
+                  onEdit={openEditTreatment}
+                  onDelete={handleDeleteTreatment}
+                />
               )}
 
               <AccordionItem value="payments">
