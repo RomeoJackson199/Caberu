@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Eye, Sparkles } from "lucide-react";
-import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 
 export function HomepageEditor() {

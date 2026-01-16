@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SeoManager } from "./lib/seo";
 import AuthCallbackHandler from "./components/AuthCallbackHandler";
-import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DentistPortal } from "@/pages/DentistPortal";
 import { PatientPortalNav } from "@/components/patients/PatientPortalNav";
 import { RoleBasedRouter } from "@/components/RoleBasedRouter";

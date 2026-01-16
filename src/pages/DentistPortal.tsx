@@ -26,7 +26,7 @@ import DentistAdminSecurity from "./DentistAdminSecurity";
 import DentistAdminUsers from "./DentistAdminUsers";
 import DentistTeamManagement from "./DentistTeamManagement";
 import DentistSettings from "./DentistSettings";
-import { LoadingSpinner } from "@/components/enhanced/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import DentistAppointmentsManagement from "./DentistAppointmentsManagement";
 import { InviteDentistDialog } from "@/components/InviteDentistDialog";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
