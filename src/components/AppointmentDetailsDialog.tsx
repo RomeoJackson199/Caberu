@@ -65,7 +65,7 @@ export function AppointmentDetailsDialog({ appointmentId, open, onOpenChange }: 
               address
             )
           ),
-          patient:profiles!appointments_patient_id_fkey (
+          patient:secure_profiles_view!appointments_patient_id_fkey (
             id,
             first_name,
             last_name,

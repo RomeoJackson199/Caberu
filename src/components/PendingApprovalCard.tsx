@@ -70,7 +70,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
             reason,
             patient_name,
             patient_id,
-            profiles!appointments_patient_id_fkey (
+            profiles:secure_profiles_view!appointments_patient_id_fkey (
               first_name,
               last_name
             )
