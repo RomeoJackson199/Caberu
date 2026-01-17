@@ -12,8 +12,8 @@ interface Appointment {
   patient_name?: string;
   appointment_date: string;
   duration_minutes: number;
-  status: string;
-  urgency: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  urgency: 'low' | 'medium' | 'high' | 'emergency';
   reason?: string;
   consultation_notes?: string;
 }
