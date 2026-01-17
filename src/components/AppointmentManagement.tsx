@@ -48,8 +48,8 @@ interface Appointment {
   patient_name?: string;
   appointment_date: string;
   duration_minutes: number;
-  status: string;
-  urgency: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  urgency: 'low' | 'medium' | 'high' | 'emergency';
   reason?: string;
   notes?: string;
   consultation_notes?: string;
@@ -365,7 +365,7 @@ export function AppointmentManagement({ dentistId }: AppointmentManagementProps)
           </div>
 
           {/* Statistics */}
-          <AppointmentStats appointments={appointments} />
+          <AppointmentStats appointments={appointments} dentistId={dentistId} />
         </CardContent>
       </Card>
 
