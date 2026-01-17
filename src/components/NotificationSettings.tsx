@@ -8,8 +8,9 @@ import { toast } from '@/hooks/use-toast';
 import { NotificationService } from '@/lib/notificationService';
 import { NotificationPreferences } from '@/types/common';
 import { supabase } from '@/integrations/supabase/client';
-import { Bell, Mail, Phone, Clock } from 'lucide-react';
+import { Bell, Mail, Phone, Clock, Smartphone } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { pushNotificationService } from '@/lib/pushNotifications';
 
 export const NotificationSettings: React.FC = () => {
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
@@ -17,10 +18,93 @@ export const NotificationSettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [testingSMS, setTestingSMS] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
+  const [testingPush, setTestingPush] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [togglingPush, setTogglingPush] = useState(false);
 
   useEffect(() => {
     loadPreferences();
+    checkPushStatus();
   }, []);
+
+  const checkPushStatus = async () => {
+    const supported = pushNotificationService.isSupported();
+    setPushSupported(supported);
+    if (supported) {
+      const subscribed = await pushNotificationService.isSubscribed();
+      setPushEnabled(subscribed);
+    }
+  };
+
+  const togglePushNotifications = async () => {
+    setTogglingPush(true);
+    try {
+      if (pushEnabled) {
+        // Disable push notifications
+        const success = await pushNotificationService.unsubscribe();
+        if (success) {
+          setPushEnabled(false);
+          toast({
+            title: "Push Notifications Disabled",
+            description: "You will no longer receive push notifications.",
+          });
+        }
+      } else {
+        // Enable push notifications
+        const subscription = await pushNotificationService.subscribe(true);
+        if (subscription) {
+          setPushEnabled(true);
+          toast({
+            title: "Push Notifications Enabled",
+            description: "You will now receive push notifications.",
+          });
+        } else {
+          toast({
+            title: "Permission Denied",
+            description: "Please enable notifications in your browser settings.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update push notification settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setTogglingPush(false);
+    }
+  };
+
+  const testPushNotification = async () => {
+    setTestingPush(true);
+    try {
+      await pushNotificationService.showNotification(
+        "Test Push Notification",
+        {
+          body: "This is a test push notification to verify your settings are working correctly.",
+          icon: "/logo.png",
+          tag: "test-notification"
+        }
+      );
+      toast({
+        title: "Test Notification Sent",
+        description: "Check for a push notification on your device.",
+      });
+    } catch (error) {
+      console.error('Error sending test push:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send test push notification.",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingPush(false);
+    }
+  };
 
   const loadPreferences = async () => {
     setLoading(true);
@@ -267,6 +351,39 @@ export const NotificationSettings: React.FC = () => {
               onCheckedChange={(checked) => updatePreference('in_app_enabled', checked)}
             />
           </div>
+
+          {/* Push Notifications */}
+          {pushSupported && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Smartphone className="h-5 w-5 text-primary" />
+                <div>
+                  <Label htmlFor="push-enabled" className="text-sm font-medium">
+                    Push Notifications
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive notifications on your device
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="push-enabled"
+                  checked={pushEnabled}
+                  onCheckedChange={togglePushNotifications}
+                  disabled={togglingPush}
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={testPushNotification}
+                  disabled={!pushEnabled || testingPush}
+                >
+                  {testingPush ? 'Sending...' : 'Test'}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

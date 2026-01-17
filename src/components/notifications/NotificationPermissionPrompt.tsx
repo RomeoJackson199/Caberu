@@ -204,36 +204,7 @@ export function NotificationPermissionPrompt() {
         )}
       </AnimatePresence>
 
-      {/* Settings control - shown when permission is granted */}
-      {permission === "granted" && isSubscribed && (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDisableNotifications}
-            disabled={loading}
-            className="text-muted-foreground"
-          >
-            <BellOff className="h-4 w-4 mr-2" />
-            {loading ? "Disabling..." : "Disable Push Notifications"}
-          </Button>
-        </div>
-      )}
-
-      {/* Re-enable button if permission granted but not subscribed */}
-      {permission === "granted" && !isSubscribed && (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleEnableNotifications}
-            disabled={loading}
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            {loading ? "Enabling..." : "Enable Push Notifications"}
-          </Button>
-        </div>
-      )}
+      {/* Push notification controls moved to NotificationSettings - no banner shown here */}
     </>
   );
 }
