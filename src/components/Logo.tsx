@@ -40,7 +40,8 @@ export function Logo({ size = "md", variant = "full", className = "", priority =
       className={`object-contain ${className}`}
       loading={priority ? "eager" : "lazy"}
       decoding={priority ? "sync" : "async"}
-      fetchPriority={priority ? "high" : "auto"}
+      // @ts-expect-error - fetchpriority is a valid HTML attribute but not in React types yet
+      fetchpriority={priority ? "high" : "auto"}
       draggable={false}
     />
   );
