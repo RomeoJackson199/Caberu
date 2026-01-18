@@ -37,17 +37,27 @@ serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
-    // Store the code
+    // Delete any existing codes for this email first to ensure clean state
+    const { error: deleteError } = await supabase
+      .from('verification_codes')
+      .delete()
+      .eq('email', email);
+
+    if (deleteError) {
+      console.error('Error deleting old codes:', deleteError);
+      // Continue anyway - insert might still work
+    }
+
+    // Insert new code
     const { error: storeError } = await supabase
       .from('verification_codes')
-      .upsert({
+      .insert({
         email,
         code,
         type, // Store the type to distinguish functionality
         expires_at: expiresAt.toISOString(),
         used: false,
-      }, {
-        onConflict: 'email'
+        failed_attempts: 0,
       });
 
     if (storeError) {
