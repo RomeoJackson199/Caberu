@@ -26,6 +26,18 @@ interface QuickAppointmentDialogProps {
   showPatientSelector?: boolean;
 }
 
+/**
+ * Renders a dialog UI to create and schedule a dentist appointment, including optional patient selection, date/time, reason, and duration.
+ *
+ * @param open - Whether the dialog is visible.
+ * @param onOpenChange - Callback invoked when the dialog open state changes.
+ * @param dentistId - ID of the dentist for whom the appointment will be created.
+ * @param selectedDate - Initial date used to prefill the appointment date.
+ * @param selectedTime - Initial time used to prefill the appointment time (e.g., "09:30").
+ * @param patient - Optional preselected patient (PatientMinimal); when provided the patient selector is hidden unless `showPatientSelector` is true.
+ * @param showPatientSelector - When true, always show the patient selection UI even if a `patient` is provided.
+ * @returns The dialog element that manages appointment creation and related UI interactions.
+ */
 export function QuickAppointmentDialog({
   open,
   onOpenChange,

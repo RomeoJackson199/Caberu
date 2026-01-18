@@ -41,7 +41,14 @@ interface EmptyStateProps {
 }
 
 /**
- * Generic empty state component
+ * Render a centered card-style empty state with an icon, title, optional description, and optional primary/secondary actions.
+ *
+ * @param icon - Optional icon component to show above the title; defaults to an Inbox icon when omitted.
+ * @param title - Heading text displayed below the icon.
+ * @param description - Optional supporting text shown under the title.
+ * @param action - Optional primary action object. When provided, renders a primary Button showing `label`, calling `onClick`, and optionally showing `icon`.
+ * @param secondaryAction - Optional secondary action object. When provided, renders an outline Button showing `label`, calling `onClick`, and optionally showing `icon`.
+ * @returns The JSX element for a centered empty-state Card containing the icon, title, optional description, and optional action buttons.
  */
 export function EmptyState({ icon: Icon, title, description, action, secondaryAction }: EmptyStateProps) {
   const IconComponent = Icon || Inbox;
@@ -78,7 +85,14 @@ export function EmptyState({ icon: Icon, title, description, action, secondaryAc
 }
 
 /**
- * Empty state for appointment lists
+ * Render an empty-state UI for appointment lists.
+ *
+ * When `showCreateButton` is true and `onCreateAppointment` is provided, the component includes a primary
+ * action labeled "Create Appointment" that invokes `onCreateAppointment` when clicked.
+ *
+ * @param onCreateAppointment - Optional callback invoked when the primary action is clicked.
+ * @param showCreateButton - Whether to show the primary "Create Appointment" button (default: true).
+ * @returns The configured EmptyState element for appointments.
  */
 export function NoAppointments({
   onCreateAppointment,
@@ -106,7 +120,14 @@ export function NoAppointments({
 }
 
 /**
- * Empty state for patient lists
+ * Render an empty state for patient lists that prompts the user to add patients.
+ *
+ * Renders a standardized empty-state card with a patient icon, a title, and a descriptive message.
+ * If `showAddButton` is true and `onAddPatient` is provided, a primary "Add Patient" action is shown and invokes `onAddPatient` when clicked.
+ *
+ * @param onAddPatient - Optional callback invoked when the primary "Add Patient" action is activated.
+ * @param showAddButton - Whether to display the primary "Add Patient" action; defaults to `true`.
+ * @returns The EmptyState component configured for patient lists.
  */
 export function NoPatients({
   onAddPatient,
@@ -134,7 +155,14 @@ export function NoPatients({
 }
 
 /**
- * Empty state for search results
+ * Displays a standardized empty state for search results.
+ *
+ * The displayed title will include the `searchTerm` when provided. If `onClearSearch` is supplied, a primary "Clear Search" action is shown; if `onRetry` is supplied, a secondary "Try Again" action is shown.
+ *
+ * @param searchTerm - Optional search term to include in the title (e.g., `No results for "term"`).
+ * @param onClearSearch - Optional callback invoked by the primary "Clear Search" action.
+ * @param onRetry - Optional callback invoked by the secondary "Try Again" action.
+ * @returns A JSX element rendering the configured empty state for search results.
  */
 export function NoResults({
   searchTerm,
@@ -172,7 +200,12 @@ export function NoResults({
 }
 
 /**
- * Generic no data state
+ * Render a standardized "no data" empty state with an optional refresh action.
+ *
+ * @param title - Title text displayed in the empty state. Defaults to "No data available".
+ * @param description - Supporting description text displayed below the title. Defaults to "There is no data to display at the moment."
+ * @param onRefresh - Optional callback; when provided a primary "Refresh" action is rendered that invokes this callback when clicked.
+ * @returns The empty-state JSX element configured with the provided title, description, and optional refresh action.
  */
 export function NoData({
   title = 'No data available',
@@ -202,7 +235,14 @@ export function NoData({
 }
 
 /**
- * Empty state for prescriptions
+ * Render an empty-state card for prescriptions.
+ *
+ * Displays a standardized empty state with a title and description, and an optional
+ * primary action to create a prescription.
+ *
+ * @param onCreatePrescription - Callback invoked when the "Create Prescription" action is clicked.
+ * @param showCreateButton - Whether to show the primary "Create Prescription" button. Defaults to `true`.
+ * @returns A JSX element representing the prescriptions empty state.
  */
 export function NoPrescriptions({
   onCreatePrescription,
@@ -230,7 +270,11 @@ export function NoPrescriptions({
 }
 
 /**
- * Empty state for treatment plans
+ * Render an empty-state UI for treatment plans.
+ *
+ * @param onCreatePlan - Optional callback invoked when the "Create Treatment Plan" action is triggered.
+ * @param showCreateButton - When `true` and `onCreatePlan` is provided, show the primary "Create Treatment Plan" button.
+ * @returns A JSX element representing the treatment-plans empty state configured with title, description, icon, and optional primary action.
  */
 export function NoTreatmentPlans({
   onCreatePlan,
@@ -258,7 +302,15 @@ export function NoTreatmentPlans({
 }
 
 /**
- * Empty state for error scenarios
+ * Renders a standardized empty-state for error conditions with an optional retry action.
+ *
+ * Shows an alert icon, a title, and a description. If `onRetry` is provided, includes a primary
+ * action button labeled "Try Again" that invokes the callback.
+ *
+ * @param title - Heading shown in the empty state (defaults to "Something went wrong")
+ * @param description - Supporting message shown below the title
+ * @param onRetry - Optional callback invoked when the "Try Again" action is clicked
+ * @returns A JSX element representing the error empty state
  */
 export function ErrorState({
   title = 'Something went wrong',
@@ -288,7 +340,12 @@ export function ErrorState({
 }
 
 /**
- * Compact empty state for inline usage (no card wrapper)
+ * Renders a compact inline empty state with an icon, title, and optional description.
+ *
+ * @param icon - Optional icon component to display; defaults to `Inbox` when omitted.
+ * @param title - Title text to display.
+ * @param description - Optional descriptive text shown below the title.
+ * @returns A JSX element containing the compact empty state layout (no card wrapper).
  */
 export function CompactEmptyState({ icon: Icon, title, description }: Omit<EmptyStateProps, 'action' | 'secondaryAction'>) {
   const IconComponent = Icon || Inbox;

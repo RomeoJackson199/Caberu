@@ -13,7 +13,9 @@ import { Skeleton } from './skeleton';
 import { Card, CardContent, CardHeader } from './card';
 
 /**
- * Dashboard skeleton with stats and cards
+ * Renders a dashboard-style loading skeleton with a header, a 4-item stats grid, and a two-column main content area of placeholder cards and lists.
+ *
+ * @returns A JSX element containing the dashboard loading skeleton
  */
 export function DashboardSkeleton() {
   return (
@@ -79,7 +81,11 @@ export function DashboardSkeleton() {
 }
 
 /**
- * List skeleton for appointment/patient lists
+ * Render a list-style loading skeleton used for appointment or patient lists.
+ *
+ * @param count - Number of placeholder list items to render (default: 5)
+ * @param showHeader - Whether to render the header skeleton (default: true)
+ * @returns A JSX element containing the list loading skeleton layout
  */
 export function ListSkeleton({ count = 5, showHeader = true }: { count?: number; showHeader?: boolean }) {
   return (
@@ -125,7 +131,10 @@ export function ListSkeleton({ count = 5, showHeader = true }: { count?: number;
 }
 
 /**
- * Form skeleton for settings/profile pages
+ * Renders a form-style loading skeleton with a header, multiple sections of field placeholders, and action button placeholders.
+ *
+ * @param sections - Number of form sections to render; each section contains three labeled field skeletons. Defaults to 3.
+ * @returns A JSX element representing the form skeleton layout.
  */
 export function FormSkeleton({ sections = 3 }: { sections?: number }) {
   return (
@@ -164,7 +173,11 @@ export function FormSkeleton({ sections = 3 }: { sections?: number }) {
 }
 
 /**
- * Card grid skeleton for business/service listings
+ * Renders a responsive grid of placeholder cards used as a loading skeleton for card-based lists.
+ *
+ * @param count - Number of skeleton cards to render. Defaults to 6.
+ * @param columns - Column layout preset to use: `2`, `3`, or `4`. Each value maps to responsive grid breakpoints.
+ * @returns The JSX element containing the card grid skeleton.
  */
 export function CardGridSkeleton({ count = 6, columns = 3 }: { count?: number; columns?: 2 | 3 | 4 }) {
   const gridClass = {
@@ -210,7 +223,11 @@ export function CardGridSkeleton({ count = 6, columns = 3 }: { count?: number; c
 }
 
 /**
- * Table skeleton for data tables
+ * Renders a table-shaped loading skeleton with a configurable number of header columns and body rows.
+ *
+ * @param rows - Number of body rows to render. Default: 5
+ * @param columns - Number of columns in the header and each row. Default: 5
+ * @returns The JSX element representing the table skeleton (header and rows)
  */
 export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; columns?: number }) {
   return (

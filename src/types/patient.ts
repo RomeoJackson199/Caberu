@@ -135,7 +135,9 @@ export interface PatientAppointment {
 export type AppointmentGroup = 'upcoming' | 'needs_completion' | 'completed' | 'cancelled';
 
 /**
- * Determine which group an appointment belongs to
+ * Classifies a patient appointment into a timeline group.
+ *
+ * @returns `'cancelled'` if `status` is `'cancelled'`, `'completed'` if `status` is `'completed'`, `'needs_completion'` if the appointment date is before now and status is neither cancelled nor completed, `'upcoming'` otherwise.
  */
 export function getAppointmentGroup(appointment: PatientAppointment): AppointmentGroup {
     const now = new Date();
