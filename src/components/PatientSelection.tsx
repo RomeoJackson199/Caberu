@@ -10,6 +10,17 @@ interface PatientSelectionProps {
   selectedPatient?: PatientMinimal | null;
 }
 
+/**
+ * Render a searchable list of patients and allow selecting one.
+ *
+ * The component displays a search input and a scrollable list of patients (mocked in this implementation),
+ * filters the list by the entered search term (matching full name), and visually indicates the currently
+ * selected patient. Selecting a patient invokes the provided callback.
+ *
+ * @param onSelect - Callback invoked with the patient the user selects.
+ * @param selectedPatient - The currently selected patient, or `null` if none is selected.
+ * @returns The rendered patient selection UI.
+ */
 export function PatientSelection({ onSelect, selectedPatient }: PatientSelectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [patients, setPatients] = useState<PatientMinimal[]>([]);

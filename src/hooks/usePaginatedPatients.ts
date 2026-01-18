@@ -20,6 +20,24 @@ interface UsePaginatedPatientsReturn {
     error: Error | null;
 }
 
+/**
+ * Manage paginated retrieval of a dentist's patients with load-more and refresh support.
+ *
+ * Fetches an initial page of patients and supports loading subsequent pages and refreshing from the start.
+ * Shows a destructive toast and sets `error` when fetches fail.
+ *
+ * @param dentistId - Dentist identifier to fetch patients for
+ * @param businessId - Optional business identifier to filter patients
+ * @param limit - Maximum number of patients to request per page (defaults to 50)
+ * @param searchQuery - Optional text used to filter patients by search
+ * @returns An object with:
+ *   - `patients`: the current list of loaded patient items
+ *   - `isLoading`: whether a fetch is in progress
+ *   - `hasMore`: whether more pages may be available
+ *   - `loadMore`: function to load the next page
+ *   - `refresh`: function to reload from the beginning
+ *   - `error`: the last fetch error, or `null` if none
+ */
 export function usePaginatedPatients({
     dentistId,
     businessId,

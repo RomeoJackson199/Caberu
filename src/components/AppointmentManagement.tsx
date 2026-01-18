@@ -50,6 +50,12 @@ interface AppointmentManagementProps {
   dentistId: string;
 }
 
+/**
+ * Renders the appointment management UI for a specific dentist, including listing, searching, creating, viewing, editing, and completing appointments.
+ *
+ * @param dentistId - The dentist's unique identifier used to fetch and mutate that dentist's appointments.
+ * @returns The AppointmentManagement React element.
+ */
 export function AppointmentManagement({ dentistId }: AppointmentManagementProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<PatientMinimal[]>([]);
