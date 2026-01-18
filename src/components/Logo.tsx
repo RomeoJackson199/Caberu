@@ -21,15 +21,6 @@ const sizeMap = {
   xl: { height: 96, width: 280 },
 };
 
-/**
- * Renders the Caberu logo as an <img> element with configurable size, variant, and loading priority.
- *
- * @param size - One of `"sm" | "md" | "lg" | "xl"`; controls the rendered width and height via the internal size map (default: `"md"`).
- * @param variant - One of `"full" | "icon"`; selects the full wordmark or the icon-only logo (default: `"full"`).
- * @param className - Additional CSS classes appended to the image's `className`.
- * @param priority - If `true`, marks the image as LCP-critical: uses eager loading, synchronous decoding, and high fetch priority (default: `false`).
- * @returns An HTMLImageElement rendering the requested Caberu logo variant at the chosen size.
- */
 export function Logo({ size = "md", variant = "full", className = "", priority = false }: LogoProps) {
   const logoSize = sizeMap[size];
   const logoSrc = getCaberuLogo(variant);
@@ -49,7 +40,7 @@ export function Logo({ size = "md", variant = "full", className = "", priority =
       className={`object-contain ${className}`}
       loading={priority ? "eager" : "lazy"}
       decoding={priority ? "sync" : "async"}
-      fetchpriority={priority ? "high" : "auto"}
+      fetchPriority={priority ? "high" : "auto"}
       draggable={false}
     />
   );

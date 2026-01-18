@@ -2,13 +2,29 @@ import React from 'react';
 import { AppointmentCard } from './AppointmentCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { AppointmentWithProfiles, AppointmentStatus } from '@/types/patient';
 
-export interface Appointment extends AppointmentWithProfiles {
+export interface Appointment {
+  id: string;
+  patient_id: string;
+  dentist_id?: string;
+  business_id?: string;
+  appointment_date: string;
+  duration_minutes: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  urgency: 'low' | 'medium' | 'high' | 'emergency';
+  reason?: string;
   patient_name?: string;
+  notes?: string;
+  consultation_notes?: string;
+  profiles?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+  };
 }
 
-type StatusType = AppointmentStatus;
+type StatusType = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 
 interface AppointmentListProps {
   appointments: Appointment[];

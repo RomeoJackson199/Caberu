@@ -2,7 +2,18 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
-import type { PatientListItem } from '@/types/patient';
+
+interface Patient {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+    date_of_birth?: string;
+    avatar_url?: string;
+    medical_history?: string;
+    created_at: string;
+}
 
 interface UsePaginatedPatientsOptions {
     dentistId: string;
@@ -12,7 +23,7 @@ interface UsePaginatedPatientsOptions {
 }
 
 interface UsePaginatedPatientsReturn {
-    patients: PatientListItem[];
+    patients: Patient[];
     isLoading: boolean;
     hasMore: boolean;
     loadMore: () => Promise<void>;
@@ -20,31 +31,13 @@ interface UsePaginatedPatientsReturn {
     error: Error | null;
 }
 
-/**
- * Manage paginated retrieval of a dentist's patients with load-more and refresh support.
- *
- * Fetches an initial page of patients and supports loading subsequent pages and refreshing from the start.
- * Shows a destructive toast and sets `error` when fetches fail.
- *
- * @param dentistId - Dentist identifier to fetch patients for
- * @param businessId - Optional business identifier to filter patients
- * @param limit - Maximum number of patients to request per page (defaults to 50)
- * @param searchQuery - Optional text used to filter patients by search
- * @returns An object with:
- *   - `patients`: the current list of loaded patient items
- *   - `isLoading`: whether a fetch is in progress
- *   - `hasMore`: whether more pages may be available
- *   - `loadMore`: function to load the next page
- *   - `refresh`: function to reload from the beginning
- *   - `error`: the last fetch error, or `null` if none
- */
 export function usePaginatedPatients({
     dentistId,
     businessId,
     limit = 50,
     searchQuery,
 }: UsePaginatedPatientsOptions): UsePaginatedPatientsReturn {
-    const [patients, setPatients] = useState<PatientListItem[]>([]);
+    const [patients, setPatients] = useState<Patient[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [hasMore, setHasMore] = useState(false);
     const [cursor, setCursor] = useState<string | null>(null);
@@ -71,7 +64,7 @@ export function usePaginatedPatients({
             }
 
             if (data && data.length > 0) {
-                const newPatients = data.map((p: PatientListItem & { has_more?: boolean }) => ({
+                const newPatients = data.map((p: Patient & { has_more?: boolean }) => ({
                     id: p.id,
                     first_name: p.first_name,
                     last_name: p.last_name,

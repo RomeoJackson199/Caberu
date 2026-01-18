@@ -2,9 +2,15 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
-import type { AppointmentWithProfiles } from '@/types/patient';
 
-interface Appointment extends Omit<AppointmentWithProfiles, 'patient' | 'dentist' | 'profiles'> {
+interface Appointment {
+    id: string;
+    appointment_date: string;
+    duration_minutes: number;
+    status: string;
+    urgency: string;
+    reason?: string;
+    consultation_notes?: string;
     patient_id: string;
     patient_first_name: string;
     patient_last_name: string;

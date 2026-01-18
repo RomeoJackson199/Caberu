@@ -28,7 +28,6 @@ import { TreatmentPlanManager } from "@/components/TreatmentPlanManager";
 import { AIConversationDialog } from "@/components/AIConversationDialog";
 import { logger } from '@/lib/logger';
 import { MedicalDataConsentDialog, checkMedicalDataConsent } from '@/components/gdpr/MedicalDataConsentDialog';
-import type { Prescription, TreatmentPlan, AppointmentWithProfiles } from '@/types/patient';
 
 interface HealthDataProps {
   user: User;
@@ -38,7 +37,15 @@ interface HealthDataProps {
   mode?: 'patient' | 'dentist';
 }
 
-interface PrescriptionWithDentist extends Prescription {
+interface Prescription {
+  id: string;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  duration_days: number;
+  instructions: string;
+  prescribed_date: string;
+  status: string;
   dentist: {
     profile: {
       first_name: string;
@@ -47,8 +54,17 @@ interface PrescriptionWithDentist extends Prescription {
   };
 }
 
-interface TreatmentPlanWithDentist extends TreatmentPlan {
-  estimated_duration?: string;
+interface TreatmentPlan {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  estimated_cost: number;
+  estimated_duration: string;
+  start_date: string;
+  end_date: string;
+  created_at: string;
   dentist: {
     profile: {
       first_name: string;
@@ -57,9 +73,13 @@ interface TreatmentPlanWithDentist extends TreatmentPlan {
   };
 }
 
-interface AppointmentWithDentistProfile extends AppointmentWithProfiles {
-  reason?: string;
-  consultation_notes?: string;
+interface Appointment {
+  id: string;
+  appointment_date: string;
+  status: string;
+  reason: string;
+  consultation_notes: string;
+  urgency: string;
   dentist: {
     profile: {
       first_name: string;

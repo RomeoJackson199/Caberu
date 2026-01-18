@@ -3,10 +3,19 @@ import { format } from 'date-fns';
 import { AppointmentConfirmationWidget } from '@/components/AppointmentConfirmationWidget';
 import { Card, CardContent } from '@/components/ui/card';
 import { STATUS_COLORS, URGENCY_COLORS } from '@/lib/constants';
-import type { PatientAppointment } from '@/types/patient';
 
-interface Appointment extends PatientAppointment {
+interface Appointment {
+  id: string;
+  patient_id: string;
+  dentist_id?: string;
+  business_id?: string;
   patient_name?: string;
+  appointment_date: string;
+  duration_minutes: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  urgency: 'low' | 'medium' | 'high' | 'emergency';
+  reason?: string;
+  consultation_notes?: string;
 }
 
 interface AppointmentListProps {

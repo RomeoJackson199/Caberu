@@ -15,9 +15,13 @@ import { TimeGreeting, QuickActions, AnimatedStatCard } from "@/components/ui/pa
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorState, EmptyState } from "@/components/stability";
 import { getProviderName } from "@/lib/dataValidation";
-import type { AppointmentWithDentist } from '@/types/patient';
 
-interface Appointment extends Pick<AppointmentWithDentist, 'id' | 'appointment_date' | 'duration_minutes' | 'status' | 'reason'> {
+interface Appointment {
+  id: string;
+  appointment_date: string;
+  duration_minutes: number;
+  status: string;
+  reason?: string;
   dentists?: {
     profiles?: {
       first_name: string;
