@@ -25,15 +25,7 @@ import { NotificationService } from '../lib/notificationService';
 import { User as UserType } from '../types/common';
 import { supabase } from '../integrations/supabase/client';
 import { logger } from '@/lib/logger';
-
-interface Patient {
-  id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-}
+import type { PatientWithUserData } from '@/types/patient';
 
 interface DentistNotificationSenderProps {
   dentist: UserType;
@@ -87,12 +79,12 @@ const notificationCategories = [
   { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800' }
 ];
 
-export const DentistNotificationSender: React.FC<DentistNotificationSenderProps> = ({ 
-  dentist, 
-  className 
+export const DentistNotificationSender: React.FC<DentistNotificationSenderProps> = ({
+  dentist,
+  className
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<PatientWithUserData[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<string>('');
   const [notificationType, setNotificationType] = useState<string>('system');
   const [notificationCategory, setNotificationCategory] = useState<string>('info');

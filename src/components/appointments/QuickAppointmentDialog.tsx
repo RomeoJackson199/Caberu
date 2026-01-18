@@ -14,14 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createAppointmentWithNotification } from "@/hooks/useAppointments";
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-}
+import type { PatientMinimal } from "@/types/patient";
 
 interface QuickAppointmentDialogProps {
   open: boolean;
@@ -29,10 +22,22 @@ interface QuickAppointmentDialogProps {
   dentistId: string;
   selectedDate: Date;
   selectedTime: string;
-  patient?: Patient;
+  patient?: PatientMinimal;
   showPatientSelector?: boolean;
 }
 
+/**
+ * Renders a dialog UI to create and schedule a dentist appointment, including optional patient selection, date/time, reason, and duration.
+ *
+ * @param open - Whether the dialog is visible.
+ * @param onOpenChange - Callback invoked when the dialog open state changes.
+ * @param dentistId - ID of the dentist for whom the appointment will be created.
+ * @param selectedDate - Initial date used to prefill the appointment date.
+ * @param selectedTime - Initial time used to prefill the appointment time (e.g., "09:30").
+ * @param patient - Optional preselected patient (PatientMinimal); when provided the patient selector is hidden unless `showPatientSelector` is true.
+ * @param showPatientSelector - When true, always show the patient selection UI even if a `patient` is provided.
+ * @returns The dialog element that manages appointment creation and related UI interactions.
+ */
 export function QuickAppointmentDialog({
   open,
   onOpenChange,
@@ -43,7 +48,7 @@ export function QuickAppointmentDialog({
   showPatientSelector = false
 }: QuickAppointmentDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(patient || null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientMinimal | null>(patient || null);
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [patientSearch, setPatientSearch] = useState("");
   const [reason, setReason] = useState("");
