@@ -169,7 +169,7 @@ export function AuthRedirectHandler() {
           return;
         }
 
-        // Priority 2: Provider/Dentist -> /dentist/dashboard
+        // Priority 2: Provider/Dentist -> check if business selection needed
         if (isDentist) {
           // Try to save pending consent if exists
           if (hasPendingPracticeConsent()) {
@@ -190,23 +190,32 @@ export function AuthRedirectHandler() {
           }
 
           if (businessId) {
+            // Business already selected, go to dashboard
             logger.info('AuthRedirectHandler: Redirecting dentist to /dentist/dashboard', { businessId });
             sessionStorage.removeItem(REDIRECT_KEY);
             navigate('/dentist/dashboard', { replace: true });
             return;
           } else if (memberships.length === 0) {
+            // No memberships, go to dashboard (might show create business option)
             logger.info('AuthRedirectHandler: Dentist with no memberships, redirecting to /dentist/dashboard');
             sessionStorage.removeItem(REDIRECT_KEY);
             navigate('/dentist/dashboard', { replace: true });
             return;
-          } else {
-            // Dentist with memberships but no business selected - redirect to dashboard anyway
-            // The dashboard will handle business selection if needed
-            logger.info('AuthRedirectHandler: Dentist with memberships, redirecting to dashboard', {
-              membershipsCount: memberships.length
+          } else if (memberships.length === 1) {
+            // Only one membership, auto-select it and go to dashboard
+            logger.info('AuthRedirectHandler: Dentist with one membership, auto-selecting', {
+              businessId: memberships[0].business_id
             });
             sessionStorage.removeItem(REDIRECT_KEY);
             navigate('/dentist/dashboard', { replace: true });
+            return;
+          } else {
+            // Multiple memberships but no business selected - show business selection
+            logger.info('AuthRedirectHandler: Dentist with multiple memberships, showing selection', {
+              membershipsCount: memberships.length
+            });
+            sessionStorage.removeItem(REDIRECT_KEY);
+            navigate('/select-business', { replace: true });
             return;
           }
         }
