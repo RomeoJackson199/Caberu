@@ -39,29 +39,11 @@ import { CompletionSheet } from "@/components/CompletionSheet";
 import { AppointmentList } from "@/components/optimized/AppointmentList";
 import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { logger } from '@/lib/logger';
+import type { PatientAppointment, PatientMinimal } from '@/types/patient';
 
-interface Appointment {
-  id: string;
-  patient_id: string;
-  dentist_id?: string;
-  business_id?: string;
+interface Appointment extends PatientAppointment {
   patient_name?: string;
-  appointment_date: string;
-  duration_minutes: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  urgency: 'low' | 'medium' | 'high' | 'emergency';
-  reason?: string;
-  notes?: string;
-  consultation_notes?: string;
   patient_age?: number;
-}
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
 }
 
 interface AppointmentManagementProps {
@@ -70,7 +52,7 @@ interface AppointmentManagementProps {
 
 export function AppointmentManagement({ dentistId }: AppointmentManagementProps) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<PatientMinimal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
