@@ -68,6 +68,22 @@ export interface PatientWithFlags extends Patient {
     flags?: PatientFlags;
 }
 
+/**
+ * Patient with user_id for authentication context
+ */
+export interface PatientWithUserData extends Patient {
+    user_id: string;
+}
+
+/**
+ * Minimal patient type for selection/search contexts
+ * Only includes essential fields for performance
+ */
+export type PatientMinimal = Pick<
+    Patient,
+    'id' | 'first_name' | 'last_name' | 'email' | 'phone' | 'avatar_url'
+>;
+
 // ============================================================================
 // Appointment Types
 // ============================================================================
@@ -139,6 +155,43 @@ export function getAppointmentGroup(appointment: PatientAppointment): Appointmen
     }
 
     return 'upcoming';
+}
+
+/**
+ * Profile information for dentist/patient
+ */
+export interface Profile {
+    id: string;
+    user_id?: string;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+    avatar_url?: string;
+    profile_picture_url?: string;
+    role?: string;
+    specialization?: string;
+    license_number?: string;
+    created_at?: string;
+}
+
+/**
+ * Appointment with nested profile data
+ * Includes both patient and dentist profiles
+ */
+export interface AppointmentWithProfiles extends PatientAppointment {
+    patient?: Profile;
+    dentist?: Profile;
+    profiles?: Profile; // For backward compatibility with single profile queries
+}
+
+/**
+ * Appointment with dentist relationship
+ * Includes dentist profile information
+ */
+export interface AppointmentWithDentist extends PatientAppointment {
+    dentist?: Profile;
+    dentist_profile?: Profile; // Alternative naming for queries
 }
 
 // ============================================================================

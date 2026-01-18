@@ -2,18 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
-
-interface Patient {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone?: string;
-    date_of_birth?: string;
-    avatar_url?: string;
-    medical_history?: string;
-    created_at: string;
-}
+import type { PatientListItem } from '@/types/patient';
 
 interface UsePaginatedPatientsOptions {
     dentistId: string;
@@ -23,7 +12,7 @@ interface UsePaginatedPatientsOptions {
 }
 
 interface UsePaginatedPatientsReturn {
-    patients: Patient[];
+    patients: PatientListItem[];
     isLoading: boolean;
     hasMore: boolean;
     loadMore: () => Promise<void>;
@@ -37,7 +26,7 @@ export function usePaginatedPatients({
     limit = 50,
     searchQuery,
 }: UsePaginatedPatientsOptions): UsePaginatedPatientsReturn {
-    const [patients, setPatients] = useState<Patient[]>([]);
+    const [patients, setPatients] = useState<PatientListItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [hasMore, setHasMore] = useState(false);
     const [cursor, setCursor] = useState<string | null>(null);
@@ -64,7 +53,7 @@ export function usePaginatedPatients({
             }
 
             if (data && data.length > 0) {
-                const newPatients = data.map((p: Patient & { has_more?: boolean }) => ({
+                const newPatients = data.map((p: PatientListItem & { has_more?: boolean }) => ({
                     id: p.id,
                     first_name: p.first_name,
                     last_name: p.last_name,

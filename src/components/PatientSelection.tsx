@@ -3,26 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, User, CheckCircle } from "lucide-react";
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-}
+import type { PatientMinimal } from "@/types/patient";
 
 interface PatientSelectionProps {
-  onSelect: (patient: Patient) => void;
-  selectedPatient?: Patient | null;
+  onSelect: (patient: PatientMinimal) => void;
+  selectedPatient?: PatientMinimal | null;
 }
 
 export function PatientSelection({ onSelect, selectedPatient }: PatientSelectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<PatientMinimal[]>([]);
 
-  const mockPatients: Patient[] = [
-    { id: "1", first_name: "John", last_name: "Doe", email: "john@example.com" },
-    { id: "2", first_name: "Jane", last_name: "Smith", email: "jane@example.com" }
+  const mockPatients: PatientMinimal[] = [
+    { id: "1", first_name: "John", last_name: "Doe", email: "john@example.com", phone: null, avatar_url: null },
+    { id: "2", first_name: "Jane", last_name: "Smith", email: "jane@example.com", phone: null, avatar_url: null }
   ];
 
   useEffect(() => {

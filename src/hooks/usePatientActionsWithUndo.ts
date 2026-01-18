@@ -14,31 +14,7 @@ import { useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUndoManager } from './useUndoManager';
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  date_of_birth?: string;
-  address?: string;
-  medical_history?: string;
-  emergency_contact?: string;
-  profile_picture_url?: string;
-  [key: string]: any; // Other fields
-}
-
-interface PatientNote {
-  id: string;
-  patient_id: string;
-  title: string;
-  content: string;
-  note_type: string;
-  is_private: boolean;
-  created_at: string;
-  [key: string]: any;
-}
+import type { Patient, PatientNote } from '@/types/patient';
 
 interface Allergy {
   id: string;

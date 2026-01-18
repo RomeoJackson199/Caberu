@@ -14,14 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createAppointmentWithNotification } from "@/hooks/useAppointments";
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-}
+import type { PatientMinimal } from "@/types/patient";
 
 interface QuickAppointmentDialogProps {
   open: boolean;
@@ -29,7 +22,7 @@ interface QuickAppointmentDialogProps {
   dentistId: string;
   selectedDate: Date;
   selectedTime: string;
-  patient?: Patient;
+  patient?: PatientMinimal;
   showPatientSelector?: boolean;
 }
 
@@ -43,7 +36,7 @@ export function QuickAppointmentDialog({
   showPatientSelector = false
 }: QuickAppointmentDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(patient || null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientMinimal | null>(patient || null);
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [patientSearch, setPatientSearch] = useState("");
   const [reason, setReason] = useState("");

@@ -270,13 +270,23 @@ const App = () => {
           }
         }
       } catch (error) {
-        // Only log if it's not an auth error (user just not authenticated)
-        if (error && typeof error === 'object' && 'status' in error) {
-          const statusError = error as { status?: number };
-          if (statusError.status !== 401 && statusError.status !== 403) {
-            logger.error('Auth check failed:', error);
+        // Gracefully handle auth errors on public pages - these are expected
+        if (error && typeof error === 'object') {
+          // Check for auth-related status codes
+          if ('status' in error) {
+            const statusError = error as { status?: number };
+            if (statusError.status === 401 || statusError.status === 403) {
+              return; // Silent return for expected auth errors
+            }
           }
-        } else {
+          // Check for AuthSessionMissingError and similar auth errors
+          if ('name' in error) {
+            const namedError = error as { name?: string };
+            if (namedError.name === 'AuthSessionMissingError' || namedError.name === 'AuthError') {
+              return; // Silent return for expected auth session errors
+            }
+          }
+          // Log unexpected errors only
           logger.error('Auth check failed:', error);
         }
       }
