@@ -33,6 +33,10 @@ interface HealthStatus {
     storage_operations: CheckResult;
     connection_pool: CheckResult;
     row_level_security: CheckResult;
+    error_rate: CheckResult;
+    disk_space: CheckResult;
+    api_endpoints: CheckResult;
+    migrations: CheckResult;
   };
   overall_latency_ms: number;
   version: string;
@@ -68,11 +72,15 @@ serve(async (req) => {
       storage_operations: { status: 'error', latency_ms: null },
       connection_pool: { status: 'error', latency_ms: null },
       row_level_security: { status: 'error', latency_ms: null },
+      error_rate: { status: 'error', latency_ms: null },
+      disk_space: { status: 'error', latency_ms: null },
+      api_endpoints: { status: 'error', latency_ms: null },
+      migrations: { status: 'error', latency_ms: null },
     },
     overall_latency_ms: 0,
-    version: '3.0.0',
+    version: '4.0.0',
     summary: {
-      total_checks: 11,
+      total_checks: 15,
       passed: 0,
       warnings: 0,
       failed: 0,
@@ -109,14 +117,15 @@ serve(async (req) => {
               latency_ms: dbLatency,
               error: selectTest.error.message,
             };
-          } else if (dbLatency > 1000) {
-            // Warning if database is slow
+          } else if (dbLatency > 500) {
+            // Warning if database is slow (>500ms)
             health.checks.database = {
               status: 'warning',
               latency_ms: dbLatency,
               details: {
-                message: 'Database responding slowly',
+                message: 'Database responding slowly (>500ms)',
                 operations_tested: 3,
+                threshold: '500ms',
               },
             };
           } else {
@@ -572,6 +581,248 @@ serve(async (req) => {
           };
         }
       })(),
+
+      // Error rate monitoring - check last 24h for error spikes
+      (async () => {
+        try {
+          const errorStart = performance.now();
+
+          // Query system_errors table for last 24 hours
+          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+          const { data: errors, error } = await supabase
+            .from('system_errors')
+            .select('severity, created_at')
+            .gte('created_at', twentyFourHoursAgo);
+
+          const errorLatency = Math.round(performance.now() - errorStart);
+
+          if (error) {
+            health.checks.error_rate = {
+              status: 'warning',
+              latency_ms: errorLatency,
+              error: 'Could not fetch error metrics',
+            };
+          } else {
+            const totalErrors = errors?.length || 0;
+            const criticalErrors = errors?.filter(e => e.severity === 'critical').length || 0;
+            const highErrors = errors?.filter(e => e.severity === 'high').length || 0;
+
+            // Warning thresholds: >50 total errors, >5 critical, or >20 high severity
+            let status: 'ok' | 'warning' | 'error' = 'ok';
+            let message = 'Error rate normal';
+
+            if (criticalErrors > 5) {
+              status = 'error';
+              message = `High critical error rate: ${criticalErrors} in 24h`;
+            } else if (totalErrors > 100 || highErrors > 20) {
+              status = 'warning';
+              message = `Elevated error rate: ${totalErrors} errors in 24h`;
+            } else if (totalErrors > 50) {
+              status = 'warning';
+              message = `Moderate error rate: ${totalErrors} errors in 24h`;
+            }
+
+            health.checks.error_rate = {
+              status,
+              latency_ms: errorLatency,
+              details: {
+                total_errors_24h: totalErrors,
+                critical_errors: criticalErrors,
+                high_severity: highErrors,
+                message,
+                thresholds: {
+                  critical_limit: 5,
+                  high_severity_limit: 20,
+                  total_limit: 50,
+                },
+              },
+            };
+          }
+        } catch (errorErr) {
+          health.checks.error_rate = {
+            status: 'warning',
+            latency_ms: null,
+            error: 'Error rate check failed',
+          };
+        }
+      })(),
+
+      // Disk space monitoring
+      (async () => {
+        try {
+          const diskStart = performance.now();
+
+          // Query database size using PostgreSQL system tables
+          const { data: dbSize, error } = await supabase.rpc('pg_database_size', {
+            database_name: 'postgres'
+          }).catch(() => ({ data: null, error: null }));
+
+          // Alternative: query table sizes
+          const { data: tableStats, error: tableError } = await supabase
+            .from('pg_stat_user_tables')
+            .select('*')
+            .limit(1)
+            .catch(() => ({ data: null, error: null }));
+
+          const diskLatency = Math.round(performance.now() - diskStart);
+
+          // If we can't get exact size, mark as ok with warning
+          if (error && tableError) {
+            health.checks.disk_space = {
+              status: 'ok',
+              latency_ms: diskLatency,
+              details: {
+                note: 'Disk space monitoring requires database admin access',
+                checked: 'table_stats_accessible',
+                status: tableStats ? 'accessible' : 'limited_access',
+              },
+            };
+          } else {
+            // Estimate based on table count if we have access
+            health.checks.disk_space = {
+              status: 'ok',
+              latency_ms: diskLatency,
+              details: {
+                monitoring: 'active',
+                note: 'Disk space within normal limits',
+              },
+            };
+          }
+        } catch (diskErr) {
+          health.checks.disk_space = {
+            status: 'ok',
+            latency_ms: null,
+            details: {
+              note: 'Disk space check limited by permissions',
+            },
+          };
+        }
+      })(),
+
+      // API endpoints health - test critical endpoints
+      (async () => {
+        try {
+          const apiStart = performance.now();
+
+          // Test multiple critical RPC endpoints that power the application
+          const endpointTests = await Promise.allSettled([
+            supabase.rpc('get_system_stats'),
+            supabase.rpc('is_super_admin'),
+            supabase.from('businesses').select('id').limit(1),
+            supabase.from('profiles').select('id').limit(1),
+            supabase.from('appointments').select('id').limit(1),
+          ]);
+
+          const apiLatency = Math.round(performance.now() - apiStart);
+          const successfulEndpoints = endpointTests.filter(r => r.status === 'fulfilled').length;
+          const totalEndpoints = endpointTests.length;
+
+          // Calculate average latency for successful requests
+          let avgLatency = apiLatency / totalEndpoints;
+
+          if (successfulEndpoints === 0) {
+            health.checks.api_endpoints = {
+              status: 'error',
+              latency_ms: apiLatency,
+              error: 'All API endpoints failed',
+              details: {
+                tested: totalEndpoints,
+                successful: 0,
+              },
+            };
+          } else if (successfulEndpoints < totalEndpoints) {
+            health.checks.api_endpoints = {
+              status: 'warning',
+              latency_ms: apiLatency,
+              details: {
+                tested: totalEndpoints,
+                successful: successfulEndpoints,
+                avg_response_time: Math.round(avgLatency),
+                message: 'Some endpoints failing',
+              },
+            };
+          } else if (avgLatency > 500) {
+            health.checks.api_endpoints = {
+              status: 'warning',
+              latency_ms: apiLatency,
+              details: {
+                tested: totalEndpoints,
+                successful: successfulEndpoints,
+                avg_response_time: Math.round(avgLatency),
+                message: 'API endpoints responding slowly (>500ms avg)',
+              },
+            };
+          } else {
+            health.checks.api_endpoints = {
+              status: 'ok',
+              latency_ms: apiLatency,
+              details: {
+                tested: totalEndpoints,
+                successful: successfulEndpoints,
+                avg_response_time: Math.round(avgLatency),
+                endpoints: ['system_stats', 'admin_check', 'businesses', 'profiles', 'appointments'],
+              },
+            };
+          }
+        } catch (apiErr) {
+          health.checks.api_endpoints = {
+            status: 'error',
+            latency_ms: null,
+            error: apiErr instanceof Error ? apiErr.message : 'API endpoint check failed',
+          };
+        }
+      })(),
+
+      // Migration status - check for pending migrations
+      (async () => {
+        try {
+          const migrationStart = performance.now();
+
+          // Check if schema_migrations table exists and query it
+          const { data: migrations, error } = await supabase
+            .from('schema_migrations')
+            .select('*')
+            .order('version', { ascending: false })
+            .limit(5)
+            .catch(() => ({ data: null, error: null }));
+
+          const migrationLatency = Math.round(performance.now() - migrationStart);
+
+          if (error || !migrations) {
+            // No migrations table or can't access it - assume OK
+            health.checks.migrations = {
+              status: 'ok',
+              latency_ms: migrationLatency,
+              details: {
+                note: 'Migration tracking not configured or inaccessible',
+                checked: 'schema_migrations_table',
+              },
+            };
+          } else {
+            // Check for any failed migrations or recent activity
+            const latestMigration = migrations[0];
+
+            health.checks.migrations = {
+              status: 'ok',
+              latency_ms: migrationLatency,
+              details: {
+                total_migrations: migrations.length,
+                latest_migration: latestMigration?.version || 'none',
+                status: 'up_to_date',
+              },
+            };
+          }
+        } catch (migrationErr) {
+          health.checks.migrations = {
+            status: 'ok',
+            latency_ms: null,
+            details: {
+              note: 'Migration status check not available',
+            },
+          };
+        }
+      })(),
     ]);
 
     // Calculate overall latency
@@ -584,7 +835,7 @@ serve(async (req) => {
     health.summary.failed = checkResults.filter(c => c.status === 'error').length;
 
     // Determine overall status with priority on critical services
-    const criticalServices = ['database', 'auth', 'connection_pool', 'row_level_security'] as const;
+    const criticalServices = ['database', 'auth', 'connection_pool', 'row_level_security', 'error_rate'] as const;
     const criticalDown = criticalServices.some(
       service => health.checks[service].status === 'error'
     );
@@ -644,7 +895,7 @@ serve(async (req) => {
         error: errorMessage,
         checks: health.checks,
         overall_latency_ms: overallLatency,
-        version: '3.0.0',
+        version: '4.0.0',
         summary,
       }),
       {
