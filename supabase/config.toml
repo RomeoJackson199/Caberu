@@ -21,9 +21,6 @@ verify_jwt = true
 [functions.update-payment-status]
 verify_jwt = true
 
-[functions.import-appointments]
-verify_jwt = true
-
 [functions.process-csv-import]
 verify_jwt = true
 
@@ -31,14 +28,11 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.send-email-notification]
-verify_jwt = false  # Handles auth internally; called server-to-server by other edge functions
+verify_jwt = false
 
 [functions.send-import-invitations]
 verify_jwt = true
 
-## SECURITY: dev-claim-bypass removed - was a security risk
-## [functions.dev-claim-bypass]
-## verify_jwt = false
 [functions.claim-profile]
 verify_jwt = false
 
@@ -49,10 +43,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-2fa-code]
-verify_jwt = false  # Must be accessible for password recovery (user not logged in)
+verify_jwt = false
 
 [functions.verify-2fa-code]
-verify_jwt = false  # Must be accessible for password recovery (user not logged in)
+verify_jwt = false
 
 [functions.generate-appointment-summary]
 verify_jwt = true
@@ -75,15 +69,6 @@ verify_jwt = true
 [functions.create-business-payment]
 verify_jwt = false
 
-[functions.confirm-restaurant-order]
-verify_jwt = true
-
-[functions.process-restaurant-payment]
-verify_jwt = true
-
-[functions.restaurant-payment-webhook]
-verify_jwt = false
-
 [functions.complete-business-subscription]
 verify_jwt = true
 
@@ -94,7 +79,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.database-api]
-verify_jwt = false  # We handle auth manually to support both JWT and API key
+verify_jwt = false
 
 [functions.apply-promo-code]
 verify_jwt = true
@@ -112,4 +97,52 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.reset-password-with-code]
-verify_jwt = false  # Must be accessible for password recovery (user not logged in)
+verify_jwt = false
+
+[functions.make-super-admin]
+verify_jwt = false
+
+[functions.health-check]
+verify_jwt = false
+
+[functions.get-imaging-url]
+verify_jwt = true
+
+[functions.get-vapid-key]
+verify_jwt = true
+
+[functions.generate-data-export]
+verify_jwt = true
+
+[functions.delete-user-account]
+verify_jwt = true
+
+[functions.caberu-support-chat]
+verify_jwt = true
+
+[functions.send-appointment-decision]
+verify_jwt = true
+
+[functions.complete-business-setup]
+verify_jwt = true
+
+[functions.send-patient-invitation]
+verify_jwt = true
+
+[functions.google-calendar-create-event]
+verify_jwt = true
+
+[functions.send-payment-reminder]
+verify_jwt = true
+
+[functions.schedule-plan-change]
+verify_jwt = true
+
+[functions.test-email]
+verify_jwt = false
+
+[functions.upload-imaging]
+verify_jwt = true
+
+[functions.validate-promo-code]
+verify_jwt = true
