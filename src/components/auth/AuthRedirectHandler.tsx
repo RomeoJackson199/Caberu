@@ -201,17 +201,10 @@ export function AuthRedirectHandler() {
             sessionStorage.removeItem(REDIRECT_KEY);
             navigate('/dentist/dashboard', { replace: true });
             return;
-          } else if (memberships.length === 1) {
-            // Only one membership, auto-select it and go to dashboard
-            logger.info('AuthRedirectHandler: Dentist with one membership, auto-selecting', {
-              businessId: memberships[0].business_id
-            });
-            sessionStorage.removeItem(REDIRECT_KEY);
-            navigate('/dentist/dashboard', { replace: true });
-            return;
           } else {
-            // Multiple memberships but no business selected - show business selection
-            logger.info('AuthRedirectHandler: Dentist with multiple memberships, showing selection', {
+            // Always show business selection for any number of memberships
+            // This ensures users can see all available businesses and choose
+            logger.info('AuthRedirectHandler: Dentist with memberships, showing business selection', {
               membershipsCount: memberships.length
             });
             sessionStorage.removeItem(REDIRECT_KEY);
