@@ -9,18 +9,58 @@ import type {
   CreateBusinessRequest,
 } from '@/types/super-admin';
 import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
 
 // Check if current user is super admin
 export function useIsSuperAdmin() {
-  return useQuery({
-    queryKey: ['isSuperAdmin'],
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  // Listen for auth state changes to get current user
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id ?? null);
+      setAuthReady(true);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUserId(session?.user?.id ?? null);
+      setAuthReady(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const query = useQuery({
+    // Include userId in query key to prevent cache pollution between users
+    queryKey: ['isSuperAdmin', userId],
     queryFn: async () => {
+      if (!userId) return false;
       const { data, error } = await supabase.rpc('is_super_admin');
       if (error) throw error;
       return data as boolean;
     },
+    // Only run query when auth is ready and we have a user
+    enabled: authReady && !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    // Refetch when user changes
+    refetchOnMount: true,
   });
+
+  // Return combined loading state that includes auth waiting
+  // isLoading is true if:
+  // 1. Auth is not ready yet, OR
+  // 2. Auth is ready with a user, but query is still loading
+  const isLoading = !authReady || (!!userId && query.isLoading);
+
+  return {
+    ...query,
+    isLoading,
+    // If not authenticated, return false (not undefined)
+    data: authReady && !userId ? false : query.data,
+  };
 }
 
 // Get all businesses with metrics
