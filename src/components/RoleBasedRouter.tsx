@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useIsSuperAdmin } from "@/hooks/useSuperAdmin";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from '@/lib/logger';
@@ -13,15 +14,22 @@ interface RoleBasedRouterProps {
 
 export function RoleBasedRouter({ children, requiredRole, redirectTo = "/" }: RoleBasedRouterProps) {
   const { roles, loading, hasRole, isDentist, isAdmin, isPatient } = useUserRole();
+  const { data: isSuperAdmin, isLoading: superAdminLoading } = useIsSuperAdmin();
   const navigate = useNavigate();
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    // Wait for both role and super admin loading to complete
+    if (loading || superAdminLoading) return;
 
     const checkAccess = async () => {
       if (requiredRole) {
-        const hasRequiredRole = requiredRole === 'dentist' ? isDentist : hasRole(requiredRole);
+        // For 'admin' role requirement, also accept super_admin
+        const hasRequiredRole = requiredRole === 'dentist'
+          ? isDentist
+          : requiredRole === 'admin'
+            ? (hasRole(requiredRole) || isSuperAdmin === true)
+            : hasRole(requiredRole);
         if (!hasRequiredRole) {
           navigate(redirectTo, { replace: true });
           return;
@@ -76,9 +84,9 @@ export function RoleBasedRouter({ children, requiredRole, redirectTo = "/" }: Ro
     };
 
     checkAccess();
-  }, [loading, requiredRole, hasRole, isDentist, roles, navigate, redirectTo]);
+  }, [loading, superAdminLoading, requiredRole, hasRole, isDentist, isSuperAdmin, roles, navigate, redirectTo]);
 
-  if (loading) {
+  if (loading || superAdminLoading) {
     return <LoadingSpinner variant="overlay" message="Verifying access..." />;
   }
 
