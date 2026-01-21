@@ -20,6 +20,7 @@ import {
   Activity,
   TrendingUp,
   BarChart3,
+  TestTube,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -58,6 +59,7 @@ interface HealthCheckHistory {
 export function DiagnosticsCard() {
   const { toast } = useToast();
   const [isRunningAll, setIsRunningAll] = useState(false);
+  const [isRunningUnitTests, setIsRunningUnitTests] = useState(false);
   const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null);
   const [overallStatus, setOverallStatus] = useState<'healthy' | 'degraded' | 'unhealthy' | null>(null);
   const [history, setHistory] = useState<HealthCheckHistory[]>([]);
@@ -727,6 +729,44 @@ export function DiagnosticsCard() {
     setIsRunningAll(false);
   };
 
+  const runUnitTests = async () => {
+    setIsRunningUnitTests(true);
+
+    try {
+      toast({
+        title: 'Running Unit Tests',
+        description: 'Executing test suite...',
+      });
+
+      // Call edge function to run tests
+      const { data, error } = await supabase.functions.invoke('run-tests');
+
+      if (error) {
+        throw error;
+      }
+
+      const testResults = data;
+      const passed = testResults?.passed || 0;
+      const failed = testResults?.failed || 0;
+      const total = testResults?.total || 0;
+      const coverage = testResults?.coverage || 'N/A';
+
+      toast({
+        title: failed === 0 ? 'All Tests Passed ✓' : 'Some Tests Failed',
+        description: `${passed}/${total} tests passed. Coverage: ${coverage}%`,
+        variant: failed === 0 ? 'default' : 'destructive',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Test Execution Info',
+        description: 'To run tests locally, execute: npm test',
+        variant: 'default',
+      });
+    } finally {
+      setIsRunningUnitTests(false);
+    }
+  };
+
   const exportHealthData = () => {
     const exportData = {
       timestamp: new Date().toISOString(),
@@ -979,6 +1019,20 @@ export function DiagnosticsCard() {
             >
               <Download className="h-4 w-4" />
               Export
+            </Button>
+            <Button
+              onClick={runUnitTests}
+              disabled={isRunningUnitTests}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              {isRunningUnitTests ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <TestTube className="h-4 w-4" />
+              )}
+              Run Unit Tests
             </Button>
             <Button
               onClick={runAllTests}
