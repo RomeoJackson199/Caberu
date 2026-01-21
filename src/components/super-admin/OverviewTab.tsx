@@ -3,6 +3,10 @@ import { useSystemStats } from '@/hooks/useSuperAdmin';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { DiagnosticsCard } from './DiagnosticsCard';
 import { QuickActionsCard } from './QuickActionsCard';
+import { VoiceAIStatusCard } from './VoiceAIStatusCard';
+import { EdgeFunctionTestPanel } from './EdgeFunctionTestPanel';
+import { DatabaseInsightsCard } from './DatabaseInsightsCard';
+import { LiveMonitoringCard } from './LiveMonitoringCard';
 import {
   Building2,
   Users,
@@ -105,6 +109,18 @@ export function OverviewTab() {
 
       {/* Diagnostics */}
       <DiagnosticsCard />
+
+      {/* Voice AI & Edge Functions */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <VoiceAIStatusCard />
+        <EdgeFunctionTestPanel />
+      </div>
+
+      {/* Database Insights & Live Monitoring */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DatabaseInsightsCard />
+        <LiveMonitoringCard />
+      </div>
 
       {/* Admin Actions and Quick Navigation */}
       <div className="grid gap-4 md:grid-cols-2">
