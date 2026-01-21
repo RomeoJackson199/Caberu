@@ -106,7 +106,7 @@ serve(async (req) => {
           const [selectTest, countTest, rpcTest] = await Promise.all([
             supabase.from('businesses').select('id').limit(1),
             supabase.from('businesses').select('*', { count: 'exact', head: true }),
-            supabase.rpc('is_super_admin').catch(() => ({ data: null, error: null }))
+            supabase.rpc('is_super_admin').then(res => res).catch(() => ({ data: null, error: null }))
           ]);
 
           const dbLatency = Math.round(performance.now() - dbStart);
@@ -654,16 +654,18 @@ serve(async (req) => {
           const diskStart = performance.now();
 
           // Query database size using PostgreSQL system tables
-          const { data: dbSize, error } = await supabase.rpc('pg_database_size', {
-            database_name: 'postgres'
-          }).catch(() => ({ data: null, error: null }));
+          let dbSizeResult = { data: null as any, error: null as any };
+          try {
+            dbSizeResult = await supabase.rpc('pg_database_size', { database_name: 'postgres' });
+          } catch { /* ignore */ }
+          const { data: dbSize, error } = dbSizeResult;
 
           // Alternative: query table sizes
-          const { data: tableStats, error: tableError } = await supabase
-            .from('pg_stat_user_tables')
-            .select('*')
-            .limit(1)
-            .catch(() => ({ data: null, error: null }));
+          let tableStatsResult = { data: null as any, error: null as any };
+          try {
+            tableStatsResult = await supabase.from('pg_stat_user_tables').select('*').limit(1);
+          } catch { /* ignore */ }
+          const { data: tableStats, error: tableError } = tableStatsResult;
 
           const diskLatency = Math.round(performance.now() - diskStart);
 
@@ -780,12 +782,11 @@ serve(async (req) => {
           const migrationStart = performance.now();
 
           // Check if schema_migrations table exists and query it
-          const { data: migrations, error } = await supabase
-            .from('schema_migrations')
-            .select('*')
-            .order('version', { ascending: false })
-            .limit(5)
-            .catch(() => ({ data: null, error: null }));
+          let migrationsResult = { data: null as any, error: null as any };
+          try {
+            migrationsResult = await supabase.from('schema_migrations').select('*').order('version', { ascending: false }).limit(5);
+          } catch { /* ignore */ }
+          const { data: migrations, error } = migrationsResult;
 
           const migrationLatency = Math.round(performance.now() - migrationStart);
 

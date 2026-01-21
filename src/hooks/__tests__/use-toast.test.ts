@@ -148,7 +148,7 @@ describe('use-toast', () => {
     it('returns dismiss and update functions', () => {
       const { result } = renderHook(() => useToast());
 
-      let toastResult: { id: string; dismiss: () => void; update: (props: any) => void };
+      let toastResult!: { id: string; dismiss: () => void; update: (props: any) => void };
 
       act(() => {
         toastResult = toast({ title: 'Test' });

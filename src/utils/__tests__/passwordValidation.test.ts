@@ -179,7 +179,7 @@ describe('passwordValidation.ts', () => {
 
     it('should return true for breached passwords', async () => {
       // Mock a response that contains the password hash suffix
-      const mockSuffix = 'A' * 35; // Simplified for testing
+      const mockSuffix = 'A'.repeat(35); // Simplified for testing
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         text: async () => `${mockSuffix}:5000000\nOTHERHASH:123`,

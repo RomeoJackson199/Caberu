@@ -9,7 +9,8 @@ import {
     CreditCard,
     BarChart,
     Bell,
-    Calendar
+    Calendar,
+    MessageCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -132,13 +133,34 @@ export const InteractiveBentoGrid = () => {
                         </div>
                     </BentoCard>
 
+                    {/* WhatsApp Integration */}
+                    <BentoCard
+                        title="WhatsApp Integration"
+                        description="Connect with patients on their favorite messaging app. Send appointment reminders, confirmations, and follow-ups via WhatsApp."
+                        icon={MessageCircle}
+                        className="col-span-1 md:col-span-2 lg:col-span-2 bg-gradient-to-br from-green-50/50 via-white to-emerald-50/50 border-green-100"
+                        gradient="bg-gradient-to-r from-green-600 to-emerald-600"
+                        delay={0.4}
+                    >
+                        <div className="mt-4 flex gap-4 text-sm flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                                <span className="text-gray-600 font-medium">2B+ Users Worldwide</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <MessageCircle className="w-4 h-4 text-green-600" />
+                                <span className="text-gray-600 font-medium">98% Open Rate</span>
+                            </div>
+                        </div>
+                    </BentoCard>
+
                     {/* Patient Management */}
                     <BentoCard
                         title="Patient Records"
                         description="Complete digital health records, treatment history, prescriptions, insurance, and documents - all HIPAA compliant."
                         icon={Users}
                         gradient="bg-purple-600"
-                        delay={0.4}
+                        delay={0.5}
                     />
 
                     {/* Billing & Payments */}
@@ -147,7 +169,7 @@ export const InteractiveBentoGrid = () => {
                         description="Integrated payment processing, invoice generation, insurance tracking, and automated payment reminders."
                         icon={CreditCard}
                         gradient="bg-emerald-600"
-                        delay={0.5}
+                        delay={0.6}
                     />
 
                     {/* Analytics - Interactive Graph Effect */}
@@ -156,7 +178,7 @@ export const InteractiveBentoGrid = () => {
                         description="Real-time insights on appointments, revenue, patient trends, and staff performance."
                         icon={BarChart}
                         gradient="bg-orange-600"
-                        delay={0.6}
+                        delay={0.7}
                     >
                         <div className="absolute right-4 bottom-4 flex items-end gap-1 h-16 opacity-20 group-hover:opacity-40 transition-opacity">
                             <motion.div className="w-2 bg-orange-500 rounded-t" animate={{ height: [20, 40, 20] }} transition={{ duration: 2, repeat: Infinity }} />
@@ -172,7 +194,7 @@ export const InteractiveBentoGrid = () => {
                         description="Self-service portal for patients to book, view records, pay bills, and message providers."
                         icon={LayoutDashboard}
                         gradient="bg-pink-600"
-                        delay={0.7}
+                        delay={0.8}
                     />
 
                     {/* Smart Triage */}
@@ -182,7 +204,7 @@ export const InteractiveBentoGrid = () => {
                         icon={Activity}
                         gradient="bg-red-600"
                         className="col-span-1 md:col-span-2 lg:col-span-3"
-                        delay={0.8}
+                        delay={0.9}
                     />
 
                 </div>
