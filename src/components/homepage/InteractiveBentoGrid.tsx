@@ -138,7 +138,7 @@ export const InteractiveBentoGrid = () => {
                         title="WhatsApp Integration"
                         description="Connect with patients on their favorite messaging app. Send appointment reminders, confirmations, and follow-ups via WhatsApp."
                         icon={MessageCircle}
-                        className="col-span-1 md:col-span-2 lg:col-span-2 bg-gradient-to-br from-green-50/50 via-white to-emerald-50/50 border-green-100"
+                        className="bg-gradient-to-br from-green-50/50 via-white to-emerald-50/50 border-green-100"
                         gradient="bg-gradient-to-r from-green-600 to-emerald-600"
                         delay={0.4}
                     >
@@ -195,16 +195,6 @@ export const InteractiveBentoGrid = () => {
                         icon={LayoutDashboard}
                         gradient="bg-pink-600"
                         delay={0.8}
-                    />
-
-                    {/* Smart Triage */}
-                    <BentoCard
-                        title="Emergency Triage"
-                        description="AI identifies urgent cases and alerts you immediately via SMS/email. Never miss a critical patient need."
-                        icon={Activity}
-                        gradient="bg-red-600"
-                        className="col-span-1 md:col-span-2 lg:col-span-3"
-                        delay={0.9}
                     />
 
                 </div>
