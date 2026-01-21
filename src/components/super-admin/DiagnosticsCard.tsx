@@ -56,6 +56,15 @@ interface HealthCheckHistory {
   overall_latency_ms: number;
 }
 
+/**
+ * Renders a diagnostics dashboard for running and viewing system health checks.
+ *
+ * Displays a list of component tests with per-test status, messages, latency, and expandable details.
+ * Provides controls to run individual tests, run all tests concurrently, execute unit tests via an edge function,
+ * and export collected health data. Automatically runs all tests on mount and records a short history of checks.
+ *
+ * @returns A React element containing the diagnostics dashboard UI.
+ */
 export function DiagnosticsCard() {
   const { toast } = useToast();
   const [isRunningAll, setIsRunningAll] = useState(false);
