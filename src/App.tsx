@@ -270,15 +270,25 @@ const App = () => {
           }
         }
       } catch (error) {
-        // Only log if it's not an auth error (user just not authenticated)
-        if (error && typeof error === 'object' && 'status' in error) {
-          const statusError = error as { status?: number };
-          if (statusError.status !== 401 && statusError.status !== 403) {
-            logger.error('Auth check failed:', error);
+        // Handle expected auth errors gracefully (user not logged in)
+        if (error && typeof error === 'object') {
+          const authError = error as { name?: string; status?: number };
+          
+          // AuthSessionMissingError is expected when user isn't logged in
+          if (authError.name === 'AuthSessionMissingError') {
+            logger.debug('User not authenticated (expected)');
+            return;
           }
-        } else {
-          logger.error('Auth check failed:', error);
+          
+          // 401/403 are also expected for unauthenticated users
+          if (authError.status === 401 || authError.status === 403) {
+            logger.debug('Auth check returned expected status:', authError.status);
+            return;
+          }
         }
+        
+        // Log unexpected errors at error level
+        logger.error('Auth check failed:', error);
       }
     };
 

@@ -275,6 +275,11 @@ export class PushNotificationService {
         });
 
       if (error) {
+        // Handle RLS policy violations gracefully
+        if (error.code === '42501') {
+          console.warn('Push subscription save blocked by RLS - will retry on next visit');
+          return;
+        }
         console.error('Failed to save subscription to database:', error);
         throw error;
       }
@@ -297,6 +302,11 @@ export class PushNotificationService {
         .eq('endpoint', subscriptionData.endpoint);
 
       if (error) {
+        // Handle RLS policy violations gracefully
+        if (error.code === '42501') {
+          console.warn('Push subscription removal blocked by RLS - subscription may remain active');
+          return;
+        }
         console.error('Failed to remove subscription from database:', error);
         throw error;
       }
