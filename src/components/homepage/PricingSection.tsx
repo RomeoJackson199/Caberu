@@ -28,7 +28,8 @@ const FALLBACK_PLANS: SubscriptionPlan[] = [
     features: [
       "Unlimited appointments",
       "Unlimited emails",
-      "5 min AI phone/day + pay-as-you-go",
+      "300 min AI phone/month",
+      "WhatsApp integration",
       "Patient management",
       "Basic appointment scheduling",
       "Email notifications",
@@ -46,7 +47,8 @@ const FALLBACK_PLANS: SubscriptionPlan[] = [
     features: [
       "Unlimited appointments",
       "Unlimited emails",
-      "10 min AI phone/day + pay-as-you-go",
+      "600 min AI phone/month",
+      "500 WhatsApp messages/month",
       "Everything in Starter",
       "Advanced analytics",
       "SMS notifications",
@@ -65,7 +67,8 @@ const FALLBACK_PLANS: SubscriptionPlan[] = [
     features: [
       "Unlimited appointments",
       "Unlimited emails",
-      "20 min AI phone/day + pay-as-you-go",
+      "1200 min AI phone/month",
+      "2000 WhatsApp messages/month",
       "Everything in Professional",
       "Unlimited staff accounts",
       "API access",
