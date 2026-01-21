@@ -101,7 +101,7 @@ export function DiagnosticsCard() {
 
       if (selectTest.error) throw selectTest.error;
 
-      const status = latency > 1000 ? 'warning' : 'success';
+      const status: 'success' | 'warning' | 'error' = latency > 1000 ? 'warning' : 'success';
       updateResult('database', {
         status,
         message: latency > 1000 ? 'Responding slowly' : 'Connection successful',
@@ -111,7 +111,7 @@ export function DiagnosticsCard() {
           warning_threshold: '1000ms',
         },
       });
-      return status !== 'error';
+      return true; // status is always 'success' or 'warning' in try block
     } catch (error: any) {
       updateResult('database', {
         status: 'error',
@@ -173,7 +173,7 @@ export function DiagnosticsCard() {
 
       if (error) throw error;
 
-      const status = latency > 1500 ? 'warning' : 'success';
+      const status: 'success' | 'warning' | 'error' = latency > 1500 ? 'warning' : 'success';
       updateResult('auth', {
         status,
         message: data.session ? 'Authenticated' : 'Service available',
@@ -183,7 +183,7 @@ export function DiagnosticsCard() {
           warning_threshold: '1500ms',
         },
       });
-      return status !== 'error';
+      return true; // status is always 'success' or 'warning' in try block
     } catch (error: any) {
       updateResult('auth', {
         status: 'error',
@@ -204,7 +204,7 @@ export function DiagnosticsCard() {
       if (error) throw error;
 
       const bucketCount = data?.length || 0;
-      const status = latency > 2000 ? 'warning' : 'success';
+      const status: 'success' | 'warning' | 'error' = latency > 2000 ? 'warning' : 'success';
 
       updateResult('storage', {
         status,
@@ -215,7 +215,7 @@ export function DiagnosticsCard() {
           warning_threshold: '2000ms',
         },
       });
-      return status !== 'error';
+      return true; // status is always 'success' or 'warning' in try block
     } catch (error: any) {
       updateResult('storage', {
         status: 'error',
@@ -258,7 +258,7 @@ export function DiagnosticsCard() {
       const latency = Math.round(performance.now() - start);
       await channel.unsubscribe();
 
-      const status = latency > 3000 ? 'warning' : 'success';
+      const status: 'success' | 'warning' | 'error' = latency > 3000 ? 'warning' : 'success';
       updateResult('realtime', {
         status,
         message: 'WebSocket connected',
@@ -268,7 +268,7 @@ export function DiagnosticsCard() {
           warning_threshold: '3000ms',
         },
       });
-      return status !== 'error';
+      return true; // status is always 'success' or 'warning' in try block
     } catch (error: any) {
       updateResult('realtime', {
         status: 'error',
@@ -314,7 +314,7 @@ export function DiagnosticsCard() {
         latency,
         details: systemInfo,
       });
-      return status !== 'error';
+      return true; // status is always 'success' or 'warning' in try block
     } catch (error: any) {
       updateResult('system', {
         status: 'warning',
@@ -410,7 +410,7 @@ export function DiagnosticsCard() {
       }
 
       const latency = Math.round(performance.now() - start);
-      const status = opsSuccessful === opsTotal ?
+      const status: 'success' | 'warning' | 'error' = opsSuccessful === opsTotal ?
                      (latency > 2000 ? 'warning' : 'success') : 'warning';
 
       updateResult('storageOperations', {
@@ -422,7 +422,7 @@ export function DiagnosticsCard() {
           operations_successful: opsSuccessful,
         },
       });
-      return status !== 'error';
+      return true; // status is always 'success' or 'warning' in try block
     } catch (error: any) {
       updateResult('storageOperations', {
         status: 'warning',

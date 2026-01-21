@@ -100,25 +100,36 @@ export function QuickActionsCard() {
   const handleClearQueryCache = () => {
     setIsClearingCache(true);
     
-    // Clear TanStack Query cache
-    import('@tanstack/react-query').then(({ QueryClient }) => {
-      // Access the query client from window if available
-      if (typeof window !== 'undefined' && (window as any).__REACT_QUERY_STATE__) {
-        toast({
-          title: 'Cache Cleared',
-          description: 'React Query cache has been invalidated',
-        });
-      } else {
-        // Just reload the page as a fallback
-        toast({
-          title: 'Refreshing',
-          description: 'Reloading to clear all cached data...',
-        });
-        setTimeout(() => window.location.reload(), 1000);
+    try {
+      // Clear localStorage and sessionStorage caches
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('query') || key.includes('cache') || key.includes('supabase'))) {
+          keysToRemove.push(key);
+        }
       }
-    }).finally(() => {
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Clear sessionStorage
+      sessionStorage.clear();
+      
+      toast({
+        title: 'Cache Cleared',
+        description: `Cleared ${keysToRemove.length} cached items. Refreshing page...`,
+      });
+      
+      // Reload to fully clear React Query cache
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to clear cache',
+        variant: 'destructive',
+      });
+    } finally {
       setIsClearingCache(false);
-    });
+    }
   };
 
   const handleExportSystemInfo = () => {
