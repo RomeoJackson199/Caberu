@@ -18,11 +18,13 @@ export const VideoShowcase: React.FC = () => {
         <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
           <Player
             component={CaberuMarketing}
-            durationInFrames={900}
+            durationInFrames={1500}
             compositionWidth={1920}
             compositionHeight={1080}
             fps={30}
             controls
+            autoPlay
+            loop
             style={{
               width: '100%',
               aspectRatio: '16/9',
