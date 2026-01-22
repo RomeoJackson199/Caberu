@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import {
   Dialog,
+  DialogDescription,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -576,6 +577,9 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
             <DialogTitle>
               {isEditMode ? 'Edit Treatment Plan' : selectedTreatmentPlan ? 'View Treatment Plan' : 'New Treatment Plan'}
             </DialogTitle>
+            <DialogDescription>
+              {isEditMode ? 'Modify the treatment plan details.' : selectedTreatmentPlan ? 'View treatment plan information.' : 'Create a new treatment plan for the patient.'}
+            </DialogDescription>
           </DialogHeader>
 
           {!selectedTreatmentPlan || isEditMode ? (

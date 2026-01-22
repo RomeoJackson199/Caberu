@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -202,6 +203,7 @@ export const OnboardingPopup = ({ isOpen, onClose }: OnboardingPopupProps) => {
           <DialogTitle className="text-center">
             {steps[currentStep].title}
           </DialogTitle>
+          <DialogDescription className="sr-only">Step {currentStep + 1} of {steps.length}</DialogDescription>
         </DialogHeader>
 
         <div className="py-6">{steps[currentStep].content}</div>

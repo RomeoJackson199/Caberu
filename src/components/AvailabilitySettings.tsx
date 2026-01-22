@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
@@ -285,6 +285,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Quick Schedule Presets</DialogTitle>
+                <DialogDescription>Choose a preset to quickly configure your availability.</DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
                 {QUICK_PRESETS.map((preset, index) => (

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Calendar, 
   Clock, 
@@ -390,6 +390,7 @@ export function AppointmentConfirmationWidget({
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Delete Appointment</DialogTitle>
+                    <DialogDescription>This action is permanent and cannot be undone.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <p className="text-muted-foreground">

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pill, Plus, Search, Filter, Calendar, User } from "lucide-react";
@@ -247,6 +247,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
                 <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Create New Prescription</DialogTitle>
+                    <DialogDescription>Fill in the prescription details for the patient.</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
