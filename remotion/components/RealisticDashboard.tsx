@@ -11,35 +11,40 @@ interface RealisticDashboardProps {
 export const RealisticDashboard: React.FC<RealisticDashboardProps> = ({
   showIncomingCall = false,
   incomingCallPulse = false,
-  highlightCalendar = false,
-  highlightChat = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const sidebarItems = [
-    { icon: '📊', label: 'Dashboard', active: true },
-    { icon: '📅', label: 'Calendar', active: false, highlight: highlightCalendar },
-    { icon: '👥', label: 'Patients', active: false },
-    { icon: '💬', label: 'Messages', active: false, highlight: highlightChat },
-    { icon: '📋', label: 'Records', active: false },
-    { icon: '💰', label: 'Billing', active: false },
-    { icon: '📈', label: 'Analytics', active: false },
-    { icon: '⚙️', label: 'Settings', active: false },
+  // Top navigation items (matching real DentistAppShell)
+  const navItems = [
+    { label: 'Dashboard', active: true },
+    { label: 'Patients', active: false },
+    { label: 'Appointments', active: false },
+    { label: 'Messages', active: false },
   ];
 
-  const todayAppointments = [
-    { time: '09:00', patient: 'Sarah Johnson', type: 'Checkup', status: 'completed' },
-    { time: '10:30', patient: 'Michael Chen', type: 'Root Canal', status: 'in-progress' },
-    { time: '13:00', patient: 'Emma Davis', type: 'Consultation', status: 'upcoming' },
-    { time: '14:30', patient: 'James Wilson', type: 'Filling', status: 'upcoming' },
+  // Quick actions (matching real ClinicalToday)
+  const quickActions = [
+    { icon: '+', label: 'New Appointment', color: '#3b82f6' },
+    { icon: '👥', label: 'Patients', color: '#a855f7' },
+    { icon: '📅', label: 'Schedule', color: '#10b981' },
+    { icon: '📄', label: 'Records', color: '#f97316' },
   ];
 
+  // Stats matching real ClinicalToday dashboard
   const stats = [
-    { label: 'Today\'s Appointments', value: '12', change: '+3', color: '#3b82f6' },
-    { label: 'Patients This Week', value: '47', change: '+12%', color: '#22c55e' },
-    { label: 'Revenue (MTD)', value: '€24,580', change: '+8%', color: '#8b5cf6' },
-    { label: 'No-Show Rate', value: '2.1%', change: '-0.5%', color: '#f59e0b' },
+    { label: "Today's Appointments", value: '8', gradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)' },
+    { label: 'Pending Approvals', value: '3', gradient: 'linear-gradient(135deg, #f59e0b, #f97316)' },
+    { label: 'Completed This Week', value: '24', gradient: 'linear-gradient(135deg, #22c55e, #10b981)' },
+    { label: 'Total Patients', value: '156', gradient: 'linear-gradient(135deg, #6366f1, #3b82f6)' },
+  ];
+
+  // Today's appointments (matching real dashboard style)
+  const todayAppointments = [
+    { time: '09:00', patient: 'Sarah Johnson', reason: 'Routine Checkup', status: 'completed' },
+    { time: '10:30', patient: 'Michael Chen', reason: 'Root Canal Treatment', status: 'confirmed', urgency: 'high' },
+    { time: '13:00', patient: 'Emma Davis', reason: 'Consultation', status: 'confirmed' },
+    { time: '14:30', patient: 'James Wilson', reason: 'Filling Replacement', status: 'pending' },
   ];
 
   // Animation springs
@@ -49,29 +54,45 @@ export const RealisticDashboard: React.FC<RealisticDashboardProps> = ({
     config: { damping: 20, stiffness: 100 },
   });
 
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return { bg: 'rgba(34, 197, 94, 0.1)', text: '#22c55e', border: 'rgba(34, 197, 94, 0.2)' };
+      case 'confirmed':
+        return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6', border: 'rgba(59, 130, 246, 0.2)' };
+      case 'pending':
+        return { bg: 'rgba(245, 158, 11, 0.1)', text: '#f59e0b', border: 'rgba(245, 158, 11, 0.2)' };
+      default:
+        return { bg: 'rgba(148, 163, 184, 0.1)', text: '#94a3b8', border: 'rgba(148, 163, 184, 0.2)' };
+    }
+  };
+
   return (
     <div
       style={{
         width: '1800px',
         height: '1000px',
-        background: '#0c0f14',
+        background: '#ffffff',
         borderRadius: '20px',
         overflow: 'hidden',
         display: 'flex',
-        fontFamily: '"DM Sans", "Poppins", system-ui, -apple-system, sans-serif',
+        flexDirection: 'column',
+        fontFamily: '"Inter", "DM Sans", system-ui, -apple-system, sans-serif',
         opacity: containerOpacity,
-        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1)',
       }}
     >
-      {/* Sidebar */}
+      {/* Top Navigation Bar (matching real DentistAppShell) */}
       <div
         style={{
-          width: '260px',
-          background: 'linear-gradient(180deg, #111827 0%, #0f172a 100%)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '24px 16px',
+          height: '64px',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(8px)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
           display: 'flex',
-          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '0 24px',
+          gap: '24px',
         }}
       >
         {/* Logo */}
@@ -80,106 +101,15 @@ export const RealisticDashboard: React.FC<RealisticDashboardProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            padding: '8px 12px',
-            marginBottom: '32px',
+            marginRight: '16px',
           }}
         >
           <div
             style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '22px',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
-            }}
-          >
-            🦷
-          </div>
-          <div>
-            <div style={{ color: '#ffffff', fontSize: '20px', fontWeight: '700', letterSpacing: '-0.5px' }}>
-              Caberu
-            </div>
-            <div style={{ color: '#64748b', fontSize: '12px', fontWeight: '500' }}>
-              Healthcare Solutions
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Items */}
-        <div style={{ flex: 1 }}>
-          {sidebarItems.map((item, index) => {
-            const itemOpacity = spring({
-              frame: frame - index * 3,
-              fps,
-              config: { damping: 15 },
-            });
-
-            const isHighlighted = item.highlight;
-            const highlightPulse = isHighlighted ? Math.sin(frame / 8) * 0.3 + 0.7 : 0;
-
-            return (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  padding: '14px 16px',
-                  marginBottom: '6px',
-                  borderRadius: '12px',
-                  background: item.active
-                    ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%)'
-                    : isHighlighted
-                    ? `rgba(59, 130, 246, ${highlightPulse})`
-                    : 'transparent',
-                  border: item.active
-                    ? '1px solid rgba(59, 130, 246, 0.3)'
-                    : isHighlighted
-                    ? '1px solid rgba(59, 130, 246, 0.5)'
-                    : '1px solid transparent',
-                  cursor: 'pointer',
-                  opacity: itemOpacity,
-                  transition: 'all 0.2s ease',
-                  boxShadow: isHighlighted ? '0 0 20px rgba(59, 130, 246, 0.4)' : 'none',
-                }}
-              >
-                <span style={{ fontSize: '20px' }}>{item.icon}</span>
-                <span
-                  style={{
-                    color: item.active ? '#ffffff' : '#94a3b8',
-                    fontSize: '15px',
-                    fontWeight: item.active ? '600' : '500',
-                  }}
-                >
-                  {item.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* User Profile */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '16px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-          }}
-        >
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
+              width: '36px',
+              height: '36px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -188,385 +118,444 @@ export const RealisticDashboard: React.FC<RealisticDashboardProps> = ({
               fontSize: '16px',
             }}
           >
-            DS
+            C
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: '600' }}>Dr. Smith</div>
-            <div style={{ color: '#64748b', fontSize: '12px' }}>General Dentist</div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {navItems.map((item, index) => {
+            const itemOpacity = spring({
+              frame: frame - index * 2,
+              fps,
+              config: { damping: 15 },
+            });
+
+            return (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  background: item.active ? '#18181b' : 'transparent',
+                  color: item.active ? '#ffffff' : '#64748b',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  opacity: itemOpacity,
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {item.label}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Right side: Notifications & User */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Incoming Call Notification in header */}
+          {showIncomingCall && (
+            <div
+              style={{
+                padding: '10px 16px',
+                background: incomingCallPulse
+                  ? `linear-gradient(135deg, rgba(34, 197, 94, ${0.15 + Math.sin(frame / 5) * 0.1}) 0%, rgba(22, 163, 74, ${0.1 + Math.sin(frame / 5) * 0.1}) 100%)`
+                  : 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.08) 100%)',
+                borderRadius: '12px',
+                border: `1px solid ${incomingCallPulse ? `rgba(34, 197, 94, ${0.4 + Math.sin(frame / 5) * 0.2})` : 'rgba(34, 197, 94, 0.3)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: incomingCallPulse
+                  ? `0 0 20px rgba(34, 197, 94, ${0.2 + Math.sin(frame / 5) * 0.15})`
+                  : '0 2px 8px rgba(34, 197, 94, 0.1)',
+                transform: incomingCallPulse ? `scale(${1 + Math.sin(frame / 5) * 0.015})` : 'scale(1)',
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                }}
+              >
+                📞
+              </div>
+              <div>
+                <div style={{ color: '#16a34a', fontSize: '13px', fontWeight: '600' }}>
+                  Incoming Call
+                </div>
+                <div style={{ color: '#22c55e', fontSize: '11px' }}>
+                  New patient inquiry
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Notification Bell */}
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              position: 'relative',
+              color: '#64748b',
+            }}
+          >
+            🔔
+            <div
+              style={{
+                position: 'absolute',
+                top: '6px',
+                right: '6px',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#ef4444',
+              }}
+            />
+          </div>
+
+          {/* User Avatar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '6px 12px 6px 8px',
+              borderRadius: '10px',
+              cursor: 'pointer',
+            }}
+          >
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '600',
+                fontSize: '12px',
+              }}
+            >
+              DS
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '13px', fontWeight: '500', color: '#18181b' }}>Dr. Smith</span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Dentist</span>
+            </div>
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>▼</span>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f1219' }}>
-        {/* Top Header */}
+      <div style={{ flex: 1, padding: '24px 32px', overflowY: 'auto', background: '#fafafa' }}>
+        {/* Welcome Header with Gradient (matching ClinicalToday) */}
         <div
           style={{
-            padding: '20px 32px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'rgba(0, 0, 0, 0.2)',
+            background: 'linear-gradient(135deg, #eff6ff 0%, #eef2ff 50%, #faf5ff 100%)',
+            borderRadius: '16px',
+            padding: '24px 28px',
+            marginBottom: '24px',
+            position: 'relative',
+            overflow: 'hidden',
           }}
         >
-          <div>
-            <div style={{ color: '#ffffff', fontSize: '28px', fontWeight: '700', letterSpacing: '-0.5px' }}>
+          {/* Animated background circles */}
+          <div
+            style={{
+              position: 'absolute',
+              width: '200px',
+              height: '200px',
+              borderRadius: '50%',
+              background: 'rgba(59, 130, 246, 0.08)',
+              top: '-50px',
+              right: '-30px',
+              transform: `translateY(${Math.sin(frame / 40) * 10}px)`,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              width: '150px',
+              height: '150px',
+              borderRadius: '50%',
+              background: 'rgba(139, 92, 246, 0.06)',
+              bottom: '-40px',
+              left: '30%',
+              transform: `translateX(${Math.sin(frame / 35) * 8}px)`,
+            }}
+          />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: '26px', fontWeight: '700', color: '#18181b', marginBottom: '6px' }}>
               Good Morning, Dr. Smith 👋
             </div>
-            <div style={{ color: '#64748b', fontSize: '15px', marginTop: '4px' }}>
-              Thursday, January 23, 2026 • 12 appointments today
+            <div style={{ fontSize: '15px', color: '#64748b' }}>
+              Thursday, January 23, 2026 • You have 8 appointments today
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {/* Search */}
-            <div
-              style={{
-                padding: '12px 20px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                color: '#64748b',
-                fontSize: '14px',
-              }}
-            >
-              🔍 Search patients, appointments...
-            </div>
+        {/* Quick Actions (matching ClinicalToday) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '16px',
+            marginBottom: '24px',
+          }}
+        >
+          {quickActions.map((action, index) => {
+            const actionScale = spring({
+              frame: frame - 8 - index * 3,
+              fps,
+              config: { damping: 15, stiffness: 120 },
+            });
 
-            {/* Notifications */}
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '18px',
-                position: 'relative',
-              }}
-            >
-              🔔
+            return (
               <div
+                key={index}
                 style={{
-                  position: 'absolute',
-                  top: '8px',
-                  right: '8px',
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  background: '#ef4444',
-                  border: '2px solid #0f1219',
-                }}
-              />
-            </div>
-
-            {/* Incoming Call Notification */}
-            {showIncomingCall && (
-              <div
-                style={{
-                  padding: '12px 20px',
-                  background: incomingCallPulse
-                    ? `linear-gradient(135deg, rgba(34, 197, 94, ${0.3 + Math.sin(frame / 5) * 0.2}) 0%, rgba(22, 163, 74, ${0.2 + Math.sin(frame / 5) * 0.2}) 100%)`
-                    : 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.15) 100%)',
-                  borderRadius: '14px',
-                  border: `2px solid ${incomingCallPulse ? `rgba(34, 197, 94, ${0.6 + Math.sin(frame / 5) * 0.3})` : 'rgba(34, 197, 94, 0.4)'}`,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  boxShadow: incomingCallPulse
-                    ? `0 0 30px rgba(34, 197, 94, ${0.3 + Math.sin(frame / 5) * 0.2})`
-                    : '0 4px 16px rgba(34, 197, 94, 0.2)',
-                  transform: incomingCallPulse ? `scale(${1 + Math.sin(frame / 5) * 0.02})` : 'scale(1)',
+                  padding: '16px 20px',
+                  background: '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(0, 0, 0, 0.06)',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                  transform: `scale(${actionScale})`,
+                  cursor: 'pointer',
                 }}
               >
                 <div
                   style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    background: action.color,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '18px',
-                    animation: incomingCallPulse ? 'none' : undefined,
+                    color: 'white',
+                    fontSize: action.icon === '+' ? '22px' : '18px',
+                    fontWeight: '600',
                   }}
                 >
-                  📞
+                  {action.icon}
                 </div>
-                <div>
-                  <div style={{ color: '#22c55e', fontSize: '14px', fontWeight: '700' }}>
-                    Incoming Call
-                  </div>
-                  <div style={{ color: '#86efac', fontSize: '12px' }}>
-                    New patient inquiry
-                  </div>
-                </div>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: '#18181b' }}>
+                  {action.label}
+                </span>
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Dashboard Content */}
-        <div style={{ flex: 1, padding: '28px 32px', overflowY: 'auto' }}>
-          {/* Stats Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '28px' }}>
-            {stats.map((stat, index) => {
-              const cardScale = spring({
-                frame: frame - 10 - index * 4,
+        {/* Stats Cards (matching ClinicalToday AnimatedStatCard) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+          {stats.map((stat, index) => {
+            const cardScale = spring({
+              frame: frame - 12 - index * 4,
+              fps,
+              config: { damping: 15, stiffness: 120 },
+            });
+
+            return (
+              <div
+                key={index}
+                style={{
+                  padding: '20px 24px',
+                  background: '#ffffff',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(0, 0, 0, 0.06)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  transform: `scale(${cardScale})`,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Gradient accent bar */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '4px',
+                    background: stat.gradient,
+                  }}
+                />
+                <div style={{ color: '#64748b', fontSize: '13px', fontWeight: '500', marginBottom: '8px' }}>
+                  {stat.label}
+                </div>
+                <div style={{ fontSize: '32px', fontWeight: '700', color: '#18181b' }}>
+                  {stat.value}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Today's Schedule Card (matching ClinicalToday) */}
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1px solid rgba(0, 0, 0, 0.06)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              padding: '18px 24px',
+              borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <h2 style={{ fontSize: '17px', fontWeight: '600', color: '#18181b', margin: 0 }}>
+              Today's Schedule
+            </h2>
+            <div
+              style={{
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                borderRadius: '8px',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
+              }}
+            >
+              <span style={{ fontSize: '14px' }}>+</span>
+              New Appointment
+            </div>
+          </div>
+
+          <div style={{ padding: '12px 16px' }}>
+            {todayAppointments.map((apt, index) => {
+              const itemOpacity = spring({
+                frame: frame - 20 - index * 4,
                 fps,
-                config: { damping: 15, stiffness: 120 },
+                config: { damping: 15 },
               });
+
+              const statusStyle = getStatusStyle(apt.status);
 
               return (
                 <div
                   key={index}
                   style={{
-                    padding: '24px',
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    transform: `scale(${cardScale})`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '16px 20px',
+                    marginBottom: '8px',
+                    background: '#fafafa',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0, 0, 0, 0.04)',
+                    opacity: itemOpacity,
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  <div style={{ color: '#64748b', fontSize: '13px', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {stat.label}
+                  {/* Time */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      minWidth: '60px',
+                    }}
+                  >
+                    <span style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '2px' }}>⏰</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#18181b' }}>
+                      {apt.time}
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                    <div style={{ color: '#ffffff', fontSize: '32px', fontWeight: '700' }}>
-                      {stat.value}
+
+                  {/* Patient Info */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '15px', fontWeight: '600', color: '#18181b' }}>
+                        {apt.patient}
+                      </span>
+                      {apt.urgency === 'high' && (
+                        <span
+                          style={{
+                            padding: '2px 8px',
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            color: '#dc2626',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          Urgent
+                        </span>
+                      )}
                     </div>
-                    <div
-                      style={{
-                        color: stat.change.startsWith('+') ? '#22c55e' : stat.change.startsWith('-') ? '#ef4444' : '#64748b',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        padding: '4px 10px',
-                        background: stat.change.startsWith('+') ? 'rgba(34, 197, 94, 0.1)' : stat.change.startsWith('-') ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
-                        borderRadius: '6px',
-                      }}
-                    >
-                      {stat.change}
-                    </div>
+                    <span style={{ fontSize: '13px', color: '#64748b' }}>{apt.reason}</span>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div
+                    style={{
+                      padding: '6px 14px',
+                      background: statusStyle.bg,
+                      border: `1px solid ${statusStyle.border}`,
+                      borderRadius: '8px',
+                      color: statusStyle.text,
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {apt.status}
                   </div>
                 </div>
               );
             })}
-          </div>
 
-          {/* Two Column Layout */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            {/* Today's Schedule */}
+            {/* View All Button */}
             <div
               style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                overflow: 'hidden',
+                marginTop: '12px',
+                padding: '12px',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                borderRadius: '10px',
+                textAlign: 'center',
+                color: '#64748b',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
               }}
             >
-              <div
-                style={{
-                  padding: '20px 24px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700' }}>
-                  📅 Today's Schedule
-                </div>
-                <div
-                  style={{
-                    padding: '6px 14px',
-                    background: 'rgba(59, 130, 246, 0.15)',
-                    borderRadius: '8px',
-                    color: '#60a5fa',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                  }}
-                >
-                  View All
-                </div>
-              </div>
-              <div style={{ padding: '16px' }}>
-                {todayAppointments.map((apt, index) => {
-                  const itemOpacity = spring({
-                    frame: frame - 20 - index * 5,
-                    fps,
-                    config: { damping: 15 },
-                  });
-
-                  const statusColors = {
-                    completed: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', label: '✓ Done' },
-                    'in-progress': { bg: 'rgba(59, 130, 246, 0.15)', text: '#3b82f6', label: '● Now' },
-                    upcoming: { bg: 'rgba(148, 163, 184, 0.1)', text: '#94a3b8', label: 'Upcoming' },
-                  };
-
-                  const status = statusColors[apt.status as keyof typeof statusColors];
-
-                  return (
-                    <div
-                      key={index}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        padding: '16px',
-                        marginBottom: '8px',
-                        background: apt.status === 'in-progress' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255, 255, 255, 0.02)',
-                        borderRadius: '12px',
-                        border: apt.status === 'in-progress' ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid transparent',
-                        opacity: itemOpacity,
-                      }}
-                    >
-                      <div
-                        style={{
-                          color: apt.status === 'in-progress' ? '#3b82f6' : '#64748b',
-                          fontSize: '15px',
-                          fontWeight: '700',
-                          minWidth: '55px',
-                        }}
-                      >
-                        {apt.time}
-                      </div>
-                      <div
-                        style={{
-                          width: '4px',
-                          height: '36px',
-                          borderRadius: '2px',
-                          background: status.text,
-                          opacity: 0.6,
-                        }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ color: '#ffffff', fontSize: '15px', fontWeight: '600' }}>
-                          {apt.patient}
-                        </div>
-                        <div style={{ color: '#64748b', fontSize: '13px' }}>{apt.type}</div>
-                      </div>
-                      <div
-                        style={{
-                          padding: '6px 12px',
-                          background: status.bg,
-                          borderRadius: '8px',
-                          color: status.text,
-                          fontSize: '12px',
-                          fontWeight: '600',
-                        }}
-                      >
-                        {status.label}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* AI Assistant Panel */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  padding: '20px 24px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '18px',
-                  }}
-                >
-                  🤖
-                </div>
-                <div>
-                  <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700' }}>
-                    AI Assistant
-                  </div>
-                  <div style={{ color: '#a78bfa', fontSize: '12px', fontWeight: '500' }}>
-                    3 tasks handled automatically
-                  </div>
-                </div>
-              </div>
-              <div style={{ padding: '16px' }}>
-                {[
-                  { icon: '📞', title: 'Answered incoming call', time: '2 min ago', desc: 'Scheduled appointment for new patient' },
-                  { icon: '📧', title: 'Sent appointment reminders', time: '15 min ago', desc: '8 patients notified for tomorrow' },
-                  { icon: '📋', title: 'Updated patient records', time: '1 hour ago', desc: 'Treatment notes synced from voice' },
-                ].map((task, index) => {
-                  const taskOpacity = spring({
-                    frame: frame - 25 - index * 6,
-                    fps,
-                    config: { damping: 15 },
-                  });
-
-                  return (
-                    <div
-                      key={index}
-                      style={{
-                        display: 'flex',
-                        gap: '14px',
-                        padding: '16px',
-                        marginBottom: '8px',
-                        background: 'rgba(139, 92, 246, 0.05)',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(139, 92, 246, 0.1)',
-                        opacity: taskOpacity,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '10px',
-                          background: 'rgba(139, 92, 246, 0.15)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '18px',
-                        }}
-                      >
-                        {task.icon}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: '600' }}>
-                          {task.title}
-                        </div>
-                        <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '2px' }}>
-                          {task.desc}
-                        </div>
-                      </div>
-                      <div style={{ color: '#64748b', fontSize: '11px', fontWeight: '500' }}>
-                        {task.time}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              View All Appointments
             </div>
           </div>
         </div>
