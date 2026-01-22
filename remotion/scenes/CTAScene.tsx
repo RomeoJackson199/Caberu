@@ -57,10 +57,10 @@ export const CTAScene: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
         justifyContent: 'center',
         alignItems: 'center',
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
       {/* Animated background elements */}
@@ -147,7 +147,7 @@ export const CTAScene: React.FC = () => {
             borderRadius: '60px',
             fontSize: '42px',
             fontWeight: 'bold',
-            color: '#667eea',
+            color: '#1e40af',
             cursor: 'pointer',
             transform: `scale(${buttonScale * pulse})`,
             opacity: buttonOpacity,

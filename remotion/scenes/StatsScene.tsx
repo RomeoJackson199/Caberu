@@ -24,7 +24,7 @@ export const StatsScene: React.FC = () => {
         background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
         justifyContent: 'center',
         alignItems: 'center',
-        fontFamily: 'Arial, sans-serif',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
       {/* Title */}
@@ -91,7 +91,7 @@ export const StatsScene: React.FC = () => {
                 style={{
                   fontSize: '80px',
                   fontWeight: 'bold',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
