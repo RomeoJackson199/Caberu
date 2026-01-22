@@ -62,10 +62,20 @@ export const StatsScene: React.FC = () => {
           textAlign: 'center',
           marginBottom: '90px',
           letterSpacing: '-1px',
-          opacity: interpolate(frame, [0, 22], [0, 1], {
-            extrapolateRight: 'clamp',
+          opacity: spring({
+            frame: frame,
+            fps,
+            from: 0,
+            to: 1,
+            config: { damping: 15, stiffness: 100 },
           }),
-          transform: `translateY(${interpolate(frame, [0, 22], [40, 0], { extrapolateRight: 'clamp' })}px)`,
+          transform: `translateY(${spring({
+            frame: frame,
+            fps,
+            from: 50,
+            to: 0,
+            config: { damping: 18, stiffness: 100 },
+          })}px)`,
         }}
       >
         ⚡ Proven Results
@@ -82,33 +92,39 @@ export const StatsScene: React.FC = () => {
         }}
       >
         {stats.map((stat, index) => {
-          const delay = index * 12;
+          const delay = index * 8;
           const scale = spring({
-            frame: frame - delay - 15,
+            frame: frame - delay - 10,
             fps,
+            from: 0.8,
+            to: 1,
             config: {
-              damping: 15,
-              stiffness: 100,
+              damping: 16,
+              stiffness: 110,
             },
           });
 
-          const opacity = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [0, 1],
-            {
-              extrapolateRight: 'clamp',
-            }
-          );
+          const opacity = spring({
+            frame: frame - delay - 10,
+            fps,
+            from: 0,
+            to: 1,
+            config: {
+              damping: 15,
+              stiffness: 120,
+            },
+          });
 
-          const y = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [50, 0],
-            {
-              extrapolateRight: 'clamp',
-            }
-          );
+          const y = spring({
+            frame: frame - delay - 10,
+            fps,
+            from: 60,
+            to: 0,
+            config: {
+              damping: 18,
+              stiffness: 100,
+            },
+          });
 
           return (
             <div
@@ -167,10 +183,20 @@ export const StatsScene: React.FC = () => {
           fontWeight: '400',
           maxWidth: '900px',
           lineHeight: 1.4,
-          opacity: interpolate(frame, [65, 85], [0, 1], {
-            extrapolateRight: 'clamp',
+          opacity: spring({
+            frame: frame - 50,
+            fps,
+            from: 0,
+            to: 1,
+            config: { damping: 15, stiffness: 100 },
           }),
-          transform: `translateY(${interpolate(frame, [65, 85], [30, 0], { extrapolateRight: 'clamp' })}px)`,
+          transform: `translateY(${spring({
+            frame: frame - 50,
+            fps,
+            from: 40,
+            to: 0,
+            config: { damping: 18, stiffness: 100 },
+          })}px)`,
         }}
       >
         Join hundreds of dental practices transforming their operations
