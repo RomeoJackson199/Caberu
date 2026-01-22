@@ -131,12 +131,23 @@ const Login = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
-
-
     setIsLoading(true);
     setAuthError(null);
 
     try {
+      // SECURITY: Check rate limit before attempting login
+      const rateLimitCheck = await supabase.functions.invoke('check-login-rate-limit', {
+        body: { email: formData.email }
+      });
+
+      if (rateLimitCheck.error || !rateLimitCheck.data?.allowed) {
+        const retryAfter = rateLimitCheck.data?.retry_after || 900;
+        const minutes = Math.ceil(retryAfter / 60);
+        setAuthError(`Too many login attempts. Please try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`);
+        setIsLoading(false);
+        return;
+      }
+
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,

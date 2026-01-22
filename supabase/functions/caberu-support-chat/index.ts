@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitMemory, getClientIP, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -7,6 +8,13 @@ serve(async (req) => {
   
   const preflightResponse = handleCorsPreflightSafe(req);
   if (preflightResponse) return preflightResponse;
+
+  // SECURITY: Rate limiting for support chat
+  const clientIP = getClientIP(req);
+  const rateLimitResult = checkRateLimitMemory(clientIP, RATE_LIMITS.SUPPORT_CHAT);
+  if (!rateLimitResult.allowed) {
+    return rateLimitResponse(rateLimitResult, corsHeaders);
+  }
 
   try {
     const { message, conversation_history, context = "general" } = await req.json();
