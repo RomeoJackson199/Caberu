@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, elevenlabs-signature',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, elevenlabs-signature, x-elevenlabs-signature',
 };
 
 // Pay-as-you-go rate: $0.10 per minute overage (10 cents)
@@ -47,7 +47,7 @@ interface ElevenLabsWebhookPayload {
     };
 }
 
-// Verify ElevenLabs webhook signature
+// Verify ElevenLabs webhook signature using HMAC-SHA256
 async function verifySignature(payload: string, signature: string, secret: string): Promise<boolean> {
     if (!signature || !secret) return false;
 
@@ -66,7 +66,14 @@ async function verifySignature(payload: string, signature: string, secret: strin
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
 
-        return signature === computedSignature;
+        // Constant-time comparison to prevent timing attacks
+        if (signature.length !== computedSignature.length) return false;
+        
+        let result = 0;
+        for (let i = 0; i < signature.length; i++) {
+            result |= signature.charCodeAt(i) ^ computedSignature.charCodeAt(i);
+        }
+        return result === 0;
     } catch (e) {
         console.error('Signature verification error:', e);
         return false;
@@ -86,30 +93,53 @@ serve(async (req) => {
         const rawBody = await req.text();
         console.log('ElevenLabs webhook received');
 
-        // Signature verification for security
+        // =====================================================
+        // SECURITY: Enforce signature verification
+        // =====================================================
         const signature = req.headers.get('elevenlabs-signature') || req.headers.get('x-elevenlabs-signature');
         
-        if (webhookSecret) {
-            if (!signature) {
-                console.warn('No signature provided - webhook may be from unauthorized source');
-                // Log but don't block for now - some ElevenLabs webhook calls may not include signature
-            } else {
-                const isValid = await verifySignature(rawBody, signature, webhookSecret);
-                if (!isValid) {
-                    console.error('Invalid webhook signature - potential security issue');
-                    return new Response(
-                        JSON.stringify({ error: 'Invalid signature' }),
-                        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-                    );
-                }
-                console.log('Webhook signature verified successfully');
-            }
-        } else {
-            console.warn('ELEVENLABS_WEBHOOK_SECRET not configured - signature verification skipped');
+        if (!webhookSecret) {
+            console.error('ELEVENLABS_WEBHOOK_SECRET not configured - REJECTING webhook for security');
+            return new Response(
+                JSON.stringify({ error: 'Webhook authentication not configured' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
         }
+
+        if (!signature) {
+            console.error('Missing webhook signature - REJECTING request');
+            return new Response(
+                JSON.stringify({ error: 'Signature required' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
+
+        const isValid = await verifySignature(rawBody, signature, webhookSecret);
+        if (!isValid) {
+            console.error('Invalid webhook signature - potential security issue');
+            return new Response(
+                JSON.stringify({ error: 'Invalid signature' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
+        
+        console.log('Webhook signature verified successfully');
 
         const payload: ElevenLabsWebhookPayload = JSON.parse(rawBody);
         console.log('Webhook type:', payload.type);
+
+        // SECURITY: Validate event timestamp to prevent replay attacks (5 minute window)
+        const eventTimestamp = payload.event_timestamp;
+        const now = Math.floor(Date.now() / 1000);
+        const maxAgeSeconds = 300; // 5 minutes
+
+        if (eventTimestamp && Math.abs(now - eventTimestamp) > maxAgeSeconds) {
+            console.error('Webhook timestamp too old or in future - potential replay attack');
+            return new Response(
+                JSON.stringify({ error: 'Webhook expired' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+        }
 
         // Only process post-call events
         if (payload.type !== 'post_call_transcription') {
@@ -150,7 +180,7 @@ serve(async (req) => {
 
         // If no business_id in metadata, try to infer from agent configuration
         if (!businessId && data.agent_id) {
-            // Look up agent -> business mapping (you may need to create this table)
+            // Look up agent -> business mapping
             const { data: agentMapping } = await supabase
                 .from('elevenlabs_agents')
                 .select('business_id')
@@ -223,16 +253,17 @@ serve(async (req) => {
                     analysis: data.analysis,
                     overage_seconds: overageSeconds,
                     included_seconds: includedSeconds,
-                    raw_data_keys: Object.keys(data)
+                    raw_data_keys: Object.keys(data),
+                    signature_verified: true
                 }
             })
             .select()
             .single();
 
         if (insertError) {
-            // Check if it's a duplicate
+            // Check if it's a duplicate (replay protection)
             if (insertError.code === '23505') {
-                console.log('Call already recorded:', callId);
+                console.log('Call already recorded (replay protection):', callId);
                 return new Response(
                     JSON.stringify({ message: 'Call already recorded', call_id: callId }),
                     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
