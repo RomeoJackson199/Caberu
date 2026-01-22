@@ -146,3 +146,12 @@ verify_jwt = true
 
 [functions.validate-promo-code]
 verify_jwt = true
+
+[functions.check-login-rate-limit]
+verify_jwt = false
+
+[functions.create-stripe-connect-account]
+verify_jwt = true
+
+[functions.check-stripe-connect-status]
+verify_jwt = true
