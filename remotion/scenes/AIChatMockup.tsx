@@ -1,8 +1,9 @@
 import React from 'react';
-import { interpolate, useCurrentFrame } from 'remotion';
+import { interpolate, useCurrentFrame, spring, useVideoConfig } from 'remotion';
 
 export const AIChatMockup: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
   const messages = [
     { sender: 'patient', text: 'Hi! I have a toothache and need to see a dentist soon. Can you help?', time: '2:43 PM' },
@@ -12,21 +13,33 @@ export const AIChatMockup: React.FC = () => {
     { sender: 'patient', text: 'Yes! Tomorrow at 2:00 PM would be perfect', time: '2:45 PM' },
   ];
 
-  const headerOpacity = interpolate(frame, [0, 15], [0, 1], { extrapolateRight: 'clamp' });
+  const headerOpacity = spring({
+    frame: frame,
+    fps,
+    config: { damping: 15, stiffness: 100 },
+  });
+
+  const containerScale = spring({
+    frame: frame,
+    fps,
+    from: 0.85,
+    to: 1,
+    config: { damping: 20, stiffness: 100 },
+  });
 
   return (
     <div
       style={{
         width: '1000px',
         height: '650px',
-        background: 'white',
-        borderRadius: '20px',
-        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.1)',
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1)',
         overflow: 'hidden',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         display: 'flex',
         flexDirection: 'column',
-        transform: `scale(${interpolate(frame, [0, 20], [0.9, 1], { extrapolateRight: 'clamp' })})`,
+        transform: `scale(${containerScale})`,
       }}
     >
       {/* Header with enhanced design */}
@@ -98,25 +111,30 @@ export const AIChatMockup: React.FC = () => {
         }}
       >
         {messages.map((msg, i) => {
-          const delay = i * 12;
-          const opacity = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [0, 1],
-            { extrapolateRight: 'clamp' }
-          );
-          const y = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [40, 0],
-            { extrapolateRight: 'clamp' }
-          );
-          const scale = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [0.9, 1],
-            { extrapolateRight: 'clamp' }
-          );
+          const delay = i * 9;
+          const msgOpacity = spring({
+            frame: frame - (10 + delay),
+            fps,
+            from: 0,
+            to: 1,
+            config: { damping: 15, stiffness: 120 },
+          });
+
+          const msgY = spring({
+            frame: frame - (10 + delay),
+            fps,
+            from: 50,
+            to: 0,
+            config: { damping: 18, stiffness: 100 },
+          });
+
+          const msgScale = spring({
+            frame: frame - (10 + delay),
+            fps,
+            from: 0.85,
+            to: 1,
+            config: { damping: 16, stiffness: 110 },
+          });
 
           return (
             <div
@@ -125,8 +143,8 @@ export const AIChatMockup: React.FC = () => {
                 display: 'flex',
                 justifyContent: msg.sender === 'patient' ? 'flex-end' : 'flex-start',
                 marginBottom: '18px',
-                opacity,
-                transform: `translateY(${y}px) scale(${scale})`,
+                opacity: msgOpacity,
+                transform: `translateY(${msgY}px) scale(${msgScale})`,
               }}
             >
               <div
@@ -177,8 +195,20 @@ export const AIChatMockup: React.FC = () => {
             width: 'fit-content',
             border: '2px solid #e2e8f0',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
-            opacity: interpolate(frame, [75, 88], [0, 1], { extrapolateRight: 'clamp' }),
-            transform: `translateY(${interpolate(frame, [75, 88], [20, 0], { extrapolateRight: 'clamp' })}px)`,
+            opacity: spring({
+              frame: frame - 55,
+              fps,
+              from: 0,
+              to: 1,
+              config: { damping: 12 },
+            }),
+            transform: `translateY(${spring({
+              frame: frame - 55,
+              fps,
+              from: 30,
+              to: 0,
+              config: { damping: 15 },
+            })}px)`,
           }}
         >
           {[0, 1, 2].map((i) => (

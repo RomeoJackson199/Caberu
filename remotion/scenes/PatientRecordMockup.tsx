@@ -1,23 +1,43 @@
 import React from 'react';
-import { interpolate, useCurrentFrame } from 'remotion';
+import { interpolate, useCurrentFrame, spring, useVideoConfig } from 'remotion';
 
 export const PatientRecordMockup: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
-  const headerOpacity = interpolate(frame, [0, 15], [0, 1], { extrapolateRight: 'clamp' });
-  const headerScale = interpolate(frame, [0, 15], [0.95, 1], { extrapolateRight: 'clamp' });
+  const headerOpacity = spring({
+    frame: frame,
+    fps,
+    config: { damping: 15, stiffness: 100 },
+  });
+
+  const headerScale = spring({
+    frame: frame,
+    fps,
+    from: 0.9,
+    to: 1,
+    config: { damping: 18, stiffness: 120 },
+  });
+
+  const containerScale = spring({
+    frame: frame,
+    fps,
+    from: 0.85,
+    to: 1,
+    config: { damping: 20, stiffness: 100 },
+  });
 
   return (
     <div
       style={{
         width: '1000px',
         height: '650px',
-        background: 'white',
-        borderRadius: '20px',
-        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.1)',
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1)',
         overflow: 'hidden',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        transform: `scale(${interpolate(frame, [0, 20], [0.9, 1], { extrapolateRight: 'clamp' })})`,
+        transform: `scale(${containerScale})`,
       }}
     >
       {/* Header with Patient Info - Enhanced */}
@@ -96,7 +116,13 @@ export const PatientRecordMockup: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              opacity: interpolate(frame, [15, 30], [0, 1], { extrapolateRight: 'clamp' }),
+              opacity: spring({
+                frame: frame - 10,
+                fps,
+                from: 0,
+                to: 1,
+                config: { damping: 15 },
+              }),
             }}
           >
             <span>📋</span>
@@ -109,7 +135,31 @@ export const PatientRecordMockup: React.FC = () => {
             { icon: '🦷', label: 'Next Cleaning', value: 'Apr 15, 2026' },
             { icon: '💊', label: 'Medications', value: 'None' },
           ].map((item, i) => {
-            const delay = i * 8;
+            const delay = i * 6;
+            const itemOpacity = spring({
+              frame: frame - (15 + delay),
+              fps,
+              from: 0,
+              to: 1,
+              config: { damping: 15, stiffness: 120 },
+            });
+
+            const itemY = spring({
+              frame: frame - (15 + delay),
+              fps,
+              from: 40,
+              to: 0,
+              config: { damping: 18, stiffness: 100 },
+            });
+
+            const itemScale = spring({
+              frame: frame - (15 + delay),
+              fps,
+              from: 0.9,
+              to: 1,
+              config: { damping: 16, stiffness: 110 },
+            });
+
             return (
               <div
                 key={i}
@@ -122,23 +172,8 @@ export const PatientRecordMockup: React.FC = () => {
                   color: '#475569',
                   border: '2px solid #e2e8f0',
                   boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
-                  opacity: interpolate(
-                    frame,
-                    [25 + delay, 38 + delay],
-                    [0, 1],
-                    { extrapolateRight: 'clamp' }
-                  ),
-                  transform: `translateY(${interpolate(
-                    frame,
-                    [25 + delay, 38 + delay],
-                    [30, 0],
-                    { extrapolateRight: 'clamp' }
-                  )}px) scale(${interpolate(
-                    frame,
-                    [25 + delay, 38 + delay],
-                    [0.9, 1],
-                    { extrapolateRight: 'clamp' }
-                  )})`,
+                  opacity: itemOpacity,
+                  transform: `translateY(${itemY}px) scale(${itemScale})`,
                 }}
               >
                 <div style={{
@@ -181,7 +216,13 @@ export const PatientRecordMockup: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              opacity: interpolate(frame, [15, 30], [0, 1], { extrapolateRight: 'clamp' }),
+              opacity: spring({
+                frame: frame - 10,
+                fps,
+                from: 0,
+                to: 1,
+                config: { damping: 15 },
+              }),
             }}
           >
             <span>🩺</span>
@@ -193,7 +234,31 @@ export const PatientRecordMockup: React.FC = () => {
             { date: 'Oct 5, 2025', treatment: 'Filling - Tooth #14', dentist: 'Dr. Johnson', status: 'Completed' },
             { date: 'Jul 22, 2025', treatment: 'X-Ray Examination', dentist: 'Dr. Smith', status: 'Completed' },
           ].map((treatment, i) => {
-            const delay = i * 10;
+            const delay = i * 6;
+            const treatmentOpacity = spring({
+              frame: frame - (35 + delay),
+              fps,
+              from: 0,
+              to: 1,
+              config: { damping: 15, stiffness: 120 },
+            });
+
+            const treatmentY = spring({
+              frame: frame - (35 + delay),
+              fps,
+              from: 40,
+              to: 0,
+              config: { damping: 18, stiffness: 100 },
+            });
+
+            const treatmentScale = spring({
+              frame: frame - (35 + delay),
+              fps,
+              from: 0.9,
+              to: 1,
+              config: { damping: 16, stiffness: 110 },
+            });
+
             return (
               <div
                 key={i}
@@ -204,23 +269,8 @@ export const PatientRecordMockup: React.FC = () => {
                   marginBottom: '12px',
                   border: '2px solid #86efac',
                   boxShadow: '0 2px 8px rgba(34, 197, 94, 0.1)',
-                  opacity: interpolate(
-                    frame,
-                    [30 + delay, 45 + delay],
-                    [0, 1],
-                    { extrapolateRight: 'clamp' }
-                  ),
-                  transform: `translateY(${interpolate(
-                    frame,
-                    [30 + delay, 45 + delay],
-                    [30, 0],
-                    { extrapolateRight: 'clamp' }
-                  )}px) scale(${interpolate(
-                    frame,
-                    [30 + delay, 45 + delay],
-                    [0.9, 1],
-                    { extrapolateRight: 'clamp' }
-                  )})`,
+                  opacity: treatmentOpacity,
+                  transform: `translateY(${treatmentY}px) scale(${treatmentScale})`,
                 }}
               >
                 <div style={{
@@ -268,20 +318,30 @@ export const PatientRecordMockup: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          bottom: '30px',
-          left: '30px',
-          padding: '14px 24px',
-          background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 50%, #7c3aed 100%)',
-          borderRadius: '16px',
+          bottom: '20px',
+          right: '20px',
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
+          borderRadius: '12px',
           color: 'white',
-          fontSize: '16px',
+          fontSize: '14px',
           fontWeight: '700',
-          boxShadow: '0 10px 30px rgba(168, 85, 247, 0.5)',
-          opacity: interpolate(frame, [60, 75], [0, 1], { extrapolateRight: 'clamp' }),
-          transform: `scale(${1 + Math.sin(frame / 10) * 0.05})`,
+          boxShadow: '0 8px 24px rgba(168, 85, 247, 0.4)',
+          opacity: spring({
+            frame: frame - 55,
+            fps,
+            from: 0,
+            to: 1,
+            config: { damping: 12 },
+          }),
+          transform: `scale(${1 + Math.sin(frame / 12) * 0.03})`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
         }}
       >
-        📋 Complete Digital Health Records
+        <span style={{ fontSize: '16px' }}>📋</span>
+        <span>Digital Health Records</span>
       </div>
     </div>
   );

@@ -1,10 +1,23 @@
 import React from 'react';
-import { interpolate, useCurrentFrame } from 'remotion';
+import { interpolate, useCurrentFrame, spring, useVideoConfig } from 'remotion';
 
 export const AnalyticsMockup: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
-  const headerOpacity = interpolate(frame, [0, 15], [0, 1], { extrapolateRight: 'clamp' });
+  const headerOpacity = spring({
+    frame: frame,
+    fps,
+    config: { damping: 15, stiffness: 100 },
+  });
+
+  const containerScale = spring({
+    frame: frame,
+    fps,
+    from: 0.85,
+    to: 1,
+    config: { damping: 20, stiffness: 100 },
+  });
 
   const stats = [
     { label: 'Revenue - Today', value: '€1,245', change: '+8.2%', icon: '💰', color: '#3b82f6' },
@@ -18,12 +31,12 @@ export const AnalyticsMockup: React.FC = () => {
       style={{
         width: '1000px',
         height: '650px',
-        background: 'white',
-        borderRadius: '20px',
-        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.1)',
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1)',
         overflow: 'hidden',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        transform: `scale(${interpolate(frame, [0, 20], [0.9, 1], { extrapolateRight: 'clamp' })})`,
+        transform: `scale(${containerScale})`,
       }}
     >
       {/* Header with enhanced gradient */}
@@ -67,25 +80,30 @@ export const AnalyticsMockup: React.FC = () => {
         }}
       >
         {stats.map((stat, i) => {
-          const delay = i * 10;
-          const opacity = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [0, 1],
-            { extrapolateRight: 'clamp' }
-          );
-          const scale = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [0.85, 1],
-            { extrapolateRight: 'clamp' }
-          );
-          const y = interpolate(
-            frame,
-            [15 + delay, 30 + delay],
-            [30, 0],
-            { extrapolateRight: 'clamp' }
-          );
+          const delay = i * 6;
+          const statOpacity = spring({
+            frame: frame - (10 + delay),
+            fps,
+            from: 0,
+            to: 1,
+            config: { damping: 15, stiffness: 120 },
+          });
+
+          const statScale = spring({
+            frame: frame - (10 + delay),
+            fps,
+            from: 0.85,
+            to: 1,
+            config: { damping: 16, stiffness: 110 },
+          });
+
+          const statY = spring({
+            frame: frame - (10 + delay),
+            fps,
+            from: 40,
+            to: 0,
+            config: { damping: 18, stiffness: 100 },
+          });
 
           const isNegativeChange = stat.change.startsWith('-');
           const changeColor = isNegativeChange ? '#166534' : '#166534';
@@ -99,8 +117,8 @@ export const AnalyticsMockup: React.FC = () => {
                 borderRadius: '16px',
                 border: `3px solid ${stat.color}30`,
                 boxShadow: `0 4px 16px ${stat.color}15`,
-                opacity,
-                transform: `scale(${scale}) translateY(${y}px)`,
+                opacity: statOpacity,
+                transform: `scale(${statScale}) translateY(${statY}px)`,
               }}
             >
               <div style={{
@@ -179,7 +197,13 @@ export const AnalyticsMockup: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
-              opacity: interpolate(frame, [45, 60], [0, 1], { extrapolateRight: 'clamp' }),
+              opacity: spring({
+                frame: frame - 35,
+                fps,
+                from: 0,
+                to: 1,
+                config: { damping: 15 },
+              }),
             }}
           >
             <span>📈</span>
@@ -189,19 +213,22 @@ export const AnalyticsMockup: React.FC = () => {
           {/* Enhanced Bar Chart */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '14px', height: '160px' }}>
             {[68, 75, 62, 88, 92, 82, 98].map((height, i) => {
-              const delay = i * 6;
-              const barHeight = interpolate(
-                frame,
-                [50 + delay, 70 + delay],
-                [0, (height / 100) * 160],
-                { extrapolateRight: 'clamp' }
-              );
-              const opacity = interpolate(
-                frame,
-                [50 + delay, 70 + delay],
-                [0, 1],
-                { extrapolateRight: 'clamp' }
-              );
+              const delay = i * 4;
+              const barHeight = spring({
+                frame: frame - (40 + delay),
+                fps,
+                from: 0,
+                to: (height / 100) * 160,
+                config: { damping: 20, stiffness: 100 },
+              });
+
+              const opacity = spring({
+                frame: frame - (40 + delay),
+                fps,
+                from: 0,
+                to: 1,
+                config: { damping: 15, stiffness: 120 },
+              });
 
               const isHighest = i === 6;
               const barColor = isHighest
@@ -245,7 +272,13 @@ export const AnalyticsMockup: React.FC = () => {
                         fontSize: '11px',
                         fontWeight: '700',
                         whiteSpace: 'nowrap',
-                        opacity: interpolate(frame, [88, 100], [0, 1], { extrapolateRight: 'clamp' }),
+                        opacity: spring({
+                          frame: frame - 70,
+                          fps,
+                          from: 0,
+                          to: 1,
+                          config: { damping: 12 },
+                        }),
                       }}>
                         Peak
                       </div>
@@ -270,20 +303,30 @@ export const AnalyticsMockup: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          bottom: '30px',
-          right: '30px',
-          padding: '14px 24px',
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%)',
-          borderRadius: '16px',
+          bottom: '20px',
+          right: '20px',
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          borderRadius: '12px',
           color: 'white',
-          fontSize: '16px',
+          fontSize: '14px',
           fontWeight: '700',
-          boxShadow: '0 10px 30px rgba(139, 92, 246, 0.5)',
-          opacity: interpolate(frame, [95, 108], [0, 1], { extrapolateRight: 'clamp' }),
-          transform: `scale(${1 + Math.sin(frame / 10) * 0.05})`,
+          boxShadow: '0 8px 24px rgba(139, 92, 246, 0.4)',
+          opacity: spring({
+            frame: frame - 75,
+            fps,
+            from: 0,
+            to: 1,
+            config: { damping: 12 },
+          }),
+          transform: `scale(${1 + Math.sin(frame / 12) * 0.03})`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
         }}
       >
-        🤖 AI-Powered Insights & Predictions
+        <span style={{ fontSize: '16px' }}>🤖</span>
+        <span>AI-Powered Insights</span>
       </div>
     </div>
   );
