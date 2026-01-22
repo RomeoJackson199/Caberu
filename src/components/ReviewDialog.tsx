@@ -1,5 +1,5 @@
 import { useState, memo, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
@@ -50,6 +50,7 @@ export const ReviewDialog = memo(function ReviewDialog({
       <DialogContent className="space-y-4">
         <DialogHeader>
           <DialogTitle>Share Your Experience</DialogTitle>
+          <DialogDescription>Rate your visit and leave optional feedback.</DialogDescription>
         </DialogHeader>
         <div className="flex space-x-2">
           {[1, 2, 3, 4, 5].map((star) => (

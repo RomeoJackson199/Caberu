@@ -32,7 +32,7 @@ import type { DateRange } from "react-day-picker";
 import { format, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getHours, getDay, eachDayOfInterval } from "date-fns";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, LineChart, Line, PieChart, Pie, Legend, Cell } from "recharts";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1199,6 +1199,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Send reminder{reminderPatient ? ` to ${reminderPatient.name}` : ''}</DialogTitle>
+            <DialogDescription>Send an attendance reminder to the patient.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Input value={"Gentle attendance reminder"} readOnly />

@@ -70,7 +70,7 @@ import { BusinessSelector } from "@/components/BusinessSelector";
 import { useClinicBranding } from "@/hooks/useClinicBranding";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { BusinessSelectionForPatients } from "@/components/BusinessSelectionForPatients";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logger } from '@/lib/logger';
 
 const STORAGE = {
@@ -273,6 +273,7 @@ function TopBar() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Select Your Clinic</DialogTitle>
+              <DialogDescription>Choose which clinic you want to access.</DialogDescription>
             </DialogHeader>
             <BusinessSelectionForPatients
               selectedBusinessId={businessId ?? undefined}

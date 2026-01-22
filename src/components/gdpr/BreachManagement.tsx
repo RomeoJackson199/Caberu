@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertTriangle, Clock, FileText, Users, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -234,6 +234,7 @@ export default function BreachManagement() {
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Report Security Incident</DialogTitle>
+              <DialogDescription>Document a security incident for GDPR compliance. Authorities must be notified within 72 hours.</DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">

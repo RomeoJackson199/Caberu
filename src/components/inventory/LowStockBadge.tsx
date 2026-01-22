@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +51,7 @@ export function LowStockBadge({ dentistId, threshold = 10 }: LowStockBadgeProps)
               <AlertTriangle className="h-5 w-5 text-destructive" />
               Low Stock Items
             </DialogTitle>
+            <DialogDescription>Items that need to be reordered soon.</DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">

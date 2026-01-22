@@ -84,11 +84,29 @@ serve(async (req) => {
         const webhookSecret = Deno.env.get('ELEVENLABS_WEBHOOK_SECRET');
 
         const rawBody = await req.text();
-        console.log('ElevenLabs webhook received (full):', rawBody);
+        console.log('ElevenLabs webhook received');
 
-        // TODO: Re-enable signature verification once format is confirmed
-        // For now, skip signature verification to allow webhook to function
-        console.log('Processing webhook (signature verification disabled for debugging)');
+        // Signature verification for security
+        const signature = req.headers.get('elevenlabs-signature') || req.headers.get('x-elevenlabs-signature');
+        
+        if (webhookSecret) {
+            if (!signature) {
+                console.warn('No signature provided - webhook may be from unauthorized source');
+                // Log but don't block for now - some ElevenLabs webhook calls may not include signature
+            } else {
+                const isValid = await verifySignature(rawBody, signature, webhookSecret);
+                if (!isValid) {
+                    console.error('Invalid webhook signature - potential security issue');
+                    return new Response(
+                        JSON.stringify({ error: 'Invalid signature' }),
+                        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                    );
+                }
+                console.log('Webhook signature verified successfully');
+            }
+        } else {
+            console.warn('ELEVENLABS_WEBHOOK_SECRET not configured - signature verification skipped');
+        }
 
         const payload: ElevenLabsWebhookPayload = JSON.parse(rawBody);
         console.log('Webhook type:', payload.type);

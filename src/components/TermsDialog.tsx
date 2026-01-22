@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -20,6 +21,7 @@ export const TermsDialog = ({ open, onOpenChange }: TermsDialogProps) => {
       <DialogContent className="max-w-lg glass-card border-dental-primary/20">
         <DialogHeader>
           <DialogTitle className="text-center">{t.termsTitle}</DialogTitle>
+          <DialogDescription>Review our terms and conditions for using this service.</DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-80 pr-4 space-y-4">
           <p>{t.termsIntro}</p>

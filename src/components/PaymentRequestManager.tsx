@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, DollarSign, Clock, CheckCircle, XCircle, Search, Filter, MoreHorizontal, Send, FileDown, Check, Edit } from 'lucide-react';
 import { PaymentRequestForm } from '@/components/PaymentRequestForm';
@@ -435,6 +435,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t.editPaymentRequest || 'Edit Payment Request'}</DialogTitle>
+            <DialogDescription>Update the payment request details.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
