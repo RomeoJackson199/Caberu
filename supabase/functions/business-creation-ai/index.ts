@@ -1,10 +1,46 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // CORS configuration - secure origins only (HIPAA/GDPR compliant)
-import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 
-// Helper to get CORS headers from request
-const getRequestCorsHeaders = (req: Request) => getCorsHeaders(req.headers.get('Origin'));
+// In-memory rate limiting (simple but effective for single instance)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 3600000; // 1 hour
+const RATE_LIMIT_MAX_REQUESTS = 20; // 20 requests per hour per IP
+
+function checkRateLimit(clientIP: string): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const limitKey = `business_ai_${clientIP}`;
+  const existing = rateLimitMap.get(limitKey);
+
+  // Periodic cleanup (1% chance per request)
+  if (Math.random() < 0.01) {
+    for (const [key, value] of rateLimitMap.entries()) {
+      if (now > value.resetAt) rateLimitMap.delete(key);
+    }
+  }
+
+  if (existing) {
+    if (now < existing.resetAt) {
+      if (existing.count >= RATE_LIMIT_MAX_REQUESTS) {
+        console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+        return { 
+          allowed: false, 
+          retryAfter: Math.ceil((existing.resetAt - now) / 1000) 
+        };
+      }
+      existing.count++;
+    } else {
+      // Window expired, reset
+      rateLimitMap.set(limitKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    }
+  } else {
+    rateLimitMap.set(limitKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+  }
+
+  return { allowed: true };
+}
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -14,8 +50,50 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // SECURITY: Extract client IP for rate limiting
+  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
+                   req.headers.get('cf-connecting-ip') || 
+                   req.headers.get('x-real-ip') ||
+                   'unknown';
+
+  // SECURITY: Check rate limit
+  const rateLimitResult = checkRateLimit(clientIP);
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'Rate limit exceeded. Please try again later.',
+        retry_after: rateLimitResult.retryAfter
+      }),
+      { 
+        status: 429, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': String(rateLimitResult.retryAfter || 3600)
+        } 
+      }
+    );
+  }
+
   try {
     const { message, conversation_history, current_step, business_data } = await req.json();
+    
+    // SECURITY: Validate input
+    if (!message || typeof message !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid message format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // SECURITY: Limit message length to prevent abuse
+    if (message.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: 'Message too long. Maximum 2000 characters.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -95,7 +173,7 @@ CRITICAL: Extract information from user messages and use the extract_business_in
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          ...(conversation_history || []),
+          ...(conversation_history || []).slice(-10), // Limit conversation history
           { role: "user", content: message },
         ],
         tools: tools,
@@ -146,6 +224,8 @@ CRITICAL: Extract information from user messages and use the extract_business_in
         }
       }
     }
+
+    console.log(`Business creation AI request from IP: ${clientIP}, step: ${current_step}`);
 
     return new Response(
       JSON.stringify({ 

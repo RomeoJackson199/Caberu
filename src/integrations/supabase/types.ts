@@ -65,6 +65,30 @@ export type Database = {
           },
         ]
       }
+      api_rate_limits: {
+        Row: {
+          count: number | null
+          created_at: string | null
+          id: string
+          key: string
+          window_start: string | null
+        }
+        Insert: {
+          count?: number | null
+          created_at?: string | null
+          id?: string
+          key: string
+          window_start?: string | null
+        }
+        Update: {
+          count?: number | null
+          created_at?: string | null
+          id?: string
+          key?: string
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       appointment_reminders: {
         Row: {
           appointment_id: string
@@ -4089,7 +4113,21 @@ export type Database = {
           used_seconds: number
         }[]
       }
+      check_rate_limit: {
+        Args: {
+          p_key: string
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: {
+          current_count: number
+          exceeded: boolean
+          reset_at: string
+        }[]
+      }
       clean_encrypted_display: { Args: { input_text: string }; Returns: string }
+      cleanup_old_audit_logs: { Args: never; Returns: Json }
+      cleanup_old_rate_limits: { Args: never; Returns: number }
       dentist_has_patient_access: {
         Args: { _patient_id: string; _user_id: string }
         Returns: boolean
