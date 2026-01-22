@@ -131,12 +131,30 @@ const Login = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
-
-
     setIsLoading(true);
     setAuthError(null);
 
     try {
+      // Check rate limit before attempting login
+      const rateLimitCheck = await supabase.functions.invoke('check-login-rate-limit', {
+        body: {
+          email: formData.email,
+          action: 'check',
+        },
+      });
+
+      if (rateLimitCheck.error) {
+        throw new Error('Failed to check rate limit');
+      }
+
+      if (rateLimitCheck.data && !rateLimitCheck.data.allowed) {
+        const minutes = Math.ceil(rateLimitCheck.data.retryAfterSeconds / 60);
+        throw new Error(
+          rateLimitCheck.data.message ||
+          `Too many login attempts. Please try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`
+        );
+      }
+
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -174,6 +192,19 @@ const Login = () => {
 
       // No 2FA - proceed with normal login flow
       await completeLogin();
+
+      // Record successful login to reset rate limits
+      try {
+        await supabase.functions.invoke('check-login-rate-limit', {
+          body: {
+            email: formData.email,
+            action: 'record_success',
+          },
+        });
+      } catch (resetError) {
+        // Don't fail login if rate limit reset fails
+        logger.error("Failed to reset rate limit:", resetError);
+      }
     } catch (error: unknown) {
       // Log for debugging
       logger.error("Sign in error:", error);
@@ -184,15 +215,31 @@ const Login = () => {
         : String(error).toLowerCase();
 
       let userFriendlyMessage = "Unable to sign in. Please try again.";
+      let isAuthenticationFailure = false;
 
       if (errorMessage.includes("invalid") || errorMessage.includes("credentials") || errorMessage.includes("password")) {
         userFriendlyMessage = "The email or password you entered is incorrect. Please double-check and try again.";
+        isAuthenticationFailure = true;
       } else if (errorMessage.includes("email not confirmed")) {
         userFriendlyMessage = "Your email address hasn't been verified yet. Please check your inbox for the confirmation link.";
       } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
         userFriendlyMessage = "We're having trouble connecting. Please check your internet connection and try again.";
-      } else if (errorMessage.includes("rate") || errorMessage.includes("limit")) {
-        userFriendlyMessage = "Too many login attempts. Please wait a moment and try again.";
+      } else if (errorMessage.includes("rate") || errorMessage.includes("limit") || errorMessage.includes("too many")) {
+        userFriendlyMessage = error instanceof Error ? error.message : "Too many login attempts. Please wait a moment and try again.";
+      }
+
+      // Record failed attempt for authentication failures
+      if (isAuthenticationFailure) {
+        try {
+          await supabase.functions.invoke('check-login-rate-limit', {
+            body: {
+              email: formData.email,
+              action: 'record_failure',
+            },
+          });
+        } catch (recordError) {
+          logger.error("Failed to record login attempt:", recordError);
+        }
       }
 
       setAuthError(userFriendlyMessage);
@@ -251,6 +298,18 @@ const Login = () => {
 
       // Complete the login process with the active session
       await completeLogin();
+
+      // Reset rate limits after successful 2FA login
+      try {
+        await supabase.functions.invoke('check-login-rate-limit', {
+          body: {
+            email: userEmail || formData.email,
+            action: 'record_success',
+          },
+        });
+      } catch (resetError) {
+        logger.error("Failed to reset rate limit after 2FA:", resetError);
+      }
     } catch (error) {
       toast({
         title: "Sign in failed",
