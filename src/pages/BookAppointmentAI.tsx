@@ -19,15 +19,17 @@ import {
   Timer,
   Edit2,
   Check,
-  Stethoscope
+  Stethoscope,
+  Loader2
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { format, startOfDay, startOfWeek, addDays } from "date-fns";
+import { format, startOfDay, startOfWeek, addDays, addMinutes } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 const ClinicMap = lazy(() => import("@/components/Map"));
 import { logger } from '@/lib/logger';
 import { AnimatedBackground, EmptyState } from "@/components/ui/polished-components";
 import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
+import { isPublicHoliday, getHolidayName } from "@/lib/belgianHolidays";
 import { AppointmentErrorBoundary } from "@/components/stability/AppointmentErrorBoundary";
 import { OfflineBanner } from "@/components/stability/OfflineIndicator";
 import { retryAppointmentOperation } from "@/lib/retryStrategies";
@@ -81,6 +83,7 @@ function BookAppointmentContent() {
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
   const [bookingStep, setBookingStep] = useState<'dentist' | 'symptoms' | 'service' | 'datetime' | 'confirm'>('dentist');
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -387,6 +390,7 @@ function BookAppointmentContent() {
   const confirmBooking = async () => {
     if (!selectedDate || !selectedTime || !selectedDentist || !businessId) return;
 
+    setIsBooking(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -450,8 +454,9 @@ function BookAppointmentContent() {
         .in("status", ["pending", "confirmed", "scheduled"]);
 
       // Check if our desired time slot conflicts with any existing appointment
-      const requestedStart = new Date(`${dateStr}T${selectedTime}:00`);
-      const requestedEnd = new Date(requestedStart.getTime() + serviceDuration * 60000);
+      // Use timezone-aware date creation to handle DST transitions correctly
+      const requestedStart = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
+      const requestedEnd = addMinutes(requestedStart, serviceDuration);
 
       const hasConflict = existingAppts?.some(appt => {
         const apptStart = new Date(appt.appointment_date);
@@ -470,27 +475,29 @@ function BookAppointmentContent() {
       const needsApproval = selectedDentist.require_appointment_approval === true;
       const appointmentStatus = needsApproval ? "pending" : "confirmed";
 
-      const { data: appointmentData, error: appointmentError } = await supabase
-        .from("appointments")
-        .insert({
-          patient_id: profile.id,
-          dentist_id: selectedDentist.id,
-          business_id: businessId,
-          appointment_date: appointmentDateTime.toISOString(),
-          reason: selectedService ? selectedService.name : "General consultation",
-          status: appointmentStatus,
-          booking_source: aiBookingData ? "ai" : "manual",
-          urgency: "low",
-          service_id: selectedService?.id || null,
-          duration_minutes: selectedService?.duration_minutes || 30,
-          notes: symptomSummary || null // Include symptom summary for dentist
-        })
-        .select()
-        .single();
+      // Use retry logic for the appointment creation to handle transient network errors
+      const appointmentData = await retryAppointmentOperation(async () => {
+        const { data, error } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: profile.id,
+            dentist_id: selectedDentist.id,
+            business_id: businessId,
+            appointment_date: appointmentDateTime.toISOString(),
+            reason: selectedService ? selectedService.name : "General consultation",
+            status: appointmentStatus,
+            booking_source: aiBookingData ? "ai" : "manual",
+            urgency: "low",
+            service_id: selectedService?.id || null,
+            duration_minutes: selectedService?.duration_minutes || 30,
+            notes: symptomSummary || null // Include symptom summary for dentist
+          })
+          .select()
+          .single();
 
-      if (appointmentError) {
-        throw appointmentError;
-      }
+        if (error) throw error;
+        return data;
+      }, 'create appointment');
 
       // Book all required slots for the appointment duration
       const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
@@ -554,13 +561,18 @@ function BookAppointmentContent() {
         fetchAvailableSlots(selectedDate, selectedDentist.id);
       }
       setBookingStep('datetime');
+    } finally {
+      setIsBooking(false);
     }
   };
 
   const isDateDisabled = (date: Date) => {
     const today = startOfDay(new Date());
     if (date < today) return true;
-    
+
+    // Check Belgian public holidays
+    if (isPublicHoliday(date)) return true;
+
     // Check if dentist works on this day of week
     const dayOfWeek = date.getDay();
     return !dentistAvailableDays.includes(dayOfWeek);
@@ -1026,18 +1038,29 @@ function BookAppointmentContent() {
               </div>
 
               {/* Week Days */}
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-2" role="listbox" aria-label="Select a date">
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
                   const date = addDays(currentWeekStart, index);
                   const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
                   const isDisabled = isDateDisabled(date);
+                  const holidayName = isPublicHoliday(date) ? getHolidayName(date) : null;
+                  const disabledReason = holidayName
+                    ? `Holiday: ${holidayName}`
+                    : isDisabled
+                      ? 'Not available'
+                      : '';
 
                   return (
                     <button
                       key={day}
+                      role="option"
+                      aria-selected={isSelected}
+                      aria-disabled={isDisabled}
+                      aria-label={`${format(date, 'EEEE, MMMM d')}${isDisabled ? `, ${disabledReason}` : ''}`}
+                      title={holidayName || undefined}
                       onClick={() => !isDisabled && handleDateSelect(date)}
                       disabled={isDisabled}
-                      className={`flex flex-col items-center p-3 rounded-full transition-all ${isSelected
+                      className={`flex flex-col items-center p-3 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${isSelected
                         ? 'bg-primary text-primary-foreground'
                         : isDisabled
                           ? 'opacity-40 cursor-not-allowed'
@@ -1046,6 +1069,7 @@ function BookAppointmentContent() {
                     >
                       <span className="text-xs mb-1">{day}</span>
                       <span className="text-lg font-medium">{date.getDate()}</span>
+                      {holidayName && <span className="text-[8px] text-red-500">🎌</span>}
                     </button>
                   );
                 })}
@@ -1061,24 +1085,39 @@ function BookAppointmentContent() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                  <div
+                    className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2"
+                    role="listbox"
+                    aria-label="Available time slots"
+                    aria-busy={loadingSlots}
+                  >
                     {loadingSlots ? (
-                      <p className="col-span-full text-center text-muted-foreground py-8">Loading time slots...</p>
+                      <p className="col-span-full text-center text-muted-foreground py-8" role="status" aria-live="polite">Loading time slots...</p>
                     ) : availableSlots.length === 0 ? (
-                      <p className="col-span-full text-center text-muted-foreground py-8">No available slots for this date</p>
+                      <p className="col-span-full text-center text-muted-foreground py-8" role="status">No available slots for this date</p>
                     ) : (
                       availableSlots
                         .filter(slot => slot.available)
-                        .map((slot) => (
+                        .map((slot, index) => (
                           <button
                             key={slot.time}
+                            role="option"
+                            aria-selected={selectedTime === slot.time}
+                            aria-label={`Select time slot ${slot.time}${selectedDate ? ` on ${format(selectedDate, 'MMMM d')}` : ''}`}
+                            tabIndex={0}
                             onClick={() => handleTimeSelect(slot.time)}
-                            className={`p-3 rounded-lg border-2 text-center font-medium transition-all ${selectedTime === slot.time
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleTimeSelect(slot.time);
+                              }
+                            }}
+                            className={`p-3 rounded-lg border-2 text-center font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${selectedTime === slot.time
                               ? 'bg-primary text-primary-foreground border-primary'
                               : 'border-muted hover:border-primary/50 hover:bg-muted/50'
                               }`}
                           >
-                            <Clock className="h-4 w-4 mx-auto mb-1" />
+                            <Clock className="h-4 w-4 mx-auto mb-1" aria-hidden="true" />
                             {slot.time}
                           </button>
                         ))
@@ -1135,8 +1174,20 @@ function BookAppointmentContent() {
                 size="lg"
                 className="w-full"
                 onClick={confirmBooking}
+                disabled={isBooking}
+                aria-busy={isBooking}
               >
-                Confirm Booking
+                {isBooking ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
+                    Booking...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" aria-hidden="true" />
+                    Confirm Booking
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>

@@ -8,7 +8,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Calendar as CalendarIcon, Clock, User, ArrowRight, CheckCircle } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
+import { isPublicHoliday } from "@/lib/belgianHolidays";
 import { cn } from "@/lib/utils";
 import { showAppointmentRescheduled } from "@/lib/successNotifications";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,7 +85,15 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       if (error) throw error;
 
-      setAppointment(data as any);
+      // Transform nested dentists array to single object
+      const transformedData: AppointmentDetails = {
+        id: data.id,
+        appointment_date: data.appointment_date,
+        reason: data.reason,
+        dentist_id: data.dentist_id,
+        dentist: Array.isArray(data.dentists) ? data.dentists[0] : data.dentists,
+      };
+      setAppointment(transformedData);
     } catch (error) {
       console.error('Error loading appointment:', error);
       toast({
@@ -228,10 +237,13 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
   };
 
   const isDateDisabled = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    // Disable past dates and weekends
-    return date < today || date.getDay() === 0 || date.getDay() === 6;
+    const today = startOfDay(new Date());
+    // Disable past dates
+    if (date < today) return true;
+    // Disable Belgian public holidays
+    if (isPublicHoliday(date)) return true;
+    // Disable weekends (TODO: should check dentist availability instead)
+    return date.getDay() === 0 || date.getDay() === 6;
   };
 
   if (!appointment && loading) {

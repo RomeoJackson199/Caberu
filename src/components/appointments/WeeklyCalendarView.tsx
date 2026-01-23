@@ -12,6 +12,12 @@ import { ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
 import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
+import {
+  CALENDAR_DISPLAY,
+  APPOINTMENT_STATUS_COLORS,
+  SCHEDULE_BLOCK_STYLES,
+  MIN_APPOINTMENT_BLOCK_HEIGHT
+} from "@/lib/appointmentConfig";
 
 interface WeeklyCalendarViewProps {
   dentistId: string;
@@ -22,45 +28,14 @@ interface WeeklyCalendarViewProps {
   googleCalendarEvents?: any[];
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  "completed": "bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-100 border-l-4 border-l-emerald-500",
-  "cancelled": "bg-gray-100/80 dark:bg-gray-800/40 text-gray-600 dark:text-gray-400 border-l-4 border-l-gray-400 opacity-70",
-  "confirmed": "bg-blue-100/80 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 border-l-4 border-l-blue-500",
-  "pending": "bg-amber-100/80 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100 border-l-4 border-l-amber-500",
-  "google-calendar": "bg-purple-100/80 dark:bg-purple-900/40 text-purple-900 dark:text-purple-100 border-l-4 border-l-purple-500",
-};
+// Use centralized configuration for status colors and block styles
+const STATUS_COLORS = APPOINTMENT_STATUS_COLORS;
+const BLOCK_STYLES = SCHEDULE_BLOCK_STYLES;
 
-// Visual block patterns for schedule indicators
-const BLOCK_STYLES: Record<string, { bg: string; pattern: string; label: string; icon: string }> = {
-  "break": {
-    bg: "bg-orange-100/60 dark:bg-orange-900/30",
-    pattern: "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(251,146,60,0.3)_5px,rgba(251,146,60,0.3)_10px)]",
-    label: "Break",
-    icon: "☕"
-  },
-  "sick-leave": {
-    bg: "bg-red-100/60 dark:bg-red-900/30",
-    pattern: "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(239,68,68,0.3)_5px,rgba(239,68,68,0.3)_10px)]",
-    label: "Sick Leave",
-    icon: "🏥"
-  },
-  "unavailable": {
-    bg: "bg-gray-200/60 dark:bg-gray-800/60",
-    pattern: "bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,rgba(156,163,175,0.2)_2px,rgba(156,163,175,0.2)_4px)]",
-    label: "Unavailable",
-    icon: "🚫"
-  },
-  "vacation": {
-    bg: "bg-teal-100/60 dark:bg-teal-900/30",
-    pattern: "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(20,184,166,0.3)_5px,rgba(20,184,166,0.3)_10px)]",
-    label: "Vacation",
-    icon: "🌴"
-  }
-};
-
-const HOUR_HEIGHT = 80; // Height of one hour in pixels
-const START_HOUR = 7; // Calendar starts at 7 AM
-const END_HOUR = 20; // Calendar ends at 8 PM
+// Calendar display constants from configuration
+const HOUR_HEIGHT = CALENDAR_DISPLAY.hourHeight;
+const START_HOUR = CALENDAR_DISPLAY.startHour;
+const END_HOUR = CALENDAR_DISPLAY.endHour;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 export function WeeklyCalendarView({
@@ -96,14 +71,24 @@ export function WeeklyCalendarView({
     }
   }, [currentDate, isMobile, weekDays]);
 
-  // Fetch appointments
+  // Fetch appointments with patient profiles in a single query (eliminates N+1 pattern)
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments-calendar", dentistId, businessId, format(weekStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const weekEnd = addDays(weekStart, 7);
+
+      // Use a join to fetch appointments with patient profiles in one query
       let query = supabase
         .from("appointments")
-        .select("*")
+        .select(`
+          *,
+          patient:profiles!appointments_patient_id_fkey (
+            id,
+            first_name,
+            last_name,
+            email
+          )
+        `)
         .eq("dentist_id", dentistId)
         .gte("appointment_date", weekStart.toISOString())
         .lt("appointment_date", weekEnd.toISOString())
@@ -118,18 +103,11 @@ export function WeeklyCalendarView({
 
       if (error) throw error;
 
-      const appointments = data || [];
-      const patientIds = Array.from(new Set(appointments.map((a: any) => a.patient_id).filter(Boolean)));
-
-      if (patientIds.length) {
-        const { data: profiles } = await supabase
-          .from("secure_profiles_view")
-          .select("id, first_name, last_name, email")
-          .in("id", patientIds);
-        const map = new Map((profiles || []).map((p: any) => [p.id, p]));
-        return appointments.map((a: any) => ({ ...a, patient: map.get(a.patient_id) || null }));
-      }
-      return appointments;
+      return (data || []).map((appointment) => ({
+        ...appointment,
+        // Normalize the patient field (Supabase returns it from the join)
+        patient: appointment.patient || null,
+      }));
     }
   });
 
@@ -295,7 +273,7 @@ export function WeeklyCalendarView({
 
     return {
       top: `${Math.max(0, top)}px`,
-      height: `${Math.max(20, height)}px`, // Minimum height for visibility
+      height: `${Math.max(MIN_APPOINTMENT_BLOCK_HEIGHT, height)}px`, // Minimum height for visibility
       left: '2px',
       right: '2px',
     };
