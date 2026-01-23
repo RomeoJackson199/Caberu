@@ -54,6 +54,19 @@ export const TreatmentPlanScene: React.FC = () => {
     config: { damping: 15, stiffness: 100 },
   });
 
+  // Zoom effect on click - zooms into the "Propose to Patient" button area
+  const zoomProgress = spring({
+    frame: frame - 58,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 25, stiffness: 80 },
+  });
+
+  const zoomScale = interpolate(zoomProgress, [0, 1], [1, 1.3]);
+  const zoomX = interpolate(zoomProgress, [0, 1], [0, -150]);
+  const zoomY = interpolate(zoomProgress, [0, 1], [0, -200]);
+
   return (
     <AbsoluteFill
       style={{
@@ -83,42 +96,66 @@ export const TreatmentPlanScene: React.FC = () => {
           borderRadius: '20px',
           overflow: 'hidden',
           fontFamily: '"Inter", "DM Sans", system-ui, sans-serif',
-          transform: `scale(${containerScale})`,
+          transform: `scale(${containerScale * zoomScale}) translate(${zoomX}px, ${zoomY}px)`,
           opacity: containerOpacity,
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)',
+          transformOrigin: 'bottom center',
         }}
       >
-        {/* Header matching real TreatmentPlanEditor CardHeader */}
+        {/* Header matching real TreatmentPlanEditor CardHeader with ClipboardList icon */}
         <div
           style={{
-            padding: '20px 28px',
+            padding: '16px 24px',
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '10px',
           }}
         >
-          <div style={{ fontSize: '22px' }}>📋</div>
-          <div>
-            <div style={{ fontSize: '18px', fontWeight: '600', color: '#18181b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* ClipboardList icon representation */}
+          <div
+            style={{
+              width: '20px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#64748b',
+            }}
+          >
+            📋
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '500', color: '#18181b' }}>
               Treatment Plan
-              <span
-                style={{
-                  padding: '4px 12px',
-                  background: 'rgba(245, 158, 11, 0.1)',
-                  border: '1px solid rgba(245, 158, 11, 0.3)',
-                  borderRadius: '8px',
-                  color: '#f59e0b',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                }}
-              >
-                Draft
-              </span>
-            </div>
-            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
-              Patient: Michael Chen • Appointment #4521
-            </div>
+            </span>
+            {/* Draft badge - matches outline variant */}
+            <span
+              style={{
+                padding: '2px 8px',
+                background: 'transparent',
+                border: '1px solid rgba(245, 158, 11, 0.5)',
+                borderRadius: '6px',
+                color: '#f59e0b',
+                fontSize: '11px',
+                fontWeight: '500',
+              }}
+            >
+              Draft
+            </span>
+            {/* Version badge */}
+            <span
+              style={{
+                padding: '2px 8px',
+                background: '#f1f5f9',
+                borderRadius: '6px',
+                color: '#64748b',
+                fontSize: '11px',
+                fontWeight: '500',
+              }}
+            >
+              v1
+            </span>
           </div>
         </div>
 
@@ -343,36 +380,40 @@ export const TreatmentPlanScene: React.FC = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '12px' }}>
+          {/* Action Buttons - matching real TreatmentPlanEditor */}
+          <div style={{ display: 'flex', gap: '8px', paddingTop: '8px' }}>
+            {/* Save Draft - outline variant */}
             <div
               style={{
                 flex: 1,
-                padding: '14px 24px',
+                padding: '10px 16px',
                 border: '1px solid rgba(0, 0, 0, 0.15)',
-                borderRadius: '10px',
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#475569',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#18181b',
                 textAlign: 'center',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 cursor: 'pointer',
+                background: 'transparent',
               }}
             >
-              <span>💾</span>
+              {/* Save icon */}
+              <span style={{ fontSize: '14px' }}>💾</span>
               Save Draft
             </div>
+            {/* Propose to Patient - primary variant */}
             <div
               style={{
                 flex: 1,
-                padding: '14px 24px',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                borderRadius: '10px',
-                fontSize: '15px',
-                fontWeight: '600',
+                padding: '10px 16px',
+                background: '#18181b',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
                 color: 'white',
                 textAlign: 'center',
                 display: 'flex',
@@ -380,11 +421,11 @@ export const TreatmentPlanScene: React.FC = () => {
                 justifyContent: 'center',
                 gap: '8px',
                 cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(59, 130, 246, 0.35)',
                 transform: `scale(${proposeButtonScale})`,
               }}
             >
-              <span>📤</span>
+              {/* Send icon */}
+              <span style={{ fontSize: '14px' }}>📤</span>
               Propose to Patient
             </div>
           </div>

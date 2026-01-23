@@ -23,19 +23,19 @@ export const PatientPortalScene: React.FC = () => {
     extrapolateRight: 'clamp',
   });
 
-  // Stats matching real PatientCareHome AnimatedStatCard
+  // Stats matching real PatientCareHome AnimatedStatCard - exact Tailwind gradients
   const stats = [
-    { title: 'Upcoming', value: '2', icon: '📅', suffix: ' Appointments', gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)' },
-    { title: 'Total Visits', value: '12', icon: '📊', suffix: ' All time', gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' },
-    { title: 'Active', value: '1', icon: '💊', suffix: ' Prescriptions', gradient: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)' },
+    { title: 'Upcoming', value: '2', icon: '📅', suffix: ' Appointments', gradient: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)', iconBg: '#3b82f6' },
+    { title: 'Total Visits', value: '12', icon: '📊', suffix: ' All time', gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)', iconBg: '#a855f7' },
+    { title: 'Active', value: '1', icon: '❤️', suffix: ' Prescriptions', gradient: 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)', iconBg: '#22c55e' },
   ];
 
-  // Quick actions matching real PatientCareHome
+  // Quick actions matching real PatientCareHome - exact colors from quickActions array
   const quickActions = [
-    { icon: '📅', label: 'Book Appointment', color: '#3b82f6' },
-    { icon: '📋', label: 'Medical Records', color: '#a855f7' },
-    { icon: '💬', label: 'AI Assistant', color: '#22c55e' },
-    { icon: '🚨', label: 'Emergency Care', color: '#ef4444' },
+    { icon: '📅', label: 'Book Appointment', color: '#3b82f6', bgColor: '#eff6ff', description: 'Schedule a new appointment' },
+    { icon: '📄', label: 'Medical Records', color: '#a855f7', bgColor: '#faf5ff', description: 'View your health history' },
+    { icon: '💬', label: 'AI Dental Assistant', color: '#22c55e', bgColor: '#f0fdf4', description: 'Get instant answers' },
+    { icon: '🚨', label: 'Emergency Care', color: '#ef4444', bgColor: '#fef2f2', description: 'Urgent dental issues' },
   ];
 
   // Appointments matching real UI
@@ -65,6 +65,19 @@ export const PatientPortalScene: React.FC = () => {
     to: 1,
     config: { damping: 15, stiffness: 100 },
   });
+
+  // Zoom effect on click - zooms into the Book Appointment button area
+  const zoomProgress = spring({
+    frame: frame - 48,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 25, stiffness: 80 },
+  });
+
+  const zoomScale = interpolate(zoomProgress, [0, 1], [1, 1.35]);
+  const zoomX = interpolate(zoomProgress, [0, 1], [0, -280]);
+  const zoomY = interpolate(zoomProgress, [0, 1], [0, 180]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -107,9 +120,10 @@ export const PatientPortalScene: React.FC = () => {
           borderRadius: '20px',
           overflow: 'hidden',
           fontFamily: '"Inter", "DM Sans", system-ui, sans-serif',
-          transform: `scale(${containerScale})`,
+          transform: `scale(${containerScale * zoomScale}) translate(${zoomX}px, ${zoomY}px)`,
           opacity: containerOpacity,
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)',
+          transformOrigin: 'top right',
         }}
       >
         {/* Header matching real PatientCareHome */}
@@ -201,12 +215,26 @@ export const PatientPortalScene: React.FC = () => {
                     </div>
                     <div style={{ fontSize: '32px', fontWeight: '700', color: '#18181b' }}>
                       {stat.value}
-                      <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '500' }}>
+                      <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '500', marginLeft: '4px' }}>
                         {stat.suffix}
                       </span>
                     </div>
                   </div>
-                  <div style={{ fontSize: '36px' }}>{stat.icon}</div>
+                  {/* Icon with gradient background - matches AnimatedStatCard */}
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: stat.gradient,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '24px',
+                    }}
+                  >
+                    {stat.icon}
+                  </div>
                 </div>
               </div>
             );
@@ -233,14 +261,14 @@ export const PatientPortalScene: React.FC = () => {
                   key={index}
                   style={{
                     padding: '20px',
-                    background: '#ffffff',
+                    background: action.bgColor,
                     borderRadius: '12px',
                     border: '1px solid rgba(0, 0, 0, 0.06)',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '12px',
+                    gap: '10px',
                     transform: `scale(${actionScale})`,
                     cursor: 'pointer',
                   }}
@@ -259,8 +287,11 @@ export const PatientPortalScene: React.FC = () => {
                   >
                     {action.icon}
                   </div>
-                  <span style={{ fontSize: '14px', fontWeight: '500', color: '#18181b' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#18181b', textAlign: 'center' }}>
                     {action.label}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#64748b', textAlign: 'center' }}>
+                    {action.description}
                   </span>
                 </div>
               );

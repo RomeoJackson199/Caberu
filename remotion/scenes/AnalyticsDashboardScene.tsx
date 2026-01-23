@@ -1,5 +1,6 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AnimatedCursor } from '../components/AnimatedCursor';
 
 /**
  * AnalyticsDashboardScene - Shows the analytics dashboard with real KPIs and charts
@@ -22,11 +23,11 @@ export const AnalyticsDashboardScene: React.FC = () => {
     extrapolateRight: 'clamp',
   });
 
-  // KPI cards matching real DentistAnalytics (5 columns)
+  // KPI cards matching real DentistAnalytics (5 columns) - exact labels and icons
   const kpiCards = [
-    { label: 'Revenue', value: '€12,450', sub: '+8.2% vs last', icon: '💰', color: '#3b82f6' },
+    { label: 'Revenue', value: '€12,450', sub: '+8.2% vs last', icon: '💰', color: '#3b82f6', hasSparkline: true },
     { label: 'Collection rate', value: '94.2%', sub: 'within 30 days', icon: '📈', color: '#22c55e' },
-    { label: 'No-show rate', value: '3.5%', sub: 'last 30 days', icon: '⚠️', color: '#f97316', isGood: true },
+    { label: 'No-show rate', value: '3.5%', sub: 'last 30 days', icon: '⚠️', color: '#22c55e', isGood: true },
     { label: 'Chair utilization', value: '87.3%', sub: 'based on availability', icon: '🪑', color: '#8b5cf6' },
     { label: 'Follow-ups due', value: '12', sub: 'next 14 days', icon: '📅', color: '#ec4899' },
   ];
@@ -42,6 +43,29 @@ export const AnalyticsDashboardScene: React.FC = () => {
   // Chart data for revenue trend
   const revenueData = [68, 75, 82, 78, 92, 88, 98];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Cursor positions - moves through KPIs and clicks on chart
+  const cursorPositions = [
+    { x: 960, y: 500, frame: 0 },
+    { x: 350, y: 180, frame: 15 },  // First KPI card
+    { x: 650, y: 180, frame: 25 },  // Second KPI card
+    { x: 1100, y: 380, frame: 40 }, // Revenue chart area
+    { x: 1350, y: 550, frame: 55 }, // Peak bar in chart
+    { x: 1350, y: 550, frame: 65 }, // Click on peak
+  ];
+
+  // Zoom effect when clicking on chart
+  const zoomProgress = spring({
+    frame: frame - 55,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 25, stiffness: 70 },
+  });
+
+  const zoomScale = interpolate(zoomProgress, [0, 1], [1, 1.25]);
+  const zoomX = interpolate(zoomProgress, [0, 1], [0, -350]);
+  const zoomY = interpolate(zoomProgress, [0, 1], [0, -180]);
 
   return (
     <AbsoluteFill
@@ -73,9 +97,10 @@ export const AnalyticsDashboardScene: React.FC = () => {
           borderRadius: '20px',
           overflow: 'hidden',
           fontFamily: '"Inter", "DM Sans", system-ui, sans-serif',
-          transform: `scale(${containerScale})`,
+          transform: `scale(${containerScale * zoomScale}) translate(${zoomX}px, ${zoomY}px)`,
           opacity: containerOpacity,
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)',
+          transformOrigin: 'bottom right',
         }}
       >
         {/* Header matching real DentistAnalytics sticky header */}
@@ -92,10 +117,10 @@ export const AnalyticsDashboardScene: React.FC = () => {
         >
           <div>
             <div style={{ fontSize: '26px', fontWeight: '700', color: '#18181b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>📊</span>
+              <span style={{ fontSize: '24px' }}>📊</span>
               Business Dashboard
             </div>
-            <div style={{ fontSize: '14px', color: '#64748b', marginTop: '2px' }}>
+            <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
               Instant overview of clinic performance
             </div>
           </div>
@@ -443,6 +468,14 @@ export const AnalyticsDashboardScene: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Animated cursor */}
+      <AnimatedCursor
+        positions={cursorPositions}
+        clickFrames={[65]}
+        startFrame={5}
+        size={26}
+      />
 
       {/* Label */}
       <div
