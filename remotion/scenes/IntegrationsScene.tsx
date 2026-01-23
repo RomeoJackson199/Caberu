@@ -2,6 +2,7 @@ import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { KineticText } from '../components/KineticText';
 import { SpeedLines } from '../components/SpeedLines';
+import { AnimatedCursor } from '../components/AnimatedCursor';
 
 /**
  * IntegrationsScene - Shows seamless integrations with dental software
@@ -37,8 +38,33 @@ export const IntegrationsScene: React.FC = () => {
   // Rotating orbit effect
   const orbitRotation = frame * 0.5;
 
-  // Zoom effect
-  const zoomScale = interpolate(frame, [0, 15], [1.1, 1], { extrapolateRight: 'clamp' });
+  // Initial zoom effect
+  const initialZoom = interpolate(frame, [0, 15], [1.1, 1], { extrapolateRight: 'clamp' });
+
+  // Cursor positions - moves to integrations and clicks on one
+  const cursorPositions = [
+    { x: 960, y: 540, frame: 0 },     // Center (Caberu hub)
+    { x: 960, y: 220, frame: 20 },    // Top integration (Dentrix)
+    { x: 1280, y: 540, frame: 35 },   // Right integration
+    { x: 640, y: 540, frame: 50 },    // Left integration (Eaglesoft)
+    { x: 640, y: 540, frame: 60 },    // Click on Eaglesoft
+  ];
+
+  // Zoom effect when clicking on integration
+  const clickZoomProgress = spring({
+    frame: frame - 58,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 28, stiffness: 70 },
+  });
+
+  const clickZoomScale = interpolate(clickZoomProgress, [0, 1], [1, 1.15]);
+  const clickZoomX = interpolate(clickZoomProgress, [0, 1], [0, 150]);
+  const clickZoomY = interpolate(clickZoomProgress, [0, 1], [0, 20]);
+
+  // Combined zoom
+  const zoomScale = initialZoom * clickZoomScale;
 
   return (
     <AbsoluteFill
@@ -47,7 +73,8 @@ export const IntegrationsScene: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         fontFamily: '"DM Sans", system-ui, sans-serif',
-        transform: `scale(${zoomScale})`,
+        transform: `scale(${zoomScale}) translate(${clickZoomX}px, ${clickZoomY}px)`,
+        transformOrigin: 'center center',
       }}
     >
       {/* Speed lines */}
@@ -331,6 +358,14 @@ export const IntegrationsScene: React.FC = () => {
           50+ Integrations
         </div>
       </div>
+
+      {/* Animated cursor */}
+      <AnimatedCursor
+        positions={cursorPositions}
+        clickFrames={[60]}
+        startFrame={8}
+        size={26}
+      />
     </AbsoluteFill>
   );
 };

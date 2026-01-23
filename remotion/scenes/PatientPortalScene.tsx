@@ -66,6 +66,19 @@ export const PatientPortalScene: React.FC = () => {
     config: { damping: 15, stiffness: 100 },
   });
 
+  // Zoom effect on click - zooms into the Book Appointment button area
+  const zoomProgress = spring({
+    frame: frame - 48,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 25, stiffness: 80 },
+  });
+
+  const zoomScale = interpolate(zoomProgress, [0, 1], [1, 1.35]);
+  const zoomX = interpolate(zoomProgress, [0, 1], [0, -280]);
+  const zoomY = interpolate(zoomProgress, [0, 1], [0, 180]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
@@ -107,9 +120,10 @@ export const PatientPortalScene: React.FC = () => {
           borderRadius: '20px',
           overflow: 'hidden',
           fontFamily: '"Inter", "DM Sans", system-ui, sans-serif',
-          transform: `scale(${containerScale})`,
+          transform: `scale(${containerScale * zoomScale}) translate(${zoomX}px, ${zoomY}px)`,
           opacity: containerOpacity,
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)',
+          transformOrigin: 'top right',
         }}
       >
         {/* Header matching real PatientCareHome */}

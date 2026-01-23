@@ -54,6 +54,19 @@ export const TreatmentPlanScene: React.FC = () => {
     config: { damping: 15, stiffness: 100 },
   });
 
+  // Zoom effect on click - zooms into the "Propose to Patient" button area
+  const zoomProgress = spring({
+    frame: frame - 58,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 25, stiffness: 80 },
+  });
+
+  const zoomScale = interpolate(zoomProgress, [0, 1], [1, 1.3]);
+  const zoomX = interpolate(zoomProgress, [0, 1], [0, -150]);
+  const zoomY = interpolate(zoomProgress, [0, 1], [0, -200]);
+
   return (
     <AbsoluteFill
       style={{
@@ -83,9 +96,10 @@ export const TreatmentPlanScene: React.FC = () => {
           borderRadius: '20px',
           overflow: 'hidden',
           fontFamily: '"Inter", "DM Sans", system-ui, sans-serif',
-          transform: `scale(${containerScale})`,
+          transform: `scale(${containerScale * zoomScale}) translate(${zoomX}px, ${zoomY}px)`,
           opacity: containerOpacity,
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)',
+          transformOrigin: 'bottom center',
         }}
       >
         {/* Header matching real TreatmentPlanEditor CardHeader */}

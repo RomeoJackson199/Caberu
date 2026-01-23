@@ -1,5 +1,6 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AnimatedCursor } from '../components/AnimatedCursor';
 
 /**
  * AnalyticsDashboardScene - Shows the analytics dashboard with real KPIs and charts
@@ -43,6 +44,29 @@ export const AnalyticsDashboardScene: React.FC = () => {
   const revenueData = [68, 75, 82, 78, 92, 88, 98];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // Cursor positions - moves through KPIs and clicks on chart
+  const cursorPositions = [
+    { x: 960, y: 500, frame: 0 },
+    { x: 350, y: 180, frame: 15 },  // First KPI card
+    { x: 650, y: 180, frame: 25 },  // Second KPI card
+    { x: 1100, y: 380, frame: 40 }, // Revenue chart area
+    { x: 1350, y: 550, frame: 55 }, // Peak bar in chart
+    { x: 1350, y: 550, frame: 65 }, // Click on peak
+  ];
+
+  // Zoom effect when clicking on chart
+  const zoomProgress = spring({
+    frame: frame - 55,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 25, stiffness: 70 },
+  });
+
+  const zoomScale = interpolate(zoomProgress, [0, 1], [1, 1.25]);
+  const zoomX = interpolate(zoomProgress, [0, 1], [0, -350]);
+  const zoomY = interpolate(zoomProgress, [0, 1], [0, -180]);
+
   return (
     <AbsoluteFill
       style={{
@@ -73,9 +97,10 @@ export const AnalyticsDashboardScene: React.FC = () => {
           borderRadius: '20px',
           overflow: 'hidden',
           fontFamily: '"Inter", "DM Sans", system-ui, sans-serif',
-          transform: `scale(${containerScale})`,
+          transform: `scale(${containerScale * zoomScale}) translate(${zoomX}px, ${zoomY}px)`,
           opacity: containerOpacity,
           boxShadow: '0 25px 80px rgba(0, 0, 0, 0.3)',
+          transformOrigin: 'bottom right',
         }}
       >
         {/* Header matching real DentistAnalytics sticky header */}
@@ -443,6 +468,14 @@ export const AnalyticsDashboardScene: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Animated cursor */}
+      <AnimatedCursor
+        positions={cursorPositions}
+        clickFrames={[65]}
+        startFrame={5}
+        size={26}
+      />
 
       {/* Label */}
       <div

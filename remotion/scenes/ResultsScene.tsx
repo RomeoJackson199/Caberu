@@ -2,6 +2,7 @@ import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import { KineticText } from '../components/KineticText';
 import { SpeedLines } from '../components/SpeedLines';
+import { AnimatedCursor } from '../components/AnimatedCursor';
 
 /**
  * ResultsScene - Shows dramatic before/after transformation metrics
@@ -64,8 +65,34 @@ export const ResultsScene: React.FC = () => {
     return Math.floor(from + (to - from) * Math.min(progress, 1));
   };
 
-  // Scene zoom effect
-  const zoomScale = interpolate(frame, [0, 15], [1.08, 1], { extrapolateRight: 'clamp' });
+  // Scene initial zoom effect
+  const initialZoom = interpolate(frame, [0, 15], [1.08, 1], { extrapolateRight: 'clamp' });
+
+  // Cursor positions - moves through the metrics cards
+  const cursorPositions = [
+    { x: 960, y: 400, frame: 0 },
+    { x: 380, y: 380, frame: 20 },  // First metric card
+    { x: 680, y: 380, frame: 35 },  // Second metric card
+    { x: 980, y: 380, frame: 50 },  // Third metric card (Revenue)
+    { x: 980, y: 380, frame: 65 },  // Click on Revenue card
+    { x: 1280, y: 380, frame: 80 }, // Fourth metric card
+  ];
+
+  // Zoom effect when clicking on Revenue card
+  const clickZoomProgress = spring({
+    frame: frame - 65,
+    fps,
+    from: 0,
+    to: 1,
+    config: { damping: 28, stiffness: 70 },
+  });
+
+  const clickZoomScale = interpolate(clickZoomProgress, [0, 1], [1, 1.2]);
+  const clickZoomX = interpolate(clickZoomProgress, [0, 1], [0, -80]);
+  const clickZoomY = interpolate(clickZoomProgress, [0, 1], [0, 50]);
+
+  // Combined zoom scale
+  const zoomScale = initialZoom * clickZoomScale;
 
   return (
     <AbsoluteFill
@@ -74,7 +101,8 @@ export const ResultsScene: React.FC = () => {
         justifyContent: 'center',
         alignItems: 'center',
         fontFamily: '"DM Sans", system-ui, sans-serif',
-        transform: `scale(${zoomScale})`,
+        transform: `scale(${zoomScale}) translate(${clickZoomX}px, ${clickZoomY}px)`,
+        transformOrigin: 'center center',
       }}
     >
       {/* Speed lines for energy */}
@@ -347,6 +375,14 @@ export const ResultsScene: React.FC = () => {
           </span>
         </div>
       </div>
+
+      {/* Animated cursor */}
+      <AnimatedCursor
+        positions={cursorPositions}
+        clickFrames={[65]}
+        startFrame={10}
+        size={26}
+      />
     </AbsoluteFill>
   );
 };
