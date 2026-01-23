@@ -194,6 +194,3 @@ export const CaberuMarketing: React.FC<CaberuMarketingProps> = ({ title }) => {
     </AbsoluteFill>
   );
 };
-    </AbsoluteFill >
-  );
-};
