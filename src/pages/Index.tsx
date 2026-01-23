@@ -19,7 +19,7 @@ import { FAQSection } from "@/components/homepage/FAQSection";
 import { ContactForm } from "@/components/homepage/ContactForm";
 import { PremiumHeroSection } from "@/components/homepage/PremiumHeroSection";
 import { FeatureSection } from "@/components/homepage/feature-section";
-import { VideoShowcase } from "@/components/homepage/VideoShowcase";
+// import { VideoShowcase } from "@/components/homepage/VideoShowcase";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,7 @@ const Index = () => {
         <PremiumHeroSection />
 
         {/* Video Showcase */}
-        <VideoShowcase />
+        {/* <VideoShowcase /> */}
 
         {/* Enhanced Feature Section */}
         <FeatureSection />
