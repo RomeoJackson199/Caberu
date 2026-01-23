@@ -15,7 +15,11 @@
     "fix:types": "node scripts/fix-lint-errors.js",
     "preview": "vite preview",
     "video": "remotion studio remotion/index.ts",
-    "video:render": "remotion render remotion/index.ts CaberuMarketing out/video.mp4"
+    "video:render": "remotion render remotion/index.ts CaberuMarketing out/video.mp4",
+    "video:3d": "remotion render remotion/index.ts CaberuMarketing3D out/video-3d.mp4",
+    "video:3d-short": "remotion render remotion/index.ts CaberuMarketing3D-Short out/video-3d-short.mp4",
+    "video:3d-square": "remotion render remotion/index.ts CaberuMarketing3D-Square out/video-3d-square.mp4",
+    "video:3d-vertical": "remotion render remotion/index.ts CaberuMarketing3D-Vertical out/video-3d-vertical.mp4"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -84,9 +88,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
+    "@react-three/drei": "^9.109.2",
+    "@react-three/fiber": "^8.16.8",
     "@remotion/bundler": "^4.0.409",
     "@remotion/cli": "^4.0.409",
     "@remotion/player": "^4.0.409",
+    "@remotion/three": "^4.0.409",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
@@ -98,6 +105,7 @@
     "@types/react-dom": "^18.3.0",
     "@types/react-joyride": "^2.0.2",
     "@types/react-window": "^1.8.8",
+    "@types/three": "^0.182.0",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",
@@ -112,6 +120,7 @@
     "remotion": "^4.0.409",
     "tailwindcss": "^3.4.11",
     "terser": "^5.44.0",
+    "three": "^0.168.0",
     "ts-jest": "^29.4.1",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.0.1",
