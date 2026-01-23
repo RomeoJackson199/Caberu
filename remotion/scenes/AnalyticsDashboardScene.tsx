@@ -23,11 +23,11 @@ export const AnalyticsDashboardScene: React.FC = () => {
     extrapolateRight: 'clamp',
   });
 
-  // KPI cards matching real DentistAnalytics (5 columns)
+  // KPI cards matching real DentistAnalytics (5 columns) - exact labels and icons
   const kpiCards = [
-    { label: 'Revenue', value: '€12,450', sub: '+8.2% vs last', icon: '💰', color: '#3b82f6' },
+    { label: 'Revenue', value: '€12,450', sub: '+8.2% vs last', icon: '💰', color: '#3b82f6', hasSparkline: true },
     { label: 'Collection rate', value: '94.2%', sub: 'within 30 days', icon: '📈', color: '#22c55e' },
-    { label: 'No-show rate', value: '3.5%', sub: 'last 30 days', icon: '⚠️', color: '#f97316', isGood: true },
+    { label: 'No-show rate', value: '3.5%', sub: 'last 30 days', icon: '⚠️', color: '#22c55e', isGood: true },
     { label: 'Chair utilization', value: '87.3%', sub: 'based on availability', icon: '🪑', color: '#8b5cf6' },
     { label: 'Follow-ups due', value: '12', sub: 'next 14 days', icon: '📅', color: '#ec4899' },
   ];
@@ -117,10 +117,10 @@ export const AnalyticsDashboardScene: React.FC = () => {
         >
           <div>
             <div style={{ fontSize: '26px', fontWeight: '700', color: '#18181b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span>📊</span>
+              <span style={{ fontSize: '24px' }}>📊</span>
               Business Dashboard
             </div>
-            <div style={{ fontSize: '14px', color: '#64748b', marginTop: '2px' }}>
+            <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
               Instant overview of clinic performance
             </div>
           </div>
