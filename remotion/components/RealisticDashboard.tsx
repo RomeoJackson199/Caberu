@@ -132,9 +132,8 @@ export const RealisticDashboard: React.FC<RealisticDashboardProps> = ({
             Caberu
           </span>
         </div>
-      </div>
 
-      {/* Navigation Tabs */}
+        {/* Navigation Tabs */}
       <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {navItems.map((item, index) => {
           const itemOpacity = spring({
@@ -277,7 +276,7 @@ export const RealisticDashboard: React.FC<RealisticDashboardProps> = ({
       </div>
     </div>
 
-      {/* Main Content */ }
+      {/* Main Content */}
   <div style={{ flex: 1, padding: '24px 32px', overflowY: 'auto', background: '#fafafa' }}>
     {/* Welcome Header with Gradient (enhanced to match ClinicalToday) */}
     <div
