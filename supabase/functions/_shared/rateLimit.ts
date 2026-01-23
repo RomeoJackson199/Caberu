@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 /**
  * Shared Rate Limiting Utility for Supabase Edge Functions
  * Supports both in-memory (single instance) and database-backed (multi-instance) limiting
@@ -89,12 +87,44 @@ export function checkRateLimitMemory(
   }
 }
 
+// Type for rate limit record from database
+interface RateLimitRecord {
+  id: string;
+  key: string;
+  count: number;
+  window_start: string;
+  created_at: string | null;
+}
+
 /**
  * Database-backed rate limiting (distributed, multi-instance)
  * Best for: Critical endpoints like login, sensitive operations
  */
 export async function checkRateLimitDB(
-  supabase: ReturnType<typeof createClient>,
+  supabaseClient: { 
+    from: (table: string) => {
+      select: (columns: string) => {
+        eq: (column: string, value: string) => {
+          gte: (column: string, value: string) => {
+            order: (column: string, options: { ascending: boolean }) => {
+              limit: (count: number) => {
+                maybeSingle: () => Promise<{ data: RateLimitRecord | null; error: Error | null }>;
+              };
+            };
+          };
+        };
+      };
+      update: (values: { count: number }) => {
+        eq: (column: string, value: string) => {
+          gte: (column: string, value: string) => Promise<{ error: Error | null }>;
+        };
+      };
+      insert: (values: { key: string; count: number; window_start: string }) => Promise<{ error: Error | null }>;
+      delete: () => {
+        eq: (column: string, value: string) => Promise<{ error: Error | null }>;
+      };
+    };
+  },
   clientKey: string,
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
@@ -105,9 +135,9 @@ export async function checkRateLimitDB(
 
   try {
     // Check existing attempts in the current window
-    const { data: existingAttempts, error: selectError } = await supabase
+    const { data: existingAttempts, error: selectError } = await supabaseClient
       .from('api_rate_limits')
-      .select('count, window_start')
+      .select('id, key, count, window_start, created_at')
       .eq('key', key)
       .gte('window_start', windowStartTime.toISOString())
       .order('window_start', { ascending: false })
@@ -142,13 +172,13 @@ export async function checkRateLimitDB(
 
     // Increment the counter
     if (existingAttempts) {
-      await supabase
+      await supabaseClient
         .from('api_rate_limits')
         .update({ count: currentCount + 1 })
         .eq('key', key)
         .gte('window_start', windowStartTime.toISOString());
     } else {
-      await supabase
+      await supabaseClient
         .from('api_rate_limits')
         .insert({
           key,
@@ -177,13 +207,19 @@ export async function checkRateLimitDB(
  * Clear rate limit for a key (e.g., after successful login)
  */
 export async function clearRateLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabaseClient: { 
+    from: (table: string) => {
+      delete: () => {
+        eq: (column: string, value: string) => Promise<{ error: Error | null }>;
+      };
+    };
+  },
   clientKey: string,
   keyPrefix: string
 ): Promise<void> {
   const key = `${keyPrefix}_${clientKey}`;
   try {
-    await supabase
+    await supabaseClient
       .from('api_rate_limits')
       .delete()
       .eq('key', key);

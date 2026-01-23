@@ -1,59 +1,65 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { KineticText } from '../components/KineticText';
+import { SpeedLines } from '../components/SpeedLines';
 
 export const ModernCTAScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Logo entrance
+  // Logo entrance - faster
   const logoScale = spring({
-    frame: frame - 5,
+    frame: frame - 3,
     fps,
     from: 0,
     to: 1,
-    config: { damping: 12, stiffness: 150 },
+    config: { damping: 10, stiffness: 180 },
   });
 
-  const logoRotate = interpolate(frame, [5, 35], [-180, 0], {
+  const logoRotate = interpolate(frame, [3, 28], [-180, 0], {
     extrapolateRight: 'clamp',
   });
 
+  // Logo glow pulse
+  const logoGlow = 0.4 + Math.sin(frame / 8) * 0.2;
+
   // Heading animation
-  const headingOpacity = interpolate(frame, [20, 40], [0, 1], {
+  const headingOpacity = interpolate(frame, [15, 32], [0, 1], {
     extrapolateRight: 'clamp',
   });
 
   const headingY = spring({
-    frame: frame - 20,
+    frame: frame - 15,
     fps,
-    from: 50,
+    from: 45,
     to: 0,
-    config: { damping: 18, stiffness: 80 },
+    config: { damping: 15, stiffness: 90 },
   });
 
   // Subheading animation
-  const subheadingOpacity = interpolate(frame, [35, 50], [0, 1], {
+  const subheadingOpacity = interpolate(frame, [28, 42], [0, 1], {
     extrapolateRight: 'clamp',
   });
 
-  // CTA Button animation
+  // CTA Button animation with bounce
   const buttonScale = spring({
-    frame: frame - 50,
+    frame: frame - 42,
     fps,
     from: 0,
     to: 1,
-    config: { damping: 10, stiffness: 200 },
+    config: { damping: 8, stiffness: 220 },
   });
 
-  const buttonPulse = 1 + Math.sin(frame / 12) * 0.03;
+  const buttonPulse = 1 + Math.sin(frame / 10) * 0.04;
+  const buttonGlow = 0.25 + Math.sin(frame / 8) * 0.15;
 
   // Contact info animation
-  const contactOpacity = interpolate(frame, [70, 90], [0, 1], {
+  const contactOpacity = interpolate(frame, [60, 78], [0, 1], {
     extrapolateRight: 'clamp',
   });
 
   // Badges animation
-  const badgeOpacity = interpolate(frame, [90, 110], [0, 1], {
+  const badgeOpacity = interpolate(frame, [78, 95], [0, 1], {
     extrapolateRight: 'clamp',
   });
 
@@ -67,33 +73,68 @@ export const ModernCTAScene: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      {/* Animated background circles */}
+      {/* Speed lines on entrance */}
+      <SpeedLines
+        direction="radial"
+        color="rgba(255, 255, 255, 0.08)"
+        intensity={0.5}
+        startFrame={0}
+        duration={20}
+      />
+
+      {/* Animated background circles - enhanced */}
       <div
         style={{
           position: 'absolute',
-          width: '1200px',
-          height: '1200px',
+          width: '1400px',
+          height: '1400px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%)',
-          top: '-400px',
-          left: '-400px',
-          transform: `scale(${1 + Math.sin(frame / 40) * 0.1})`,
+          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 60%)',
+          top: '-450px',
+          left: '-450px',
+          transform: `scale(${1 + Math.sin(frame / 35) * 0.12}) rotate(${frame * 0.1}deg)`,
         }}
       />
       <div
         style={{
           position: 'absolute',
-          width: '800px',
-          height: '800px',
+          width: '1000px',
+          height: '1000px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 60%)',
-          bottom: '-200px',
-          right: '-200px',
-          transform: `scale(${1 + Math.sin((frame + 20) / 35) * 0.08})`,
+          background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%)',
+          bottom: '-250px',
+          right: '-250px',
+          transform: `scale(${1 + Math.sin((frame + 20) / 30) * 0.1})`,
         }}
       />
 
-      {/* Shine effect */}
+      {/* Floating particles */}
+      {[...Array(12)].map((_, i) => {
+        const x = (i * 180 + 60) % 1920;
+        const y = Math.sin((frame + i * 20) / 18) * 50 + (i * 100) % 1080;
+        const opacity = 0.1 + Math.sin((frame + i * 15) / 12) * 0.08;
+        const scale = 0.5 + Math.sin((frame + i * 8) / 10) * 0.4;
+
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: x,
+              top: y,
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: 'white',
+              opacity,
+              transform: `scale(${scale})`,
+              boxShadow: '0 0 10px white',
+            }}
+          />
+        );
+      })}
+
+      {/* Shine effect - more prominent */}
       <div
         style={{
           position: 'absolute',
@@ -101,8 +142,8 @@ export const ModernCTAScene: React.FC = () => {
           left: '-100%',
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent)',
-          transform: `translateX(${interpolate(frame, [100, 150], [0, 300], { extrapolateRight: 'clamp' })}%)`,
+          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent)',
+          transform: `translateX(${interpolate(frame, [80, 140], [0, 350], { extrapolateRight: 'clamp' })}%)`,
         }}
       />
 
@@ -113,43 +154,44 @@ export const ModernCTAScene: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           zIndex: 1,
-          maxWidth: '1200px',
+          maxWidth: '1250px',
           padding: '0 40px',
         }}
       >
-        {/* Logo */}
+        {/* Logo with enhanced glow */}
         <div
           style={{
-            width: '110px',
-            height: '110px',
-            borderRadius: '28px',
-            background: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(20px)',
-            border: '2px solid rgba(255, 255, 255, 0.3)',
+            width: '120px',
+            height: '120px',
+            borderRadius: '30px',
+            background: 'rgba(255, 255, 255, 0.18)',
+            backdropFilter: 'blur(25px)',
+            border: '2px solid rgba(255, 255, 255, 0.35)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '55px',
-            marginBottom: '40px',
+            fontSize: '60px',
+            marginBottom: '38px',
             transform: `scale(${logoScale}) rotate(${logoRotate}deg)`,
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+            boxShadow: `0 25px 70px rgba(0, 0, 0, 0.25), 0 0 100px rgba(255, 255, 255, ${logoGlow * 0.3})`,
           }}
         >
           🦷
         </div>
 
-        {/* Heading */}
+        {/* Heading with kinetic effect */}
         <div
           style={{
-            fontSize: '72px',
+            fontSize: '76px',
             fontWeight: '800',
             color: '#ffffff',
             textAlign: 'center',
-            marginBottom: '20px',
-            letterSpacing: '-2px',
+            marginBottom: '22px',
+            letterSpacing: '-3px',
             opacity: headingOpacity,
             transform: `translateY(${headingY}px)`,
-            textShadow: '0 4px 30px rgba(0, 0, 0, 0.2)',
+            textShadow: '0 6px 40px rgba(0, 0, 0, 0.25)',
+            lineHeight: 1.1,
           }}
         >
           Ready to Transform
@@ -161,9 +203,9 @@ export const ModernCTAScene: React.FC = () => {
         <div
           style={{
             fontSize: '28px',
-            color: 'rgba(255, 255, 255, 0.9)',
+            color: 'rgba(255, 255, 255, 0.92)',
             textAlign: 'center',
-            marginBottom: '50px',
+            marginBottom: '48px',
             opacity: subheadingOpacity,
             fontWeight: '400',
           }}
@@ -171,43 +213,51 @@ export const ModernCTAScene: React.FC = () => {
           Join thousands of dental practices automating with AI
         </div>
 
-        {/* CTA Button */}
+        {/* CTA Button - Enhanced */}
         <div
           style={{
-            padding: '28px 70px',
+            padding: '30px 75px',
             background: '#ffffff',
             borderRadius: '60px',
-            fontSize: '28px',
+            fontSize: '30px',
             fontWeight: '700',
             color: '#1e40af',
             transform: `scale(${buttonScale * buttonPulse})`,
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)',
+            boxShadow: `0 25px 70px rgba(0, 0, 0, ${buttonGlow}), 0 0 60px rgba(255, 255, 255, ${buttonGlow * 0.5})`,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '16px',
+            gap: '18px',
           }}
         >
           <span>Get Started Free</span>
-          <span style={{ fontSize: '24px' }}>→</span>
+          <span 
+            style={{ 
+              fontSize: '26px',
+              transform: `translateX(${Math.sin(frame / 10) * 5}px)`,
+              display: 'inline-block',
+            }}
+          >
+            →
+          </span>
         </div>
 
         {/* Contact Information */}
         <div
           style={{
-            marginTop: '50px',
+            marginTop: '48px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '12px',
+            gap: '14px',
             opacity: contactOpacity,
           }}
         >
           <div
             style={{
-              fontSize: '24px',
-              color: 'rgba(255, 255, 255, 0.95)',
-              fontWeight: '600',
+              fontSize: '26px',
+              color: 'rgba(255, 255, 255, 0.98)',
+              fontWeight: '700',
             }}
           >
             caberu.be
@@ -215,44 +265,45 @@ export const ModernCTAScene: React.FC = () => {
           <div
             style={{
               fontSize: '18px',
-              color: 'rgba(255, 255, 255, 0.8)',
+              color: 'rgba(255, 255, 255, 0.85)',
             }}
           >
             Romeo@caberu.be
           </div>
         </div>
 
-        {/* Trust Badges */}
+        {/* Trust Badges - Enhanced */}
         <div
           style={{
-            marginTop: '45px',
+            marginTop: '42px',
             display: 'flex',
-            gap: '24px',
+            gap: '22px',
             opacity: badgeOpacity,
           }}
         >
           {['🔒 HIPAA Compliant', '💳 No Credit Card', '🎁 14-Day Trial'].map((badge, index) => {
             const badgeScale = spring({
-              frame: frame - 90 - index * 5,
+              frame: frame - 80 - index * 4,
               fps,
-              from: 0.5,
+              from: 0.4,
               to: 1,
-              config: { damping: 12, stiffness: 200 },
+              config: { damping: 10, stiffness: 220 },
             });
 
             return (
               <div
                 key={index}
                 style={{
-                  padding: '14px 26px',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
+                  padding: '15px 28px',
+                  background: 'rgba(255, 255, 255, 0.18)',
+                  backdropFilter: 'blur(12px)',
                   borderRadius: '50px',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
                   color: 'white',
-                  fontSize: '16px',
+                  fontSize: '17px',
                   fontWeight: '600',
                   transform: `scale(${badgeScale})`,
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
                 }}
               >
                 {badge}
@@ -261,6 +312,32 @@ export const ModernCTAScene: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Decorative corner elements */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '30px',
+          left: '30px',
+          width: '60px',
+          height: '60px',
+          borderLeft: '3px solid rgba(255, 255, 255, 0.3)',
+          borderTop: '3px solid rgba(255, 255, 255, 0.3)',
+          opacity: interpolate(frame, [50, 65], [0, 1], { extrapolateRight: 'clamp' }),
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '30px',
+          right: '30px',
+          width: '60px',
+          height: '60px',
+          borderRight: '3px solid rgba(255, 255, 255, 0.3)',
+          borderBottom: '3px solid rgba(255, 255, 255, 0.3)',
+          opacity: interpolate(frame, [50, 65], [0, 1], { extrapolateRight: 'clamp' }),
+        }}
+      />
     </AbsoluteFill>
   );
 };
