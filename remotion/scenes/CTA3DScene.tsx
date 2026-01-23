@@ -222,6 +222,8 @@ export const CTA3DScene: React.FC = () => {
     >
       {/* 3D Canvas */}
       <ThreeCanvas
+        width={width}
+        height={height}
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: true }}
       >
