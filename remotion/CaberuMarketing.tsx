@@ -12,6 +12,8 @@ import { MobileViewScene } from './scenes/MobileViewScene';
 import { QuickFeatureMontage } from './scenes/QuickFeatureMontage';
 import { SocialProofScene } from './scenes/SocialProofScene';
 import { ModernCTAScene } from './scenes/ModernCTAScene';
+import { ResultsScene } from './scenes/ResultsScene';
+import { IntegrationsScene } from './scenes/IntegrationsScene';
 
 interface CaberuMarketingProps {
   title: string;
@@ -94,20 +96,24 @@ const SceneTransition: React.FC<{
  * ✓ Feature highlights and callouts
  * ✓ Social proof with animated counters
  * ✓ Modern SaaS aesthetic throughout
+ * ✓ Seamless integrations showcase
+ * ✓ Real transformation results
  *
  * Optimized Sequence (60 seconds @ 30fps):
  * 1.  Problem Hook (0-60): Chaos montage with speed effects
  * 2.  Hero (60-150): Logo + "There's a better way" intro
- * 3.  Patient Portal (150-270): Self-service booking with cursor
- * 4.  AI Voice Call (270-390): AI answering calls - waveform animation
- * 5.  Dashboard (390-510): Full dashboard with feature highlights
- * 6.  Analytics (510-630): Revenue charts and KPIs
- * 7.  Treatment Plan (630-750): Creating plans with cursor clicks
- * 8.  Messaging (750-870): WhatsApp/chat communication
- * 9.  Mobile View (870-990): PWA mobile experience
- * 10. Feature Grid (990-1170): 10-feature montage with stagger
- * 11. Social Proof (1170-1380): Stats, testimonials, trust badges
- * 12. CTA (1380-1800): Strong call-to-action with contact info
+ * 3.  Patient Portal (150-240): Self-service booking with cursor
+ * 4.  AI Voice Call (240-330): AI answering calls - waveform animation
+ * 5.  Dashboard (330-420): Full dashboard with feature highlights
+ * 6.  Analytics (420-510): Revenue charts and KPIs
+ * 7.  Treatment Plan (510-600): Creating plans with cursor clicks
+ * 8.  Messaging (600-690): WhatsApp/chat communication
+ * 9.  Mobile View (690-780): PWA mobile experience
+ * 10. Integrations (780-870): Seamless dental software integrations
+ * 11. Feature Grid (870-1020): 10-feature montage with stagger
+ * 12. Results (1020-1140): Real transformation metrics
+ * 13. Social Proof (1140-1320): Stats, testimonials, trust badges
+ * 14. CTA (1320-1800): Strong call-to-action with urgency
  */
 export const CaberuMarketing: React.FC<CaberuMarketingProps> = ({ title }) => {
   const frame = useCurrentFrame();
@@ -130,18 +136,24 @@ export const CaberuMarketing: React.FC<CaberuMarketingProps> = ({ title }) => {
       {/* Transition: Zoom */}
       <SceneTransition type="zoom" startFrame={145} duration={10} />
 
-      {/* Scene 3: Patient Portal Booking - 150-270 frames (4 seconds) */}
-      <Sequence from={150} durationInFrames={120}>
+      {/* Scene 3: Patient Portal Booking - 150-240 frames (3 seconds) */}
+      <Sequence from={150} durationInFrames={90}>
         <PatientPortalScene />
       </Sequence>
 
-      {/* Scene 4: AI Voice Call Interface - 270-390 frames (4 seconds) */}
-      <Sequence from={270} durationInFrames={120}>
+      {/* Transition: Wipe */}
+      <SceneTransition type="wipe" startFrame={235} duration={10} />
+
+      {/* Scene 4: AI Voice Call Interface - 240-330 frames (3 seconds) */}
+      <Sequence from={240} durationInFrames={90}>
         <AIVoiceCallScene />
       </Sequence>
 
-      {/* Scene 5: Dashboard Overview - 390-510 frames (4 seconds) */}
-      <Sequence from={390} durationInFrames={120}>
+      {/* Transition: Fade */}
+      <SceneTransition type="fade" startFrame={325} duration={10} />
+
+      {/* Scene 5: Dashboard Overview - 330-420 frames (3 seconds) */}
+      <Sequence from={330} durationInFrames={90}>
         <DashboardIntroScene
           showCursor={true}
           showIncomingCall={true}
@@ -149,38 +161,75 @@ export const CaberuMarketing: React.FC<CaberuMarketingProps> = ({ title }) => {
         />
       </Sequence>
 
-      {/* Scene 6: Analytics Dashboard - 510-630 frames (4 seconds) */}
-      <Sequence from={510} durationInFrames={120}>
+      {/* Transition: Zoom */}
+      <SceneTransition type="zoom" startFrame={415} duration={10} />
+
+      {/* Scene 6: Analytics Dashboard - 420-510 frames (3 seconds) */}
+      <Sequence from={420} durationInFrames={90}>
         <AnalyticsDashboardScene />
       </Sequence>
 
-      {/* Scene 7: Treatment Plan Creation - 630-750 frames (4 seconds) */}
-      <Sequence from={630} durationInFrames={120}>
+      {/* Transition: Wipe */}
+      <SceneTransition type="wipe" startFrame={505} duration={10} />
+
+      {/* Scene 7: Treatment Plan Creation - 510-600 frames (3 seconds) */}
+      <Sequence from={510} durationInFrames={90}>
         <TreatmentPlanScene />
       </Sequence>
 
-      {/* Scene 8: WhatsApp/Messaging - 750-870 frames (4 seconds) */}
-      <Sequence from={750} durationInFrames={120}>
+      {/* Transition: Fade */}
+      <SceneTransition type="fade" startFrame={595} duration={10} />
+
+      {/* Scene 8: WhatsApp/Messaging - 600-690 frames (3 seconds) */}
+      <Sequence from={600} durationInFrames={90}>
         <WhatsAppChatScene />
       </Sequence>
 
-      {/* Scene 9: Mobile PWA View - 870-990 frames (4 seconds) */}
-      <Sequence from={870} durationInFrames={120}>
+      {/* Transition: Zoom */}
+      <SceneTransition type="zoom" startFrame={685} duration={10} />
+
+      {/* Scene 9: Mobile PWA View - 690-780 frames (3 seconds) */}
+      <Sequence from={690} durationInFrames={90}>
         <MobileViewScene />
       </Sequence>
 
-      {/* Scene 10: Feature Montage - 990-1170 frames (6 seconds) */}
-      <Sequence from={990} durationInFrames={180}>
+      {/* Transition: Wipe */}
+      <SceneTransition type="wipe" startFrame={775} duration={10} />
+
+      {/* Scene 10: Integrations - 780-870 frames (3 seconds) */}
+      <Sequence from={780} durationInFrames={90}>
+        <IntegrationsScene />
+      </Sequence>
+
+      {/* Transition: Zoom */}
+      <SceneTransition type="zoom" startFrame={865} duration={10} />
+
+      {/* Scene 11: Feature Montage - 870-1020 frames (5 seconds) */}
+      <Sequence from={870} durationInFrames={150}>
         <QuickFeatureMontage />
       </Sequence>
 
-      {/* Scene 11: Social Proof - 1170-1380 frames (7 seconds) */}
-      <Sequence from={1170} durationInFrames={210}>
+      {/* Transition: Fade */}
+      <SceneTransition type="fade" startFrame={1015} duration={10} />
+
+      {/* Scene 12: Results - 1020-1140 frames (4 seconds) */}
+      <Sequence from={1020} durationInFrames={120}>
+        <ResultsScene />
+      </Sequence>
+
+      {/* Transition: Zoom */}
+      <SceneTransition type="zoom" startFrame={1135} duration={10} />
+
+      {/* Scene 13: Social Proof - 1140-1320 frames (6 seconds) */}
+      <Sequence from={1140} durationInFrames={180}>
         <SocialProofScene />
       </Sequence>
 
-      {/* Scene 12: CTA Scene - 1380-1800 frames (14 seconds) */}
-      <Sequence from={1380} durationInFrames={420}>
+      {/* Transition: Wipe */}
+      <SceneTransition type="wipe" startFrame={1315} duration={10} />
+
+      {/* Scene 14: CTA Scene - 1320-1800 frames (16 seconds) */}
+      <Sequence from={1320} durationInFrames={480}>
         <ModernCTAScene />
       </Sequence>
 

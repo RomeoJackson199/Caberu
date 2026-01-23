@@ -205,7 +205,7 @@ export const ModernCTAScene: React.FC = () => {
             fontSize: '28px',
             color: 'rgba(255, 255, 255, 0.92)',
             textAlign: 'center',
-            marginBottom: '48px',
+            marginBottom: '28px',
             opacity: subheadingOpacity,
             fontWeight: '400',
           }}
@@ -213,33 +213,88 @@ export const ModernCTAScene: React.FC = () => {
           Join thousands of dental practices automating with AI
         </div>
 
-        {/* CTA Button - Enhanced */}
+        {/* Limited Time Offer Banner */}
         <div
           style={{
-            padding: '30px 75px',
-            background: '#ffffff',
-            borderRadius: '60px',
-            fontSize: '30px',
-            fontWeight: '700',
-            color: '#1e40af',
-            transform: `scale(${buttonScale * buttonPulse})`,
-            boxShadow: `0 25px 70px rgba(0, 0, 0, ${buttonGlow}), 0 0 60px rgba(255, 255, 255, ${buttonGlow * 0.5})`,
-            cursor: 'pointer',
+            padding: '14px 32px',
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.15) 100%)',
+            borderRadius: '50px',
+            border: '2px solid rgba(239, 68, 68, 0.5)',
+            marginBottom: '32px',
             display: 'flex',
             alignItems: 'center',
-            gap: '18px',
+            gap: '14px',
+            opacity: interpolate(frame, [35, 48], [0, 1], { extrapolateRight: 'clamp' }),
+            transform: `scale(${1 + Math.sin(frame / 8) * 0.02})`,
+            boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)',
           }}
         >
-          <span>Get Started Free</span>
-          <span 
-            style={{ 
-              fontSize: '26px',
-              transform: `translateX(${Math.sin(frame / 10) * 5}px)`,
-              display: 'inline-block',
+          <span
+            style={{
+              fontSize: '22px',
+              animation: 'pulse 1s infinite',
             }}
           >
-            →
+            🔥
           </span>
+          <span style={{ color: '#fca5a5', fontSize: '18px', fontWeight: '700' }}>
+            Limited Offer: 3 Months Free for Early Adopters
+          </span>
+          <span
+            style={{
+              fontSize: '22px',
+            }}
+          >
+            🔥
+          </span>
+        </div>
+
+        {/* CTA Button - Enhanced with urgency */}
+        <div
+          style={{
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              padding: '30px 75px',
+              background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
+              borderRadius: '60px',
+              fontSize: '30px',
+              fontWeight: '700',
+              color: '#1e40af',
+              transform: `scale(${buttonScale * buttonPulse})`,
+              boxShadow: `0 25px 70px rgba(0, 0, 0, ${buttonGlow}), 0 0 60px rgba(255, 255, 255, ${buttonGlow * 0.5})`,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '18px',
+              border: '3px solid rgba(59, 130, 246, 0.3)',
+            }}
+          >
+            <span>Start Free Trial</span>
+            <span
+              style={{
+                fontSize: '26px',
+                transform: `translateX(${Math.sin(frame / 10) * 5}px)`,
+                display: 'inline-block',
+              }}
+            >
+              →
+            </span>
+          </div>
+          {/* Animated ring around button */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: '-8px',
+              borderRadius: '70px',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              opacity: 0.5 + Math.sin(frame / 15) * 0.3,
+              transform: `scale(${1 + Math.sin(frame / 15) * 0.02})`,
+              pointerEvents: 'none',
+            }}
+          />
         </div>
 
         {/* Contact Information */}

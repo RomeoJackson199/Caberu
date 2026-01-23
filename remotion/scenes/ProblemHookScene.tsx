@@ -16,12 +16,12 @@ export const ProblemHookScene: React.FC = () => {
   const shakeX = Math.sin(frame * 2.5) * 5 * shakeIntensity;
   const shakeY = Math.cos(frame * 2) * 4 * shakeIntensity;
 
-  // Problems appearing faster
+  // Problems appearing faster - with revenue impact
   const problems = [
-    { icon: '📞', text: 'Missed Calls', delay: 0, color: '#ef4444' },
-    { icon: '📅', text: 'No-Shows', delay: 5, color: '#f97316' },
-    { icon: '📝', text: 'Paper Chaos', delay: 10, color: '#eab308' },
-    { icon: '😤', text: 'Burnout', delay: 15, color: '#dc2626' },
+    { icon: '📞', text: 'Missed Calls', delay: 0, color: '#ef4444', stat: '$2,400/mo lost' },
+    { icon: '📅', text: 'No-Shows', delay: 5, color: '#f97316', stat: '28% avg rate' },
+    { icon: '📝', text: 'Paper Chaos', delay: 10, color: '#eab308', stat: '6 hrs/week' },
+    { icon: '😤', text: 'Burnout', delay: 15, color: '#dc2626', stat: 'Staff turnover' },
   ];
 
   // Red warning overlay pulse - faster
@@ -208,9 +208,14 @@ export const ProblemHookScene: React.FC = () => {
               }}
             >
               <span style={{ fontSize: '26px' }}>{problem.icon}</span>
-              <span style={{ color: '#fca5a5', fontSize: '16px', fontWeight: '700' }}>
-                {problem.text}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <span style={{ color: '#fca5a5', fontSize: '16px', fontWeight: '700' }}>
+                  {problem.text}
+                </span>
+                <span style={{ color: '#fca5a5', fontSize: '12px', fontWeight: '500', opacity: 0.8 }}>
+                  {problem.stat}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -253,7 +258,7 @@ export const ProblemHookScene: React.FC = () => {
         }}
       >
         <span style={{ color: '#ef4444', fontSize: '20px', fontWeight: '700' }}>
-          47% of calls go unanswered
+          47% of calls go unanswered • $28,800/year lost revenue
         </span>
       </div>
     </AbsoluteFill>
