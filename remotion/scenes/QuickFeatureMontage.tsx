@@ -1,24 +1,27 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from 'remotion';
+import { KineticText } from '../components/KineticText';
+import { SpeedLines } from '../components/SpeedLines';
 
 /**
- * Compact feature card for grid layout
+ * Compact feature card with enhanced animation
  */
 const CompactFeatureCard: React.FC<{
   icon: string;
   title: string;
   gradient: string;
   delay: number;
-}> = ({ icon, title, gradient, delay }) => {
+  index: number;
+}> = ({ icon, title, gradient, delay, index }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
   const scale = spring({
     frame: frame - delay,
     fps,
-    from: 0.5,
+    from: 0.3,
     to: 1,
-    config: { damping: 10, stiffness: 180 },
+    config: { damping: 8, stiffness: 200 },
   });
 
   const opacity = spring({
@@ -26,41 +29,54 @@ const CompactFeatureCard: React.FC<{
     fps,
     from: 0,
     to: 1,
+    config: { damping: 10, stiffness: 180 },
+  });
+
+  // Stagger from alternating sides
+  const slideX = spring({
+    frame: frame - delay,
+    fps,
+    from: index % 2 === 0 ? -50 : 50,
+    to: 0,
     config: { damping: 12, stiffness: 150 },
   });
+
+  // Subtle hover effect
+  const hoverScale = 1 + Math.sin((frame + index * 10) / 20) * 0.02;
 
   return (
     <div
       style={{
-        padding: '24px 28px',
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
-        borderRadius: '20px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        transform: `scale(${scale})`,
+        padding: '22px 26px',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.04) 100%)',
+        borderRadius: '18px',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        transform: `scale(${scale * hoverScale}) translateX(${slideX}px)`,
         opacity,
-        boxShadow: '0 15px 40px rgba(0, 0, 0, 0.25)',
+        boxShadow: '0 15px 50px rgba(0, 0, 0, 0.3)',
         display: 'flex',
         alignItems: 'center',
-        gap: '18px',
+        gap: '16px',
+        backdropFilter: 'blur(10px)',
       }}
     >
       <div
         style={{
-          width: '56px',
-          height: '56px',
+          width: '52px',
+          height: '52px',
           borderRadius: '14px',
           background: gradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '28px',
-          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
+          fontSize: '26px',
+          boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
           flexShrink: 0,
         }}
       >
         {icon}
       </div>
-      <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: '600' }}>
+      <div style={{ color: '#ffffff', fontSize: '17px', fontWeight: '600' }}>
         {title}
       </div>
     </div>
@@ -85,6 +101,9 @@ export const QuickFeatureMontage: React.FC = () => {
     { icon: '🏢', title: 'Multi-Location', gradient: 'linear-gradient(135deg, #64748b 0%, #475569 100%)' },
   ];
 
+  // Zoom effect on grid
+  const gridScale = interpolate(frame, [0, 20], [1.1, 1], { extrapolateRight: 'clamp' });
+
   return (
     <AbsoluteFill
       style={{
@@ -94,6 +113,15 @@ export const QuickFeatureMontage: React.FC = () => {
         fontFamily: '"DM Sans", system-ui, sans-serif',
       }}
     >
+      {/* Speed lines on entrance */}
+      <SpeedLines
+        direction="radial"
+        color="rgba(59, 130, 246, 0.1)"
+        intensity={0.5}
+        startFrame={0}
+        duration={18}
+      />
+
       {/* Animated background */}
       <div
         style={{
@@ -101,17 +129,18 @@ export const QuickFeatureMontage: React.FC = () => {
           width: '100%',
           height: '100%',
           background: `
-            radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.1) 0%, transparent 40%),
-            radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.08) 0%, transparent 40%)
+            radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.12) 0%, transparent 40%),
+            radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.1) 0%, transparent 40%)
           `,
         }}
       />
 
-      {/* Floating particles */}
-      {[...Array(6)].map((_, i) => {
-        const x = (i * 350 + 100) % 1920;
-        const y = Math.sin((frame + i * 30) / 20) * 30 + (i * 180) % 1080;
-        const opacity = 0.1 + Math.sin((frame + i * 20) / 15) * 0.05;
+      {/* Floating particles - enhanced */}
+      {[...Array(10)].map((_, i) => {
+        const x = (i * 200 + 80) % 1920;
+        const y = Math.sin((frame + i * 25) / 18) * 35 + (i * 120) % 1080;
+        const opacity = 0.12 + Math.sin((frame + i * 18) / 14) * 0.06;
+        const scale = 0.7 + Math.sin((frame + i * 8) / 12) * 0.4;
 
         return (
           <div
@@ -120,57 +149,56 @@ export const QuickFeatureMontage: React.FC = () => {
               position: 'absolute',
               left: x,
               top: y,
-              width: '6px',
-              height: '6px',
+              width: '7px',
+              height: '7px',
               borderRadius: '50%',
               background: i % 2 === 0 ? '#3b82f6' : '#8b5cf6',
               opacity,
-              boxShadow: `0 0 10px ${i % 2 === 0 ? '#3b82f6' : '#8b5cf6'}`,
+              transform: `scale(${scale})`,
+              boxShadow: `0 0 ${10 + scale * 6}px ${i % 2 === 0 ? '#3b82f6' : '#8b5cf6'}`,
             }}
           />
         );
       })}
 
-      {/* Title */}
+      {/* Title with kinetic text */}
       <div
         style={{
           position: 'absolute',
-          top: '80px',
+          top: '70px',
           left: '50%',
           transform: 'translateX(-50%)',
           textAlign: 'center',
         }}
       >
-        <div
-          style={{
-            color: '#ffffff',
-            fontSize: '52px',
-            fontWeight: '700',
-            letterSpacing: '-1px',
-            opacity: interpolate(frame, [0, 15], [0, 1], { extrapolateRight: 'clamp' }),
-          }}
-        >
-          Everything You Need
-        </div>
+        <KineticText
+          text="Everything You Need"
+          style="split"
+          startFrame={0}
+          fontSize={54}
+          fontWeight={700}
+          color="#ffffff"
+        />
         <div
           style={{
             color: '#94a3b8',
-            fontSize: '24px',
-            marginTop: '12px',
-            opacity: interpolate(frame, [5, 20], [0, 1], { extrapolateRight: 'clamp' }),
+            fontSize: '23px',
+            marginTop: '14px',
+            opacity: interpolate(frame, [8, 20], [0, 1], { extrapolateRight: 'clamp' }),
           }}
         >
           Built for modern dental practices
         </div>
       </div>
 
-      {/* Feature grid - 2 columns, 5 rows */}
+      {/* Feature grid - 2 columns, 5 rows with zoom */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 340px)',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(2, 320px)',
+          gap: '14px',
           marginTop: '100px',
+          transform: `scale(${gridScale})`,
         }}
       >
         {allFeatures.map((feature, index) => (
@@ -179,42 +207,74 @@ export const QuickFeatureMontage: React.FC = () => {
             icon={feature.icon}
             title={feature.title}
             gradient={feature.gradient}
-            delay={10 + index * 4}
+            delay={8 + index * 3}
+            index={index}
           />
         ))}
       </div>
 
-      {/* Bottom text */}
+      {/* Bottom text with enhanced animation */}
       <div
         style={{
           position: 'absolute',
-          bottom: '60px',
+          bottom: '55px',
           left: '50%',
           transform: 'translateX(-50%)',
           textAlign: 'center',
           opacity: spring({
-            frame: frame - 60,
+            frame: frame - 50,
             fps,
             from: 0,
             to: 1,
-            config: { damping: 15 },
+            config: { damping: 12 },
           }),
         }}
       >
         <div
           style={{
-            padding: '14px 32px',
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%)',
+            padding: '16px 36px',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%)',
             borderRadius: '50px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             color: 'white',
-            fontSize: '18px',
+            fontSize: '19px',
             fontWeight: '600',
             backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            boxShadow: '0 8px 30px rgba(59, 130, 246, 0.2)',
           }}
         >
+          <span style={{ fontSize: '22px' }}>✨</span>
           + Many more features included
         </div>
+      </div>
+
+      {/* Feature count badge */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '35px',
+          right: '35px',
+          padding: '12px 24px',
+          background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+          borderRadius: '14px',
+          color: 'white',
+          fontSize: '16px',
+          fontWeight: '700',
+          boxShadow: '0 6px 25px rgba(34, 197, 94, 0.4)',
+          opacity: spring({
+            frame: frame - 25,
+            fps,
+            from: 0,
+            to: 1,
+            config: { damping: 15 },
+          }),
+          transform: `scale(${1 + Math.sin(frame / 15) * 0.03})`,
+        }}
+      >
+        50+ Features
       </div>
     </AbsoluteFill>
   );
