@@ -112,3 +112,80 @@ export interface AppointmentFilters {
   statusFilter: string;
   dateFilter: string;
 }
+
+// ============================================================================
+// Calendar View Types
+// ============================================================================
+
+/**
+ * Patient info for calendar event display
+ */
+export interface CalendarEventPatient {
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
+/**
+ * Calendar event for display in day/week views
+ */
+export interface CalendarEvent {
+  id: string;
+  appointment_date: string;
+  duration_minutes: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'google-calendar';
+  urgency?: 'low' | 'medium' | 'high' | 'emergency';
+  reason?: string;
+  patient?: CalendarEventPatient | null;
+  patient_id?: string;
+  isGoogleCalendarEvent?: boolean;
+}
+
+/**
+ * Calendar event with position data for overlapping handling
+ */
+export interface PositionedCalendarEvent extends CalendarEvent {
+  column: number;
+  totalColumns: number;
+}
+
+/**
+ * Props for DayCalendarView component
+ */
+export interface DayCalendarViewProps {
+  dentistId: string;
+  businessId?: string;
+  currentDate: Date;
+  onAppointmentClick: (appointment: CalendarEvent) => void;
+  selectedAppointmentId?: string;
+  googleCalendarEvents?: GoogleCalendarEvent[];
+}
+
+/**
+ * Props for WeeklyCalendarView component
+ */
+export interface WeeklyCalendarViewProps {
+  dentistId: string;
+  businessId?: string;
+  currentDate: Date;
+  onAppointmentClick: (appointment: CalendarEvent) => void;
+  selectedAppointmentId?: string;
+  googleCalendarEvents?: GoogleCalendarEvent[];
+}
+
+/**
+ * Google Calendar event from sync
+ */
+export interface GoogleCalendarEvent {
+  id: string;
+  summary: string;
+  start: string;
+  end: string;
+  description?: string;
+}
+
+/**
+ * Calendar view mode
+ */
+export type CalendarViewMode = 'day' | 'week' | 'month';

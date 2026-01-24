@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Appointment } from "@/types/shared";
 import { useNavigate } from "react-router-dom";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
@@ -10,7 +10,7 @@ import { DayCalendarView } from "@/components/appointments/DayCalendarView";
 import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { MonthlyOverview } from "@/components/appointments/MonthlyOverview";
-import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -176,10 +176,63 @@ function DentistAppointmentsManagementContent() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
-  const navigateDate = (direction: "prev" | "next") => {
+  const navigateDate = useCallback((direction: "prev" | "next") => {
     const daysToAdd = viewMode === "week" ? 7 : 1;
-    setCurrentDate(direction === "next" ? addDays(currentDate, daysToAdd) : subDays(currentDate, daysToAdd));
-  };
+    setCurrentDate(prev => direction === "next" ? addDays(prev, daysToAdd) : subDays(prev, daysToAdd));
+  }, [viewMode]);
+
+  const goToToday = useCallback(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  // Keyboard navigation for dates
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          if (!e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            navigateDate('prev');
+          }
+          break;
+        case 'ArrowRight':
+          if (!e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            navigateDate('next');
+          }
+          break;
+        case 't':
+        case 'T':
+          if (!e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            goToToday();
+          }
+          break;
+        case 'w':
+        case 'W':
+          if (!e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            setViewMode('week');
+          }
+          break;
+        case 'd':
+        case 'D':
+          if (!e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            setViewMode('day');
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigateDate, goToToday]);
 
   const handleAppointmentClick = (appointment: Appointment) => {
     // Determine if appointment is actionable (can enter consultation)
@@ -476,12 +529,18 @@ function DentistAppointmentsManagementContent() {
               Stats
             </Button>
 
-            {/* Today Button */}
+            {/* Today Button - more prominent when not viewing today */}
             <Button
-              variant="outline"
+              variant={isSameDay(currentDate, new Date()) ? "outline" : "default"}
               size="sm"
-              onClick={() => setCurrentDate(new Date())}
-              className="h-9 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950 transition-all shadow-sm font-semibold"
+              onClick={goToToday}
+              className={cn(
+                "h-9 rounded-xl border-2 transition-all shadow-sm font-semibold",
+                isSameDay(currentDate, new Date())
+                  ? "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
+                  : "bg-blue-600 hover:bg-blue-700 text-white border-blue-600 animate-pulse"
+              )}
+              title="Press 'T' to jump to today"
             >
               Today
             </Button>

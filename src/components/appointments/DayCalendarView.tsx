@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, addHours, isSameDay, parseISO, differenceInMinutes, setHours, setMinutes } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -8,29 +9,22 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Clock } from "lucide-react";
+import { Clock, CalendarX } from "lucide-react";
 import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
+import {
+  CALENDAR_DISPLAY,
+  APPOINTMENT_STATUS_COLORS,
+  MIN_APPOINTMENT_BLOCK_HEIGHT,
+  CLINIC_TIMEZONE
+} from "@/lib/appointmentConfig";
+import { calculateEventPositions, type PositionedEvent } from "@/lib/appointmentUtils";
+import type { DayCalendarViewProps, CalendarEvent } from "@/types/appointment";
 
-interface DayCalendarViewProps {
-  dentistId: string;
-  businessId?: string;
-  currentDate: Date;
-  onAppointmentClick: (appointment: any) => void;
-  selectedAppointmentId?: string;
-  googleCalendarEvents?: any[];
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  "completed": "bg-emerald-100 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 border-l-4 border-l-emerald-500",
-  "cancelled": "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-l-4 border-l-gray-400 opacity-70",
-  "confirmed": "bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 border-l-4 border-l-blue-500",
-  "pending": "bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 border-l-4 border-l-amber-500",
-  "google-calendar": "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100 border-l-4 border-l-purple-500",
-};
-
-const HOUR_HEIGHT = 100; // Taller slots for day view
-const START_HOUR = 7;
-const END_HOUR = 20;
+// Use centralized configuration
+const STATUS_COLORS = APPOINTMENT_STATUS_COLORS;
+const HOUR_HEIGHT = 100; // Taller slots for day view (specific to day view)
+const START_HOUR = CALENDAR_DISPLAY.startHour;
+const END_HOUR = CALENDAR_DISPLAY.endHour;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 export function DayCalendarView({
@@ -92,8 +86,8 @@ export function DayCalendarView({
     }
   });
 
-  // Combine regular appointments with Google Calendar events
-  const allEvents = useMemo(() => {
+  // Combine regular appointments with Google Calendar events and calculate positions
+  const positionedEvents = useMemo(() => {
     const googleEvents = (googleCalendarEvents || []).map(event => ({
       ...event,
       id: event.id,
@@ -107,7 +101,8 @@ export function DayCalendarView({
     const combined = [...appointments, ...googleEvents];
     // Deduplicate by ID
     const uniqueEvents = Array.from(new Map(combined.map(item => [item.id, item])).values());
-    return uniqueEvents;
+    // Calculate positions for overlapping appointments
+    return calculateEventPositions(uniqueEvents);
   }, [appointments, googleCalendarEvents]);
 
   const getPatientInitials = (firstName?: string, lastName?: string) => {
@@ -124,21 +119,40 @@ export function DayCalendarView({
   };
 
 
-  const getEventStyle = (event: any) => {
-    const startDate = parseISO(event.appointment_date);
+  // Convert UTC date to clinic timezone for accurate display
+  const toClinicTime = useCallback((dateStr: string) => {
+    return toZonedTime(parseISO(dateStr), CLINIC_TIMEZONE);
+  }, []);
+
+  // Memoized event style calculation for overlapping appointments
+  const getEventStyle = useCallback((event: PositionedEvent) => {
+    // Convert to clinic timezone for accurate hour calculation (handles DST)
+    const startDate = toClinicTime(event.appointment_date);
     const startHour = startDate.getHours() + (startDate.getMinutes() / 60);
     const durationHours = (event.duration_minutes || 30) / 60;
 
     const top = (startHour - START_HOUR) * HOUR_HEIGHT;
     const height = durationHours * HOUR_HEIGHT;
 
+    // Calculate width and position for overlapping appointments
+    const totalColumns = event.totalColumns || 1;
+    const column = event.column || 0;
+    const horizontalPadding = 4; // px from edges
+    const gapBetweenColumns = 2; // px between overlapping events
+
+    // Calculate percentage-based width for better responsiveness
+    const availableWidth = 100;
+    const columnWidth = availableWidth / totalColumns;
+    const leftPosition = column * columnWidth;
+
     return {
       top: `${Math.max(0, top)}px`,
-      height: `${Math.max(30, height)}px`,
-      left: '4px',
-      right: '4px',
+      height: `${Math.max(MIN_APPOINTMENT_BLOCK_HEIGHT, height)}px`,
+      left: `calc(${leftPosition}% + ${horizontalPadding}px)`,
+      width: `calc(${columnWidth}% - ${horizontalPadding * 2 / totalColumns}px - ${gapBetweenColumns}px)`,
+      zIndex: 10 + column,
     };
-  };
+  }, [toClinicTime]);
 
   if (isLoading) {
     return (
@@ -163,7 +177,7 @@ export function DayCalendarView({
           </div>
           <div className="text-right">
             <div className="text-sm text-muted-foreground">
-              {allEvents.length} appointments
+              {positionedEvents.length} appointment{positionedEvents.length !== 1 ? 's' : ''}
             </div>
           </div>
         </div>
@@ -199,15 +213,20 @@ export function DayCalendarView({
                 ))}
               </div>
 
-              {/* Current Time Indicator */}
-              {isSameDay(currentDate, currentTime) && (
+              {/* Current Time Indicator - only show within calendar hours */}
+              {isSameDay(currentDate, currentTime) &&
+               currentTime.getHours() >= START_HOUR &&
+               currentTime.getHours() < END_HOUR && (
                 <div
-                  className="absolute left-0 right-0 border-t-2 border-red-500 z-10 pointer-events-none flex items-center"
+                  className="absolute left-0 right-0 border-t-2 border-red-500 z-30 pointer-events-none flex items-center"
                   style={{
                     top: `${((currentTime.getHours() + currentTime.getMinutes() / 60) - START_HOUR) * HOUR_HEIGHT}px`
                   }}
                 >
-                  <div className="absolute -left-1.5 w-3 h-3 bg-red-500 rounded-full" />
+                  <div className="absolute -left-1.5 w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/30" />
+                  <div className="absolute left-3 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-medium rounded">
+                    {format(currentTime, "h:mm a")}
+                  </div>
                 </div>
               )}
 
@@ -221,19 +240,32 @@ export function DayCalendarView({
                 />
               ))}
 
+              {/* Empty State */}
+              {positionedEvents.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center p-8 bg-white/80 dark:bg-gray-900/80 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                    <CalendarX className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">No appointments scheduled</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Click any time slot to create one</p>
+                  </div>
+                </div>
+              )}
+
               {/* Events */}
-              {allEvents.map((event) => {
+              {positionedEvents.map((event) => {
                 const style = getEventStyle(event);
                 const isSelected = event.id === selectedAppointmentId;
+                const isOverlapping = event.totalColumns > 1;
 
                 return (
                   <Tooltip key={event.id}>
                     <TooltipTrigger asChild>
                       <div
                         className={cn(
-                          "absolute rounded-lg border p-3 cursor-pointer transition-all hover:brightness-95 hover:shadow-md z-10 overflow-hidden flex flex-col justify-center",
+                          "absolute rounded-lg border p-3 cursor-pointer transition-all hover:brightness-95 hover:shadow-md overflow-hidden flex flex-col justify-center",
                           STATUS_COLORS[event.status] || "bg-gray-100 border-l-gray-500",
-                          isSelected && "ring-2 ring-primary ring-offset-1 z-20 shadow-xl scale-[1.01]"
+                          isSelected && "ring-2 ring-primary ring-offset-1 shadow-xl scale-[1.01]",
+                          isOverlapping && "border-l-2"
                         )}
                         style={style}
                         onClick={(e) => {
@@ -246,15 +278,17 @@ export function DayCalendarView({
                             {event.urgency === 'high' && <Badge variant="destructive" className="h-4 px-1.5 text-[10px]">URGENT</Badge>}
                             {event.patient?.first_name} {event.patient?.last_name}
                           </div>
-                          <Badge variant="outline" className="text-[10px] h-5 bg-white/50 dark:bg-black/20 border-0 backdrop-blur-sm">
-                            {event.status}
-                          </Badge>
+                          {!isOverlapping && (
+                            <Badge variant="outline" className="text-[10px] h-5 bg-white/50 dark:bg-black/20 border-0 backdrop-blur-sm flex-shrink-0">
+                              {event.status}
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-xs opacity-80 truncate flex items-center gap-2 mt-1">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-3 w-3 flex-shrink-0" />
                           {format(parseISO(event.appointment_date), "h:mm a")} - {format(addHours(parseISO(event.appointment_date), (event.duration_minutes || 30) / 60), "h:mm a")}
                         </div>
-                        {event.reason && (
+                        {event.reason && !isOverlapping && (
                           <div className="text-xs opacity-70 truncate mt-1 italic">
                             "{event.reason}"
                           </div>

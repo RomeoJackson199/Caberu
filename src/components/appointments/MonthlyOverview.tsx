@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isSameMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isSameMonth, getDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { CalendarDays } from "lucide-react";
 
@@ -36,8 +36,10 @@ export function MonthlyOverview({ appointments, currentDate, onDateClick }: Mont
     return "bg-blue-200 dark:bg-blue-800";
   };
 
-  // Get day of week for first day to align calendar
-  const firstDayOfWeek = monthStart.getDay();
+  // Get day of week for first day to align calendar (Monday = 0, Sunday = 6)
+  // Convert from getDay() (Sunday=0) to Monday-start (Monday=0)
+  const dayOfWeek = getDay(monthStart);
+  const firstDayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const emptyDays = Array(firstDayOfWeek).fill(null);
 
   return (
@@ -50,9 +52,9 @@ export function MonthlyOverview({ appointments, currentDate, onDateClick }: Mont
         <p className="text-xs text-muted-foreground">Click a day to view appointments</p>
       </CardHeader>
       <CardContent>
-        {/* Day labels */}
+        {/* Day labels - Monday start for consistency with week view */}
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
             <div key={day} className="text-center text-xs font-semibold text-muted-foreground p-1">
               {day}
             </div>

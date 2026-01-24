@@ -215,3 +215,166 @@ export function isValidAppointmentStatus(status: string): status is AppointmentS
 export function isValidUrgencyLevel(urgency: string): urgency is UrgencyLevel {
   return Object.keys(URGENCY_CONFIG).includes(urgency);
 }
+
+// ============================================
+// Overlapping Appointments Handling
+// ============================================
+
+export interface CalendarEvent {
+  id: string;
+  appointment_date: string;
+  duration_minutes?: number;
+  status: string;
+  [key: string]: any;
+}
+
+export interface PositionedEvent extends CalendarEvent {
+  column: number;
+  totalColumns: number;
+}
+
+/**
+ * Check if two events overlap in time
+ */
+function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boolean {
+  const start1 = new Date(event1.appointment_date).getTime();
+  const end1 = start1 + ((event1.duration_minutes || 30) * 60 * 1000);
+  const start2 = new Date(event2.appointment_date).getTime();
+  const end2 = start2 + ((event2.duration_minutes || 30) * 60 * 1000);
+
+  // Events overlap if one starts before the other ends
+  return start1 < end2 && start2 < end1;
+}
+
+/**
+ * Group overlapping events together
+ */
+function groupOverlappingEvents(events: CalendarEvent[]): CalendarEvent[][] {
+  if (events.length === 0) return [];
+
+  // Sort events by start time
+  const sorted = [...events].sort((a, b) =>
+    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+  );
+
+  const groups: CalendarEvent[][] = [];
+  let currentGroup: CalendarEvent[] = [sorted[0]];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const event = sorted[i];
+    // Check if this event overlaps with any event in the current group
+    const overlapsWithGroup = currentGroup.some(groupEvent => eventsOverlap(event, groupEvent));
+
+    if (overlapsWithGroup) {
+      currentGroup.push(event);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = [event];
+    }
+  }
+
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  return groups;
+}
+
+/**
+ * Assign columns to events within a group using a greedy algorithm
+ */
+function assignColumns(group: CalendarEvent[]): PositionedEvent[] {
+  if (group.length === 0) return [];
+  if (group.length === 1) {
+    return [{ ...group[0], column: 0, totalColumns: 1 }];
+  }
+
+  // Sort by start time
+  const sorted = [...group].sort((a, b) =>
+    new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+  );
+
+  // Track column end times
+  const columnEndTimes: number[] = [];
+  const result: PositionedEvent[] = [];
+
+  for (const event of sorted) {
+    const startTime = new Date(event.appointment_date).getTime();
+    const endTime = startTime + ((event.duration_minutes || 30) * 60 * 1000);
+
+    // Find first available column
+    let column = -1;
+    for (let i = 0; i < columnEndTimes.length; i++) {
+      if (columnEndTimes[i] <= startTime) {
+        column = i;
+        columnEndTimes[i] = endTime;
+        break;
+      }
+    }
+
+    // If no column available, create a new one
+    if (column === -1) {
+      column = columnEndTimes.length;
+      columnEndTimes.push(endTime);
+    }
+
+    result.push({
+      ...event,
+      column,
+      totalColumns: 1 // Will be updated after
+    });
+  }
+
+  // Update total columns for all events in this group
+  const totalColumns = columnEndTimes.length;
+  return result.map(event => ({ ...event, totalColumns }));
+}
+
+/**
+ * Process events to calculate their column positions for rendering
+ * Returns events with column and totalColumns properties
+ */
+export function calculateEventPositions(events: CalendarEvent[]): PositionedEvent[] {
+  const groups = groupOverlappingEvents(events);
+  const positionedEvents: PositionedEvent[] = [];
+
+  for (const group of groups) {
+    const positioned = assignColumns(group);
+    positionedEvents.push(...positioned);
+  }
+
+  return positionedEvents;
+}
+
+/**
+ * Get style object for a positioned event (for use in calendar views)
+ */
+export function getOverlappingEventStyle(
+  event: PositionedEvent,
+  startHour: number,
+  hourHeight: number,
+  minHeight: number = 20,
+  horizontalPadding: number = 2
+): React.CSSProperties {
+  const startDate = new Date(event.appointment_date);
+  const startDecimalHour = startDate.getHours() + (startDate.getMinutes() / 60);
+  const durationHours = (event.duration_minutes || 30) / 60;
+
+  const top = (startDecimalHour - startHour) * hourHeight;
+  const height = durationHours * hourHeight;
+
+  // Calculate width and left position based on column
+  const totalColumns = event.totalColumns;
+  const column = event.column;
+  const availableWidth = 100 - (horizontalPadding * 2);
+  const columnWidth = availableWidth / totalColumns;
+
+  return {
+    position: 'absolute',
+    top: `${Math.max(0, top)}px`,
+    height: `${Math.max(minHeight, height)}px`,
+    left: `${horizontalPadding + (column * columnWidth)}%`,
+    width: `${columnWidth - 1}%`, // -1% for gap between columns
+    zIndex: 10 + column, // Stagger z-index so later columns appear on top
+  };
+}
