@@ -651,7 +651,9 @@ export type Database = {
           pending_plan_change_date: string | null
           phone: string | null
           platform_fee_percentage: number | null
+          primary_color: string | null
           promo_code_used: string | null
+          secondary_color: string | null
           show_branding_in_emails: boolean
           show_logo_in_chat: boolean
           slug: string
@@ -695,7 +697,9 @@ export type Database = {
           pending_plan_change_date?: string | null
           phone?: string | null
           platform_fee_percentage?: number | null
+          primary_color?: string | null
           promo_code_used?: string | null
+          secondary_color?: string | null
           show_branding_in_emails?: boolean
           show_logo_in_chat?: boolean
           slug: string
@@ -739,7 +743,9 @@ export type Database = {
           pending_plan_change_date?: string | null
           phone?: string | null
           platform_fee_percentage?: number | null
+          primary_color?: string | null
           promo_code_used?: string | null
+          secondary_color?: string | null
           show_branding_in_emails?: boolean
           show_logo_in_chat?: boolean
           slug?: string
