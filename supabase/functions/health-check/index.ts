@@ -106,7 +106,7 @@ serve(async (req) => {
           const [selectTest, countTest, rpcTest] = await Promise.all([
             supabase.from('businesses').select('id').limit(1),
             supabase.from('businesses').select('*', { count: 'exact', head: true }),
-            supabase.rpc('is_super_admin').then(res => res).catch(() => ({ data: null, error: null }))
+            (async () => { try { return await supabase.rpc('is_super_admin'); } catch { return { data: null, error: null }; } })()
           ]);
 
           const dbLatency = Math.round(performance.now() - dbStart);
