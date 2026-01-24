@@ -408,18 +408,19 @@ async function logAuditEvent(
   req: Request
 ) {
   try {
+    // record_id is now TEXT type, so we can pass string directly
     await supabase.from('audit_logs').insert({
       user_id: callerId,
       action: action,
       table_name: 'push_subscriptions',
-      record_id: targetUserId,
+      record_id: targetUserId, // TEXT column accepts strings
       changes: {
         ...details,
         target_user_id: targetUserId,
         timestamp: new Date().toISOString(),
       },
-      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
-      user_agent: req.headers.get('user-agent') || 'unknown',
+      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || null,
+      user_agent: req.headers.get('user-agent') || null,
     });
   } catch (error) {
     console.error('Failed to log audit event:', error);
