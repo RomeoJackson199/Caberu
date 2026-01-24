@@ -30,8 +30,8 @@ interface AppointmentDetails {
     profiles?: {
       first_name: string;
       last_name: string;
-    };
-  };
+    } | null;
+  } | null;
 }
 
 interface TimeSlot {
@@ -86,12 +86,17 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       if (error) throw error;
 
       // Transform nested dentists array to single object
+      const dentistData = Array.isArray(data.dentists) ? data.dentists[0] : data.dentists;
+      // Handle profiles being array or object
+      const profilesData = dentistData?.profiles;
+      const normalizedProfiles = Array.isArray(profilesData) ? profilesData[0] : profilesData;
+      
       const transformedData: AppointmentDetails = {
         id: data.id,
         appointment_date: data.appointment_date,
         reason: data.reason,
         dentist_id: data.dentist_id,
-        dentist: Array.isArray(data.dentists) ? data.dentists[0] : data.dentists,
+        dentist: dentistData ? { profiles: normalizedProfiles || null } : null,
       };
       setAppointment(transformedData);
     } catch (error) {

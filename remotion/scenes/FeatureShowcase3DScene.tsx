@@ -251,8 +251,8 @@ export const FeatureShowcase3DScene: React.FC = () => {
     >
       {/* 3D Canvas */}
       <ThreeCanvas
-        style={{ width: '100%', height: '100%' }}
-        gl={{ antialias: true, alpha: true }}
+        width={1920}
+        height={1080}
       >
         <Suspense fallback={null}>
           <PerspectiveCamera

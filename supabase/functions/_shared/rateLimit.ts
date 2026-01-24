@@ -101,30 +101,8 @@ interface RateLimitRecord {
  * Best for: Critical endpoints like login, sensitive operations
  */
 export async function checkRateLimitDB(
-  supabaseClient: { 
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (column: string, value: string) => {
-          gte: (column: string, value: string) => {
-            order: (column: string, options: { ascending: boolean }) => {
-              limit: (count: number) => {
-                maybeSingle: () => Promise<{ data: RateLimitRecord | null; error: Error | null }>;
-              };
-            };
-          };
-        };
-      };
-      update: (values: { count: number }) => {
-        eq: (column: string, value: string) => {
-          gte: (column: string, value: string) => Promise<{ error: Error | null }>;
-        };
-      };
-      insert: (values: { key: string; count: number; window_start: string }) => Promise<{ error: Error | null }>;
-      delete: () => {
-        eq: (column: string, value: string) => Promise<{ error: Error | null }>;
-      };
-    };
-  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabaseClient: any,
   clientKey: string,
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
@@ -207,13 +185,8 @@ export async function checkRateLimitDB(
  * Clear rate limit for a key (e.g., after successful login)
  */
 export async function clearRateLimit(
-  supabaseClient: { 
-    from: (table: string) => {
-      delete: () => {
-        eq: (column: string, value: string) => Promise<{ error: Error | null }>;
-      };
-    };
-  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabaseClient: any,
   clientKey: string,
   keyPrefix: string
 ): Promise<void> {

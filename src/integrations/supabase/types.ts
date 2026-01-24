@@ -4145,7 +4145,7 @@ export type Database = {
         Returns: undefined
       }
       generate_daily_slots: {
-        Args: { p_business_id?: string; p_date: string; p_dentist_id: string }
+        Args: { p_business_id: string; p_date: string; p_dentist_id: string }
         Returns: undefined
       }
       get_all_businesses_admin: {
@@ -4325,6 +4325,10 @@ export type Database = {
         Returns: undefined
       }
       process_gdpr_deletion: { Args: { target_user_id: string }; Returns: Json }
+      regenerate_daily_slots: {
+        Args: { p_business_id: string; p_date: string; p_dentist_id: string }
+        Returns: undefined
+      }
       release_appointment_slot: {
         Args: { p_appointment_id: string }
         Returns: boolean
