@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { format, startOfWeek, addDays, addHours, isSameDay, parseISO, differenceInMinutes, setHours, setMinutes, startOfDay } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, CalendarX } from "lucide-react";
 import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -16,17 +17,11 @@ import {
   CALENDAR_DISPLAY,
   APPOINTMENT_STATUS_COLORS,
   SCHEDULE_BLOCK_STYLES,
-  MIN_APPOINTMENT_BLOCK_HEIGHT
+  MIN_APPOINTMENT_BLOCK_HEIGHT,
+  CLINIC_TIMEZONE
 } from "@/lib/appointmentConfig";
-
-interface WeeklyCalendarViewProps {
-  dentistId: string;
-  businessId?: string;
-  currentDate: Date;
-  onAppointmentClick: (appointment: any) => void;
-  selectedAppointmentId?: string;
-  googleCalendarEvents?: any[];
-}
+import { calculateEventPositions, type PositionedEvent } from "@/lib/appointmentUtils";
+import type { WeeklyCalendarViewProps, CalendarEvent } from "@/types/appointment";
 
 // Use centralized configuration for status colors and block styles
 const STATUS_COLORS = APPOINTMENT_STATUS_COLORS;
@@ -247,6 +242,19 @@ export function WeeklyCalendarView({
     return [...appointments, ...googleEvents];
   }, [appointments, googleCalendarEvents]);
 
+  // Pre-calculate positioned events for each day (for overlapping detection)
+  const positionedEventsByDay = useMemo(() => {
+    const byDay = new Map<string, PositionedEvent[]>();
+
+    weekDays.forEach(day => {
+      const dayKey = format(day, 'yyyy-MM-dd');
+      const dayEvents = allEvents.filter(e => isSameDay(parseISO(e.appointment_date), day));
+      byDay.set(dayKey, calculateEventPositions(dayEvents));
+    });
+
+    return byDay;
+  }, [allEvents, weekDays]);
+
   const getPatientInitials = (firstName?: string, lastName?: string) => {
     const first = firstName?.[0] || "";
     const last = lastName?.[0] || "";
@@ -261,9 +269,15 @@ export function WeeklyCalendarView({
   };
 
 
-  // Helper to calculate position styles
-  const getEventStyle = (event: any) => {
-    const startDate = parseISO(event.appointment_date);
+  // Convert UTC date to clinic timezone for accurate display (DST safe)
+  const toClinicTime = useCallback((dateStr: string) => {
+    return toZonedTime(parseISO(dateStr), CLINIC_TIMEZONE);
+  }, []);
+
+  // Helper to calculate position styles with overlap handling
+  const getEventStyle = useCallback((event: PositionedEvent) => {
+    // Convert to clinic timezone for accurate hour calculation (handles DST)
+    const startDate = toClinicTime(event.appointment_date);
     const startHour = startDate.getHours() + (startDate.getMinutes() / 60);
     const durationHours = (event.duration_minutes || 30) / 60;
 
@@ -271,13 +285,24 @@ export function WeeklyCalendarView({
     const top = (startHour - START_HOUR) * HOUR_HEIGHT;
     const height = durationHours * HOUR_HEIGHT;
 
+    // Calculate width and position for overlapping appointments
+    const totalColumns = event.totalColumns || 1;
+    const column = event.column || 0;
+    const horizontalPadding = 2; // px from edges
+    const gapBetweenColumns = 1; // px between overlapping events
+
+    const availableWidth = 100;
+    const columnWidth = availableWidth / totalColumns;
+    const leftPosition = column * columnWidth;
+
     return {
       top: `${Math.max(0, top)}px`,
-      height: `${Math.max(MIN_APPOINTMENT_BLOCK_HEIGHT, height)}px`, // Minimum height for visibility
-      left: '2px',
-      right: '2px',
+      height: `${Math.max(MIN_APPOINTMENT_BLOCK_HEIGHT, height)}px`,
+      left: `calc(${leftPosition}% + ${horizontalPadding}px)`,
+      width: `calc(${columnWidth}% - ${horizontalPadding * 2 / totalColumns}px - ${gapBetweenColumns}px)`,
+      zIndex: 10 + column,
     };
-  };
+  }, [toClinicTime]);
 
   const displayDays = isMobile ? [weekDays[mobileCurrentDay]] : weekDays;
 
@@ -307,7 +332,7 @@ export function WeeklyCalendarView({
           </div>
         )}
 
-        {/* Calendar Header (Days) */}
+        {/* Calendar Header (Days) with density indicators */}
         <div className="flex border-b bg-muted/5">
           <div className="w-16 flex-shrink-0 border-r bg-background/50" /> {/* Time axis spacer */}
           <div
@@ -316,16 +341,44 @@ export function WeeklyCalendarView({
           >
             {displayDays.map((day) => {
               const isToday = isSameDay(day, new Date());
+              const dayKey = format(day, 'yyyy-MM-dd');
+              const dayEventCount = positionedEventsByDay.get(dayKey)?.length || 0;
+              const hasVacation = getScheduleBlocks(day).some(b => b.type === 'vacation' || b.type === 'sick-leave');
+
+              // Calculate density level for visual indicator
+              const getDensityColor = (count: number) => {
+                if (count === 0) return null;
+                if (count <= 2) return "bg-green-400";
+                if (count <= 4) return "bg-yellow-400";
+                if (count <= 6) return "bg-orange-400";
+                return "bg-red-400";
+              };
+              const densityColor = getDensityColor(dayEventCount);
+
               return (
-                <div key={day.toISOString()} className={cn("py-3 text-center", isToday && "bg-blue-50/50 dark:bg-blue-900/10")}>
+                <div key={day.toISOString()} className={cn("py-3 text-center relative", isToday && "bg-blue-50/50 dark:bg-blue-900/10")}>
                   <div className={cn("text-xs font-medium uppercase mb-1", isToday ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground")}>
                     {format(day, "EEE")}
                   </div>
-                  <div className={cn(
-                    "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold",
-                    isToday ? "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/20" : "text-foreground"
-                  )}>
-                    {format(day, "d")}
+                  <div className="relative inline-flex flex-col items-center">
+                    <div className={cn(
+                      "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold",
+                      isToday ? "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/20" : "text-foreground",
+                      hasVacation && !isToday && "bg-teal-100 dark:bg-teal-900/40"
+                    )}>
+                      {format(day, "d")}
+                    </div>
+                    {/* Density indicator dots */}
+                    {dayEventCount > 0 && (
+                      <div className="flex gap-0.5 mt-1">
+                        <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} title={`${dayEventCount} appointments`} />
+                        {dayEventCount > 3 && <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} />}
+                        {dayEventCount > 6 && <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} />}
+                      </div>
+                    )}
+                    {hasVacation && (
+                      <span className="text-[10px] text-teal-600 dark:text-teal-400 mt-0.5">Off</span>
+                    )}
                   </div>
                 </div>
               );
@@ -367,20 +420,23 @@ export function WeeklyCalendarView({
                 ))}
               </div>
 
-              {/* Current Time Indicator */}
-              {weekDays.some(day => isSameDay(day, currentTime)) && (
+              {/* Current Time Indicator - only show within calendar hours */}
+              {weekDays.some(day => isSameDay(day, currentTime)) &&
+               currentTime.getHours() >= START_HOUR &&
+               currentTime.getHours() < END_HOUR && (
                 <div
-                  className="absolute left-0 right-0 border-t-2 border-red-500 z-10 pointer-events-none flex items-center"
+                  className="absolute left-0 right-0 border-t-2 border-red-500 z-30 pointer-events-none flex items-center"
                   style={{
                     top: `${((currentTime.getHours() + currentTime.getMinutes() / 60) - START_HOUR) * HOUR_HEIGHT}px`
                   }}
                 >
-                  <div className="absolute -left-1.5 w-3 h-3 bg-red-500 rounded-full" />
+                  <div className="absolute -left-1.5 w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/30" />
                 </div>
               )}
 
               {displayDays.map((day) => {
-                const dayEvents = allEvents.filter(e => isSameDay(parseISO(e.appointment_date), day));
+                const dayKey = format(day, 'yyyy-MM-dd');
+                const dayEvents = positionedEventsByDay.get(dayKey) || [];
                 const isToday = isSameDay(day, new Date());
 
                 return (
@@ -432,19 +488,28 @@ export function WeeklyCalendarView({
                       );
                     })}
 
+                    {/* Empty State for Day */}
+                    {dayEvents.length === 0 && !getScheduleBlocks(day).some(b => b.type === 'vacation' || b.type === 'sick-leave') && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+                        <CalendarX className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+
                     {/* Events */}
                     {dayEvents.map((event) => {
                       const style = getEventStyle(event);
                       const isSelected = event.id === selectedAppointmentId;
+                      const isOverlapping = event.totalColumns > 1;
 
                       return (
                         <Tooltip key={event.id}>
                           <TooltipTrigger asChild>
                             <div
                               className={cn(
-                                "absolute rounded-md border text-xs p-2 cursor-pointer transition-all hover:brightness-95 hover:shadow-md z-10 overflow-hidden",
+                                "absolute rounded-md border text-xs p-2 cursor-pointer transition-all hover:brightness-95 hover:shadow-md overflow-hidden",
                                 STATUS_COLORS[event.status] || "bg-gray-100 border-l-gray-500",
-                                isSelected && "ring-2 ring-primary ring-offset-1 z-20 shadow-lg"
+                                isSelected && "ring-2 ring-primary ring-offset-1 shadow-lg",
+                                isOverlapping && "border-l-2"
                               )}
                               style={style}
                               onClick={(e) => {
@@ -457,7 +522,7 @@ export function WeeklyCalendarView({
                                 {event.patient?.first_name} {event.patient?.last_name}
                               </div>
                               <div className="text-[10px] opacity-80 truncate flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
+                                <Clock className="h-3 w-3 flex-shrink-0" />
                                 {format(parseISO(event.appointment_date), "h:mm a")}
                               </div>
                             </div>
