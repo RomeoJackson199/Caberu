@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clock, Save, Plus, Trash2, Calendar, Coffee } from "lucide-react";
+import { Clock, Save, Plus, Trash2, Calendar, Coffee, Copy, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,14 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { logger } from '@/lib/logger';
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
+import { format, parseISO } from "date-fns";
 interface DentistAvailability {
   id?: string;
   day_of_week: number;
@@ -36,27 +39,27 @@ interface AvailabilitySettingsProps {
   dentistId: string;
 }
 
-const DAYS_OF_WEEK = [
-  { value: 1, label: 'Monday', short: 'M' },
-  { value: 2, label: 'Tuesday', short: 'T' },
-  { value: 3, label: 'Wednesday', short: 'W' },
-  { value: 4, label: 'Thursday', short: 'T' },
-  { value: 5, label: 'Friday', short: 'F' },
-  { value: 6, label: 'Saturday', short: 'S' },
-  { value: 0, label: 'Sunday', short: 'S' },
-];
+interface ValidationError {
+  dayOfWeek: number;
+  message: string;
+}
 
-const VACATION_TYPES = [
-  { value: 'vacation', label: 'Vacation', color: 'bg-blue-100 text-blue-800' },
-  { value: 'sick', label: 'Sick Leave', color: 'bg-red-100 text-red-800' },
-  { value: 'personal', label: 'Congé personnel', color: 'bg-green-100 text-green-800' },
-];
+interface AffectedAppointment {
+  id: string;
+  appointment_date: string;
+  patient_name: string;
+  reason?: string;
+}
 
 export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
   const [availability, setAvailability] = useState<DentistAvailability[]>([]);
   const [vacationDays, setVacationDays] = useState<VacationDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [affectedAppointments, setAffectedAppointments] = useState<AffectedAppointment[]>([]);
+  const [showAffectedDialog, setShowAffectedDialog] = useState(false);
+  const [copyFromDay, setCopyFromDay] = useState<number | null>(null);
   const [newVacation, setNewVacation] = useState<VacationDay>({
     start_date: '',
     end_date: '',
@@ -67,6 +70,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
   const { toast } = useToast();
   const { t } = useLanguage();
 
+  // Localized day labels - defined once inside component for translations
   const DAYS_OF_WEEK = [
     { value: 1, label: t.monday, short: t.monday.charAt(0) },
     { value: 2, label: t.tuesday, short: t.tuesday.charAt(0) },
@@ -82,8 +86,10 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
     { value: 'sick', label: t.vacationsTypeSick, color: 'bg-red-100 text-red-800' },
     { value: 'personal', label: t.vacationsTypePersonal, color: 'bg-green-100 text-green-800' },
   ];
+
   useEffect(() => {
     Promise.all([fetchAvailability(), fetchVacationDays()]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dentistId]);
 
   const fetchAvailability = async () => {
@@ -154,9 +160,244 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
         index === dayIndex ? { ...day, [field]: value } : day
       )
     );
+    // Clear validation errors when user makes changes
+    setValidationErrors([]);
   };
 
-  const saveAvailability = async () => {
+  // Get day name for validation messages
+  const getDayName = (dayOfWeek: number): string => {
+    const day = DAYS_OF_WEEK.find(d => d.value === dayOfWeek);
+    return day?.label || `Day ${dayOfWeek}`;
+  };
+
+  // Validate availability settings before saving
+  const validateAvailability = (availabilityData: DentistAvailability[]): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    availabilityData.forEach(day => {
+      if (!day.is_available) return; // Skip validation for unavailable days
+
+      const dayName = getDayName(day.day_of_week);
+
+      // Validate start_time < end_time (unless overnight shift)
+      // For overnight shifts, end_time can be less than start_time (e.g., 22:00 - 06:00)
+      if (day.start_time === day.end_time) {
+        errors.push({
+          dayOfWeek: day.day_of_week,
+          message: `${dayName}: Start and end time cannot be the same`
+        });
+      }
+
+      // Validate break times if both are set
+      const hasBreakStart = !!day.break_start_time;
+      const hasBreakEnd = !!day.break_end_time;
+
+      if (hasBreakStart !== hasBreakEnd) {
+        errors.push({
+          dayOfWeek: day.day_of_week,
+          message: `${dayName}: Both break start and end times must be set, or leave both empty`
+        });
+      }
+
+      if (hasBreakStart && hasBreakEnd) {
+        // Break end must be after break start
+        if (day.break_start_time! >= day.break_end_time!) {
+          errors.push({
+            dayOfWeek: day.day_of_week,
+            message: `${dayName}: Break end time must be after break start time`
+          });
+        }
+
+        // Check if it's a normal (non-overnight) shift
+        const isNormalShift = day.start_time < day.end_time;
+
+        if (isNormalShift) {
+          // Break must be within working hours
+          if (day.break_start_time! < day.start_time) {
+            errors.push({
+              dayOfWeek: day.day_of_week,
+              message: `${dayName}: Break cannot start before working hours begin`
+            });
+          }
+          if (day.break_end_time! > day.end_time) {
+            errors.push({
+              dayOfWeek: day.day_of_week,
+              message: `${dayName}: Break cannot end after working hours end`
+            });
+          }
+        }
+      }
+    });
+
+    return errors;
+  };
+
+  // Check for appointments that would be affected by availability changes
+  const checkAffectedAppointments = async (newAvailability: DentistAvailability[]): Promise<AffectedAppointment[]> => {
+    try {
+      const businessId = await getCurrentBusinessId();
+
+      // Get future appointments for this dentist
+      const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          appointment_date,
+          reason,
+          profiles!appointments_patient_id_fkey (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('dentist_id', dentistId)
+        .eq('business_id', businessId)
+        .gte('appointment_date', new Date().toISOString())
+        .in('status', ['pending', 'confirmed']);
+
+      if (error || !appointments) return [];
+
+      const affected: AffectedAppointment[] = [];
+
+      for (const apt of appointments) {
+        const aptDate = new Date(apt.appointment_date);
+        const dayOfWeek = aptDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const aptTime = format(aptDate, 'HH:mm');
+
+        // Find the availability for this day
+        const dayAvail = newAvailability.find(a => a.day_of_week === dayOfWeek);
+
+        if (!dayAvail) continue;
+
+        let isOutsideHours = false;
+
+        // Check if day is now unavailable
+        if (!dayAvail.is_available) {
+          isOutsideHours = true;
+        } else {
+          // Check if appointment time is within new working hours
+          const isNormalShift = dayAvail.start_time < dayAvail.end_time;
+
+          if (isNormalShift) {
+            // Normal daytime hours
+            if (aptTime < dayAvail.start_time || aptTime >= dayAvail.end_time) {
+              isOutsideHours = true;
+            }
+          } else {
+            // Overnight shift (e.g., 22:00 - 06:00)
+            // Time is valid if >= start_time OR < end_time
+            if (aptTime < dayAvail.start_time && aptTime >= dayAvail.end_time) {
+              isOutsideHours = true;
+            }
+          }
+
+          // Check if appointment falls during break time
+          if (!isOutsideHours && dayAvail.break_start_time && dayAvail.break_end_time) {
+            if (aptTime >= dayAvail.break_start_time && aptTime < dayAvail.break_end_time) {
+              isOutsideHours = true;
+            }
+          }
+        }
+
+        if (isOutsideHours) {
+          const patient = apt.profiles as { first_name?: string; last_name?: string } | null;
+          affected.push({
+            id: apt.id,
+            appointment_date: apt.appointment_date,
+            patient_name: patient ? `${patient.first_name || ''} ${patient.last_name || ''}`.trim() : 'Unknown Patient',
+            reason: apt.reason
+          });
+        }
+      }
+
+      return affected;
+    } catch (error) {
+      logger.error('Error checking affected appointments:', error);
+      return [];
+    }
+  };
+
+  // Copy availability from one day to another
+  const copyAvailabilityToDay = (fromDayIndex: number, toDayIndex: number) => {
+    const sourceDay = availability[fromDayIndex];
+    if (!sourceDay) return;
+
+    setAvailability(prev =>
+      prev.map((day, index) =>
+        index === toDayIndex
+          ? {
+              ...day,
+              start_time: sourceDay.start_time,
+              end_time: sourceDay.end_time,
+              is_available: sourceDay.is_available,
+              break_start_time: sourceDay.break_start_time,
+              break_end_time: sourceDay.break_end_time,
+            }
+          : day
+      )
+    );
+    setCopyFromDay(null);
+    toast({
+      title: t.success,
+      description: `Copied schedule from ${getDayName(sourceDay.day_of_week)} to ${getDayName(availability[toDayIndex].day_of_week)}`,
+    });
+  };
+
+  // Copy availability to all weekdays
+  const copyToAllWeekdays = (fromDayIndex: number) => {
+    const sourceDay = availability[fromDayIndex];
+    if (!sourceDay) return;
+
+    setAvailability(prev =>
+      prev.map((day, index) => {
+        // Copy to weekdays (Monday=1 to Friday=5) except the source day
+        if (day.day_of_week >= 1 && day.day_of_week <= 5 && index !== fromDayIndex) {
+          return {
+            ...day,
+            start_time: sourceDay.start_time,
+            end_time: sourceDay.end_time,
+            is_available: sourceDay.is_available,
+            break_start_time: sourceDay.break_start_time,
+            break_end_time: sourceDay.break_end_time,
+          };
+        }
+        return day;
+      })
+    );
+    setCopyFromDay(null);
+    toast({
+      title: t.success,
+      description: `Copied schedule from ${getDayName(sourceDay.day_of_week)} to all weekdays`,
+    });
+  };
+
+  // Main save function - validates and checks for conflicts before saving
+  const saveAvailability = async (forceOverride = false) => {
+    // Step 1: Validate availability settings
+    const errors = validateAvailability(availability);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      toast({
+        title: t.error,
+        description: "Please fix the validation errors before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Step 2: Check for affected appointments (unless user already confirmed)
+    if (!forceOverride) {
+      setSaving(true);
+      const affected = await checkAffectedAppointments(availability);
+      setSaving(false);
+
+      if (affected.length > 0) {
+        setAffectedAppointments(affected);
+        setShowAffectedDialog(true);
+        return;
+      }
+    }
+
+    // Step 3: Proceed with saving
     setSaving(true);
     try {
       const businessId = await getCurrentBusinessId();
@@ -199,6 +440,22 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
           throw insertError;
         }
       }
+
+      // Clear old slots so they regenerate with new availability
+      const { error: slotsError } = await supabase
+        .from('appointment_slots')
+        .delete()
+        .eq('dentist_id', dentistId)
+        .is('appointment_id', null);
+
+      if (slotsError) {
+        logger.warn('Error clearing slots (non-fatal):', slotsError);
+      }
+
+      // Clear states
+      setValidationErrors([]);
+      setAffectedAppointments([]);
+      setShowAffectedDialog(false);
 
       // Refetch to confirm
       await fetchAvailability();
@@ -342,7 +599,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
           </div>
         </div>
         <Button
-          onClick={saveAvailability}
+          onClick={() => saveAvailability(false)}
           disabled={saving}
           size="lg"
           className="h-12 px-8 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg font-semibold"
@@ -351,6 +608,62 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
           {saving ? t.saving : t.saveAvailability}
         </Button>
       </div>
+
+      {/* Validation Errors Alert */}
+      {validationErrors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Validation Errors</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error.message}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Affected Appointments Warning Dialog */}
+      <Dialog open={showAffectedDialog} onOpenChange={setShowAffectedDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              Appointments May Be Affected
+            </DialogTitle>
+            <DialogDescription>
+              The following {affectedAppointments.length} appointment(s) fall outside the new availability hours.
+              They will remain scheduled but may conflict with your new hours.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {affectedAppointments.map((apt) => (
+              <div key={apt.id} className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="font-medium">{apt.patient_name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {format(parseISO(apt.appointment_date), 'EEEE, MMM d, yyyy - h:mm a')}
+                </div>
+                {apt.reason && (
+                  <div className="text-sm text-muted-foreground mt-1">{apt.reason}</div>
+                )}
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowAffectedDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => saveAvailability(true)}
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Anyway'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="schedule" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 h-14 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/50 dark:to-purple-950/50 p-1 rounded-xl shadow-inner">
@@ -379,25 +692,43 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 p-6">
-              {/* Quick Preset Button */}
-              <div className="flex justify-end">
+              {/* Quick Preset Buttons */}
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   variant="outline"
-                  size="lg"
-                  className="h-12 px-6 rounded-xl border-2 border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-950/30 font-semibold"
+                  size="sm"
+                  className="h-10 px-4 rounded-lg border-2 border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-950/30"
                   onClick={() => {
                     setAvailability(prev => prev.map(day => ({
                       ...day,
-                      is_available: day.day_of_week !== 1, // All except Monday
-                      start_time: '10:00',
-                      end_time: '18:00',
+                      is_available: day.day_of_week >= 1 && day.day_of_week <= 5, // Mon-Fri
+                      start_time: '09:00',
+                      end_time: '17:00',
+                      break_start_time: '12:00',
+                      break_end_time: '13:00'
+                    })));
+                  }}
+                >
+                  <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                  Standard 9-17
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 px-4 rounded-lg border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-950/30"
+                  onClick={() => {
+                    setAvailability(prev => prev.map(day => ({
+                      ...day,
+                      is_available: day.day_of_week !== 0, // All except Sunday
+                      start_time: '08:00',
+                      end_time: '20:00',
                       break_start_time: '',
                       break_end_time: ''
                     })));
                   }}
                 >
-                  <Clock className="h-5 w-5 mr-2 text-blue-600" />
-                  Tue-Sun 10-18 (No breaks)
+                  <Clock className="h-4 w-4 mr-2 text-purple-600" />
+                  Extended 8-20
                 </Button>
               </div>
 
@@ -425,13 +756,45 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
                               </div>
                               <Label className="text-lg font-medium">{day.label}</Label>
                             </div>
-                            <Switch
-                              checked={dayAvailability.is_available}
-                              onCheckedChange={(checked) =>
-                                updateAvailability(index, 'is_available', checked)
-                              }
-                              className="scale-125"
-                            />
+                            <div className="flex items-center gap-3">
+                              {/* Copy Schedule Dropdown */}
+                              {dayAvailability.is_available && (
+                                <Select
+                                  value=""
+                                  onValueChange={(value) => {
+                                    if (value === 'weekdays') {
+                                      copyToAllWeekdays(index);
+                                    } else {
+                                      const targetIndex = DAYS_OF_WEEK.findIndex(d => d.value === parseInt(value));
+                                      if (targetIndex >= 0) {
+                                        copyAvailabilityToDay(index, targetIndex);
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="w-10 h-10 p-0 border-dashed">
+                                    <Copy className="h-4 w-4 text-muted-foreground" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="weekdays" className="font-medium">
+                                      Copy to all weekdays
+                                    </SelectItem>
+                                    {DAYS_OF_WEEK.filter((_, i) => i !== index).map((targetDay) => (
+                                      <SelectItem key={targetDay.value} value={targetDay.value.toString()}>
+                                        Copy to {targetDay.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              <Switch
+                                checked={dayAvailability.is_available}
+                                onCheckedChange={(checked) =>
+                                  updateAvailability(index, 'is_available', checked)
+                                }
+                                className="scale-125"
+                              />
+                            </div>
                           </div>
 
                           {/* Time Settings - Improved responsive grid */}
