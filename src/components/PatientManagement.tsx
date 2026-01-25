@@ -19,7 +19,11 @@ import {
   MapPin,
   CreditCard,
   Edit,
-  Trash2
+  Trash2,
+  Filter,
+  AlertTriangle,
+  ExternalLink,
+  MessageSquare
 } from "lucide-react";
 import {
   AlertDialog,
@@ -64,7 +68,9 @@ import {
   NoteFormSheet,
   AppointmentsList,
   PrescriptionsSection,
-  TreatmentPlansSection
+  TreatmentPlansSection,
+  AllergyManager,
+  PatientStatsCard
 } from "@/components/patient-management";
 
 
@@ -72,6 +78,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unpaid' | 'upcoming' | 'active_plan'>('all');
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
@@ -216,6 +223,100 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
         .filter(Boolean) as Patient[];
 
       setPatients(uniquePatients);
+
+      // Pre-fetch flags for all patients (for quick filters)
+      const now = new Date();
+      const flagsMap: Record<string, PatientFlags> = {};
+
+      for (const patient of uniquePatients) {
+        // Get appointments for this patient
+        const patientAppointments = appointmentData.filter(apt => apt.patient_id === patient.id);
+        const hasUpcomingAppointment = patientAppointments.some(a => {
+          try {
+            // We need to get the full appointment to check date
+            return false; // Will be computed when patient is selected
+          } catch { return false; }
+        });
+
+        // For now, just set empty flags - they will be fully computed when patient is selected
+        flagsMap[patient.id] = {
+          hasUnpaidBalance: false,
+          hasUpcomingAppointment: false,
+          hasActiveTreatmentPlan: false,
+        };
+      }
+
+      // Batch fetch upcoming appointments
+      const { data: upcomingAppts } = await supabase
+        .from('appointments')
+        .select('patient_id, appointment_date, status')
+        .eq('dentist_id', dentistId)
+        .eq('business_id', businessId)
+        .neq('status', 'cancelled')
+        .gte('appointment_date', now.toISOString());
+
+      (upcomingAppts || []).forEach(apt => {
+        if (flagsMap[apt.patient_id]) {
+          flagsMap[apt.patient_id].hasUpcomingAppointment = true;
+        }
+      });
+
+      // Batch fetch active treatment plans
+      if (hasFeature('treatmentPlans')) {
+        const { data: activePlans } = await supabase
+          .from('treatment_plans')
+          .select('patient_id')
+          .eq('dentist_id', dentistId)
+          .eq('status', 'active');
+
+        (activePlans || []).forEach(plan => {
+          if (flagsMap[plan.patient_id]) {
+            flagsMap[plan.patient_id].hasActiveTreatmentPlan = true;
+          }
+        });
+      }
+
+      // Batch fetch unpaid balances
+      const patientIds = uniquePatients.map(p => p.id);
+      try {
+        const { data: pendingPayments } = await sb
+          .from('payment_requests')
+          .select('patient_id, amount, status')
+          .eq('dentist_id', dentistId)
+          .in('patient_id', patientIds)
+          .neq('status', 'paid')
+          .neq('status', 'cancelled');
+
+        (pendingPayments || []).forEach((pr: any) => {
+          if (flagsMap[pr.patient_id]) {
+            flagsMap[pr.patient_id].hasUnpaidBalance = true;
+            flagsMap[pr.patient_id].outstandingCents = (flagsMap[pr.patient_id].outstandingCents || 0) + (pr.amount || 0);
+          }
+        });
+      } catch {
+        // Ignore payment query errors
+      }
+
+      try {
+        const { data: unpaidInvoices } = await sb
+          .from('invoices')
+          .select('patient_id, patient_amount_cents, status')
+          .eq('dentist_id', dentistId)
+          .in('patient_id', patientIds)
+          .neq('status', 'paid')
+          .neq('status', 'cancelled');
+
+        (unpaidInvoices || []).forEach((inv: any) => {
+          if (flagsMap[inv.patient_id]) {
+            flagsMap[inv.patient_id].hasUnpaidBalance = true;
+            flagsMap[inv.patient_id].outstandingCents = (flagsMap[inv.patient_id].outstandingCents || 0) + (inv.patient_amount_cents || 0);
+          }
+        });
+      } catch {
+        // Ignore invoice query errors
+      }
+
+      setPatientFlags(flagsMap);
     } catch (error: unknown) {
       toast({
         title: "Error",
@@ -369,11 +470,28 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const filteredPatients = patients.filter(patient => {
     const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
     const search = searchTerm.toLowerCase();
-    return fullName.includes(search)
+    const matchesSearch = fullName.includes(search)
       || patient.email.toLowerCase().includes(search)
       || (patient.phone || '').toLowerCase().includes(search)
       || patient.id.toLowerCase().includes(search);
+
+    if (!matchesSearch) return false;
+
+    // Apply active filter
+    const flags = patientFlags[patient.id];
+    if (activeFilter === 'unpaid' && !flags?.hasUnpaidBalance) return false;
+    if (activeFilter === 'upcoming' && !flags?.hasUpcomingAppointment) return false;
+    if (activeFilter === 'active_plan' && !flags?.hasActiveTreatmentPlan) return false;
+
+    return true;
   });
+
+  // Count patients matching each filter for badges
+  const filterCounts = {
+    unpaid: patients.filter(p => patientFlags[p.id]?.hasUnpaidBalance).length,
+    upcoming: patients.filter(p => patientFlags[p.id]?.hasUpcomingAppointment).length,
+    active_plan: patients.filter(p => patientFlags[p.id]?.hasActiveTreatmentPlan).length,
+  };
 
 
   const openEditTreatment = (plan: TreatmentPlan) => {
@@ -642,7 +760,44 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                 className="pl-10 h-12 text-base"
               />
             </div>
-
+            {/* Quick Filters */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={activeFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveFilter('all')}
+                className="h-8 text-xs"
+              >
+                All
+              </Button>
+              <Button
+                variant={activeFilter === 'unpaid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveFilter('unpaid')}
+                className="h-8 text-xs"
+              >
+                <CreditCard className="h-3 w-3 mr-1" />
+                Unpaid {filterCounts.unpaid > 0 && `(${filterCounts.unpaid})`}
+              </Button>
+              <Button
+                variant={activeFilter === 'upcoming' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveFilter('upcoming')}
+                className="h-8 text-xs"
+              >
+                <Calendar className="h-3 w-3 mr-1" />
+                Upcoming {filterCounts.upcoming > 0 && `(${filterCounts.upcoming})`}
+              </Button>
+              <Button
+                variant={activeFilter === 'active_plan' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveFilter('active_plan')}
+                className="h-8 text-xs"
+              >
+                <ClipboardListIcon className="h-3 w-3 mr-1" />
+                Active Plan {filterCounts.active_plan > 0 && `(${filterCounts.active_plan})`}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -773,14 +928,47 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm">
+                    <div className="flex items-center space-x-2 text-sm group">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedPatient.email}</span>
+                      <a
+                        href={`mailto:${selectedPatient.email}`}
+                        className="hover:text-dental-primary hover:underline transition-colors"
+                      >
+                        {selectedPatient.email}
+                      </a>
+                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                     </div>
                     {selectedPatient.phone && (
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedPatient.phone}</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center space-x-2 group flex-1">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <a
+                            href={`tel:${selectedPatient.phone}`}
+                            className="hover:text-dental-primary hover:underline transition-colors"
+                          >
+                            {selectedPatient.phone}
+                          </a>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0"
+                            onClick={() => window.open(`tel:${selectedPatient.phone}`, '_self')}
+                            title="Call patient"
+                          >
+                            <Phone className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0"
+                            onClick={() => window.open(`sms:${selectedPatient.phone}`, '_self')}
+                            title="Send SMS"
+                          >
+                            <MessageSquare className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     )}
                     {selectedPatient.address && (
@@ -807,9 +995,17 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                     )}
                   </div>
                 </div>
+                {/* Allergy Management Section */}
+                <div className="mt-4 pt-4 border-t">
+                  <AllergyManager
+                    patientId={selectedPatient.id}
+                    businessId={businessId || ''}
+                  />
+                </div>
+
                 {selectedPatient.medical_history && (
                   <div className="mt-4 pt-4 border-t">
-                    <h4 className="font-medium text-sm mb-2">Medical Alerts</h4>
+                    <h4 className="font-medium text-sm mb-2">Medical History</h4>
                     <p className="text-sm bg-muted p-3 rounded-md">{sanitizeText(selectedPatient.medical_history)}</p>
                   </div>
                 )}
@@ -841,8 +1037,42 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
               </CardContent>
             </Card>
 
+            {/* Patient Stats Overview */}
+            <PatientStatsCard
+              appointments={appointments}
+              treatmentPlans={treatmentPlans}
+              prescriptions={prescriptions}
+              flags={patientFlags[selectedPatient.id]}
+            />
+
             {/* Appointments Section */}
-            <AppointmentsList appointments={appointments} />
+            <AppointmentsList
+              appointments={appointments}
+              onComplete={(appointmentId) => {
+                const apt = appointments.find(a => a.id === appointmentId);
+                if (apt) {
+                  setCompletionAppointment(apt);
+                  setShowCompletion(true);
+                }
+              }}
+              onCancel={async (appointmentId) => {
+                try {
+                  const { error } = await supabase
+                    .from('appointments')
+                    .update({ status: 'cancelled' })
+                    .eq('id', appointmentId);
+                  if (error) throw error;
+                  toast({ title: 'Appointment cancelled' });
+                  if (selectedPatient) fetchPatientData(selectedPatient.id);
+                } catch (error: unknown) {
+                  toast({
+                    title: 'Error',
+                    description: error instanceof Error ? error.message : 'Failed to cancel',
+                    variant: 'destructive'
+                  });
+                }
+              }}
+            />
 
             {/* Collapsible Sections */}
             <Accordion type="single" collapsible value={accordionValue} onValueChange={(val) => {

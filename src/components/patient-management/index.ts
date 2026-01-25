@@ -7,3 +7,5 @@ export { NoteFormSheet } from './NoteForm';
 export { AppointmentsList } from './AppointmentsList';
 export { PrescriptionsSection } from './PrescriptionsSection';
 export { TreatmentPlansSection } from './TreatmentPlansSection';
+export { AllergyManager } from './AllergyManager';
+export { PatientStatsCard } from './PatientStatsCard';

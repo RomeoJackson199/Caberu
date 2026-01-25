@@ -3,7 +3,68 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PrescriptionForm } from "./types";
+
+// Common dental prescription templates
+const PRESCRIPTION_TEMPLATES = [
+  {
+    label: "Amoxicillin (Antibiotic)",
+    medication_name: "Amoxicillin",
+    dosage: "500mg",
+    frequency: "3 times daily",
+    duration_days: "7",
+    instructions: "Take with or without food. Complete the full course even if symptoms improve.",
+  },
+  {
+    label: "Ibuprofen (Pain Relief)",
+    medication_name: "Ibuprofen",
+    dosage: "400mg",
+    frequency: "Every 6 hours as needed",
+    duration_days: "5",
+    instructions: "Take with food. Do not exceed 1200mg in 24 hours. Avoid if you have stomach ulcers.",
+  },
+  {
+    label: "Paracetamol (Pain Relief)",
+    medication_name: "Paracetamol",
+    dosage: "1000mg",
+    frequency: "Every 6 hours as needed",
+    duration_days: "5",
+    instructions: "Do not exceed 4000mg in 24 hours. Avoid alcohol while taking this medication.",
+  },
+  {
+    label: "Metronidazole (Antibiotic)",
+    medication_name: "Metronidazole",
+    dosage: "400mg",
+    frequency: "3 times daily",
+    duration_days: "5",
+    instructions: "Avoid alcohol during treatment and for 48 hours after. Take with or after food.",
+  },
+  {
+    label: "Chlorhexidine Mouthwash",
+    medication_name: "Chlorhexidine Gluconate 0.2%",
+    dosage: "10ml",
+    frequency: "Twice daily",
+    duration_days: "14",
+    instructions: "Rinse for 1 minute then spit out. Do not rinse with water after. Use 30 minutes after brushing.",
+  },
+  {
+    label: "Clindamycin (For Penicillin Allergy)",
+    medication_name: "Clindamycin",
+    dosage: "300mg",
+    frequency: "4 times daily",
+    duration_days: "7",
+    instructions: "Take with a full glass of water. May cause diarrhea - contact dentist if severe.",
+  },
+  {
+    label: "Prednisolone (Steroid)",
+    medication_name: "Prednisolone",
+    dosage: "5mg",
+    frequency: "Once daily in the morning",
+    duration_days: "5",
+    instructions: "Take with food. Do not stop abruptly - follow tapering instructions if provided.",
+  },
+];
 
 interface PrescriptionFormSheetProps {
   open: boolean;
@@ -29,6 +90,36 @@ export function PrescriptionFormSheet({
           <SheetTitle>{isEditing ? 'Edit Prescription' : 'Add Prescription'}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4">
+          {/* Quick Template Selector */}
+          <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+            <Label className="text-xs text-muted-foreground mb-2 block">Quick Fill from Template</Label>
+            <Select
+              onValueChange={(value) => {
+                const template = PRESCRIPTION_TEMPLATES.find(t => t.label === value);
+                if (template) {
+                  onFormChange({
+                    medication_name: template.medication_name,
+                    dosage: template.dosage,
+                    frequency: template.frequency,
+                    duration_days: template.duration_days,
+                    instructions: template.instructions,
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Select a common prescription..." />
+              </SelectTrigger>
+              <SelectContent>
+                {PRESCRIPTION_TEMPLATES.map((template) => (
+                  <SelectItem key={template.label} value={template.label}>
+                    {template.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <Label htmlFor="medication">Medication Name *</Label>
             <Input

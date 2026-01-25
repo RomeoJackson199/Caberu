@@ -6,6 +6,58 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NoteForm } from "./types";
 
+// Common note templates for dentists
+const NOTE_TEMPLATES = [
+  {
+    label: "Post-Extraction Instructions",
+    title: "Post-Extraction Care Instructions",
+    content: "- Bite on gauze for 30-45 minutes\n- Avoid spitting, rinsing, or using straws for 24 hours\n- Soft foods only for 48 hours\n- No smoking for at least 72 hours\n- Ice pack on cheek 20 min on/off\n- Pain medication as prescribed\n- Call if excessive bleeding or fever",
+    note_type: "consultation",
+  },
+  {
+    label: "Follow-up Required",
+    title: "Follow-up Appointment Needed",
+    content: "Patient requires follow-up appointment in [X] weeks for:\n- Treatment progress check\n- Suture removal\n- Further treatment planning",
+    note_type: "follow_up",
+  },
+  {
+    label: "Treatment Consent",
+    title: "Informed Consent Obtained",
+    content: "Discussed treatment options, risks, benefits, and alternatives with patient. Patient understood and gave informed consent for the proposed treatment. All questions answered satisfactorily.",
+    note_type: "consultation",
+  },
+  {
+    label: "Anxiety Patient",
+    title: "Patient Anxiety Note",
+    content: "Patient experiences dental anxiety. Recommended:\n- Extra time scheduled for appointments\n- Gentle approach and clear communication\n- Consider sedation options if needed\n- Build-up appointments recommended",
+    note_type: "general",
+  },
+  {
+    label: "Payment Discussion",
+    title: "Payment Plan Discussion",
+    content: "Discussed payment options with patient:\n- Treatment cost: €[AMOUNT]\n- Payment plan agreed: [DETAILS]\n- Next payment due: [DATE]",
+    note_type: "billing",
+  },
+  {
+    label: "Medication Allergy",
+    title: "Allergy Alert - Update Required",
+    content: "Patient reported allergy to: [MEDICATION/SUBSTANCE]\nReaction: [DESCRIPTION]\nSeverity: [MILD/MODERATE/SEVERE]\nAlternatives discussed.",
+    note_type: "clinical",
+  },
+  {
+    label: "Referral Made",
+    title: "Specialist Referral",
+    content: "Patient referred to:\n- Specialist: [NAME/SPECIALTY]\n- Reason: [REASON]\n- Referral letter provided: Yes/No\n- Urgent: Yes/No",
+    note_type: "consultation",
+  },
+  {
+    label: "No-Show",
+    title: "Missed Appointment",
+    content: "Patient did not attend scheduled appointment.\n- Attempted contact: [YES/NO]\n- Rescheduled: [YES/NO]\n- Notes: ",
+    note_type: "general",
+  },
+];
+
 interface NoteFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,6 +82,35 @@ export function NoteFormSheet({
           <SheetTitle>{isEditing ? 'Edit Note' : 'Add Note'}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4">
+          {/* Quick Template Selector */}
+          <div className="p-3 bg-muted/50 rounded-lg border border-dashed">
+            <Label className="text-xs text-muted-foreground mb-2 block">Quick Fill from Template</Label>
+            <Select
+              onValueChange={(value) => {
+                const template = NOTE_TEMPLATES.find(t => t.label === value);
+                if (template) {
+                  onFormChange({
+                    ...form,
+                    title: template.title,
+                    content: template.content,
+                    note_type: template.note_type,
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Select a template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {NOTE_TEMPLATES.map((template) => (
+                  <SelectItem key={template.label} value={template.label}>
+                    {template.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <Label htmlFor="note_title">Title *</Label>
             <Input
@@ -62,7 +143,9 @@ export function NoteFormSheet({
                 <SelectContent>
                   <SelectItem value="general">General</SelectItem>
                   <SelectItem value="consultation">Consultation</SelectItem>
+                  <SelectItem value="clinical">Clinical</SelectItem>
                   <SelectItem value="follow_up">Follow-up</SelectItem>
+                  <SelectItem value="billing">Billing</SelectItem>
                   <SelectItem value="reminder">Reminder</SelectItem>
                 </SelectContent>
               </Select>
