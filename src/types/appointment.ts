@@ -133,7 +133,7 @@ export interface CalendarEventPatient {
 export interface CalendarEvent {
   id: string;
   appointment_date: string;
-  duration_minutes: number;
+  duration_minutes?: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'google-calendar';
   urgency?: 'low' | 'medium' | 'high' | 'emergency';
   reason?: string;

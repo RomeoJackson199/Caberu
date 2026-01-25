@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { Appointment } from "@/types/shared";
+import type { CalendarEvent } from "@/types/appointment";
 import { useNavigate } from "react-router-dom";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
@@ -234,7 +235,10 @@ function DentistAppointmentsManagementContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigateDate, goToToday]);
 
-  const handleAppointmentClick = (appointment: Appointment) => {
+  const handleAppointmentClick = (calendarEvent: CalendarEvent) => {
+    // Cast calendar event to Appointment-like object for handling
+    const appointment = calendarEvent as unknown as Appointment;
+    
     // Determine if appointment is actionable (can enter consultation)
     const isPending = appointment.status === 'pending';
     const isCompleted = appointment.status === 'completed';
@@ -253,6 +257,12 @@ function DentistAppointmentsManagementContent() {
     setSelectedAppointment(appointment);
     setViewMode("day");
     setCurrentDate(parseISO(appointment.appointment_date));
+  };
+
+  const handleDayViewAppointmentClick = (calendarEvent: CalendarEvent) => {
+    // For day view, we just select the appointment (the full data is fetched by the calendar)
+    const appointment = calendarEvent as unknown as Appointment;
+    setSelectedAppointment(appointment);
   };
 
   const handleBackToWeek = () => {
@@ -664,7 +674,7 @@ function DentistAppointmentsManagementContent() {
               dentistId={dentistId}
               businessId={businessId || undefined}
               currentDate={currentDate}
-              onAppointmentClick={setSelectedAppointment}
+              onAppointmentClick={handleDayViewAppointmentClick}
               selectedAppointmentId={selectedAppointment?.id}
               googleCalendarEvents={googleCalendarEvents}
             />

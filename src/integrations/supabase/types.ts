@@ -1064,6 +1064,80 @@ export type Database = {
           },
         ]
       }
+      dentist_date_overrides: {
+        Row: {
+          break_end_time: string | null
+          break_start_time: string | null
+          business_id: string
+          created_at: string | null
+          dentist_id: string
+          end_time: string | null
+          id: string
+          is_available: boolean | null
+          override_date: string
+          reason: string | null
+          start_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          break_end_time?: string | null
+          break_start_time?: string | null
+          business_id: string
+          created_at?: string | null
+          dentist_id: string
+          end_time?: string | null
+          id?: string
+          is_available?: boolean | null
+          override_date: string
+          reason?: string | null
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          break_end_time?: string | null
+          break_start_time?: string | null
+          business_id?: string
+          created_at?: string | null
+          dentist_id?: string
+          end_time?: string | null
+          id?: string
+          is_available?: boolean | null
+          override_date?: string
+          reason?: string | null
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dentist_date_overrides_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_date_overrides_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_date_overrides_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_date_overrides_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dentist_invitations: {
         Row: {
           business_id: string
@@ -4104,6 +4178,19 @@ export type Database = {
       can_view_profile_in_user_business_norec: {
         Args: { _target_profile_id: string; _viewer_user_id: string }
         Returns: boolean
+      }
+      check_affected_appointments_on_availability_change: {
+        Args: {
+          p_business_id: string
+          p_dentist_id: string
+          p_new_availability: Json
+        }
+        Returns: {
+          appointment_date: string
+          appointment_id: string
+          patient_name: string
+          reason: string
+        }[]
       }
       check_imaging_workflow_flags: {
         Args: { p_appointment_id: string }

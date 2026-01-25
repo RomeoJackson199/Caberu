@@ -174,21 +174,37 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Get business_id from business_members
+      // Get business_id from business_members (use current session business or first available)
       const { data: profileData } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      const { data: memberData, error: memberError } = await supabase
-        .from('business_members')
+      if (!profileData) throw new Error('Profile not found');
+
+      // Try to get business from session_business first, fallback to first business_member
+      const { data: sessionBusiness } = await supabase
+        .from('session_business')
         .select('business_id')
-        .eq('profile_id', profileData?.id)
-        .single();
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
-      if (memberError) throw memberError;
-      const businessId = memberData.business_id;
+      let businessId = sessionBusiness?.business_id;
+
+      if (!businessId) {
+        // Fallback to first business membership
+        const { data: memberData, error: memberError } = await supabase
+          .from('business_members')
+          .select('business_id')
+          .eq('profile_id', profileData.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (memberError) throw memberError;
+        if (!memberData) throw new Error('No business membership found');
+        businessId = memberData.business_id;
+      }
 
       // Delete existing availability for this dentist and business
       await supabase
