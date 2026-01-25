@@ -220,23 +220,29 @@ export function isValidUrgencyLevel(urgency: string): urgency is UrgencyLevel {
 // Overlapping Appointments Handling
 // ============================================
 
-export interface CalendarEvent {
+// Import and re-export CalendarEvent from central types for backwards compatibility
+import type { CalendarEvent } from "@/types/appointment";
+export type { CalendarEvent } from "@/types/appointment";
+
+export interface PositionedEvent {
   id: string;
   appointment_date: string;
   duration_minutes?: number;
-  status: string;
-  [key: string]: any;
-}
-
-export interface PositionedEvent extends CalendarEvent {
+  status: CalendarEvent['status'];
   column: number;
   totalColumns: number;
+  urgency?: 'low' | 'medium' | 'high' | 'emergency';
+  reason?: string;
+  patient?: any;
+  patient_id?: string;
+  isGoogleCalendarEvent?: boolean;
+  [key: string]: any;
 }
 
 /**
  * Check if two events overlap in time
  */
-function eventsOverlap(event1: CalendarEvent, event2: CalendarEvent): boolean {
+function eventsOverlap(event1: { appointment_date: string; duration_minutes?: number }, event2: { appointment_date: string; duration_minutes?: number }): boolean {
   const start1 = new Date(event1.appointment_date).getTime();
   const end1 = start1 + ((event1.duration_minutes || 30) * 60 * 1000);
   const start2 = new Date(event2.appointment_date).getTime();
