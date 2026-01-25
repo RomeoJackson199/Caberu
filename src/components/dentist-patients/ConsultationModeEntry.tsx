@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -47,6 +47,15 @@ export function ConsultationModeEntry({
     const group = getAppointmentGroup(apt);
     return group === 'upcoming' || group === 'needs_completion';
   }).sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
+
+  // Auto-select and enter if only one eligible appointment
+  useEffect(() => {
+    if (open && eligibleAppointments.length === 1) {
+      // Auto-enter consultation for single appointment
+      onEnterConsultation(eligibleAppointments[0].id);
+      onOpenChange(false);
+    }
+  }, [open, eligibleAppointments, onEnterConsultation, onOpenChange]);
 
   const handleConfirm = () => {
     if (selectedAppointmentId) {
