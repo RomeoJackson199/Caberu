@@ -40,6 +40,17 @@ const Index = () => {
         navigate('/auth-redirect', {
           replace: true
         });
+        return;
+      }
+
+      // Mobile-only: redirect to welcome/login instead of showing homepage
+      if (isMobile && !currentUser) {
+        const hasSeenOnboarding = localStorage.getItem('caberu_onboarding_seen');
+        if (!hasSeenOnboarding) {
+          navigate('/welcome', { replace: true });
+        } else {
+          navigate('/login', { replace: true });
+        }
       }
     }).catch(() => {
       setLoading(false);
@@ -59,7 +70,7 @@ const Index = () => {
       }
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isMobile]);
   if (loading) {
     return <HomepageSkeleton />;
   }

@@ -2,10 +2,24 @@ import React from 'react';
 import { Composition } from 'remotion';
 import { CaberuMarketing } from './CaberuMarketing';
 import { CaberuMarketing3D } from './CaberuMarketing3D';
+import { OnboardingComposition, TOTAL_FRAMES } from './OnboardingComposition';
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* Onboarding Welcome Slides (16 seconds, portrait mobile) */}
+      <Composition
+        id="OnboardingWelcome"
+        component={OnboardingComposition}
+        durationInFrames={TOTAL_FRAMES}
+        fps={30}
+        width={390}
+        height={400}
+        defaultProps={{
+          title: 'Welcome to Caberu',
+        }}
+      />
+
       {/* Original 2D Marketing Video (45 seconds) */}
       <Composition
         id="CaberuMarketing"
