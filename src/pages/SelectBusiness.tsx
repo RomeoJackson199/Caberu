@@ -95,6 +95,18 @@ export default function SelectBusiness() {
         fetchBusinesses();
     }, [isAuthenticated]);
 
+    // Auto-select if only one business available
+    useEffect(() => {
+        if (!loadingBusinesses && !contextLoading && allBusinessesList.length === 1 && !selecting) {
+            const singleBusiness = allBusinessesList[0];
+            // Only auto-select if not already selected
+            if (businessId !== singleBusiness.id) {
+                logger.info('Auto-selecting single business:', singleBusiness.name);
+                handleSelectBusiness(singleBusiness.id);
+            }
+        }
+    }, [loadingBusinesses, contextLoading, allBusinessesList, businessId, selecting]);
+
     // Check subscription status for a dentist
     const checkDentistSubscription = async (dentistId: string): Promise<boolean> => {
         try {
@@ -260,10 +272,27 @@ export default function SelectBusiness() {
                 <div className="space-y-4">
                     {sortedFilteredBusinesses.length === 0 ? (
                         <Card className="text-center py-12">
-                            <CardContent>
-                                <p className="text-muted-foreground">
-                                    {searchTerm ? 'No businesses match your search' : 'No businesses available'}
-                                </p>
+                            <CardContent className="space-y-4">
+                                <AlertTriangle className="h-12 w-12 mx-auto text-muted-foreground/50" />
+                                <div>
+                                    <p className="text-lg font-semibold text-foreground mb-2">
+                                        {searchTerm ? 'No businesses match your search' : 'No businesses available'}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {searchTerm
+                                            ? 'Try adjusting your search terms or clear the search to see all businesses.'
+                                            : 'You don\'t have access to any businesses yet. Contact your administrator for access.'}
+                                    </p>
+                                </div>
+                                {searchTerm && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setSearchTerm('')}
+                                        className="mt-4"
+                                    >
+                                        Clear Search
+                                    </Button>
+                                )}
                             </CardContent>
                         </Card>
                     ) : (
