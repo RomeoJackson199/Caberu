@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   const { t } = useLanguage();
   const [badges, setBadges] = useState<Partial<Record<DentistSection, number>>>({});
   const location = useLocation();
+  const navigate = useNavigate();
   const [businessInfo, setBusinessInfo] = useState<{ id: string; name: string } | null>(null);
   const { template, hasFeature, loading: templateLoading } = useBusinessTemplate();
   const { isActive: hasActiveSubscription, loading: subscriptionLoading, status: subscriptionStatus, endsAt: subscriptionEndsAt } = useBusinessSubscription();
@@ -97,6 +98,11 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       }
     }
   }, [location.pathname]);
+
+  // Helper function to navigate to a section with URL update
+  const navigateToSection = (section: DentistSection) => {
+    navigate(`/dentist/${section}`);
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -245,9 +251,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
           planName={subscriptionStatus === 'cancelling' ? 'subscription' : 'subscription'}
           onReactivate={() => {
             // Navigate to settings with billing tab
-            setActiveSection('settings');
-            // Update URL to open billing tab
-            window.history.pushState({}, '', '/dentist/settings?tab=billing');
+            navigate('/dentist/settings?tab=billing');
           }}
           onLogout={async () => {
             await supabase.auth.signOut();
@@ -259,13 +263,13 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
 
     // If trying to access clinical section without medical features, redirect to dashboard
     if (activeSection === 'clinical' && !hasFeature('medicalRecords') && !hasFeature('prescriptions') && !hasFeature('treatmentPlans')) {
-      setActiveSection('dashboard');
+      navigateToSection('dashboard');
       return <LoadingSpinner variant="card" message={t.loading} />;
     }
 
     switch (activeSection) {
       case 'dashboard':
-        return <ClinicalToday dentistId={dentistId} user={user} onOpenPatientsTab={() => setActiveSection('patients')} onOpenAppointmentsTab={() => setActiveSection('appointments')} />;
+        return <ClinicalToday dentistId={dentistId} user={user} onOpenPatientsTab={() => navigateToSection('patients')} onOpenAppointmentsTab={() => navigateToSection('appointments')} />;
       case 'patients':
         return <DentistPatientManagement dentistId={dentistId} />;
       case 'appointments':
@@ -281,7 +285,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       case 'clinical':
         // Only render clinical if medical features are enabled
         if (hasFeature('medicalRecords') || hasFeature('prescriptions') || hasFeature('treatmentPlans')) {
-          return <ClinicalToday dentistId={dentistId} user={user} onOpenPatientsTab={() => setActiveSection('patients')} onOpenAppointmentsTab={() => setActiveSection('appointments')} />;
+          return <ClinicalToday dentistId={dentistId} user={user} onOpenPatientsTab={() => navigateToSection('patients')} onOpenAppointmentsTab={() => navigateToSection('appointments')} />;
         }
         return <div className="p-4">{t.clinicalNotAvailable || "Clinical features not available for this business type"}</div>;
       case 'schedule':
@@ -293,9 +297,9 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
           <Suspense fallback={<LoadingSpinner />}>
             <DentistAnalytics
               dentistId={dentistId}
-              onOpenPatientsTab={() => setActiveSection('patients')}
-              onOpenClinicalTab={() => setActiveSection('clinical')}
-              onOpenPaymentsTab={() => setActiveSection('payments')}
+              onOpenPatientsTab={() => navigateToSection('patients')}
+              onOpenClinicalTab={() => navigateToSection('clinical')}
+              onOpenPaymentsTab={() => navigateToSection('payments')}
             />
           </Suspense>
         );
@@ -325,7 +329,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   return (
     <DentistAppShell
       activeSection={activeSection}
-      onChangeSection={setActiveSection}
+      onChangeSection={navigateToSection}
       badges={badges}
       dentistId={dentistId}
     >
