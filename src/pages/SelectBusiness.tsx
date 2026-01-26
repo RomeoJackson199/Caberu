@@ -95,18 +95,6 @@ export default function SelectBusiness() {
         fetchBusinesses();
     }, [isAuthenticated]);
 
-    // Auto-select if only one business available
-    useEffect(() => {
-        if (!loadingBusinesses && !contextLoading && allBusinessesList.length === 1 && !selecting) {
-            const singleBusiness = allBusinessesList[0];
-            // Only auto-select if not already selected
-            if (businessId !== singleBusiness.id) {
-                logger.info('Auto-selecting single business:', singleBusiness.name);
-                handleSelectBusiness(singleBusiness.id);
-            }
-        }
-    }, [loadingBusinesses, contextLoading, allBusinessesList, businessId, selecting]);
-
     // Check subscription status for a dentist
     const checkDentistSubscription = async (dentistId: string): Promise<boolean> => {
         try {
