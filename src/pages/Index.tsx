@@ -66,8 +66,9 @@ const Index = () => {
     });
     return () => subscription.unsubscribe();
   }, [navigate, isMobile]);
-  if (loading) {
-    return <HomepageSkeleton />;
+  // Don't render anything on mobile — redirect happens in useEffect
+  if (loading || (isMobile && !user)) {
+    return null;
   }
   return <div className={`min-h-screen bg-background font-sans antialiased selection:bg-primary/20 selection:text-primary ${isMobile ? 'mobile-content-with-nav' : ''}`}>
       {/* AI Context - Hidden */}
