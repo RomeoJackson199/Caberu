@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { DentistBreadcrumbs } from "@/components/layout/DentistBreadcrumbs";
 export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'inventory' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services';
 interface DentistAppShellProps {
   activeSection: DentistSection;
@@ -294,8 +295,18 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
       </div>
     </header>
 
-    {/* Main Content Area */}
-    <main className="flex-1 overflow-y-auto pt-16">
+    {/* Breadcrumb Navigation */}
+    <div className="fixed top-16 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b">
+      <div className="px-6 py-3">
+        <DentistBreadcrumbs
+          activeSection={activeSection}
+          onChangeSection={onChangeSection}
+        />
+      </div>
+    </div>
+
+    {/* Main Content Area - Added extra padding for breadcrumbs */}
+    <main className="flex-1 overflow-y-auto pt-[112px]">
       <AnimatePresence mode="wait">
         <motion.div key={activeSection} initial={{
           opacity: 0,

@@ -20,6 +20,7 @@ export function AuthRedirectHandler() {
   const { loading: roleLoading, isDentist } = useUserRole();
   const { loading: businessLoading, businessId, memberships } = useBusinessContext();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<'auth' | 'role' | 'business' | 'redirect'>('auth');
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   // Check for circular redirect issues
@@ -90,6 +91,15 @@ export function AuthRedirectHandler() {
   useEffect(() => {
     // Wait for all checks to complete
     if (superAdminLoading || roleLoading || businessLoading) {
+      // Update loading stage based on what's loading
+      if (superAdminLoading) {
+        setLoadingStage('auth');
+      } else if (roleLoading) {
+        setLoadingStage('role');
+      } else if (businessLoading) {
+        setLoadingStage('business');
+      }
+
       logger.info('AuthRedirectHandler: Waiting for loading to complete', {
         superAdminLoading,
         roleLoading,
@@ -110,6 +120,7 @@ export function AuthRedirectHandler() {
 
     const performRedirect = async () => {
       setIsRedirecting(true);
+      setLoadingStage('redirect');
 
       try {
         logger.info('AuthRedirectHandler: Starting redirect logic', {
@@ -131,23 +142,48 @@ export function AuthRedirectHandler() {
 
             if (rpcError) {
               logger.error('AuthRedirectHandler: Failed to initialize OAuth business owner', rpcError);
-              toast({
-                title: "Setup Error",
-                description: "Failed to initialize your business account. Please contact support.",
-                variant: "destructive",
-              });
+
+              // Check error type
+              const errorMsg = rpcError.message?.toLowerCase() || '';
+              const isNetworkError = errorMsg.includes('network') || errorMsg.includes('fetch');
+              const isPermissionError = errorMsg.includes('permission') || errorMsg.includes('unauthorized');
+
+              if (isNetworkError) {
+                toast({
+                  title: "Connection Error",
+                  description: "Unable to complete setup due to network issues. Please try again.",
+                  variant: "destructive",
+                  duration: 6000,
+                });
+              } else if (isPermissionError) {
+                toast({
+                  title: "Permission Error",
+                  description: "Your account doesn't have the necessary permissions. Please contact support.",
+                  variant: "destructive",
+                  duration: 6000,
+                });
+              } else {
+                toast({
+                  title: "Setup Error",
+                  description: "Failed to initialize your business account. Please contact support if this persists.",
+                  variant: "destructive",
+                  duration: 6000,
+                });
+              }
             } else if (result?.success) {
               logger.info('AuthRedirectHandler: Successfully initialized OAuth business owner', result);
               toast({
                 title: "Account Setup Complete",
                 description: "Your business owner account is ready!",
+                duration: 4000,
               });
             } else {
               logger.error('AuthRedirectHandler: RPC returned failure', result);
               toast({
                 title: "Setup Warning",
-                description: result?.error || "There was an issue setting up your account.",
+                description: result?.error || "There was an issue setting up your account. You may need to complete setup manually.",
                 variant: "destructive",
+                duration: 6000,
               });
             }
 
@@ -235,11 +271,26 @@ export function AuthRedirectHandler() {
 
         if (profileError) {
           logger.error('AuthRedirectHandler: Error fetching profile', profileError);
-          toast({
-            title: "Profile Error",
-            description: "Unable to load your profile. Please try again.",
-            variant: "destructive",
-          });
+
+          // Check if it's a network error
+          const isNetworkError = profileError.message?.toLowerCase().includes('network') ||
+                                 profileError.message?.toLowerCase().includes('fetch');
+
+          if (isNetworkError) {
+            toast({
+              title: "Connection Error",
+              description: "Unable to connect to the server. Please check your internet connection and try again.",
+              variant: "destructive",
+              duration: 5000,
+            });
+          } else {
+            toast({
+              title: "Profile Error",
+              description: "Unable to load your profile. Redirecting to onboarding to complete your setup.",
+              variant: "destructive",
+            });
+          }
+
           sessionStorage.removeItem(REDIRECT_KEY);
           navigate('/onboarding', { replace: true });
           return;
@@ -257,37 +308,90 @@ export function AuthRedirectHandler() {
         navigate('/dashboard', { replace: true });
       } catch (error) {
         logger.error("Error in AuthRedirectHandler:", error);
-        toast({
-          title: "Navigation Error",
-          description: "Something went wrong. Redirecting to dashboard.",
-          variant: "destructive",
-        });
-        sessionStorage.removeItem(REDIRECT_KEY);
-        navigate('/dashboard', { replace: true });
+
+        // Determine error type and provide appropriate message
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isAuthError = errorMessage.toLowerCase().includes('auth') ||
+                           errorMessage.toLowerCase().includes('unauthorized') ||
+                           errorMessage.toLowerCase().includes('session');
+        const isNetworkError = errorMessage.toLowerCase().includes('network') ||
+                              errorMessage.toLowerCase().includes('fetch') ||
+                              errorMessage.toLowerCase().includes('connection');
+
+        if (isAuthError) {
+          toast({
+            title: "Authentication Error",
+            description: "Your session may have expired. Please log in again.",
+            variant: "destructive",
+            duration: 6000,
+          });
+          sessionStorage.removeItem(REDIRECT_KEY);
+          navigate('/login', { replace: true });
+        } else if (isNetworkError) {
+          toast({
+            title: "Connection Error",
+            description: "Unable to connect to the server. Please check your internet connection and try again.",
+            variant: "destructive",
+            duration: 6000,
+          });
+          // Don't redirect on network errors, user might want to retry
+          sessionStorage.removeItem(REDIRECT_KEY);
+          navigate('/', { replace: true });
+        } else {
+          toast({
+            title: "Navigation Error",
+            description: "Something unexpected happened. Taking you to the dashboard.",
+            variant: "destructive",
+            duration: 5000,
+          });
+          sessionStorage.removeItem(REDIRECT_KEY);
+          navigate('/dashboard', { replace: true });
+        }
       }
     };
 
     performRedirect();
   }, [isSuperAdmin, isDentist, superAdminLoading, roleLoading, businessLoading, businessId, memberships, navigate, isRedirecting, toast]);
 
-  if (superAdminLoading || roleLoading || businessLoading) {
-    return (
-      <LoadingSpinner
-        variant="overlay"
-        size="lg"
-        message="Redirecting..."
-        description="Setting up your workspace..."
-      />
-    );
-  }
+  // Determine loading message based on stage
+  const getLoadingMessage = () => {
+    switch (loadingStage) {
+      case 'auth':
+        return {
+          message: "Verifying credentials...",
+          description: "Authenticating your account"
+        };
+      case 'role':
+        return {
+          message: "Loading your profile...",
+          description: "Checking your account permissions"
+        };
+      case 'business':
+        return {
+          message: "Loading workspace...",
+          description: "Setting up your business context"
+        };
+      case 'redirect':
+        return {
+          message: "Almost there...",
+          description: "Preparing your dashboard"
+        };
+      default:
+        return {
+          message: "Redirecting...",
+          description: "Setting up your workspace"
+        };
+    }
+  };
 
-  if (isRedirecting) {
+  if (superAdminLoading || roleLoading || businessLoading || isRedirecting) {
+    const { message, description } = getLoadingMessage();
     return (
       <LoadingSpinner
         variant="overlay"
         size="lg"
-        message="Almost there..."
-        description="Loading your portal..."
+        message={message}
+        description={description}
       />
     );
   }
