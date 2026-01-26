@@ -1,0 +1,561 @@
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
+import { format, startOfWeek, addDays, addMinutes, startOfDay } from "date-fns";
+import { logger } from "@/lib/logger";
+import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
+import { isPublicHoliday } from "@/lib/belgianHolidays";
+import { retryAppointmentOperation } from "@/lib/retryStrategies";
+import { getFriendlyErrorMessage } from "@/lib/userFriendlyErrors";
+import type { Dentist, TimeSlot, Service, BookingStep, AIBookingData, SuccessDetails } from "./types";
+
+export function useBookingFlow() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { businessId, loading: businessLoading, switchBusiness } = useBusinessContext();
+
+  // Core booking state
+  const [bookingStep, setBookingStep] = useState<BookingStep>('dentist');
+  const [dentists, setDentists] = useState<Dentist[]>([]);
+  const [selectedDentist, setSelectedDentist] = useState<Dentist | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [selectedTime, setSelectedTime] = useState<string>();
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [dentistAvailableDays, setDentistAvailableDays] = useState<number[]>([]);
+
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+
+  // Success dialog
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successDetails, setSuccessDetails] = useState<SuccessDetails | undefined>(undefined);
+
+  // AI booking data
+  const [aiBookingData, setAiBookingData] = useState<AIBookingData | null>(null);
+  const [symptomSummary, setSymptomSummary] = useState<string>("");
+  const [isEditingSymptoms, setIsEditingSymptoms] = useState(false);
+
+  // Load AI booking data from sessionStorage
+  useEffect(() => {
+    const storedData = sessionStorage.getItem('aiBookingData');
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        setAiBookingData(parsed);
+        setSymptomSummary(parsed.symptoms || "");
+        sessionStorage.removeItem('aiBookingData');
+      } catch (e) {
+        logger.error("Error parsing AI booking data:", e);
+      }
+    }
+  }, []);
+
+  // Fetch dentists when business is ready
+  useEffect(() => {
+    if (!businessLoading && businessId) {
+      fetchDentists();
+    }
+  }, [businessId, businessLoading]);
+
+  const fetchDentists = useCallback(async () => {
+    if (!businessId) return;
+
+    setLoading(true);
+    try {
+      const { data: memberData, error: memberError } = await supabase
+        .from("business_members")
+        .select(`
+          profile_id,
+          profiles:profile_id (
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            address
+          )
+        `)
+        .eq("business_id", businessId);
+
+      if (memberError) throw memberError;
+
+      const profileIds = memberData?.map(m => m.profile_id) || [];
+
+      if (profileIds.length === 0) {
+        toast({
+          title: "No Dentists Available",
+          description: "This clinic doesn't have any dentists registered yet.",
+          variant: "destructive",
+        });
+        setDentists([]);
+        setLoading(false);
+        return;
+      }
+
+      const dentistResult = await supabase
+        .from("dentists")
+        .select(`
+          id,
+          first_name,
+          last_name,
+          email,
+          specialization,
+          license_number,
+          profile_id,
+          require_appointment_approval,
+          profiles:profile_id (
+            first_name,
+            last_name,
+            email,
+            phone,
+            address,
+            bio,
+            profile_picture_url
+          )
+        `)
+        .eq("is_active", true)
+        .in("profile_id", profileIds);
+
+      if (dentistResult.error) throw dentistResult.error;
+
+      const transformedData = (dentistResult.data || []).map((d: any) => ({
+        ...d,
+        profiles: Array.isArray(d.profiles) ? d.profiles[0] : (d.profiles || null),
+      }));
+
+      setDentists(transformedData);
+    } catch (error) {
+      logger.error("Error fetching dentists:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load dentists",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [businessId, toast]);
+
+  const fetchServices = useCallback(async () => {
+    if (!businessId) return;
+
+    setLoadingServices(true);
+    try {
+      const { data, error } = await supabase
+        .from('business_services')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+
+      const fetchedServices = data || [];
+      setServices(fetchedServices);
+
+      // Pre-select AI-recommended service if available
+      if (aiBookingData?.recommendedService && fetchedServices.length > 0) {
+        const recommendedServiceName = aiBookingData.recommendedService.toLowerCase();
+        const matchingService = fetchedServices.find(s =>
+          s.name.toLowerCase().includes(recommendedServiceName) ||
+          recommendedServiceName.includes(s.name.toLowerCase())
+        );
+        if (matchingService) {
+          setSelectedService(matchingService);
+        }
+      }
+    } catch (error) {
+      logger.error("Error fetching services:", error);
+    } finally {
+      setLoadingServices(false);
+    }
+  }, [businessId, aiBookingData]);
+
+  const fetchAvailableSlots = useCallback(async (date: Date, dentistId: string) => {
+    if (!businessId) return;
+
+    setLoadingSlots(true);
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+
+      // Ensure slots exist for this day
+      await supabase.rpc('generate_daily_slots', {
+        p_dentist_id: dentistId,
+        p_date: dateStr,
+        p_business_id: businessId
+      });
+
+      // Get ALL slots
+      const { data, error } = await supabase
+        .from('appointment_slots')
+        .select('slot_time, is_available')
+        .eq('dentist_id', dentistId)
+        .eq('slot_date', dateStr)
+        .eq('business_id', businessId)
+        .order('slot_time');
+
+      if (error) throw error;
+
+      // Get existing appointments for this day (pending, confirmed, scheduled)
+      const { data: existingAppts } = await supabase
+        .from("appointments")
+        .select("appointment_date, duration_minutes")
+        .eq("dentist_id", dentistId)
+        .eq("business_id", businessId)
+        .gte("appointment_date", `${dateStr}T00:00:00`)
+        .lt("appointment_date", `${dateStr}T23:59:59`)
+        .in("status", ["pending", "confirmed", "scheduled"]);
+
+      // Build set of blocked time slots from existing appointments
+      const blockedSlots = new Set<string>();
+      existingAppts?.forEach(appt => {
+        const apptDate = new Date(appt.appointment_date);
+        const apptDuration = appt.duration_minutes || 30;
+        const slotsBlocked = Math.ceil(apptDuration / 30);
+
+        for (let i = 0; i < slotsBlocked; i++) {
+          const slotTime = new Date(apptDate.getTime() + i * 30 * 60000);
+          const timeStr = slotTime.toTimeString().substring(0, 5);
+          blockedSlots.add(timeStr);
+        }
+      });
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "No Available Slots",
+          description: "No available slots found for this dentist on the selected date",
+          variant: "destructive",
+        });
+        setAvailableSlots([]);
+        setLoadingSlots(false);
+        return;
+      }
+
+      // Map slots and mark as unavailable if blocked by existing appointments
+      const allSlots = data.map((slot: { slot_time: string; is_available: boolean }) => {
+        const timeStr = slot.slot_time.substring(0, 5);
+        return {
+          time: timeStr,
+          available: slot.is_available && !blockedSlots.has(timeStr),
+        };
+      });
+
+      // Filter available slots based on service duration
+      const duration = selectedService?.duration_minutes || 30;
+      const slotsNeeded = Math.ceil(duration / 30);
+
+      // For each slot, check if enough consecutive slots are available
+      const filteredSlots = allSlots.filter((slot: TimeSlot, index: number) => {
+        if (!slot.available) return false;
+
+        if (slotsNeeded <= 1) return true;
+
+        for (let i = 1; i < slotsNeeded; i++) {
+          const nextSlot = allSlots[index + i];
+          if (!nextSlot || !nextSlot.available) return false;
+        }
+        return true;
+      });
+
+      setAvailableSlots(filteredSlots);
+    } catch (error) {
+      logger.error("Error fetching slots:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load available times",
+        variant: "destructive",
+      });
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  }, [businessId, selectedService, toast]);
+
+  // --- Step handlers ---
+
+  const handleDentistSelect = useCallback(async (dentist: Dentist) => {
+    setSelectedDentist(dentist);
+    setSelectedService(null);
+    setBookingStep('symptoms');
+
+    // Pre-fetch services in background
+    fetchServices();
+
+    if (businessId) {
+      const { data: availabilityData } = await supabase
+        .from('dentist_availability')
+        .select('day_of_week, is_available')
+        .eq('dentist_id', dentist.id)
+        .eq('business_id', businessId)
+        .eq('is_available', true);
+
+      if (availabilityData && availabilityData.length > 0) {
+        setDentistAvailableDays(availabilityData.map(d => d.day_of_week));
+      } else {
+        setDentistAvailableDays([1, 2, 3, 4, 5]);
+      }
+    }
+  }, [businessId, fetchServices]);
+
+  const handleSymptomsNext = useCallback(() => {
+    setBookingStep('service');
+  }, []);
+
+  const handleServiceSelect = useCallback((service: Service | null) => {
+    setSelectedService(service);
+    setBookingStep('datetime');
+  }, []);
+
+  const handleDateSelect = useCallback((date: Date | undefined) => {
+    if (!date || !selectedDentist) return;
+    setSelectedDate(date);
+    setSelectedTime(undefined);
+    fetchAvailableSlots(date, selectedDentist.id);
+  }, [selectedDentist, fetchAvailableSlots]);
+
+  const handleTimeSelect = useCallback((time: string) => {
+    setSelectedTime(time);
+    setBookingStep('confirm');
+  }, []);
+
+  const navigateWeek = useCallback((direction: 'prev' | 'next') => {
+    setCurrentWeekStart(prev => addDays(prev, direction === 'next' ? 7 : -7));
+  }, []);
+
+  const isDateDisabled = useCallback((date: Date) => {
+    const today = startOfDay(new Date());
+    if (date < today) return true;
+    if (isPublicHoliday(date)) return true;
+    const dayOfWeek = date.getDay();
+    return !dentistAvailableDays.includes(dayOfWeek);
+  }, [dentistAvailableDays]);
+
+  const confirmBooking = useCallback(async () => {
+    if (!selectedDate || !selectedTime || !selectedDentist || !businessId) return;
+
+    setIsBooking(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to book an appointment",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+
+      let { data: profile, error: profErr } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, phone, email, user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profErr) throw profErr;
+
+      if (!profile) {
+        const { data: inserted, error: insertErr } = await supabase
+          .from("profiles")
+          .insert({ user_id: user.id, email: user.email ?? null, first_name: '', last_name: '' })
+          .select("id, first_name, last_name, phone, email, user_id")
+          .single();
+        if (insertErr) throw insertErr;
+        profile = inserted;
+      }
+
+      const email = profile.email || user.email;
+      const missing: string[] = [];
+      if (!profile.first_name) missing.push('first name');
+      if (!profile.last_name) missing.push('last name');
+      if (!email) missing.push('email');
+
+      if (missing.length > 0) {
+        toast({
+          title: "Profile Incomplete",
+          description: "Please complete your profile first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const appointmentDateTime = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
+
+      // Check if slot is already taken
+      const serviceDuration = selectedService?.duration_minutes || 30;
+
+      const { data: existingAppts } = await supabase
+        .from("appointments")
+        .select("appointment_date, duration_minutes, status")
+        .eq("dentist_id", selectedDentist.id)
+        .eq("business_id", businessId)
+        .gte("appointment_date", `${dateStr}T00:00:00`)
+        .lt("appointment_date", `${dateStr}T23:59:59`)
+        .in("status", ["pending", "confirmed", "scheduled"]);
+
+      const requestedStart = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
+      const requestedEnd = addMinutes(requestedStart, serviceDuration);
+
+      const hasConflict = existingAppts?.some(appt => {
+        const apptStart = new Date(appt.appointment_date);
+        const apptDuration = appt.duration_minutes || 30;
+        const apptEnd = new Date(apptStart.getTime() + apptDuration * 60000);
+        return requestedStart < apptEnd && requestedEnd > apptStart;
+      });
+
+      if (hasConflict) {
+        throw new Error("This time slot is no longer available. Please select another time.");
+      }
+
+      const needsApproval = selectedDentist.require_appointment_approval === true;
+      const appointmentStatus = needsApproval ? "pending" : "confirmed";
+
+      const appointmentData = await retryAppointmentOperation(async () => {
+        const { data, error } = await supabase
+          .from("appointments")
+          .insert({
+            patient_id: profile.id,
+            dentist_id: selectedDentist.id,
+            business_id: businessId,
+            appointment_date: appointmentDateTime.toISOString(),
+            reason: selectedService ? selectedService.name : "General consultation",
+            status: appointmentStatus,
+            booking_source: aiBookingData ? "ai" : "manual",
+            urgency: "low",
+            service_id: selectedService?.id || null,
+            duration_minutes: selectedService?.duration_minutes || 30,
+            notes: symptomSummary || null
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }, 'create appointment');
+
+      // Book all required slots for the appointment duration
+      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
+        p_dentist_id: selectedDentist.id,
+        p_slot_date: dateStr,
+        p_start_time: selectedTime + ':00',
+        p_duration_minutes: serviceDuration,
+        p_appointment_id: appointmentData.id
+      });
+
+      if (slotError) {
+        await supabase.from("appointments").delete().eq("id", appointmentData.id);
+        throw new Error("This time slot is no longer available. Please select another time.");
+      }
+
+      logger.info("Appointment created:", {
+        dentistId: selectedDentist.id,
+        date: dateStr,
+        time: selectedTime,
+        appointmentId: appointmentData.id,
+        status: appointmentStatus,
+        slotsBooked: Math.ceil(serviceDuration / 30)
+      });
+
+      setSuccessDetails({
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        time: selectedTime,
+        dentist: `Dr. ${selectedDentist.first_name} ${selectedDentist.last_name}`,
+        reason: selectedService ? selectedService.name : "General consultation",
+        pendingApproval: needsApproval
+      });
+      setShowSuccessDialog(true);
+    } catch (error) {
+      logger.error("Error booking appointment:", error);
+
+      const friendlyError = getFriendlyErrorMessage(
+        error instanceof Error ? error : new Error(String(error)),
+        { operation: 'booking your appointment', entity: 'appointment' }
+      );
+
+      toast({
+        title: friendlyError.title,
+        description: friendlyError.message,
+        variant: "destructive",
+      });
+
+      if (friendlyError.suggestion) {
+        setTimeout(() => {
+          toast({
+            description: friendlyError.suggestion,
+            duration: 5000,
+          });
+        }, 500);
+      }
+
+      if (selectedDate && selectedDentist && friendlyError.canRetry) {
+        fetchAvailableSlots(selectedDate, selectedDentist.id);
+      }
+      setBookingStep('datetime');
+    } finally {
+      setIsBooking(false);
+    }
+  }, [selectedDate, selectedTime, selectedDentist, businessId, selectedService, aiBookingData, symptomSummary, toast, navigate, fetchAvailableSlots]);
+
+  const handleSuccessDialogChange = useCallback((open: boolean) => {
+    setShowSuccessDialog(open);
+    if (!open && selectedDate && selectedDentist) {
+      fetchAvailableSlots(selectedDate, selectedDentist.id);
+      setSelectedTime(undefined);
+      setBookingStep('datetime');
+    }
+  }, [selectedDate, selectedDentist, fetchAvailableSlots]);
+
+  return {
+    // State
+    bookingStep,
+    setBookingStep,
+    dentists,
+    selectedDentist,
+    selectedDate,
+    currentWeekStart,
+    selectedTime,
+    availableSlots,
+    services,
+    selectedService,
+    setSelectedService,
+    dentistAvailableDays,
+    loading,
+    loadingSlots,
+    loadingServices,
+    isBooking,
+    showSuccessDialog,
+    successDetails,
+    aiBookingData,
+    symptomSummary,
+    setSymptomSummary,
+    isEditingSymptoms,
+    setIsEditingSymptoms,
+
+    // Business context
+    businessId,
+    businessLoading,
+    switchBusiness,
+
+    // Actions
+    handleDentistSelect,
+    handleSymptomsNext,
+    handleServiceSelect,
+    handleDateSelect,
+    handleTimeSelect,
+    navigateWeek,
+    isDateDisabled,
+    confirmBooking,
+    handleSuccessDialogChange,
+    fetchAvailableSlots,
+    navigate,
+  };
+}
