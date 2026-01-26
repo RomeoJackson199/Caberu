@@ -43,14 +43,9 @@ const Index = () => {
         return;
       }
 
-      // Mobile-only: redirect to welcome/login instead of showing homepage
+      // Mobile-only: redirect to mobile auth screen instead of showing homepage
       if (isMobile && !currentUser) {
-        const hasSeenOnboarding = localStorage.getItem('caberu_onboarding_seen');
-        if (!hasSeenOnboarding) {
-          navigate('/welcome', { replace: true });
-        } else {
-          navigate('/login', { replace: true });
-        }
+        navigate('/mobile-auth', { replace: true });
       }
     }).catch(() => {
       setLoading(false);
