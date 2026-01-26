@@ -3,14 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Plus, UserPlus, Mail, User, Trash2, Edit, Eye, Search } from "lucide-react";
+import { Plus, UserPlus, Mail, User, Trash2, Edit, Eye, Search, Power, CheckSquare, Square } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { logger } from '@/lib/logger';
 import { useLanguage } from '@/hooks/useLanguage';
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 
 interface DentistManagementProps {
   currentDentistId: string;
@@ -22,22 +25,50 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
   const [dentists, setDentists] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDentist, setSelectedDentist] = useState<any>(null);
+  const [editingDentist, setEditingDentist] = useState<any>(null);
+  const [selectedDentists, setSelectedDentists] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const { toast } = useToast();
   const { businessId, businessName } = useBusinessContext();
   const { t } = useLanguage();
 
   useEffect(() => {
     fetchDentists();
-  }, []);
+  }, [businessId]);
 
   const fetchDentists = async () => {
+    if (!businessId) return;
+
     try {
+      // Get all dentists for this business via business_members
+      const { data: businessMembers, error: membersError } = await supabase
+        .from('business_members')
+        .select('profile_id')
+        .eq('business_id', businessId)
+        .in('role', ['dentist', 'admin', 'owner']);
+
+      if (membersError) throw membersError;
+
+      if (!businessMembers || businessMembers.length === 0) {
+        setDentists([]);
+        return;
+      }
+
+      const profileIds = businessMembers.map(m => m.profile_id);
+
       const { data, error } = await supabase
         .from('dentists')
         .select(`
           id,
           is_active,
           created_at,
+          specialty,
+          license_number,
+          clinic_address,
+          bio,
+          education,
+          years_of_experience,
+          languages,
           profiles (
             id,
             first_name,
@@ -47,6 +78,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
             role
           )
         `)
+        .in('profile_id', profileIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -165,10 +197,169 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
   };
 
   const handleRemoveDentist = async (dentistId: string) => {
-    toast({
-      title: "Feature Not Available",
-      description: "Dentist removal must be managed through business memberships.",
-    });
+    if (!businessId) return;
+
+    try {
+      const dentist = dentists.find(d => d.id === dentistId);
+      if (!dentist) return;
+
+      // Remove from business_members
+      const { error } = await supabase
+        .from('business_members')
+        .delete()
+        .eq('business_id', businessId)
+        .eq('profile_id', dentist.profiles.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Dentist Removed",
+        description: `${dentist.profiles.first_name} ${dentist.profiles.last_name} has been removed from the clinic.`,
+      });
+
+      fetchDentists();
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove dentist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleActive = async (dentistId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('dentists')
+        .update({ is_active: !currentStatus })
+        .eq('id', dentistId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Status Updated",
+        description: `Dentist has been ${!currentStatus ? 'activated' : 'deactivated'}.`,
+      });
+
+      fetchDentists();
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDentist) return;
+
+    try {
+      const { error } = await supabase
+        .from('dentists')
+        .update({
+          specialty: editingDentist.specialty,
+          license_number: editingDentist.license_number,
+          clinic_address: editingDentist.clinic_address,
+          bio: editingDentist.bio,
+          education: editingDentist.education,
+          years_of_experience: editingDentist.years_of_experience,
+          languages: editingDentist.languages,
+        })
+        .eq('id', editingDentist.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Dentist Updated",
+        description: "Dentist information has been updated successfully.",
+      });
+
+      setEditingDentist(null);
+      fetchDentists();
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update dentist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkActivate = async () => {
+    setBulkActionLoading(true);
+    try {
+      const dentistIds = Array.from(selectedDentists);
+      const { error } = await supabase
+        .from('dentists')
+        .update({ is_active: true })
+        .in('id', dentistIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Bulk Action Complete",
+        description: `${dentistIds.length} dentist(s) have been activated.`,
+      });
+
+      setSelectedDentists(new Set());
+      fetchDentists();
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to activate dentists",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    setBulkActionLoading(true);
+    try {
+      const dentistIds = Array.from(selectedDentists);
+      const { error } = await supabase
+        .from('dentists')
+        .update({ is_active: false })
+        .in('id', dentistIds);
+
+      if (error) throw error;
+
+      toast({
+        title: "Bulk Action Complete",
+        description: `${dentistIds.length} dentist(s) have been deactivated.`,
+      });
+
+      setSelectedDentists(new Set());
+      fetchDentists();
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to deactivate dentists",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const toggleDentistSelection = (dentistId: string) => {
+    const newSelection = new Set(selectedDentists);
+    if (newSelection.has(dentistId)) {
+      newSelection.delete(dentistId);
+    } else {
+      newSelection.add(dentistId);
+    }
+    setSelectedDentists(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDentists.size === filteredDentists.length) {
+      setSelectedDentists(new Set());
+    } else {
+      setSelectedDentists(new Set(filteredDentists.map(d => d.id)));
+    }
   };
 
   const filteredDentists = dentists.filter(dentist => {
@@ -254,9 +445,16 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
       {/* Dentist List */}
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-dental-primary">
-            <User className="h-5 w-5" />
-            <span>Dentist Profiles</span>
+          <CardTitle className="flex items-center justify-between text-dental-primary">
+            <div className="flex items-center space-x-2">
+              <User className="h-5 w-5" />
+              <span>Dentist Profiles</span>
+            </div>
+            {selectedDentists.size > 0 && (
+              <Badge variant="secondary">
+                {selectedDentists.size} selected
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -271,6 +469,50 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
             />
           </div>
 
+          {/* Bulk Actions */}
+          {selectedDentists.size > 0 && (
+            <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkActivate}
+                disabled={bulkActionLoading}
+                className="text-green-600 border-green-300 hover:bg-green-50"
+              >
+                <Power className="h-4 w-4 mr-2" />
+                Activate Selected
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkDeactivate}
+                disabled={bulkActionLoading}
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                <Power className="h-4 w-4 mr-2" />
+                Deactivate Selected
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedDentists(new Set())}
+              >
+                Clear Selection
+              </Button>
+            </div>
+          )}
+
+          {/* Select All */}
+          {filteredDentists.length > 0 && (
+            <div className="flex items-center space-x-2 p-2 border-b">
+              <Checkbox
+                checked={selectedDentists.size === filteredDentists.length && filteredDentists.length > 0}
+                onCheckedChange={toggleSelectAll}
+              />
+              <span className="text-sm text-muted-foreground">Select All</span>
+            </div>
+          )}
+
           {/* Dentist List */}
           <div className="space-y-3">
             {filteredDentists.length === 0 ? (
@@ -282,19 +524,27 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
               filteredDentists.map((dentist) => {
                 const profile = dentist.profiles;
                 const isCurrentUser = dentist.id === currentDentistId;
+                const isSelected = selectedDentists.has(dentist.id);
 
                 return (
                   <div
                     key={dentist.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border transition-all ${isCurrentUser ? 'bg-dental-primary/10 border-dental-primary/20' : 'bg-white hover:bg-gray-50'
-                      }`}
+                    className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                      isSelected ? 'bg-blue-50 border-blue-200' :
+                      isCurrentUser ? 'bg-dental-primary/10 border-dental-primary/20' :
+                      'bg-white hover:bg-gray-50'
+                    }`}
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleDentistSelection(dentist.id)}
+                      />
                       <div className="w-10 h-10 bg-dental-primary/10 rounded-full flex items-center justify-center">
                         <User className="h-5 w-5 text-dental-primary" />
                       </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 flex-wrap">
                           <h4 className="font-medium">
                             {profile.first_name} {profile.last_name}
                           </h4>
@@ -304,15 +554,35 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                           <Badge variant={dentist.is_active ? "default" : "secondary"}>
                             {dentist.is_active ? (t.active || "Active") : (t.inactive || "Inactive")}
                           </Badge>
+                          {dentist.specialty && (
+                            <Badge variant="outline" className="text-xs">{dentist.specialty}</Badge>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{profile.email}</p>
-                        {profile.phone && (
-                          <p className="text-xs text-muted-foreground">{profile.phone}</p>
+                        <p className="text-sm text-muted-foreground truncate">{profile.email}</p>
+                        {dentist.license_number && (
+                          <p className="text-xs text-muted-foreground">License: {dentist.license_number}</p>
                         )}
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggleActive(dentist.id, dentist.is_active)}
+                        title={dentist.is_active ? "Deactivate" : "Activate"}
+                      >
+                        <Power className={`h-4 w-4 ${dentist.is_active ? 'text-green-600' : 'text-gray-400'}`} />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingDentist({...dentist})}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+
                       <Button
                         size="sm"
                         variant="outline"
@@ -334,14 +604,16 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                             </DialogHeader>
                             <div className="space-y-4">
                               <p className="text-muted-foreground">
-                                Are you sure you want to remove {profile.first_name} {profile.last_name} as a dentist?
-                                They will lose access to the dentist dashboard.
+                                Are you sure you want to remove {profile.first_name} {profile.last_name} from this clinic?
+                                They will lose access to the dentist dashboard for this business.
                               </p>
                               <div className="flex justify-end space-x-2">
                                 <Button variant="outline">{t.cancel || 'Cancel'}</Button>
                                 <Button
                                   variant="destructive"
-                                  onClick={() => handleRemoveDentist(dentist.id)}
+                                  onClick={() => {
+                                    handleRemoveDentist(dentist.id);
+                                  }}
                                 >
                                   Remove
                                 </Button>
@@ -386,14 +658,46 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                     {selectedDentist.is_active ? (t.active || "Active") : (t.inactive || "Inactive")}
                   </Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">{t.roles || 'Role'}:</span>
-                  <span className="text-muted-foreground capitalize">{selectedDentist.profiles.role}</span>
-                </div>
-                {selectedDentist.profiles.phone && (
+                {selectedDentist.specialty && (
                   <div className="flex justify-between">
-                    <span className="font-medium">{t.phone || 'Phone'}:</span>
-                    <span className="text-muted-foreground">{selectedDentist.profiles.phone}</span>
+                    <span className="font-medium">Specialty:</span>
+                    <span className="text-muted-foreground">{selectedDentist.specialty}</span>
+                  </div>
+                )}
+                {selectedDentist.license_number && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">License:</span>
+                    <span className="text-muted-foreground">{selectedDentist.license_number}</span>
+                  </div>
+                )}
+                {selectedDentist.years_of_experience && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Experience:</span>
+                    <span className="text-muted-foreground">{selectedDentist.years_of_experience} years</span>
+                  </div>
+                )}
+                {selectedDentist.education && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Education:</span>
+                    <span className="text-muted-foreground text-sm">{selectedDentist.education}</span>
+                  </div>
+                )}
+                {selectedDentist.languages && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Languages:</span>
+                    <span className="text-muted-foreground text-sm">{selectedDentist.languages}</span>
+                  </div>
+                )}
+                {selectedDentist.clinic_address && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Address:</span>
+                    <span className="text-muted-foreground text-sm">{selectedDentist.clinic_address}</span>
+                  </div>
+                )}
+                {selectedDentist.bio && (
+                  <div>
+                    <span className="font-medium">Bio:</span>
+                    <p className="text-muted-foreground text-sm mt-1">{selectedDentist.bio}</p>
                   </div>
                 )}
                 <div className="flex justify-between">
@@ -404,6 +708,100 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                 </div>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Edit Dentist Dialog */}
+      {editingDentist && (
+        <Dialog open={!!editingDentist} onOpenChange={() => setEditingDentist(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Dentist Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="specialty">Specialty</Label>
+                  <Input
+                    id="specialty"
+                    value={editingDentist.specialty || ''}
+                    onChange={(e) => setEditingDentist({...editingDentist, specialty: e.target.value})}
+                    placeholder="e.g., General Dentistry, Orthodontics"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="license_number">License Number</Label>
+                  <Input
+                    id="license_number"
+                    value={editingDentist.license_number || ''}
+                    onChange={(e) => setEditingDentist({...editingDentist, license_number: e.target.value})}
+                    placeholder="Professional license number"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="education">Education</Label>
+                <Input
+                  id="education"
+                  value={editingDentist.education || ''}
+                  onChange={(e) => setEditingDentist({...editingDentist, education: e.target.value})}
+                  placeholder="e.g., DDS from Harvard School of Dental Medicine"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="years_of_experience">Years of Experience</Label>
+                  <Input
+                    id="years_of_experience"
+                    type="number"
+                    value={editingDentist.years_of_experience || ''}
+                    onChange={(e) => setEditingDentist({...editingDentist, years_of_experience: parseInt(e.target.value) || 0})}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="languages">Languages</Label>
+                  <Input
+                    id="languages"
+                    value={editingDentist.languages || ''}
+                    onChange={(e) => setEditingDentist({...editingDentist, languages: e.target.value})}
+                    placeholder="e.g., English, Spanish, French"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clinic_address">Clinic Address</Label>
+                <Input
+                  id="clinic_address"
+                  value={editingDentist.clinic_address || ''}
+                  onChange={(e) => setEditingDentist({...editingDentist, clinic_address: e.target.value})}
+                  placeholder="Full clinic address"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={editingDentist.bio || ''}
+                  onChange={(e) => setEditingDentist({...editingDentist, bio: e.target.value})}
+                  placeholder="Professional bio and background..."
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingDentist(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveEdit}>
+                Save Changes
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

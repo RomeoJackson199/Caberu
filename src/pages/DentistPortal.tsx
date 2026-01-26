@@ -25,6 +25,8 @@ import DentistAdminSecurity from "./DentistAdminSecurity";
 import DentistAdminUsers from "./DentistAdminUsers";
 import DentistTeamManagement from "./DentistTeamManagement";
 import DentistSettings from "./DentistSettings";
+import DentistAdminSchedule from "./DentistAdminSchedule";
+import DentistAdminAnalytics from "./DentistAdminAnalytics";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import DentistAppointmentsManagement from "./DentistAppointmentsManagement";
 import { InviteDentistDialog } from "@/components/InviteDentistDialog";
@@ -90,7 +92,8 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       const validSections: DentistSection[] = [
         'dashboard', 'patients', 'appointments', 'employees', 'messages', 'clinical',
         'schedule', 'payments', 'analytics', 'reports', 'inventory',
-        'imports', 'users', 'team', 'branding', 'security', 'settings', 'services'
+        'imports', 'users', 'team', 'branding', 'security', 'settings', 'services',
+        'admin-schedule', 'admin-analytics'
       ];
 
       if (validSections.includes(sectionFromUrl as DentistSection)) {
@@ -321,6 +324,10 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         return <DentistSettings />;
       case 'services':
         return <ServiceManager />;
+      case 'admin-schedule':
+        return <DentistAdminSchedule />;
+      case 'admin-analytics':
+        return <DentistAdminAnalytics />;
       default:
         return <div className="p-4">{t.sectionNotFound || "Section not found"}</div>;
     }
