@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { DentistBreadcrumbs } from "@/components/layout/DentistBreadcrumbs";
-export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'inventory' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services';
+export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'inventory' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services' | 'admin-schedule' | 'admin-analytics';
 interface DentistAppShellProps {
   activeSection: DentistSection;
   onChangeSection: (section: DentistSection) => void;
