@@ -19,6 +19,13 @@ const MobileAuthScreen = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         navigate("/auth-redirect", { replace: true });
+        return;
+      }
+
+      // Returning user: skip the sign-up/sign-in choice and go straight to login
+      const hasSignedInBefore = !!localStorage.getItem("caberu_remembered_email");
+      if (hasSignedInBefore) {
+        navigate("/login", { replace: true });
       }
     });
   }, [navigate]);

@@ -43,6 +43,13 @@ const Index = () => {
         return;
       }
 
+      // Returning user: skip landing screens and go directly to sign-in
+      const hasSignedInBefore = !!localStorage.getItem("caberu_remembered_email");
+      if (hasSignedInBefore) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
       // Mobile-only: redirect to mobile auth screen instead of showing homepage
       if (isMobile && !currentUser) {
         navigate('/mobile-auth', { replace: true });
@@ -66,8 +73,9 @@ const Index = () => {
     });
     return () => subscription.unsubscribe();
   }, [navigate, isMobile]);
-  // Don't render anything on mobile — redirect happens in useEffect
-  if (loading || (isMobile && !user)) {
+  // Don't render anything while redirecting (mobile users, returning users, or still loading)
+  const hasSignedInBefore = !!localStorage.getItem("caberu_remembered_email");
+  if (loading || (isMobile && !user) || hasSignedInBefore) {
     return null;
   }
   return <div className={`min-h-screen bg-background font-sans antialiased selection:bg-primary/20 selection:text-primary ${isMobile ? 'mobile-content-with-nav' : ''}`}>
