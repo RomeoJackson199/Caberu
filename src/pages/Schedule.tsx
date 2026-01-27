@@ -57,6 +57,7 @@ const Schedule = () => {
   const [viewMode, setViewMode] = useState<'my' | 'team'>('my');
   const [allDentists, setAllDentists] = useState<Dentist[]>([]);
   const [teamAppointments, setTeamAppointments] = useState<RealAppointment[]>([]);
+  const [totalDentistsCount, setTotalDentistsCount] = useState<number>(0);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { businessId } = useBusinessContext();
@@ -91,6 +92,50 @@ const Schedule = () => {
     
     loadUser();
   }, []);
+
+  // Check total dentist count in the practice
+  useEffect(() => {
+    if (!businessId) return;
+
+    const checkDentistCount = async () => {
+      try {
+        const { data: businessMembers, error: membersError } = await supabase
+          .from('business_members')
+          .select('profile_id')
+          .eq('business_id', businessId)
+          .in('role', ['dentist', 'admin', 'owner']);
+
+        if (membersError) throw membersError;
+
+        if (!businessMembers || businessMembers.length === 0) {
+          setTotalDentistsCount(0);
+          return;
+        }
+
+        const profileIds = businessMembers.map(m => m.profile_id);
+
+        const { data: dentistsData, error: dentistsError } = await supabase
+          .from('dentists')
+          .select('id')
+          .in('profile_id', profileIds)
+          .eq('is_active', true);
+
+        if (dentistsError) throw dentistsError;
+
+        const count = (dentistsData || []).length;
+        setTotalDentistsCount(count);
+
+        // If only one dentist, force switch to "my" view
+        if (count <= 1 && viewMode === 'team') {
+          setViewMode('my');
+        }
+      } catch (error: any) {
+        console.error('Error checking dentist count:', error);
+      }
+    };
+
+    checkDentistCount();
+  }, [businessId]);
 
   // Fetch real appointments
   useEffect(() => {
@@ -344,23 +389,26 @@ const Schedule = () => {
           subtitle={viewMode === 'my' ? "Manage your appointments and availability" : "View team schedules (read-only)"}
           breadcrumbs={[{ label: "Admin", href: "/dashboard" }, { label: "Schedule" }]}
         />
-        <Button
-          variant={viewMode === 'team' ? 'default' : 'outline'}
-          onClick={() => setViewMode(viewMode === 'my' ? 'team' : 'my')}
-          className="flex items-center gap-2"
-        >
-          {viewMode === 'my' ? (
-            <>
-              <Users className="w-4 h-4" />
-              Switch to Team View
-            </>
-          ) : (
-            <>
-              <User className="w-4 h-4" />
-              Switch to My Schedule
-            </>
-          )}
-        </Button>
+        {/* Only show switch button if there are multiple dentists */}
+        {totalDentistsCount > 1 && (
+          <Button
+            variant={viewMode === 'team' ? 'default' : 'outline'}
+            onClick={() => setViewMode(viewMode === 'my' ? 'team' : 'my')}
+            className="flex items-center gap-2"
+          >
+            {viewMode === 'my' ? (
+              <>
+                <Users className="w-4 h-4" />
+                Switch to Team View
+              </>
+            ) : (
+              <>
+                <User className="w-4 h-4" />
+                Switch to My Schedule
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       {viewMode === 'my' ? (
