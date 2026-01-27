@@ -10,8 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Shield, Key, Clock, AlertTriangle, Users, UserPlus } from "lucide-react";
+import { Loader2, Shield, Key, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -25,7 +24,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { StaffInviteDialog } from "@/components/staff/StaffInviteDialog";
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
 import { SecuritySettingsSkeleton } from "@/components/ui/page-skeletons";
@@ -38,9 +36,7 @@ export default function DentistAdminSecurity() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [sessions, setSessions] = useState<any[]>([]);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [staffMembers, setStaffMembers] = useState<any[]>([]);
   const [enablingTwoFactor, setEnablingTwoFactor] = useState(false);
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -51,7 +47,6 @@ export default function DentistAdminSecurity() {
 
   useEffect(() => {
     if (dentistId) {
-      loadSessions();
       checkTwoFactorStatus();
       loadUserEmail();
     }
@@ -78,26 +73,6 @@ export default function DentistAdminSecurity() {
       }
     } catch (error) {
       logger.error('Error checking 2FA status:', error);
-    }
-  };
-
-  const loadSessions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('action', 'login')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-      setSessions(data || []);
-    } catch (error) {
-      logger.error('Error loading sessions:', error);
     }
   };
 
@@ -460,96 +435,6 @@ export default function DentistAdminSecurity() {
           email={userEmail}
           onSuccess={handle2FASuccess}
         />
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              {t.staffRoles}
-            </CardTitle>
-            <CardDescription>
-              {t.staffRolesDesc}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {staffMembers.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground mb-4">
-                  {t.noStaffYet}
-                </p>
-                <StaffInviteDialog dentistId={dentistId} />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {staffMembers.map((member: any) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.email}</p>
-                    </div>
-                    <Select defaultValue={member.role}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="dentist">Dentist</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="assistant">Assistant</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-                <div className="pt-3">
-                  <StaffInviteDialog dentistId={dentistId} />
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              {t.history}
-            </CardTitle>
-            <CardDescription>
-              {t.history}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {sessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t.noRecordsFound}</p>
-            ) : (
-              <div className="space-y-3">
-                {sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {new Date(session.created_at).toLocaleString()}
-                      </p>
-                      {session.ip_address && (
-                        <p className="text-xs text-muted-foreground">
-                          IP: {session.ip_address}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {session.action}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
