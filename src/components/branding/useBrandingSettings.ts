@@ -14,7 +14,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   const { updateTemplate: updateTemplateContext } = useTemplate();
   const { t } = useLanguage();
   const { toast } = useToast();
-  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null!);
 
   // Core branding state
   const [loading, setLoading] = useState(false);
