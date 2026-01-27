@@ -79,22 +79,44 @@ export const InviteDentistDialog = ({ businessId, businessName }: InviteDentistD
 
       if (inviteError) throw inviteError;
 
-      // Send invitation email (optional - can be implemented later)
+      // Send invitation email using the edge function
       try {
-        await supabase.functions.invoke("send-invite-email", {
+        const { data: emailData, error: emailError } = await supabase.functions.invoke("send-dentist-invitation", {
           body: {
-            to_email: email,
+            invitee_email: email.toLowerCase().trim(),
+            business_id: businessId,
             business_name: businessName
           }
         });
+
+        if (emailError) {
+          logger.error("Failed to send invitation email:", emailError);
+          toast({
+            title: "Invitation Created",
+            description: `Invitation created but email failed to send. Please contact ${email} directly.`,
+            variant: "destructive"
+          });
+          setEmail("");
+          setOpen(false);
+          return;
+        }
+
+        logger.info("Invitation email sent successfully:", emailData);
       } catch (emailError) {
         logger.error("Failed to send invitation email:", emailError);
-        // Don't fail the whole operation if email fails
+        toast({
+          title: "Invitation Created",
+          description: `Invitation created but email failed to send. Please contact ${email} directly.`,
+          variant: "destructive"
+        });
+        setEmail("");
+        setOpen(false);
+        return;
       }
 
       toast({
         title: "Invitation Sent! 📧",
-        description: `Invitation sent to ${email}`,
+        description: `Invitation email sent to ${email}`,
       });
 
       setEmail("");
@@ -124,7 +146,7 @@ export const InviteDentistDialog = ({ businessId, businessName }: InviteDentistD
           <DialogTitle>Invite Dentist to {businessName}</DialogTitle>
           <DialogDescription>
             Enter the email address of the person you want to invite as a dentist.
-            They'll receive an invitation the next time they log in.
+            They'll receive an email with instructions to join your practice.
           </DialogDescription>
         </DialogHeader>
 
