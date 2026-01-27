@@ -93,7 +93,18 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
             description: `${email} already has a pending invite for this clinic.`,
           });
         } else {
-          // Call edge function to send dentist invitation email
+          // First, create the invitation record in the database
+          const { error: inviteError } = await supabase
+            .from('dentist_invitations')
+            .insert({
+              business_id: businessId,
+              inviter_profile_id: inviterProfile.id,
+              invitee_email: email.toLowerCase().trim(),
+            });
+
+          if (inviteError) throw inviteError;
+
+          // Then, send the invitation email using the edge function
           const { error: emailError } = await supabase.functions.invoke('send-dentist-invitation', {
             body: {
               invitee_email: email.toLowerCase().trim(),
@@ -103,14 +114,18 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
           });
 
           if (emailError) {
-            logger.error('Error sending dentist invitation:', emailError);
-            throw new Error(`Failed to send invitation email: ${emailError.message || 'Unknown error'}`);
+            logger.error('Error sending dentist invitation email:', emailError);
+            toast({
+              title: 'Invitation created',
+              description: `Invitation created but email failed to send. Please contact ${email} directly.`,
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: 'Invitation sent',
+              description: `An invitation email was sent to ${email} to join ${businessName || 'the clinic'} as a dentist.`,
+            });
           }
-
-          toast({
-            title: 'Invitation sent',
-            description: `An invitation email was sent to ${email} to join ${businessName || 'the clinic'} as a dentist.`,
-          });
         }
       } else {
         // Patient invitation - call edge function to send email
