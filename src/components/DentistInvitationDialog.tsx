@@ -26,11 +26,63 @@ interface Invitation {
 export const DentistInvitationDialog = () => {
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loading, setLoading] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     checkForInvitations();
+
+    // Set up periodic checking every 30 seconds
+    const intervalId = setInterval(() => {
+      checkForInvitations();
+    }, 30000);
+
+    // Set up real-time subscription for new invitations
+    let subscription: any = null;
+
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile?.email) return;
+
+      setUserEmail(profile.email);
+
+      // Subscribe to changes in dentist_invitations for this user's email
+      subscription = supabase
+        .channel('dentist-invitations')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'dentist_invitations',
+            filter: `invitee_email=eq.${profile.email}`
+          },
+          (payload) => {
+            logger.info('New invitation received:', payload);
+            checkForInvitations();
+          }
+        )
+        .subscribe();
+    };
+
+    setupSubscription();
+
+    // Cleanup
+    return () => {
+      clearInterval(intervalId);
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
   }, []);
 
   const checkForInvitations = async () => {
@@ -71,6 +123,9 @@ export const DentistInvitationDialog = () => {
           business_id: inv.business_id,
           businesses: Array.isArray(inv.businesses) ? inv.businesses[0] : inv.businesses
         });
+      } else {
+        // Clear invitation if none found
+        setInvitation(null);
       }
     } catch (error) {
       logger.error("Error checking invitations:", error);
