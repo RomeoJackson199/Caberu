@@ -10,7 +10,7 @@ interface QRCodeDialogProps {
   onOpenChange: (open: boolean) => void;
   businessLink: string;
   onDownload: () => void;
-  qrCanvasRef: RefObject<HTMLCanvasElement | null>;
+  qrCanvasRef: RefObject<HTMLCanvasElement>;
 }
 
 export function QRCodeDialog({ open, onOpenChange, businessLink, onDownload, qrCanvasRef }: QRCodeDialogProps) {

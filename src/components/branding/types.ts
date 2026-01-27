@@ -51,7 +51,7 @@ export interface BrandingMeta {
   pendingTemplate: TemplateType | null;
   businessLink: string;
   businessId: string | null;
-  qrCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+  qrCanvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
 export type UseBrandingSettingsReturn = BrandingState & BrandingActions & BrandingMeta;
