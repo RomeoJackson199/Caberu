@@ -94,6 +94,29 @@ serve(async (req) => {
       .eq('email', email)
       .maybeSingle();
 
+    // Create invitation record in database
+    const { data: invitation, error: invitationError } = await supabase
+      .from('dentist_invitations')
+      .insert({
+        business_id: requestBody.business_id,
+        inviter_profile_id: userProfile.id,
+        invitee_email: email,
+        invitee_profile_id: existingProfile?.id || null
+      })
+      .select('id')
+      .single();
+
+    if (invitationError || !invitation) {
+      console.error('Failed to create invitation record:', invitationError);
+      return new Response(JSON.stringify({
+        error: 'Failed to create invitation record',
+        details: invitationError?.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:3000';
     let invitationLink = '';
     let subject = '';
@@ -129,6 +152,12 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
+
+      // Update the invitation record with the new profile ID
+      await supabase
+        .from('dentist_invitations')
+        .update({ invitee_profile_id: newProfile.id })
+        .eq('id', invitation.id);
 
       // Create invitation token
       const { data: tokenData, error: tokenError } = await supabase

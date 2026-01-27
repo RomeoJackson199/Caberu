@@ -54,7 +54,7 @@ export const InviteDentistDialog = ({ businessId, businessName }: InviteDentistD
       const { data: existingInvite } = await supabase
         .from("dentist_invitations")
         .select("id, status")
-        .eq("invitee_email", email)
+        .eq("invitee_email", email.toLowerCase().trim())
         .eq("business_id", businessId)
         .eq("status", "pending")
         .single();
@@ -68,51 +68,21 @@ export const InviteDentistDialog = ({ businessId, businessName }: InviteDentistD
         return;
       }
 
-      // Create invitation
-      const { error: inviteError } = await supabase
-        .from("dentist_invitations")
-        .insert({
+      // Send invitation using the edge function (it creates the record and sends email)
+      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-dentist-invitation", {
+        body: {
+          invitee_email: email.toLowerCase().trim(),
           business_id: businessId,
-          inviter_profile_id: profile.id,
-          invitee_email: email.toLowerCase().trim()
-        });
-
-      if (inviteError) throw inviteError;
-
-      // Send invitation email using the edge function
-      try {
-        const { data: emailData, error: emailError } = await supabase.functions.invoke("send-dentist-invitation", {
-          body: {
-            invitee_email: email.toLowerCase().trim(),
-            business_id: businessId,
-            business_name: businessName
-          }
-        });
-
-        if (emailError) {
-          logger.error("Failed to send invitation email:", emailError);
-          toast({
-            title: "Invitation Created",
-            description: `Invitation created but email failed to send. Please contact ${email} directly.`,
-            variant: "destructive"
-          });
-          setEmail("");
-          setOpen(false);
-          return;
+          business_name: businessName
         }
+      });
 
-        logger.info("Invitation email sent successfully:", emailData);
-      } catch (emailError) {
-        logger.error("Failed to send invitation email:", emailError);
-        toast({
-          title: "Invitation Created",
-          description: `Invitation created but email failed to send. Please contact ${email} directly.`,
-          variant: "destructive"
-        });
-        setEmail("");
-        setOpen(false);
-        return;
+      if (emailError) {
+        logger.error("Failed to send invitation:", emailError);
+        throw emailError;
       }
+
+      logger.info("Invitation sent successfully:", emailData);
 
       toast({
         title: "Invitation Sent! 📧",
