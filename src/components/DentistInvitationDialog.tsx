@@ -46,6 +46,9 @@ export const DentistInvitationDialog = () => {
 
       if (!profile?.email) return;
 
+      // Normalize email for case-insensitive comparison
+      const normalizedEmail = profile.email.toLowerCase().trim();
+
       // Check for pending invitations
       const { data: invitations, error } = await supabase
         .from("dentist_invitations")
@@ -57,7 +60,7 @@ export const DentistInvitationDialog = () => {
             slug
           )
         `)
-        .eq("invitee_email", profile.email)
+        .eq("invitee_email", normalizedEmail)
         .eq("status", "pending")
         .gt("expires_at", new Date().toISOString())
         .limit(1);
