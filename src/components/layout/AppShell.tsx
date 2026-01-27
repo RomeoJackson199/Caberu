@@ -315,8 +315,6 @@ function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Navigate">
           <CommandItem onSelect={() => { onOpenChange(false); navigate("/dashboard"); }}>Dashboard</CommandItem>
-          <CommandItem onSelect={() => { onOpenChange(false); navigate("/analytics"); }}>Analytics</CommandItem>
-          <CommandItem onSelect={() => { onOpenChange(false); navigate("/schedule"); }}>Schedule</CommandItem>
           <CommandItem onSelect={() => { onOpenChange(false); navigate("/dashboard#inventory"); }}>Inventory</CommandItem>
           <CommandItem onSelect={() => { onOpenChange(false); navigate("/dashboard#payments"); }}>Payments</CommandItem>
         </CommandGroup>
