@@ -93,19 +93,23 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
             description: `${email} already has a pending invite for this clinic.`,
           });
         } else {
-          const { error: inviteError } = await supabase
-            .from('dentist_invitations')
-            .insert({
+          // Call edge function to send dentist invitation email
+          const { error: emailError } = await supabase.functions.invoke('send-dentist-invitation', {
+            body: {
+              invitee_email: email.toLowerCase().trim(),
               business_id: businessId,
-              inviter_profile_id: inviterProfile.id,
-              invitee_email: email,
-            });
+              business_name: businessName || 'the clinic',
+            }
+          });
 
-          if (inviteError) throw inviteError;
+          if (emailError) {
+            logger.error('Error sending dentist invitation:', emailError);
+            throw new Error(`Failed to send invitation email: ${emailError.message || 'Unknown error'}`);
+          }
 
           toast({
             title: 'Invitation sent',
-            description: `An invitation was sent to ${email} to join ${businessName || 'the clinic'} as a dentist.`,
+            description: `An invitation email was sent to ${email} to join ${businessName || 'the clinic'} as a dentist.`,
           });
         }
       } else {
