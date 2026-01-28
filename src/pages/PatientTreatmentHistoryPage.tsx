@@ -1,11 +1,13 @@
 import React from "react";
-import { FileText, FolderOpen, ShieldCheck } from "lucide-react";
+import { FolderOpen, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientRecordsTimeline } from "@/components/patients/PatientRecordsTimeline";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { PageContainer } from "@/components/ui/layout-components";
+import { EmptyState } from "@/components/ui/polished-components";
 
 export default function PatientTreatmentHistoryPage() {
   const { t } = useLanguage();
@@ -29,7 +31,7 @@ export default function PatientTreatmentHistoryPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <PageContainer>
         <Card>
           <CardContent className="p-6">
             <div className="space-y-4">
@@ -53,13 +55,12 @@ export default function PatientTreatmentHistoryPage() {
             </Card>
           ))}
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Records Header */}
+    <PageContainer>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -78,21 +79,16 @@ export default function PatientTreatmentHistoryPage() {
         </Badge>
       </div>
 
-      {/* Records Timeline */}
       {patientId ? (
         <PatientRecordsTimeline patientId={patientId} />
       ) : (
-        <Card className="border-dashed">
-          <CardContent className="py-16 text-center">
-            <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Unable to load records</h3>
-            <p className="text-sm text-muted-foreground">
-              Please try again later or contact support if the issue persists.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FolderOpen}
+          title="Unable to load records"
+          description="Please try again later or contact support if the issue persists."
+        />
       )}
-    </div>
+    </PageContainer>
   );
 }
 
