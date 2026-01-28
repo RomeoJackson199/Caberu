@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "./input";
 import { Label } from "./label";
 import { CharacterCounter } from "./character-counter";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 interface FormFieldProps extends React.ComponentProps<"input"> {
   label?: string;
@@ -13,6 +13,7 @@ interface FormFieldProps extends React.ComponentProps<"input"> {
   validate?: (value: string) => string | undefined;
   onValidation?: (isValid: boolean) => void;
   showCharacterCount?: boolean; // Show character counter when maxLength is set
+  showPasswordToggle?: boolean; // Show password visibility toggle for password fields
 }
 
 /**
@@ -33,16 +34,20 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
     id,
     showCharacterCount = true,
     maxLength,
+    showPasswordToggle = true,
+    type,
     ...props
   }, ref) => {
     const [touched, setTouched] = React.useState(false);
     const [internalError, setInternalError] = React.useState<string | undefined>();
     const [value, setValue] = React.useState(props.value?.toString() || props.defaultValue?.toString() || "");
-    
+    const [showPassword, setShowPassword] = React.useState(false);
+
     const error = externalError || internalError;
     const showError = touched && error;
     const showSuccess = touched && success && !error && value;
     const fieldId = id || React.useId();
+    const isPasswordField = type === "password";
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       setTouched(true);
@@ -90,9 +95,11 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
           <Input
             ref={ref}
             id={fieldId}
+            type={isPasswordField && showPassword ? "text" : type}
             className={cn(
               showError && "border-destructive focus-visible:ring-destructive/30",
               showSuccess && "border-green-500 focus-visible:ring-green-500/30",
+              (isPasswordField && showPasswordToggle) && "pr-10",
               className
             )}
             onBlur={handleBlur}
@@ -106,18 +113,40 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
             }
             {...props}
           />
-          
-          {/* Status icon */}
-          {(showError || showSuccess) && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              {showError && (
-                <AlertCircle className="h-4 w-4 text-destructive animate-in fade-in-50 zoom-in-95" />
-              )}
-              {showSuccess && (
-                <CheckCircle2 className="h-4 w-4 text-green-500 animate-in fade-in-50 zoom-in-95" />
-              )}
-            </div>
-          )}
+
+          {/* Right side icons container */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {/* Status icons */}
+            {showError && (
+              <AlertCircle className="h-4 w-4 text-destructive animate-in fade-in-50 zoom-in-95" aria-hidden="true" />
+            )}
+            {showSuccess && (
+              <CheckCircle2 className="h-4 w-4 text-green-500 animate-in fade-in-50 zoom-in-95" aria-hidden="true" />
+            )}
+
+            {/* Password toggle button */}
+            {isPasswordField && showPasswordToggle && !showError && !showSuccess && (
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={cn(
+                  "text-muted-foreground hover:text-foreground transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm p-0.5",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                tabIndex={0}
+                disabled={props.disabled}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            )}
+          </div>
         </div>
         
         {/* Bottom row: Error/Hint and Character Counter */}
@@ -199,6 +228,22 @@ export const validators = {
       if (!value.trim()) return undefined;
       const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
       return phoneRegex.test(value) ? undefined : message;
+    },
+
+  password: (message = "Password must be at least 8 characters with uppercase, lowercase, and number") =>
+    (value: string) => {
+      if (!value.trim()) return undefined;
+      const hasMinLength = value.length >= 8;
+      const hasUppercase = /[A-Z]/.test(value);
+      const hasLowercase = /[a-z]/.test(value);
+      const hasNumber = /[0-9]/.test(value);
+
+      if (!hasMinLength) return "Password must be at least 8 characters";
+      if (!hasUppercase) return "Password must contain an uppercase letter";
+      if (!hasLowercase) return "Password must contain a lowercase letter";
+      if (!hasNumber) return "Password must contain a number";
+
+      return undefined;
     },
 
   // Combine multiple validators

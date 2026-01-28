@@ -2,15 +2,17 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EmptyState } from "@/components/ui/empty-state";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Calendar, 
-  ChevronLeft, 
-  ChevronRight, 
-  CalendarDays, 
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
   List,
-  CalendarCheck
+  CalendarCheck,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
@@ -210,12 +212,12 @@ const CalendarView = ({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No appointments on this day
-                </p>
-              </div>
+              <EmptyState
+                icon={Calendar}
+                title="No appointments"
+                description="No appointments scheduled for this day"
+                variant="compact"
+              />
             )}
           </ScrollArea>
         </CardContent>
@@ -375,14 +377,15 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user }) => {
     
     if (!hasAnyAppointments) {
       return (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <CalendarCheck className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              Your upcoming appointments will appear here once booked.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={CalendarCheck}
+          title="No appointments yet"
+          description="Your upcoming appointments will appear here once you book them. Get started by booking your first appointment."
+          actionLabel="Book Appointment"
+          onAction={onOpenAssistant}
+          variant="illustrated"
+          illustration="calendar"
+        />
       );
     }
     

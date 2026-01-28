@@ -35,6 +35,7 @@ import { KeyboardShortcutsGuide } from "@/components/KeyboardShortcutsGuide";
 import { SmartNotificationBanner } from "@/components/notifications/SmartNotificationBanner";
 import { NotificationPermissionPrompt } from "@/components/notifications/NotificationPermissionPrompt";
 import { initializePushNotifications } from "@/lib/pushNotifications";
+import { SkipNavigation } from "@/components/accessibility/SkipNavigation";
 
 // Force resync: 2025-12-07T19:03
 
@@ -433,6 +434,7 @@ const App = () => {
                 <NotificationPermissionPrompt />
                 <ConfirmationProvider>
                 <BrowserRouter>
+                  <SkipNavigation />
                   <RouteProgressBar />
                   <EmailLimitProvider>
                     <DentistInvitationDialog />
