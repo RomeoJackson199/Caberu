@@ -68,17 +68,17 @@
     --accent-light: 268 52% 84%;
     --accent-dark: 268 52% 64%;
 
-    /* Neutral Colors - Enhanced Contrast */
+    /* Neutral Colors - Enhanced Contrast (WCAG AA Compliant) */
     --muted: 220 14% 20%;
-    --muted-foreground: 220 12% 72%;
+    --muted-foreground: 220 12% 78%;
 
     /* Destructive/Error - Enhanced */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Form Elements - Enhanced Visibility */
-    --border: 220 14% 28%;
-    --input: 220 14% 28%;
+    /* Form Elements - Enhanced Visibility (WCAG AA Compliant) */
+    --border: 220 14% 32%;
+    --input: 220 14% 32%;
     --ring: 213 84% 58%;
 
     /* Semantic Status Colors - Full Scale */
@@ -215,9 +215,9 @@
     --accent-light: 268 52% 78%;
     --accent-dark: 268 52% 58%;
 
-    /* Neutral Colors - Enhanced Contrast */
+    /* Neutral Colors - Enhanced Contrast (WCAG AA Compliant) */
     --muted: 210 20% 94%;
-    --muted-foreground: 220 10% 42%;
+    --muted-foreground: 220 10% 38%;
 
     /* Destructive/Error - Enhanced */
     --destructive: 0 84% 60%;
@@ -364,9 +364,19 @@
     scroll-behavior: smooth;
   }
 
-  /* Better focus styles - 2px brand-600 with 2px offset */
+  /* Enhanced focus styles for better accessibility - WCAG 2.1 AA Compliant */
   *:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    @apply outline-none ring-[3px] ring-ring ring-offset-2 ring-offset-background transition-shadow duration-150;
+  }
+
+  /* High contrast focus for interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-[3px] ring-primary ring-offset-2 ring-offset-background shadow-[0_0_0_3px_rgba(37,99,235,0.2)];
   }
 }
 

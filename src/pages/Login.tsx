@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/ui/form-field";
 import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -470,7 +471,7 @@ const Login = () => {
                 )}
 
                 {/* Email/Password Form */}
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-4" role="form" aria-label="Sign in form">
                   {/* Only show email field for new users */}
                   {!isReturningUser && (
                     <div className="space-y-2">
@@ -485,21 +486,24 @@ const Login = () => {
                         required
                         autoFocus={!isReturningUser}
                         autoComplete="email"
+                        aria-label="Email address"
+                        aria-required="true"
+                        aria-invalid={authError && formData.email ? "true" : "false"}
                       />
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Password</span>
                       <Link
                         to="/forgot-password"
-                        className="text-xs text-primary hover:underline"
+                        className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
                       >
                         Forgot?
                       </Link>
                     </div>
-                    <Input
+                    <FormField
                       id="password"
                       type="password"
                       placeholder="Enter your password"
@@ -509,6 +513,11 @@ const Login = () => {
                       required
                       autoFocus={isReturningUser}
                       autoComplete="current-password"
+                      showPasswordToggle={true}
+                      showCharacterCount={false}
+                      error={authError && formData.password ? "Please check your password and try again" : undefined}
+                      aria-label="Password"
+                      aria-required="true"
                     />
                   </div>
 
@@ -522,8 +531,17 @@ const Login = () => {
                     type="submit"
                     className="h-12 w-full text-base font-semibold"
                     disabled={isLoading}
+                    aria-label={isLoading ? "Signing in, please wait" : "Sign in to your account"}
+                    aria-busy={isLoading}
                   >
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continue"}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Signing in...</span>
+                      </>
+                    ) : (
+                      "Continue"
+                    )}
                   </Button>
                 </form>
 
