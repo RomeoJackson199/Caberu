@@ -4,12 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormField } from "@/components/ui/form-field";
-import { Shield, ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { FormField, validators } from "@/components/ui/form-field";
+import { Loader2, Shield, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
 import { validatePassword } from "@/utils/passwordValidation";
-import { AuthSplitLayout, AuthCard, SubmitButton, FormSection } from "@/components/ui/layout-components";
 
 const ForgotPassword = () => {
   const { toast } = useToast();
@@ -86,35 +85,43 @@ const ForgotPassword = () => {
     }
   };
 
-  const heroContent = (
-    <div className="max-w-md space-y-6 text-center">
-      <div className="h-20 w-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto backdrop-blur-sm">
-        <Shield className="h-10 w-10" />
-      </div>
-      <h2 className="text-4xl font-bold leading-tight">
-        {step === 'email' && "Forgot your password?"}
-        {step === 'verify' && "Verify & Reset"}
-        {step === 'success' && "All Set!"}
-      </h2>
-      <p className="text-lg text-white/90">
-        {step === 'email' && "Enter your email address and we'll send you a code to reset your password."}
-        {step === 'verify' && "Enter the verification code sent to your email and choose a new password."}
-        {step === 'success' && "Your password has been securely updated. You can now log in."}
-      </p>
-    </div>
-  );
+  return (
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Left Side - Hero Section */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
 
-  const formContent = (
-    <div className="space-y-6">
-      {step === 'email' && (
-        <>
-          <div className="lg:hidden text-center space-y-2">
-            <h1 className="text-2xl font-bold">Forgot password?</h1>
-            <p className="text-muted-foreground">Enter your email to receive a reset code</p>
+        <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white w-full">
+          <div className="max-w-md space-y-6 text-center">
+            <div className="h-20 w-20 rounded-2xl bg-white/20 flex items-center justify-center mx-auto backdrop-blur-sm">
+              <Shield className="h-10 w-10" />
+            </div>
+            <h2 className="text-4xl font-bold leading-tight">
+              {step === 'email' && "Forgot your password?"}
+              {step === 'verify' && "Verify & Reset"}
+              {step === 'success' && "All Set!"}
+            </h2>
+            <p className="text-lg text-white/90">
+              {step === 'email' && "Enter your email address and we'll send you a code to reset your password."}
+              {step === 'verify' && "Enter the verification code sent to your email and choose a new password."}
+              {step === 'success' && "Your password has been securely updated. You can now log in."}
+            </p>
           </div>
+        </div>
+      </div>
 
-          <AuthCard>
-            <form onSubmit={handleSendCode} className="space-y-4" role="form" aria-label="Password reset request form">
+      {/* Right Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-6 bg-background">
+        <div className="w-full max-w-md space-y-6">
+          {step === 'email' && (
+            <div className="space-y-6">
+              <div className="lg:hidden text-center space-y-2">
+                <h1 className="text-2xl font-bold">Forgot password?</h1>
+                <p className="text-muted-foreground">Enter your email to receive a reset code</p>
+              </div>
+
+              <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                <form onSubmit={handleSendCode} className="space-y-4" role="form" aria-label="Password reset request form">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email address</Label>
                     <div className="relative">
@@ -135,23 +142,36 @@ const ForgotPassword = () => {
                     </div>
                   </div>
 
-              <SubmitButton isLoading={isLoading} loadingText="Sending...">
-                Send Reset Code
-              </SubmitButton>
-            </form>
-          </AuthCard>
-        </>
-      )}
+                  <Button
+                    type="submit"
+                    className="h-12 w-full text-base font-semibold"
+                    disabled={isLoading}
+                    aria-label={isLoading ? "Sending reset code, please wait" : "Send password reset code"}
+                    aria-busy={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Sending code...</span>
+                      </>
+                    ) : (
+                      "Send Reset Code"
+                    )}
+                  </Button>
+                </form>
+              </div>
+            </div>
+          )}
 
-      {step === 'verify' && (
-        <>
-          <div className="lg:hidden text-center space-y-2">
-            <h1 className="text-2xl font-bold">Verify & Reset</h1>
-            <p className="text-muted-foreground">Check your email for the code</p>
-          </div>
+          {step === 'verify' && (
+            <div className="space-y-6">
+              <div className="lg:hidden text-center space-y-2">
+                <h1 className="text-2xl font-bold">Verify & Reset</h1>
+                <p className="text-muted-foreground">Check your email for the code</p>
+              </div>
 
-          <AuthCard>
-            <form onSubmit={handleResetPassword} className="space-y-4" role="form" aria-label="Password reset verification form">
+              <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                <form onSubmit={handleResetPassword} className="space-y-4" role="form" aria-label="Password reset verification form">
                   <div className="space-y-2">
                     <Label htmlFor="code">Verification Code</Label>
                     <Input
@@ -188,67 +208,74 @@ const ForgotPassword = () => {
                       aria-label="New password"
                       aria-required="true"
                     />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="h-12 w-full text-base font-semibold"
+                    disabled={isLoading}
+                    aria-label={isLoading ? "Resetting password, please wait" : "Reset your password"}
+                    aria-busy={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Resetting password...</span>
+                      </>
+                    ) : (
+                      "Reset Password"
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => setStep('email')}
+                    disabled={isLoading}
+                    aria-label="Go back to email entry"
+                  >
+                    Back to Email
+                  </Button>
+                </form>
               </div>
-
-              <SubmitButton isLoading={isLoading} loadingText="Resetting...">
-                Reset Password
-              </SubmitButton>
-
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setStep('email')}
-                disabled={isLoading}
-                aria-label="Go back to email entry"
-              >
-                Back to Email
-              </Button>
-            </form>
-          </AuthCard>
-        </>
-      )}
-
-      {step === 'success' && (
-        <AuthCard className="p-8 text-center">
-          <div className="space-y-6">
-            <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-              <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
             </div>
-            <div className="space-y-2">
-              <h2 className="text-2xl font-semibold">Password Reset!</h2>
-              <p className="text-muted-foreground">
-                Your password has been successfully updated. You can now access your account.
-              </p>
-            </div>
-            <Link to="/login">
-              <Button className="w-full h-12 text-base font-semibold">
-                Return to Sign In
-              </Button>
-            </Link>
-          </div>
-        </AuthCard>
-      )}
+          )}
 
-      {step !== 'success' && (
-        <div className="text-center">
-          <Link to="/login">
-            <Button variant="ghost" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to sign in
-            </Button>
-          </Link>
+          {step === 'success' && (
+            <div className="space-y-6">
+              <div className="rounded-2xl border bg-card p-8 shadow-sm text-center space-y-6">
+                <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                  <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-semibold">Password Reset!</h2>
+                  <p className="text-muted-foreground">
+                    Your password has been successfully updated. You can now access your account.
+                  </p>
+                </div>
+                <Link to="/login">
+                  <Button className="w-full h-12 text-base font-semibold">
+                    Return to Sign In
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {step !== 'success' && (
+            <div className="text-center">
+              <Link to="/login">
+                <Button variant="ghost" className="gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to sign in
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
-  );
-
-  return (
-    <AuthSplitLayout
-      formSide="right"
-      formContent={formContent}
-      heroContent={heroContent}
-    />
   );
 };
 

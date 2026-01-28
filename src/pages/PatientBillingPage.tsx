@@ -1,14 +1,14 @@
 import React from "react";
 import { CreditCard, DollarSign, Receipt, FileText, AlertCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { PaymentsTab } from "@/components/patients/PaymentsTab";
 import { emitAnalyticsEvent } from "@/lib/analyticsEvents";
-import { EmptyState } from "@/components/ui/polished-components";
-import { PageHeaderWithGradient, IconTabTrigger, PageContainer } from "@/components/ui/layout-components";
+import { AnimatedBackground, SectionHeader, EmptyState } from "@/components/ui/polished-components";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { useNavigate } from "react-router-dom";
 
@@ -82,28 +82,40 @@ export default function PatientBillingPage() {
   }
 
   return (
-    <PageContainer>
-      <PageHeaderWithGradient
-        icon={DollarSign}
-        title={t.pnav.billing.main}
-        description={t.managePaymentsDesc}
-        gradient="from-amber-50 via-orange-50 to-red-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-red-950/20"
-        iconGradient="from-amber-600 to-orange-600"
-        badge={
-          totalDueCents > 0
-            ? {
-                label: `$${(totalDueCents / 100).toFixed(2)} ${t.amountDueLabel}`,
-                className: "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg",
-              }
-            : undefined
-        }
-      />
+    <div className="space-y-6">
+      {/* Enhanced Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-red-950/20 rounded-2xl p-6">
+        <AnimatedBackground />
+
+        <div className="relative z-10 flex items-start justify-between">
+          <SectionHeader
+            icon={DollarSign}
+            title={t.pnav.billing.main}
+            description={t.managePaymentsDesc}
+            gradient="from-amber-600 to-orange-600"
+          />
+          {totalDueCents > 0 && (
+            <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg">
+              ${(totalDueCents / 100).toFixed(2)} {t.amountDueLabel}
+            </Badge>
+          )}
+        </div>
+      </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList className="grid w-full grid-cols-3">
-          <IconTabTrigger value="unpaid" icon={CreditCard} label={t.unpaid} />
-          <IconTabTrigger value="paid" icon={Receipt} label={t.paid} />
-          <IconTabTrigger value="statements" icon={FileText} label={t.statements} />
+          <TabsTrigger value="unpaid" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            {t.unpaid}
+          </TabsTrigger>
+          <TabsTrigger value="paid" className="gap-2">
+            <Receipt className="h-4 w-4" />
+            {t.paid}
+          </TabsTrigger>
+          <TabsTrigger value="statements" className="gap-2">
+            <FileText className="h-4 w-4" />
+            {t.statements}
+          </TabsTrigger>
         </TabsList>
         <div className="mt-6">
           <TabsContent value="unpaid">
@@ -125,7 +137,7 @@ export default function PatientBillingPage() {
           </TabsContent>
         </div>
       </Tabs>
-    </PageContainer>
+    </div>
   );
 }
 

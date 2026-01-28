@@ -15,8 +15,9 @@ import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { LanguageSettings } from "@/components/LanguageSettings";
 import { useLanguage } from "@/hooks/useLanguage";
+
+
 import { ProfileFormSkeleton } from "@/components/ui/page-skeletons";
-import { ProfileCard, PageContainer, FormSection } from "@/components/ui/layout-components";
 
 export default function DentistAdminProfile() {
   const { businessId } = useBusinessContext();
@@ -154,13 +155,23 @@ export default function DentistAdminProfile() {
   }
 
   return (
-    <PageContainer spacing="comfortable">
-      <ProfileCard
-        icon={User}
-        title={t.profileInformation || "Profile Information"}
-        description={t.profileInfoDesc || "Update your personal and professional details"}
-      >
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle>{t.profileInformation || "Profile Information"}</CardTitle>
+              <CardDescription>
+                {t.profileInfoDesc || "Update your personal and professional details"}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <ProfilePictureUploadWithCrop
               currentUrl={formData.profile_picture_url}
               userId={dentistId || ''}
@@ -256,16 +267,29 @@ export default function DentistAdminProfile() {
                 )}
               </Button>
             </div>
-        </form>
-      </ProfileCard>
+          </form>
+        </CardContent>
+      </Card>
 
-      <ProfileCard
-        icon={Globe}
-        title={t.language}
-        description={t.selectPreferredLanguage}
-      >
-        <LanguageSettings />
-      </ProfileCard>
-    </PageContainer>
+      {/* Language Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Globe className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle>{t.language}</CardTitle>
+              <CardDescription>
+                {t.selectPreferredLanguage}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <LanguageSettings />
+        </CardContent>
+      </Card>
+    </>
   );
 }

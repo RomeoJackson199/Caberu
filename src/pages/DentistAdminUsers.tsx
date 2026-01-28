@@ -12,8 +12,6 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { logger } from '@/lib/logger';
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useLanguage } from "@/hooks/useLanguage";
-import { PageContainer, StatsGrid } from "@/components/ui/layout-components";
-import { StatCard } from "@/components/ui/polished-components";
 import {
   Table,
   TableBody,
@@ -141,7 +139,8 @@ export default function DentistAdminUsers() {
   }
 
   return (
-    <PageContainer>
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t.teamMembers || "Team Members"}</h1>
@@ -152,32 +151,51 @@ export default function DentistAdminUsers() {
         <AddUserDialog onUserAdded={fetchUsers} />
       </div>
 
-      <StatsGrid columns={4}>
-        <StatCard
-          title={t.totalUsers || "Total Users"}
-          value={users.length}
-          icon={UsersIcon}
-          gradient="from-blue-500 to-cyan-500"
-        />
-        <StatCard
-          title={t.activeUsers || "Active Users"}
-          value={users.filter(u => u.user_id).length}
-          icon={Shield}
-          gradient="from-green-500 to-emerald-500"
-        />
-        <StatCard
-          title={t.pendingInvites || "Pending Invites"}
-          value={users.filter(u => u.invitation_status === 'pending').length}
-          icon={Mail}
-          gradient="from-amber-500 to-orange-500"
-        />
-        <StatCard
-          title={t.admins || "Admins"}
-          value={users.filter(u => u.roles.includes('admin')).length}
-          icon={Shield}
-          gradient="from-purple-500 to-pink-500"
-        />
-      </StatsGrid>
+      {/* Stats Cards */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t.totalUsers || "Total Users"}</CardTitle>
+            <UsersIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{users.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t.activeUsers || "Active Users"}</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter(u => u.user_id).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t.pendingInvites || "Pending Invites"}</CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter(u => u.invitation_status === 'pending').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t.admins || "Admins"}</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {users.filter(u => u.roles.includes('admin')).length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Search and Filter */}
       <Card>
@@ -270,6 +288,6 @@ export default function DentistAdminUsers() {
           </div>
         </CardContent>
       </Card>
-    </PageContainer>
+    </div>
   );
 }
