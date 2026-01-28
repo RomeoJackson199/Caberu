@@ -1,11 +1,19 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from '../_shared/rateLimit.ts';
 
 interface EmailRequest {
   email: string;
   type?: '2fa' | 'recovery';
 }
+
+// Rate limit config: 5 requests per 15 minutes per email
+const RATE_LIMIT_2FA = {
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  maxRequests: 5,
+  keyPrefix: '2fa_code'
+};
 
 serve(async (req) => {
   // Handle CORS preflight with secure origin validation
@@ -25,14 +33,23 @@ serve(async (req) => {
       );
     }
 
-    // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Store code in Supabase with 10 minute expiry
+    // Initialize Supabase client for rate limiting
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Rate limit check - use email + IP as key for extra security
+    const clientIP = getClientIP(req);
+    const rateLimitKey = `${email.toLowerCase()}_${clientIP}`;
+    const rateLimitResult = await checkRateLimitDB(supabase, rateLimitKey, RATE_LIMIT_2FA);
+
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for 2FA code request: ${email}`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10);

@@ -1,12 +1,20 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from '../_shared/rateLimit.ts';
 
 interface ResetRequest {
     email: string;
     code: string;
     newPassword: string;
 }
+
+// Rate limit config: 5 attempts per 15 minutes per email/IP
+const RATE_LIMIT_PASSWORD_RESET = {
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  maxRequests: 5,
+  keyPrefix: 'pwd_reset'
+};
 
 serve(async (req) => {
     const origin = req.headers.get('Origin');
@@ -28,6 +36,16 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+        // Rate limit check - use email + IP as key to prevent brute force attacks
+        const clientIP = getClientIP(req);
+        const rateLimitKey = `${email.toLowerCase()}_${clientIP}`;
+        const rateLimitResult = await checkRateLimitDB(supabase, rateLimitKey, RATE_LIMIT_PASSWORD_RESET);
+
+        if (!rateLimitResult.allowed) {
+            console.warn(`Rate limit exceeded for password reset: ${email}`);
+            return rateLimitResponse(rateLimitResult, corsHeaders);
+        }
 
         // 1. Verify the code
         const { data: validCodes, error: verifyError } = await supabase

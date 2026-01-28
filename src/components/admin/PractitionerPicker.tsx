@@ -145,7 +145,7 @@ export function PractitionerPicker({
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-[240px] bg-background z-50">
+      <DropdownMenuContent align="start" className="w-[240px] bg-background">
         <DropdownMenuLabel>Select {label}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
