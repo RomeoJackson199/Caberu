@@ -117,7 +117,7 @@ serve(async (req) => {
       });
     }
 
-    const siteUrl = Deno.env.get('SITE_URL') || 'http://localhost:3000';
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://caberu.be';
     let invitationLink = '';
     let subject = '';
     let message = '';
