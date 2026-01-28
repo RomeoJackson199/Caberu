@@ -1,200 +1,125 @@
 
-# Multi-Practitioner Management Enhancement Plan
+# Popup Fix & Performance Optimization Plan
 
-## Overview
-This plan enhances the multi-practitioner experience for clinic admins, enabling them to view comprehensive stats across all practitioners, compare performance, and manage the team more efficiently.
+## Part 1: Fix Popup/Dropdown Not Showing
 
-## Current State Analysis
-The application has basic multi-practitioner support:
-- **Analytics Dashboard**: Shows individual dentist stats but lacks comparison features
-- **Schedule Dashboard**: Weekly view but no filtering by practitioner
-- **Team Management**: Basic list with roles, no quick actions
-- **Build Errors**: Two dashboards have TypeScript issues with Supabase profile joins
+### Issue Identified
+The `PractitionerPicker` dropdown has a z-index conflict. The component manually sets `z-50` on line 148, but this overrides the base DropdownMenu component's `z-[100]`, causing the dropdown to appear behind dialogs, modals, and other overlays.
 
-## Proposed Improvements
+### Solution
+Remove the custom `z-50` class from `PractitionerPicker.tsx` since the base component already handles z-index correctly.
 
-### 1. Fix Build Errors First
-**Files**: `DentistAdminScheduleDashboard.tsx`, `DentistAnalyticsDashboard.tsx`, `QRCodeDialog.tsx`
-
-**Issues**:
-- Supabase returns `profiles` as an array, but code expects a single object
-- QRCodeCanvas ref type mismatch
-
-**Solution**: Add transformation to unwrap profile arrays (following existing patterns in `DentistSelection.tsx`)
+**File: `src/components/admin/PractitionerPicker.tsx`**
+- Line 148: Change `className="w-[240px] bg-background z-50"` to `className="w-[240px] bg-background"`
 
 ---
 
-### 2. Create Practitioner Picker Component
-**New File**: `src/components/admin/PractitionerPicker.tsx`
+## Part 2: Database Query Optimization (N+1 Pattern Fixes)
 
-A reusable dropdown for admins to filter views by practitioner:
-- "All Practitioners" option (default)
-- Individual practitioner selection
-- Avatar + name display
-- Badge showing active/inactive status
+### Issue 1: Analytics Dashboard Sequential Queries
+**Current Problem**: `DentistAnalyticsDashboard` makes one database query per dentist, causing waterfall requests.
 
-This picker will be used across Analytics, Schedule, and Team pages.
+**Solution**: Refactor to batch query all appointments at once, then aggregate in-memory.
 
----
+**File: `src/components/DentistAnalyticsDashboard.tsx`**
+```text
+Before (N+1 pattern):
+- Query 1: Get all dentists
+- Query 2: Get appointments for dentist 1
+- Query 3: Get appointments for dentist 2
+- ... (N queries total)
 
-### 3. Enhance Analytics Dashboard
-
-**File**: `src/components/DentistAnalyticsDashboard.tsx`
-
-**New Features**:
-- **Practitioner Filter**: Add the PractitionerPicker to filter stats by individual or all
-- **Comparison Mode**: Side-by-side comparison of 2-3 selected practitioners
-- **Leaderboard View**: Ranked list by configurable metric (appointments, rating, completion rate)
-- **Revenue Tracking**: Show earnings per practitioner (if payment data exists)
-- **Export Stats**: Download CSV of performance data
-
-**Visual Improvements**:
-- Larger, more prominent stat cards for individual practitioners
-- Mini charts (sparklines) showing trends over time
-- Color-coded performance indicators (green/yellow/red thresholds)
-
----
-
-### 4. Enhance Schedule Dashboard
-
-**File**: `src/components/DentistAdminScheduleDashboard.tsx`
-
-**New Features**:
-- **Practitioner Filter**: Filter to show only selected practitioner(s)
-- **Workload Heatmap**: Visual indicator of busy vs free slots
-- **Quick Stats per Day**: Show totals at bottom of each day column
-- **Click-to-View Detail**: Click appointment to see full details in a modal
-- **Conflict Detection**: Highlight overlapping bookings
-
-**Visual Improvements**:
-- Better dark mode support (current uses hardcoded white)
-- Responsive design improvements
-- Compact mode toggle for dense schedules
-
----
-
-### 5. Enhanced Team Management
-
-**File**: `src/pages/DentistAdminUsers.tsx`
-
-**New Features**:
-- **Practitioner Stats Row**: For each dentist, show today's appointments, rating, and last active
-- **Quick Actions Column**: Direct links to view schedule, analytics, or message
-- **Role Management**: Inline role assignment dropdown
-- **Activity Status**: Show online/offline or last seen indicator
-- **Practitioner Profile Modal**: Click to see full practitioner details and stats
-
-**Visual Improvements**:
-- Avatar images for team members
-- Role badges with better visual hierarchy
-- Expandable rows for additional details
-
----
-
-### 6. New: Practitioner Comparison Card
-
-**New File**: `src/components/admin/PractitionerComparisonCard.tsx`
-
-A dedicated comparison widget:
-- Select 2-3 practitioners to compare
-- Side-by-side metrics: appointments, completion rate, rating, cancellations
-- Visual bar charts for each metric
-- Highlight winner per category
-
----
-
-### 7. Admin Quick Stats Header
-
-**New File**: `src/components/admin/TeamQuickStats.tsx`
-
-A compact header showing:
-- Total practitioners (active/inactive)
-- Today's total appointments across all
-- Average team rating
-- Pending approvals count
-- This week's completed visits
-
----
-
-## Technical Approach
-
-### File Changes Summary
-
-**Fix Build Errors**:
-1. `src/components/DentistAdminScheduleDashboard.tsx` - Transform profiles array
-2. `src/components/DentistAnalyticsDashboard.tsx` - Transform profiles array
-3. `src/components/branding/QRCodeDialog.tsx` - Fix ref type
-
-**New Components**:
-4. `src/components/admin/PractitionerPicker.tsx` - Reusable filter dropdown
-5. `src/components/admin/PractitionerComparisonCard.tsx` - Comparison widget
-6. `src/components/admin/TeamQuickStats.tsx` - Quick stats header
-7. `src/components/admin/index.ts` - Barrel export
-
-**Enhance Existing**:
-8. `src/components/DentistAnalyticsDashboard.tsx` - Add filter, comparison, leaderboard
-9. `src/components/DentistAdminScheduleDashboard.tsx` - Add filter, heatmap, dark mode
-10. `src/pages/DentistAdminUsers.tsx` - Add practitioner stats, quick actions
-
----
-
-## Implementation Priority
-
-1. **Phase 1 - Fix Errors** (Critical)
-   - Fix the 3 build errors so the app compiles
-
-2. **Phase 2 - Practitioner Picker** (Foundation)
-   - Create the reusable picker component
-   - Integrate into Analytics and Schedule dashboards
-
-3. **Phase 3 - Analytics Enhancements** (High Value)
-   - Leaderboard view
-   - Comparison mode
-   - Improved visual hierarchy
-
-4. **Phase 4 - Schedule Enhancements** (Medium Value)
-   - Filter by practitioner
-   - Better dark mode support
-   - Workload visualization
-
-5. **Phase 5 - Team Management** (Polish)
-   - Quick actions
-   - Practitioner stats in list
-   - Profile modal
-
----
-
-## Technical Details
-
-### Profile Array Fix Pattern
-```typescript
-// Transform profiles from array to single object (Supabase join quirk)
-const formattedData = (data || []).map((item: any) => ({
-  ...item,
-  profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
-}));
+After (2 queries total):
+- Query 1: Get all dentists
+- Query 2: Get ALL appointments for ALL dentists in one query
+- Aggregate counts in JavaScript
 ```
 
-### PractitionerPicker Interface
-```typescript
-interface PractitionerPickerProps {
-  selectedId: string | 'all';
-  onSelect: (id: string | 'all') => void;
-  showAll?: boolean; // Include "All Practitioners" option
-  multiSelect?: boolean; // Allow selecting multiple
-}
-```
+### Issue 2: Practitioner Comparison Card
+**Same N+1 pattern** in `PractitionerComparisonCard.tsx`.
 
-### Leaderboard Metrics
-- Total appointments
-- Completion rate (completed / total)
-- Average rating
-- Cancellation rate (lower is better)
-- Patient satisfaction (from reviews)
+**Solution**: Apply the same batch query approach.
 
 ---
 
-## Security Considerations
-- All practitioner data is already scoped by `business_id` via RLS
-- Admin role verification exists in current components
-- No new database changes required - uses existing queries with additional filtering
+## Part 3: Rate Limiting Enhancements
+
+### Current State
+Login rate limiting is properly implemented with database-backed tracking.
+
+### Recommended Additions
+Add rate limiting to these sensitive endpoints:
+
+| Endpoint | Limit | Window | Priority |
+|----------|-------|--------|----------|
+| `send-2fa-code` | 5 requests | 15 min | High |
+| `reset-password-with-code` | 5 requests | 15 min | High |
+| `send-email-notification` | 50 requests | 1 hour | Medium |
+| `create-patient-profile` | 10 requests | 5 min | Medium |
+| `claim-profile` | 3 requests | 30 min | Medium |
+
+### Implementation
+Use the existing `checkRateLimitDB` utility in each edge function.
+
+---
+
+## Part 4: Frontend Performance Optimizations
+
+### 4.1 Query Deduplication
+Add query keys with proper dependencies to prevent duplicate requests.
+
+### 4.2 Skeleton Loading States
+Ensure all admin pages use consistent skeleton loaders (already good in most places).
+
+### 4.3 Real-time Subscription Cleanup
+Verify all Supabase realtime channels are properly unsubscribed on unmount (already correct in `useAppointments.tsx`).
+
+### 4.4 Lazy Loading Heavy Components
+Already implemented for most pages via `React.lazy()` in `App.tsx`.
+
+---
+
+## Part 5: Database Index Verification
+
+### Existing Indexes (Good Coverage)
+- `appointments`: Indexed on `business_id`, `dentist_id`, `patient_id`, `appointment_date`, and composite `(dentist_id, appointment_date)`
+- `business_members`: Indexed on `profile_id`, `business_id`
+- `api_rate_limits`: Indexed on `key` and `window_start`
+
+### Recommended Addition
+Add a composite index for the common schedule query pattern:
+```sql
+CREATE INDEX idx_appointments_business_date 
+ON appointments (business_id, appointment_date)
+WHERE status != 'cancelled';
+```
+
+---
+
+## Technical Implementation Summary
+
+| Task | File(s) | Effort |
+|------|---------|--------|
+| Fix z-index on PractitionerPicker | `PractitionerPicker.tsx` | 2 min |
+| Batch query in Analytics Dashboard | `DentistAnalyticsDashboard.tsx` | 20 min |
+| Batch query in Comparison Card | `PractitionerComparisonCard.tsx` | 15 min |
+| Add rate limiting to 2FA endpoint | `send-2fa-code/index.ts` | 10 min |
+| Add rate limiting to password reset | `reset-password-with-code/index.ts` | 10 min |
+| Add composite database index | SQL migration | 5 min |
+
+---
+
+## Expected Improvements
+
+**Performance Gains:**
+- Analytics Dashboard: ~70% faster load time (N queries → 2 queries)
+- Practitioner Comparison: ~60% faster load time
+- Reduced database connection pool pressure
+
+**Security Improvements:**
+- Protected against brute-force on 2FA codes
+- Protected against password reset enumeration attacks
+
+**User Experience:**
+- Dropdown menus will now appear correctly above all content
+- Faster dashboard responsiveness with larger team sizes
