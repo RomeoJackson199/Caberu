@@ -2,8 +2,14 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from '../_shared/rateLimit.ts';
 
-
+// Rate limit: 50 emails per hour per business
+const RATE_LIMIT_EMAILS = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 50,
+  keyPrefix: 'send_email'
+};
 
 interface EmailRequest {
   to: string;
@@ -38,10 +44,24 @@ serve(async (req) => {
     // messageType='system' is still a business email and should count toward limits
     const isSystem = isSystemNotification === true;
 
+    // Create service client for rate limiting
+    const serviceSupabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Rate limit check for non-system emails
+    if (!isSystem) {
+      const clientIP = getClientIP(req);
+      const rateLimitKey = requestBusinessId ? `${requestBusinessId}_${clientIP}` : clientIP;
+      const rateLimitResult = await checkRateLimitDB(serviceSupabase, rateLimitKey, RATE_LIMIT_EMAILS);
+      if (!rateLimitResult.allowed) {
+        console.warn(`Rate limit exceeded for send-email-notification: ${rateLimitKey}`);
+        return rateLimitResponse(rateLimitResult, corsHeaders);
+      }
+    }
+
     let supabase;
     let authedUserId: string | null = null;
     if (isSystem) {
-      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      supabase = serviceSupabase;
       console.log('📧 System notification - skipping user authentication');
     } else {
       const authHeader = req.headers.get('authorization');

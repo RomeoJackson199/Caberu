@@ -1,11 +1,14 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// CORS configuration - secure origins only (HIPAA/GDPR compliant)
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from '../_shared/rateLimit.ts';
 
-// Helper to get CORS headers from request
-const getRequestCorsHeaders = (req: Request) => getCorsHeaders(req.headers.get('Origin'));
+// Rate limit: 3 claim attempts per 30 minutes per IP
+const RATE_LIMIT_CLAIM = {
+  windowMs: 30 * 60 * 1000,  // 30 minutes
+  maxRequests: 3,
+  keyPrefix: 'claim_profile'
+};
 
 interface Body {
   email: string;
@@ -45,6 +48,14 @@ serve(async (req) => {
     }
 
     const admin = createClient(supabaseUrl, serviceKey);
+
+    // Rate limit check
+    const clientIP = getClientIP(req);
+    const rateLimitResult = await checkRateLimitDB(admin, clientIP, RATE_LIMIT_CLAIM);
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for claim-profile from IP: ${clientIP}`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
 
     const body = await req.json().catch(() => ({})) as Body;
     const email = (body?.email || '').trim().toLowerCase();

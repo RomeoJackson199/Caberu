@@ -418,8 +418,15 @@ serve(async (req) => {
           );
       }
 
+      // Add cache headers for read-only GET responses
+      // Cache for 30 seconds (stale-while-revalidate for 2 minutes)
+      const cacheHeaders = {
+        'Cache-Control': 'public, max-age=30, stale-while-revalidate=120',
+        'Vary': 'Authorization'
+      };
+
       return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...cacheHeaders, 'Content-Type': 'application/json' },
       });
 
     } catch (error) {
@@ -821,29 +828,41 @@ serve(async (req) => {
         const { data: patients, error } = await query;
         if (error) throw error;
 
-        // Get last dentist used for each patient
+        // Get last dentist used for each patient - BATCH QUERY (no N+1)
         if (patients && patients.length > 0) {
-          for (const patient of patients) {
-            const { data: lastAppt } = await supabase
-              .from('appointments')
-              .select(`
-                dentist_id,
-                appointment_date,
-                business_id,
-                dentists!inner(
-                  id,
-                  first_name,
-                  last_name,
-                  email,
-                  specialization,
-                  profile_picture_url
-                )
-              `)
-              .eq('patient_id', patient.id)
-              .order('appointment_date', { ascending: false })
-              .limit(1)
-              .maybeSingle();
+          const patientIds = patients.map((p: any) => p.id);
+          
+          // Fetch all recent appointments for all patients in one query
+          const { data: allAppointments } = await supabase
+            .from('appointments')
+            .select(`
+              patient_id,
+              dentist_id,
+              appointment_date,
+              business_id,
+              dentists!inner(
+                id,
+                first_name,
+                last_name,
+                email,
+                specialization,
+                profile_picture_url
+              )
+            `)
+            .in('patient_id', patientIds)
+            .order('appointment_date', { ascending: false });
 
+          // Group by patient and get the most recent for each
+          const lastApptByPatient = new Map<string, any>();
+          for (const appt of (allAppointments || [])) {
+            if (!lastApptByPatient.has(appt.patient_id)) {
+              lastApptByPatient.set(appt.patient_id, appt);
+            }
+          }
+
+          // Assign to patients
+          for (const patient of patients) {
+            const lastAppt = lastApptByPatient.get(patient.id);
             if (lastAppt) {
               (patient as any).last_dentist = lastAppt.dentists;
               (patient as any).last_appointment_date = lastAppt.appointment_date;

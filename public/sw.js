@@ -1,8 +1,20 @@
-const CACHE_NAME = 'denti-scheduler-v3';
+const CACHE_NAME = 'denti-scheduler-v4';
+
+// Core assets to pre-cache immediately
 const CORE_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/logo.png',
+  '/badge.png',
+  '/favicon.ico'
+];
+
+// Critical asset patterns to cache on first load
+const CRITICAL_ASSET_PATTERNS = [
+  /\/assets\/.*\.(js|css)$/,
+  /\/assets\/.*\.(woff2?|ttf|otf)$/,
+  /\/assets\/.*\.(png|jpg|jpeg|svg|webp|ico)$/
 ];
 
 // Install - pre-cache core assets and activate immediately
@@ -162,13 +174,21 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-// Fetch handling
+// Check if URL matches critical asset patterns
+function isCriticalAsset(url) {
+  return CRITICAL_ASSET_PATTERNS.some(pattern => pattern.test(url.pathname));
+}
+
+// Fetch handling with enhanced caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Only handle GET requests
   if (request.method !== 'GET') return;
+
+  // Skip external requests (APIs, CDNs not under our control)
+  if (url.origin !== self.location.origin) return;
 
   // Navigate requests: network-first, fallback to cached index.html
   if (request.mode === 'navigate') {
@@ -184,22 +204,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin static assets under Vite's /assets/: cache-first, then network
-  if (url.origin === self.location.origin && url.pathname.startsWith('/assets/')) {
+  // Vite hashed assets under /assets/: cache-first (immutable)
+  // These have content hashes so they're safe to cache indefinitely
+  if (url.pathname.startsWith('/assets/')) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) {
-          // Revalidate in background
-          fetch(request).then((response) => {
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, response));
-          }).catch(() => { });
           return cached;
         }
         return fetch(request).then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          // Only cache successful responses
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
           return response;
         });
+      })
+    );
+    return;
+  }
+
+  // Static files (logo, icons, manifest): stale-while-revalidate
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|webp|ico|json)$/)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
+          if (response.ok) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+          }
+          return response;
+        }).catch(() => cached);
+
+        return cached || fetchPromise;
       })
     );
     return;

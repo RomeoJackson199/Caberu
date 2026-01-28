@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from '../_shared/rateLimit.ts';
+
+// Rate limit: 10 patient creations per 5 minutes per user
+const RATE_LIMIT_CREATE_PATIENT = {
+  windowMs: 5 * 60 * 1000,  // 5 minutes
+  maxRequests: 10,
+  keyPrefix: 'create_patient'
+};
 
 interface PatientData {
   email: string;
@@ -24,6 +32,17 @@ serve(async (req) => {
   if (preflightResponse) return preflightResponse;
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Rate limit check
+    const clientIP = getClientIP(req);
+    const rateLimitResult = await checkRateLimitDB(supabase, clientIP, RATE_LIMIT_CREATE_PATIENT);
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for create-patient-profile from IP: ${clientIP}`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const sendGridApiKey = Deno.env.get('TWILIO_API_KEY');
