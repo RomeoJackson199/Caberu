@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 // 🔒 SECURITY: Import AI sanitization for prompt injection protection
 import { sanitizeAIInput, isMessageSafe, sanitizeAIResponse } from '../_shared/aiSanitization.ts';
-import { checkRateLimitMemory, getClientIP, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
+import { checkRateLimitMemory, getUserRateLimitKey, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -12,9 +12,9 @@ serve(async (req) => {
   const preflightResponse = handleCorsPreflightSafe(req);
   if (preflightResponse) return preflightResponse;
 
-  // SECURITY: Rate limiting for AI assistant
-  const clientIP = getClientIP(req);
-  const rateLimitResult = checkRateLimitMemory(clientIP, RATE_LIMITS.AI_HEAVY);
+  // SECURITY: Per-user rate limiting for AI assistant (uses user ID from JWT + IP)
+  const userKey = getUserRateLimitKey(req);
+  const rateLimitResult = checkRateLimitMemory(userKey, RATE_LIMITS.AI_HEAVY);
   if (!rateLimitResult.allowed) {
     return rateLimitResponse(rateLimitResult, corsHeaders);
   }

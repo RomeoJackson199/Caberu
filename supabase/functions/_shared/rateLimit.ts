@@ -30,6 +30,40 @@ export function getClientIP(req: Request): string {
 }
 
 /**
+ * Extract a per-user rate limit key from the request.
+ * Combines user identity (from JWT sub claim) with client IP.
+ * Falls back to IP-only if no auth token is present.
+ * Note: This decodes the JWT payload without verification — it's only
+ * used for rate limit bucketing, not for authorization decisions.
+ */
+export function getUserRateLimitKey(req: Request): string {
+  const clientIP = getClientIP(req);
+  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+
+  if (authHeader) {
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        // Decode the JWT payload (base64url)
+        const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = JSON.parse(atob(payload));
+        if (decoded.sub) {
+          return `${decoded.sub}_${clientIP}`;
+        }
+        if (decoded.email) {
+          return `${decoded.email.toLowerCase()}_${clientIP}`;
+        }
+      }
+    } catch {
+      // Failed to decode token — fall through to IP-only
+    }
+  }
+
+  return clientIP;
+}
+
+/**
  * In-memory rate limiting (fast, single-instance)
  * Best for: Edge functions that don't need distributed rate limiting
  */

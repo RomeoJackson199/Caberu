@@ -3,44 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // CORS configuration - secure origins only (HIPAA/GDPR compliant)
 import { getCorsHeaders } from '../_shared/cors.ts';
-
-// In-memory rate limiting (simple but effective for single instance)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 3600000; // 1 hour
-const RATE_LIMIT_MAX_REQUESTS = 20; // 20 requests per hour per IP
-
-function checkRateLimit(clientIP: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const limitKey = `business_ai_${clientIP}`;
-  const existing = rateLimitMap.get(limitKey);
-
-  // Periodic cleanup (1% chance per request)
-  if (Math.random() < 0.01) {
-    for (const [key, value] of rateLimitMap.entries()) {
-      if (now > value.resetAt) rateLimitMap.delete(key);
-    }
-  }
-
-  if (existing) {
-    if (now < existing.resetAt) {
-      if (existing.count >= RATE_LIMIT_MAX_REQUESTS) {
-        console.warn(`Rate limit exceeded for IP: ${clientIP}`);
-        return { 
-          allowed: false, 
-          retryAfter: Math.ceil((existing.resetAt - now) / 1000) 
-        };
-      }
-      existing.count++;
-    } else {
-      // Window expired, reset
-      rateLimitMap.set(limitKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    }
-  } else {
-    rateLimitMap.set(limitKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-  }
-
-  return { allowed: true };
-}
+import { checkRateLimitMemory, getUserRateLimitKey, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -50,29 +13,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // SECURITY: Extract client IP for rate limiting
-  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
-                   req.headers.get('cf-connecting-ip') || 
-                   req.headers.get('x-real-ip') ||
-                   'unknown';
-
-  // SECURITY: Check rate limit
-  const rateLimitResult = checkRateLimit(clientIP);
+  // SECURITY: Per-user rate limiting for business creation AI (uses user ID from JWT + IP)
+  const userKey = getUserRateLimitKey(req);
+  const rateLimitResult = checkRateLimitMemory(userKey, RATE_LIMITS.BUSINESS_AI);
   if (!rateLimitResult.allowed) {
-    return new Response(
-      JSON.stringify({ 
-        error: 'Rate limit exceeded. Please try again later.',
-        retry_after: rateLimitResult.retryAfter
-      }),
-      { 
-        status: 429, 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Retry-After': String(rateLimitResult.retryAfter || 3600)
-        } 
-      }
-    );
+    return rateLimitResponse(rateLimitResult, corsHeaders);
   }
 
   try {
@@ -225,7 +170,7 @@ CRITICAL: Extract information from user messages and use the extract_business_in
       }
     }
 
-    console.log(`Business creation AI request from IP: ${clientIP}, step: ${current_step}`);
+    console.log(`Business creation AI request from user: ${userKey}, step: ${current_step}`);
 
     return new Response(
       JSON.stringify({ 

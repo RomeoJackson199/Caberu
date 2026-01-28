@@ -6,7 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 // 🔒 SECURITY: Import AI input sanitization for prompt injection protection
 import { sanitizeAIInput, isMessageSafe, sanitizeAIResponse } from '../_shared/aiSanitization.ts';
-import { checkRateLimitMemory, getClientIP, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
+import { checkRateLimitMemory, getClientIP, getUserRateLimitKey, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
 
 // Helper to get CORS headers from request
 const getRequestCorsHeaders = (req: Request) => getCorsHeaders(req.headers.get('Origin'));
@@ -149,9 +149,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // SECURITY: Rate limiting for voice AI
+  // SECURITY: Per-user rate limiting for voice AI (uses user ID from JWT + IP)
   const clientIP = getClientIP(req);
-  const rateLimitResult = checkRateLimitMemory(clientIP, RATE_LIMITS.VOICE_AI);
+  const userKey = getUserRateLimitKey(req);
+  const rateLimitResult = checkRateLimitMemory(userKey, RATE_LIMITS.VOICE_AI);
   if (!rateLimitResult.allowed) {
     return rateLimitResponse(rateLimitResult, corsHeaders);
   }

@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { sanitizeAIInput, isMessageSafe, sanitizeAIResponse as sanitizeResponse } from "../_shared/aiSanitization.ts";
-import { checkRateLimitMemory, getClientIP, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
+import { checkRateLimitMemory, getUserRateLimitKey, rateLimitResponse, RATE_LIMITS } from "../_shared/rateLimit.ts";
 
 // Add type definitions at the top of the file
 interface MedicalRecord {
@@ -114,9 +114,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // SECURITY: Rate limiting for AI chat
-  const clientIP = getClientIP(req);
-  const rateLimitResult = checkRateLimitMemory(clientIP, RATE_LIMITS.AI_CHAT);
+  // SECURITY: Per-user rate limiting for AI chat (uses user ID from JWT + IP)
+  const userKey = getUserRateLimitKey(req);
+  const rateLimitResult = checkRateLimitMemory(userKey, RATE_LIMITS.AI_CHAT);
   if (!rateLimitResult.allowed) {
     return rateLimitResponse(rateLimitResult, corsHeaders);
   }
