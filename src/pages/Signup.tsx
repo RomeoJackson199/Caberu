@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField, validators } from "@/components/ui/form-field";
 import { Loader2, Calendar, MessageSquare, FileText, Sparkles, Mail, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { validatePassword, checkPasswordBreach, getStrengthLabel, type PasswordStrength } from '@/utils/passwordValidation';
 import { Progress } from '@/components/ui/progress';
@@ -25,8 +25,6 @@ const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [userType, setUserType] = useState<"client" | "business" | null>(null);
   const [showEmailVerificationAlert, setShowEmailVerificationAlert] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -332,7 +330,7 @@ const Signup = () => {
                   </div>
                 </div>
 
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4" role="form" aria-label="Sign up form">
                   <div className="space-y-2">
                     <Label htmlFor="email">Your Email</Label>
                     <Input
@@ -343,29 +341,26 @@ const Signup = () => {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="h-12"
                       required
+                      aria-label="Email address"
+                      aria-required="true"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div>
                     <Label htmlFor="password">Create Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Minimum 12 characters"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="h-12 pr-10"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
+                    <FormField
+                      id="password"
+                      type="password"
+                      placeholder="Minimum 12 characters"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="h-12"
+                      required
+                      showPasswordToggle={true}
+                      showCharacterCount={false}
+                      aria-label="Create password"
+                      aria-required="true"
+                    />
 
                     {/* Password Strength Indicator */}
                     {passwordStrength && formData.password && (
@@ -397,34 +392,45 @@ const Signup = () => {
                     </p>
                   </div>
 
-                  <div className="space-y-2">
+                  <div>
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Re-enter your password"
-                        value={formData.confirmPassword}
-                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                        className="h-12 pr-10"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
+                    <FormField
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Re-enter your password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      className="h-12"
+                      required
+                      showPasswordToggle={true}
+                      showCharacterCount={false}
+                      validate={(value) => {
+                        if (value && formData.password && value !== formData.password) {
+                          return "Passwords don't match";
+                        }
+                        return undefined;
+                      }}
+                      success={!!(formData.confirmPassword && formData.password && formData.confirmPassword === formData.password)}
+                      aria-label="Confirm password"
+                      aria-required="true"
+                    />
                   </div>
 
                   <Button
                     type="submit"
                     className="w-full h-12 bg-primary hover:bg-primary/90 text-lg font-semibold"
                     disabled={isLoading}
+                    aria-label={isLoading ? "Creating your account, please wait" : "Create your account"}
+                    aria-busy={isLoading}
                   >
-                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "CREATE ACCOUNT"}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Creating account...</span>
+                      </>
+                    ) : (
+                      "CREATE ACCOUNT"
+                    )}
                   </Button>
 
                   <p className="text-center text-sm text-muted-foreground">

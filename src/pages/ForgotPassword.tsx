@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FormField, validators } from "@/components/ui/form-field";
 import { Loader2, Shield, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
@@ -16,7 +17,6 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,11 +121,11 @@ const ForgotPassword = () => {
               </div>
 
               <div className="rounded-2xl border bg-card p-6 shadow-sm">
-                <form onSubmit={handleSendCode} className="space-y-4">
+                <form onSubmit={handleSendCode} className="space-y-4" role="form" aria-label="Password reset request form">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email address</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                       <Input
                         id="email"
                         type="email"
@@ -136,6 +136,8 @@ const ForgotPassword = () => {
                         required
                         autoFocus
                         autoComplete="email"
+                        aria-label="Email address"
+                        aria-required="true"
                       />
                     </div>
                   </div>
@@ -144,9 +146,14 @@ const ForgotPassword = () => {
                     type="submit"
                     className="h-12 w-full text-base font-semibold"
                     disabled={isLoading}
+                    aria-label={isLoading ? "Sending reset code, please wait" : "Send password reset code"}
+                    aria-busy={isLoading}
                   >
                     {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Sending code...</span>
+                      </>
                     ) : (
                       "Send Reset Code"
                     )}
@@ -164,7 +171,7 @@ const ForgotPassword = () => {
               </div>
 
               <div className="rounded-2xl border bg-card p-6 shadow-sm">
-                <form onSubmit={handleResetPassword} className="space-y-4">
+                <form onSubmit={handleResetPassword} className="space-y-4" role="form" aria-label="Password reset verification form">
                   <div className="space-y-2">
                     <Label htmlFor="code">Verification Code</Label>
                     <Input
@@ -176,23 +183,30 @@ const ForgotPassword = () => {
                       maxLength={6}
                       required
                       autoFocus
+                      aria-label="6-digit verification code"
+                      aria-required="true"
+                      aria-describedby="code-hint"
                     />
-                    <p className="text-xs text-muted-foreground text-center">
+                    <p id="code-hint" className="text-xs text-muted-foreground text-center">
                       Sent to {email}
                     </p>
                   </div>
 
-                  <div className="space-y-2">
+                  <div>
                     <Label htmlFor="new-password">New Password</Label>
-                    <Input
+                    <FormField
                       id="new-password"
-                      type={showPassword ? "text" : "password"}
+                      type="password"
                       placeholder="Enter new password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="h-12"
                       required
-                      minLength={6}
+                      showPasswordToggle={true}
+                      showCharacterCount={false}
+                      hint="Minimum 12 characters with uppercase, lowercase, number, and special character"
+                      aria-label="New password"
+                      aria-required="true"
                     />
                   </div>
 
@@ -200,9 +214,14 @@ const ForgotPassword = () => {
                     type="submit"
                     className="h-12 w-full text-base font-semibold"
                     disabled={isLoading}
+                    aria-label={isLoading ? "Resetting password, please wait" : "Reset your password"}
+                    aria-busy={isLoading}
                   >
                     {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        <span className="sr-only">Resetting password...</span>
+                      </>
                     ) : (
                       "Reset Password"
                     )}
@@ -214,6 +233,7 @@ const ForgotPassword = () => {
                     className="w-full"
                     onClick={() => setStep('email')}
                     disabled={isLoading}
+                    aria-label="Go back to email entry"
                   >
                     Back to Email
                   </Button>
