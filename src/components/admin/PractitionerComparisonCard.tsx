@@ -68,35 +68,48 @@ export function PractitionerComparisonCard({
         return;
       }
 
-      // Fetch appointments for each practitioner
-      const statsPromises = dentists.map(async (dentist: any) => {
+      // OPTIMIZED: Batch fetch ALL appointments for ALL selected practitioners in one query
+      const { data: allAppointments } = await supabase
+        .from('appointments')
+        .select('id, status, dentist_id')
+        .in('dentist_id', practitionerIds)
+        .eq('business_id', businessId)
+        .gte('appointment_date', startDate);
+
+      // Aggregate by dentist in-memory
+      const statsByDentist = new Map<string, { total: number; completed: number; cancelled: number }>();
+      
+      practitionerIds.forEach(id => {
+        statsByDentist.set(id, { total: 0, completed: 0, cancelled: 0 });
+      });
+
+      (allAppointments || []).forEach((apt: any) => {
+        const stats = statsByDentist.get(apt.dentist_id);
+        if (stats) {
+          stats.total++;
+          if (apt.status === 'completed') stats.completed++;
+          if (apt.status === 'cancelled') stats.cancelled++;
+        }
+      });
+
+      // Build practitioner stats from dentists + aggregated counts
+      const stats: PractitionerStats[] = dentists.map((dentist: any) => {
         const profile = Array.isArray(dentist.profiles) ? dentist.profiles[0] : dentist.profiles;
-
-        const { data: appointments } = await supabase
-          .from('appointments')
-          .select('id, status')
-          .eq('dentist_id', dentist.id)
-          .eq('business_id', businessId)
-          .gte('scheduled_date', startDate);
-
-        const total = appointments?.length || 0;
-        const completed = appointments?.filter(a => a.status === 'completed').length || 0;
-        const cancelled = appointments?.filter(a => a.status === 'cancelled').length || 0;
+        const aptStats = statsByDentist.get(dentist.id) || { total: 0, completed: 0, cancelled: 0 };
 
         return {
           id: dentist.id,
           name: `Dr ${profile?.first_name || ''} ${profile?.last_name || ''}`,
           avatar_url: profile?.avatar_url || null,
-          totalAppointments: total,
-          completedAppointments: completed,
-          cancelledAppointments: cancelled,
-          completionRate: total > 0 ? (completed / total) * 100 : 0,
-          cancellationRate: total > 0 ? (cancelled / total) * 100 : 0,
+          totalAppointments: aptStats.total,
+          completedAppointments: aptStats.completed,
+          cancelledAppointments: aptStats.cancelled,
+          completionRate: aptStats.total > 0 ? (aptStats.completed / aptStats.total) * 100 : 0,
+          cancellationRate: aptStats.total > 0 ? (aptStats.cancelled / aptStats.total) * 100 : 0,
           averageRating: dentist.average_rating || 0,
         };
       });
 
-      const stats = await Promise.all(statsPromises);
       setPractitioners(stats);
     } catch (error) {
       console.error('Error fetching comparison data:', error);

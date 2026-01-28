@@ -101,45 +101,61 @@ export const DentistAnalyticsDashboard = () => {
         dateFilter.setDate(dateFilter.getDate() - 90);
       }
 
-      // Fetch appointments for each dentist
-      const analyticsData: DentistAnalytics[] = await Promise.all(
-        (dentists || []).map(async (dentist: any) => {
-          // Transform profiles from array to single object (Supabase join quirk)
-          const profile = Array.isArray(dentist.profiles) ? dentist.profiles[0] : dentist.profiles;
-          
-          let query = supabase
-            .from('appointments')
-            .select('id, status')
-            .eq('dentist_id', dentist.id)
-            .eq('business_id', businessId);
+      // Get all dentist IDs for batch query
+      const dentistIds = (dentists || []).map((d: any) => d.id);
 
-          if (timeRange !== 'all') {
-            query = query.gte('scheduled_date', dateFilter.toISOString().split('T')[0]);
-          }
+      // OPTIMIZED: Batch fetch ALL appointments for ALL dentists in one query
+      let appointmentsQuery = supabase
+        .from('appointments')
+        .select('id, status, dentist_id')
+        .in('dentist_id', dentistIds)
+        .eq('business_id', businessId);
 
-          const { data: appointments } = await query;
+      if (timeRange !== 'all') {
+        appointmentsQuery = appointmentsQuery.gte('appointment_date', dateFilter.toISOString().split('T')[0]);
+      }
 
-          const total = appointments?.length || 0;
-          const confirmed = appointments?.filter(a => a.status === 'confirmed').length || 0;
-          const completed = appointments?.filter(a => a.status === 'completed').length || 0;
-          const cancelled = appointments?.filter(a => a.status === 'cancelled').length || 0;
+      const { data: allAppointments } = await appointmentsQuery;
 
-          return {
-            dentist_id: dentist.id,
-            dentist_name: `Dr ${profile?.first_name || ''} ${profile?.last_name || ''}`,
-            total_appointments: total,
-            confirmed_appointments: confirmed,
-            completed_appointments: completed,
-            cancelled_appointments: cancelled,
-            average_rating: dentist.average_rating || 0,
-            total_ratings: dentist.total_ratings || 0,
-            communication_score: dentist.communication_score || 0,
-            expertise_score: dentist.expertise_score || 0,
-            wait_time_score: dentist.wait_time_score || 0,
-            is_active: dentist.is_active,
-          };
-        })
-      );
+      // Aggregate appointments by dentist in-memory (much faster than N queries)
+      const appointmentsByDentist = new Map<string, { total: number; confirmed: number; completed: number; cancelled: number }>();
+      
+      // Initialize all dentists
+      dentistIds.forEach(id => {
+        appointmentsByDentist.set(id, { total: 0, confirmed: 0, completed: 0, cancelled: 0 });
+      });
+
+      // Count appointments
+      (allAppointments || []).forEach((apt: any) => {
+        const stats = appointmentsByDentist.get(apt.dentist_id);
+        if (stats) {
+          stats.total++;
+          if (apt.status === 'confirmed') stats.confirmed++;
+          if (apt.status === 'completed') stats.completed++;
+          if (apt.status === 'cancelled') stats.cancelled++;
+        }
+      });
+
+      // Build analytics data from dentists + aggregated counts
+      const analyticsData: DentistAnalytics[] = (dentists || []).map((dentist: any) => {
+        const profile = Array.isArray(dentist.profiles) ? dentist.profiles[0] : dentist.profiles;
+        const stats = appointmentsByDentist.get(dentist.id) || { total: 0, confirmed: 0, completed: 0, cancelled: 0 };
+
+        return {
+          dentist_id: dentist.id,
+          dentist_name: `Dr ${profile?.first_name || ''} ${profile?.last_name || ''}`,
+          total_appointments: stats.total,
+          confirmed_appointments: stats.confirmed,
+          completed_appointments: stats.completed,
+          cancelled_appointments: stats.cancelled,
+          average_rating: dentist.average_rating || 0,
+          total_ratings: dentist.total_ratings || 0,
+          communication_score: dentist.communication_score || 0,
+          expertise_score: dentist.expertise_score || 0,
+          wait_time_score: dentist.wait_time_score || 0,
+          is_active: dentist.is_active,
+        };
+      });
 
       // Sort by total appointments
       analyticsData.sort((a, b) => b.total_appointments - a.total_appointments);
