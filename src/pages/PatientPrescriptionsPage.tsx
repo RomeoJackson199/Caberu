@@ -1,12 +1,10 @@
 import React from "react";
-import { Pill, Plus, Search } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Pill } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { PatientDashboard } from "@/components/PatientDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { AnimatedBackground, EmptyState, SectionHeader } from "@/components/ui/polished-components";
+import { EmptyState } from "@/components/ui/polished-components";
+import { PageHeaderWithGradient, PageContainer } from "@/components/ui/layout-components";
 
 export default function PatientPrescriptionsPage() {
   const { t } = useLanguage();
@@ -14,20 +12,14 @@ export default function PatientPrescriptionsPage() {
   React.useEffect(() => { (async () => { const { data } = await supabase.auth.getUser(); setUser(data.user as any) })() }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Enhanced Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/20 dark:via-emerald-950/20 dark:to-teal-950/20 rounded-2xl p-6">
-        <AnimatedBackground />
-
-        <div className="relative z-10">
-          <SectionHeader
-            icon={Pill}
-            title={t.pnav.care.prescriptions}
-            description="View and manage your current medications and prescriptions"
-            gradient="from-green-600 to-emerald-600"
-          />
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeaderWithGradient
+        icon={Pill}
+        title={t.pnav.care.prescriptions}
+        description="View and manage your current medications and prescriptions"
+        gradient="from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/20 dark:via-emerald-950/20 dark:to-teal-950/20"
+        iconGradient="from-green-600 to-emerald-600"
+      />
 
       <EmptyState
         icon={Pill}
@@ -42,7 +34,7 @@ export default function PatientPrescriptionsPage() {
           onClick: () => {}
         }}
       />
-    </div>
+    </PageContainer>
   );
 }
 
