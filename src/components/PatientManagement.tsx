@@ -4,48 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import {
   Users,
   Search,
   User,
-  Calendar,
-  FileText,
   Plus,
-  ClipboardList as ClipboardListIcon,
-  Phone,
-  Mail,
-  MapPin,
-  CreditCard,
-  Edit,
-  Trash2
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { format } from "date-fns";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { PhotoUpload } from "@/components/PhotoUpload";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Accordion } from "@/components/ui/accordion";
 import { CompletionSheet } from "@/components/CompletionSheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PatientPaymentHistory } from "@/components/PatientPaymentHistory";
 import { PaymentRequestForm } from "@/components/PaymentRequestForm";
-import { useNavigate } from "react-router-dom";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { logger } from '@/lib/logger';
-import { sanitizeText } from '@/utils/sanitize';
 import {
   Patient,
   Appointment,
@@ -54,18 +28,20 @@ import {
   PatientNote,
   PatientManagementProps,
   PatientFlags,
-  TreatmentForm,
-  PrescriptionForm,
-  NoteForm,
-  getAge,
   PatientListItem,
   TreatmentPlanFormSheet,
   PrescriptionFormSheet,
   NoteFormSheet,
   AppointmentsList,
   PrescriptionsSection,
-  TreatmentPlansSection
+  TreatmentPlansSection,
+  PatientInfoCard,
+  NotesSection,
+  OutcomesSection,
+  PaymentsSection,
+  FilesSection,
 } from "@/components/patient-management";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 
 function PatientManagementComponent({ dentistId }: PatientManagementProps) {
@@ -77,8 +53,19 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [notes, setNotes] = useState<PatientNote[]>([]);
-  const [latestOutcome, setLatestOutcome] = useState<any[]>([]);
-  const [treatmentsByAppointment, setTreatmentsByAppointment] = useState<Record<string, any[]>>({});
+  const [latestOutcome, setLatestOutcome] = useState<Array<{
+    id: string;
+    outcome: string;
+    notes?: string;
+    appointments: { appointment_date: string; id: string };
+  }>>([]);
+  const [treatmentsByAppointment, setTreatmentsByAppointment] = useState<Record<string, Array<{
+    id: string;
+    appointment_id: string;
+    code: string;
+    quantity: number;
+    patient_share: number;
+  }>>>({});
   const [showCompletion, setShowCompletion] = useState(false);
   const [lastAppointment, setLastAppointment] = useState<Appointment | null>(null);
   const [completionAppointment, setCompletionAppointment] = useState<Appointment | null>(null);
@@ -136,8 +123,6 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   });
 
   const { toast } = useToast();
-  const sb: any = supabase;
-  const navigate = useNavigate();
   const { hasFeature, t } = useBusinessTemplate();
   const { businessId } = useBusinessContext();
 
@@ -303,14 +288,16 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
       // Outstanding balance (sum pending payment_requests + unpaid invoices patient_amount_cents)
       let outstandingCents = 0;
       try {
-        const { data: prs } = await sb.from('payment_requests').select('amount, status').eq('patient_id', patientId).eq('dentist_id', dentistId);
-        outstandingCents += (prs || []).filter((p: any) => p.status !== 'paid' && p.status !== 'cancelled').reduce((s: number, p: any) => s + (p.amount || 0), 0);
+        const { data: prs } = await supabase.from('payment_requests').select('amount, status').eq('patient_id', patientId).eq('dentist_id', dentistId);
+        type PaymentRequest = { amount: number | null; status: string };
+        outstandingCents += (prs || []).filter((p: PaymentRequest) => p.status !== 'paid' && p.status !== 'cancelled').reduce((s: number, p: PaymentRequest) => s + (p.amount || 0), 0);
       } catch {
         // ignore payment requests query errors
       }
       try {
-        const { data: inv } = await sb.from('invoices').select('patient_amount_cents, status').eq('patient_id', patientId).eq('dentist_id', dentistId);
-        outstandingCents += (inv || []).filter((i: any) => i.status !== 'paid' && i.status !== 'cancelled').reduce((s: number, i: any) => s + (i.patient_amount_cents || 0), 0);
+        const { data: inv } = await supabase.from('invoices').select('patient_amount_cents, status').eq('patient_id', patientId).eq('dentist_id', dentistId);
+        type Invoice = { patient_amount_cents: number | null; status: string };
+        outstandingCents += (inv || []).filter((i: Invoice) => i.status !== 'paid' && i.status !== 'cancelled').reduce((s: number, i: Invoice) => s + (i.patient_amount_cents || 0), 0);
       } catch {
         // ignore invoices query errors
       }
@@ -341,22 +328,36 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   };
 
   const fetchPatientOutcomes = async (patientId: string) => {
-    const { data } = await sb
+    interface AppointmentOutcome {
+      id: string;
+      outcome: string;
+      notes?: string;
+      appointments: { appointment_date: string; id: string };
+    }
+    interface AppointmentTreatment {
+      id: string;
+      appointment_id: string;
+      code: string;
+      quantity: number;
+      patient_share: number;
+    }
+
+    const { data } = await supabase
       .from('appointment_outcomes')
       .select('*, appointments!inner(appointment_date, id)')
       .eq('appointments.patient_id', patientId)
       .order('created_at', { ascending: false })
       .limit(5);
-    setLatestOutcome(data || []);
+    setLatestOutcome((data as AppointmentOutcome[]) || []);
 
-    const appointmentIds = (data || []).map((o: any) => o.appointments.id);
+    const appointmentIds = ((data as AppointmentOutcome[]) || []).map((o) => o.appointments.id);
     if (appointmentIds.length > 0) {
-      const { data: treatments } = await sb
+      const { data: treatments } = await supabase
         .from('appointment_treatments')
         .select('*')
         .in('appointment_id', appointmentIds);
-      const grouped: Record<string, any[]> = {};
-      (treatments || []).forEach((t: any) => {
+      const grouped: Record<string, AppointmentTreatment[]> = {};
+      ((treatments as AppointmentTreatment[]) || []).forEach((t) => {
         if (!grouped[t.appointment_id]) grouped[t.appointment_id] = [];
         grouped[t.appointment_id].push(t);
       });
@@ -867,186 +868,26 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                 />
               )}
 
-              <AccordionItem value="payments">
-                <Card className="glass-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-5 w-5 text-dental-primary" />
-                        <span>Payments</span>
-                        {patientFlags[selectedPatient.id]?.hasUnpaidBalance && (
-                          <Badge variant="destructive">Due €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}</Badge>
-                        )}
-                      </div>
-                      <AccordionTrigger className="py-0" />
-                    </CardTitle>
-                  </CardHeader>
-                  <AccordionContent>
-                    <CardContent>
-                      <div className="mb-3">
-                        <Button size="sm" variant="outline" onClick={() => setShowPaymentDialog(true)}>
-                          <CreditCard className="h-4 w-4 mr-1" /> Create Payment Request
-                        </Button>
-                      </div>
-                      <PatientPaymentHistory patientId={selectedPatient.id} />
-                    </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
+              <PaymentsSection
+                patientId={selectedPatient.id}
+                patientFlags={patientFlags[selectedPatient.id]}
+                onCreatePaymentRequest={() => setShowPaymentDialog(true)}
+              />
 
-              <AccordionItem value="notes">
-                <Card className="glass-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-dental-primary" />
-                        <span>Notes</span>
-                        <Badge variant="outline">{notes.length}</Badge>
-                      </div>
-                      <AccordionTrigger className="py-0" />
-                    </CardTitle>
-                  </CardHeader>
-                  <AccordionContent>
-                    <CardContent>
-                      {notes.length > 0 ? (
-                        <div className="space-y-3">
-                          {notes
-                            .slice()
-                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                            .map((note) => (
-                              <div key={note.id} className="p-3 border rounded-lg group">
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                      <h4 className="font-medium">{note.title}</h4>
-                                      {note.is_private && (
-                                        <Badge variant="secondary" className="text-xs">Private</Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground mt-1">{sanitizeText(note.content)}</p>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                      {format(new Date(note.created_at), 'PPP p')}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100">
-                                    <Button size="icon" variant="ghost" onClick={() => openEditNote(note)}>
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button size="icon" variant="ghost">
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Delete note?</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            This action cannot be undone.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction onClick={() => handleDeleteNote(note.id)}>Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          No notes found
-                        </p>
-                      )}
-                      <div className="pt-3 flex justify-end">
-                        <Button size="sm" variant="ghost">View All</Button>
-                      </div>
-                    </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
+              <NotesSection
+                notes={notes}
+                onEdit={openEditNote}
+                onDelete={handleDeleteNote}
+              />
 
-              <AccordionItem value="files">
-                <Card className="glass-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-dental-primary" />
-                        <span>Images / Files</span>
-                      </div>
-                      <AccordionTrigger className="py-0" />
-                    </CardTitle>
-                  </CardHeader>
-                  <AccordionContent>
-                    <CardContent>
-                      <div className="py-2">
-                        <PhotoUpload onComplete={() => { }} onCancel={() => { }} />
-                      </div>
-                    </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
+              <FilesSection />
 
-              <AccordionItem value="outcomes">
-                <Card className="glass-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <ClipboardListIcon className="h-5 w-5 text-dental-primary" />
-                        <span>Appointment Outcomes</span>
-                        <Badge variant="outline">{latestOutcome.length}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {lastAppointment && Math.abs(new Date(lastAppointment.appointment_date).getTime() - Date.now()) < 24 * 60 * 60 * 1000 && (
-                          <Button size="sm" onClick={() => setShowCompletion(true)}>Complete Last Appointment</Button>
-                        )}
-                        <AccordionTrigger className="py-0" />
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <AccordionContent>
-                    <CardContent>
-                      {latestOutcome.length > 0 ? (
-                        <div className="space-y-3">
-                          {latestOutcome.map((o: any) => (
-                            <div key={o.id} className="p-3 border rounded-lg">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <Badge className="capitalize">{o.outcome}</Badge>
-                                    <span className="text-xs text-muted-foreground">{new Date(o.appointments.appointment_date).toLocaleString()}</span>
-                                  </div>
-                                  {o.notes && (
-                                    <p className="text-sm mt-2 bg-muted p-2 rounded">{sanitizeText(o.notes)}</p>
-                                  )}
-                                  {treatmentsByAppointment[o.appointments.id] && (
-                                    <div className="mt-2 text-xs">
-                                      <div className="font-medium mb-1">Performed treatments</div>
-                                      <div className="space-y-1">
-                                        {treatmentsByAppointment[o.appointments.id].map((t) => (
-                                          <div key={t.id} className="flex justify-between">
-                                            <span>{t.code} x{t.quantity}</span>
-                                            <span>Patient €{(t.patient_share * t.quantity).toFixed(2)}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">No outcomes recorded</p>
-                      )}
-                    </CardContent>
-                  </AccordionContent>
-                </Card>
-              </AccordionItem>
+              <OutcomesSection
+                outcomes={latestOutcome}
+                treatmentsByAppointment={treatmentsByAppointment}
+                lastAppointment={lastAppointment}
+                onCompleteAppointment={() => setShowCompletion(true)}
+              />
             </Accordion>
 
             {(completionAppointment || lastAppointment) && (

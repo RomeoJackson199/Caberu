@@ -1,52 +1,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardList as ClipboardListIcon,
   Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Calendar,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
   RefreshCw,
-  Search,
-  Filter,
-  SortAsc,
-  SortDesc,
-  Target,
-  DollarSign,
-  Calendar as CalendarIcon
 } from "lucide-react";
-import {
-  Dialog,
-  DialogDescription,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { TreatmentPlan, NewTreatmentPlanForm } from "@/types/dental";
 import { logger } from '@/lib/logger';
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { TreatmentPlanDetailView } from "@/components/treatment/TreatmentPlanDetailView";
+import { TreatmentPlanListItem } from "@/components/treatment/TreatmentPlanListItem";
+import { TreatmentPlanFilters } from "@/components/treatment/TreatmentPlanFilters";
+import { TreatmentPlanFormDialog } from "@/components/treatment/TreatmentPlanFormDialog";
 
 interface TreatmentPlanManagerProps {
   patientId: string;
@@ -77,8 +44,6 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
     target_completion_date: '',
     notes: ''
   });
-  const [newGoal, setNewGoal] = useState('');
-  const [newProcedure, setNewProcedure] = useState('');
   const [showDetailView, setShowDetailView] = useState(false);
   const { toast } = useToast();
 
@@ -357,80 +322,6 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
       target_completion_date: '',
       notes: ''
     });
-    setNewGoal('');
-    setNewProcedure('');
-  };
-
-  const addGoal = () => {
-    if (newGoal.trim()) {
-      setFormData({
-        ...formData,
-        treatment_goals: [...formData.treatment_goals, newGoal.trim()]
-      });
-      setNewGoal('');
-    }
-  };
-
-  const removeGoal = (index: number) => {
-    setFormData({
-      ...formData,
-      treatment_goals: formData.treatment_goals.filter((_, i) => i !== index)
-    });
-  };
-
-  const addProcedure = () => {
-    if (newProcedure.trim()) {
-      setFormData({
-        ...formData,
-        procedures: [...formData.procedures, newProcedure.trim()]
-      });
-      setNewProcedure('');
-    }
-  };
-
-  const removeProcedure = (index: number) => {
-    setFormData({
-      ...formData,
-      procedures: formData.procedures.filter((_, i) => i !== index)
-    });
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'draft': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'normal': return 'bg-blue-100 text-blue-800';
-      case 'low': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <CheckCircle className="h-4 w-4" />;
-      case 'completed': return <Clock className="h-4 w-4" />;
-      case 'cancelled': return <XCircle className="h-4 w-4" />;
-      case 'draft': return <AlertTriangle className="h-4 w-4" />;
-      default: return <AlertTriangle className="h-4 w-4" />;
-    }
   };
 
   if (loading) {
@@ -463,100 +354,27 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
         </Button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search treatment plans..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Select value={sortBy} onValueChange={(value: 'name' | 'date' | 'status' | 'priority') => setSortBy(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="status">Status</SelectItem>
-              <SelectItem value="priority">Priority</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-          >
-            {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-          </Button>
-          <Select value={filterStatus} onValueChange={(value: 'all' | 'draft' | 'active' | 'completed' | 'cancelled') => setFilterStatus(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <TreatmentPlanFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        sortOrder={sortOrder}
+        onSortOrderToggle={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+        filterStatus={filterStatus}
+        onFilterStatusChange={setFilterStatus}
+      />
 
       {/* Treatment Plans List */}
       <div className="space-y-2">
         {filteredTreatmentPlans.map((plan) => (
-          <Card key={plan.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <ClipboardListIcon className="h-5 w-5 text-orange-600" />
-                  <div>
-                    <p className="font-medium">{plan.title}</p>
-                    <p className="text-sm text-gray-600">{plan.description}</p>
-                    <p className="text-xs text-gray-500">
-                      Started: {formatDate(plan.start_date)} | Duration: {plan.estimated_duration}
-                    </p>
-                    {plan.estimated_cost && (
-                      <p className="text-xs text-gray-500">
-                        Estimated Cost: ${plan.estimated_cost}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={getStatusColor(plan.status)}>
-                    {getStatusIcon(plan.status)}
-                    <span className="ml-1">{plan.status}</span>
-                  </Badge>
-                  <Badge className={getPriorityColor(plan.priority)}>
-                    {plan.priority}
-                  </Badge>
-                  <Button variant="ghost" size="sm" onClick={() => handleView(plan)}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(plan)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteTreatmentPlan(plan.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <TreatmentPlanListItem
+            key={plan.id}
+            plan={plan}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDeleteTreatmentPlan}
+          />
         ))}
       </div>
 

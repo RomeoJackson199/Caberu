@@ -7,3 +7,8 @@ export { NoteFormSheet } from './NoteForm';
 export { AppointmentsList } from './AppointmentsList';
 export { PrescriptionsSection } from './PrescriptionsSection';
 export { TreatmentPlansSection } from './TreatmentPlansSection';
+export { PatientInfoCard } from './PatientInfoCard';
+export { NotesSection } from './NotesSection';
+export { OutcomesSection } from './OutcomesSection';
+export { PaymentsSection } from './PaymentsSection';
+export { FilesSection } from './FilesSection';
