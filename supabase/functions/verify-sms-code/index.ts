@@ -55,6 +55,8 @@ serve(async (req) => {
     const twilioAuth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
     const verifyCheckUrl = `https://verify.twilio.com/v2/Services/${twilioVerifyServiceSid}/VerificationCheck`;
 
+    console.log(`Verifying code for phone: ${cleanPhone}, code entered: ${cleanCode}`);
+
     const twilioResponse = await fetch(verifyCheckUrl, {
       method: 'POST',
       headers: {
@@ -68,6 +70,7 @@ serve(async (req) => {
     });
 
     const twilioData = await twilioResponse.json();
+    console.log('Twilio response:', JSON.stringify(twilioData));
 
     if (!twilioResponse.ok) {
       console.error('Twilio Verify check error:', twilioData);
