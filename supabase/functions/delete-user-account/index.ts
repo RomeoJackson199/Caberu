@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
+
+// Rate limit: 3 account deletions per hour (critical, destructive operation)
+const RATE_LIMIT_CONFIG = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 3,
+  keyPrefix: 'delete_account'
+};
 
 serve(async (req) => {
     const origin = req.headers.get('Origin');
@@ -44,6 +52,13 @@ serve(async (req) => {
                 JSON.stringify({ error: 'Unauthorized' }),
                 { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
+        }
+
+        // Apply rate limiting per user
+        const rateLimitResult = await checkRateLimitDB(supabaseAdmin, user.id, RATE_LIMIT_CONFIG);
+        if (!rateLimitResult.allowed) {
+          console.warn(`Rate limit exceeded for user ${user.id} on account deletion`);
+          return rateLimitResponse(rateLimitResult, corsHeaders);
         }
 
         console.log('🗑️ Starting account deletion for user:', user.id, user.email);

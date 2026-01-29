@@ -101,13 +101,13 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching treatment plans:', error);
+        logger.error('Error fetching treatment plans:', error);
         throw error;
       }
 
       setTreatmentPlans(data || []);
     } catch (error) {
-      console.error('Error in fetchTreatmentPlans:', error);
+      logger.error('Error in fetchTreatmentPlans:', error);
       toast({
         title: "Error",
         description: "Failed to fetch treatment plans. Please try again.",
@@ -178,7 +178,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
         .single();
 
       if (error) {
-        console.error('Error creating treatment plan:', error);
+        logger.error('Error creating treatment plan:', error);
         throw error;
       }
 
@@ -214,7 +214,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
       resetForm();
       fetchTreatmentPlans();
     } catch (error) {
-      console.error('Error in handleCreateTreatmentPlan:', error);
+      logger.error('Error in handleCreateTreatmentPlan:', error);
       toast({
         title: "Error",
         description: "Failed to create treatment plan. Please try again.",
@@ -236,7 +236,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
         .eq('id', selectedTreatmentPlan.id);
 
       if (error) {
-        console.error('Error updating treatment plan:', error);
+        logger.error('Error updating treatment plan:', error);
         throw error;
       }
 
@@ -251,7 +251,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
       resetForm();
       fetchTreatmentPlans();
     } catch (error) {
-      console.error('Error in handleUpdateTreatmentPlan:', error);
+      logger.error('Error in handleUpdateTreatmentPlan:', error);
       toast({
         title: "Error",
         description: "Failed to update treatment plan. Please try again.",
@@ -268,7 +268,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
         .eq('id', treatmentPlanId);
 
       if (error) {
-        console.error('Error deleting treatment plan:', error);
+        logger.error('Error deleting treatment plan:', error);
         throw error;
       }
 
@@ -279,7 +279,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
 
       fetchTreatmentPlans();
     } catch (error) {
-      console.error('Error in handleDeleteTreatmentPlan:', error);
+      logger.error('Error in handleDeleteTreatmentPlan:', error);
       toast({
         title: "Error",
         description: "Failed to delete treatment plan. Please try again.",
@@ -299,7 +299,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
         .eq('id', treatmentPlanId);
 
       if (error) {
-        console.error('Error updating treatment plan status:', error);
+        logger.error('Error updating treatment plan status:', error);
         throw error;
       }
 
@@ -310,7 +310,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
 
       fetchTreatmentPlans();
     } catch (error) {
-      console.error('Error in handleStatusChange:', error);
+      logger.error('Error in handleStatusChange:', error);
       toast({
         title: "Error",
         description: "Failed to update treatment plan status. Please try again.",

@@ -1,10 +1,18 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 interface SendInvitesRequest {
   sessionId: string;
 }
+
+// Rate limit: 5 bulk import invitations per hour (expensive operation)
+const RATE_LIMIT_CONFIG = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 5,
+  keyPrefix: 'import_invites'
+};
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -69,6 +77,13 @@ serve(async (req) => {
     }
 
     const authedUserId = userResult.user.id;
+
+    // Apply rate limiting per user
+    const rateLimitResult = await checkRateLimitDB(supabase, authedUserId, RATE_LIMIT_CONFIG);
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for user ${authedUserId} on import invitations`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
 
     const { data: dentistRow, error: dentistErr } = await supabase
       .from('dentists')

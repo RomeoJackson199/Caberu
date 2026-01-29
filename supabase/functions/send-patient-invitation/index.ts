@@ -1,10 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Rate limit: 20 patient invitations per hour per business
+const RATE_LIMIT_CONFIG = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 20,
+  keyPrefix: 'patient_invite'
+};
 
 serve(async (req) => {
     const origin = req.headers.get('Origin');
@@ -21,6 +29,17 @@ serve(async (req) => {
                 JSON.stringify({ error: "Missing recipientEmail" }),
                 { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
+        }
+
+        // Create Supabase client for rate limiting
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+        // Apply rate limiting per business
+        const rateLimitKey = businessId || getClientIP(req);
+        const rateLimitResult = await checkRateLimitDB(supabase, rateLimitKey, RATE_LIMIT_CONFIG);
+        if (!rateLimitResult.allowed) {
+          console.warn(`Rate limit exceeded for business ${rateLimitKey} on patient invitations`);
+          return rateLimitResponse(rateLimitResult, corsHeaders);
         }
 
         // Create signup URL with business context
