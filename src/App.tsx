@@ -418,11 +418,10 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      {/* PWA Splash Screen - matches iOS/Android native splash */}
+      {/* PWA Splash Screen - simple logo, tagline, solid background */}
       <SplashScreen
         show={showSplash}
         isReady={appReady}
-        minDuration={800}
         onComplete={() => setShowSplash(false)}
       />
       <QueryClientProvider client={queryClient}>
