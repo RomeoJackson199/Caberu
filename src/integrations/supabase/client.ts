@@ -59,7 +59,9 @@ export const createAbortableQuery = (timeoutMs = 10000) => {
 
 // GDPR-compliant session timeout (15 minutes)
 const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
+const ACTIVITY_THROTTLE_MS = 1000; // Throttle activity detection to once per second
 let sessionTimer: ReturnType<typeof setTimeout> | undefined;
+let lastActivityTime = 0;
 
 const handleSessionTimeout = async () => {
   await supabase.auth.signOut();
@@ -71,12 +73,21 @@ const resetSessionTimeout = () => {
   sessionTimer = setTimeout(handleSessionTimeout, SESSION_TIMEOUT_MS);
 };
 
+// Throttled activity handler to avoid excessive timer resets
+const handleActivity = () => {
+  const now = Date.now();
+  if (now - lastActivityTime >= ACTIVITY_THROTTLE_MS) {
+    lastActivityTime = now;
+    resetSessionTimeout();
+  }
+};
+
 // Track user activity to reset timeout
 const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
 
 if (typeof window !== 'undefined') {
   activityEvents.forEach(event => {
-    document.addEventListener(event, resetSessionTimeout, { passive: true });
+    document.addEventListener(event, handleActivity, { passive: true });
   });
 
   // Start initial timer
@@ -88,7 +99,7 @@ if (typeof window !== 'undefined') {
       clearTimeout(sessionTimer);
     }
     activityEvents.forEach(event => {
-      document.removeEventListener(event, resetSessionTimeout);
+      document.removeEventListener(event, handleActivity);
     });
   });
 }
@@ -101,7 +112,7 @@ export const cleanupSessionTimeout = () => {
   }
   if (typeof window !== 'undefined') {
     activityEvents.forEach(event => {
-      document.removeEventListener(event, resetSessionTimeout);
+      document.removeEventListener(event, handleActivity);
     });
   }
 };

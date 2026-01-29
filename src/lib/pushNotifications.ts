@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/lib/logger';
 
 // Convert base64 string to Uint8Array for VAPID key
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -48,14 +49,14 @@ export class PushNotificationService {
       const { data, error } = await supabase.functions.invoke('get-vapid-key');
       
       if (error) {
-        console.error('Failed to fetch VAPID key:', error);
+        logger.error('Failed to fetch VAPID key:', error);
         return null;
       }
 
       this.vapidPublicKey = data?.publicKey || null;
       return this.vapidPublicKey;
     } catch (error) {
-      console.error('Error fetching VAPID key:', error);
+      logger.error('Error fetching VAPID key:', error);
       return null;
     }
   }
@@ -91,14 +92,14 @@ export class PushNotificationService {
         scope: '/'
       });
 
-      console.log('Service Worker registered successfully:', this.registration);
+      logger.info('Service Worker registered successfully:', this.registration);
 
       // Wait for the service worker to be ready
       await navigator.serviceWorker.ready;
 
       return this.registration;
     } catch (error) {
-      console.error('Service Worker registration failed:', error);
+      logger.error('Service Worker registration failed:', error);
       throw error;
     }
   }
@@ -110,7 +111,7 @@ export class PushNotificationService {
       const permission = await this.requestPermission();
 
       if (permission !== 'granted') {
-        console.log('Notification permission denied');
+        logger.info('Notification permission denied');
         return null;
       }
 
@@ -122,7 +123,7 @@ export class PushNotificationService {
       // Get VAPID key
       const vapidKey = await this.getVapidPublicKey();
       if (!vapidKey) {
-        console.error('VAPID public key not configured - cannot subscribe');
+        logger.error('VAPID public key not configured - cannot subscribe');
         throw new Error('Push notifications are not configured. Please contact support.');
       }
 
@@ -132,27 +133,27 @@ export class PushNotificationService {
       if (existingSubscription) {
         // Check if the existing subscription uses the correct VAPID key
         // If force resubscribe or keys may have changed, unsubscribe first
-        console.log('Found existing subscription, checking if valid...');
+        logger.info('Found existing subscription, checking if valid...');
         
         if (forceResubscribe) {
-          console.log('Force resubscribe requested - unsubscribing from existing subscription');
+          logger.info('Force resubscribe requested - unsubscribing from existing subscription');
           try {
             await existingSubscription.unsubscribe();
           } catch (e) {
-            console.warn('Failed to unsubscribe from existing subscription:', e);
+            logger.warn('Failed to unsubscribe from existing subscription:', e);
           }
         } else {
           // Try to save/update the existing subscription
           try {
             await this.saveSubscription(existingSubscription);
-            console.log('Existing subscription is valid and saved');
+            logger.info('Existing subscription is valid and saved');
             return existingSubscription;
           } catch (saveError) {
-            console.warn('Failed to save existing subscription, will resubscribe:', saveError);
+            logger.warn('Failed to save existing subscription, will resubscribe:', saveError);
             try {
               await existingSubscription.unsubscribe();
             } catch (e) {
-              console.warn('Failed to unsubscribe:', e);
+              logger.warn('Failed to unsubscribe:', e);
             }
           }
         }
@@ -161,21 +162,21 @@ export class PushNotificationService {
       // Subscribe to push notifications with the VAPID key
       const applicationServerKey = urlBase64ToUint8Array(vapidKey);
 
-      console.log('Creating new push subscription...');
+      logger.info('Creating new push subscription...');
       const subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey as BufferSource
       });
 
-      console.log('Push subscription successful:', subscription);
-      console.log('Endpoint:', subscription.endpoint);
+      logger.info('Push subscription successful:', subscription);
+      logger.info('Endpoint:', subscription.endpoint);
 
       // Save subscription to database
       await this.saveSubscription(subscription);
 
       return subscription;
     } catch (error) {
-      console.error('Failed to subscribe to push notifications:', error);
+      logger.error('Failed to subscribe to push notifications:', error);
       throw error;
     }
   }
@@ -202,11 +203,11 @@ export class PushNotificationService {
 
       // Unsubscribe
       const result = await subscription.unsubscribe();
-      console.log('Unsubscribed from push notifications:', result);
+      logger.info('Unsubscribed from push notifications:', result);
 
       return result;
     } catch (error) {
-      console.error('Failed to unsubscribe from push notifications:', error);
+      logger.error('Failed to unsubscribe from push notifications:', error);
       return false;
     }
   }
@@ -226,7 +227,7 @@ export class PushNotificationService {
       const subscription = await registration.pushManager.getSubscription();
       return subscription !== null;
     } catch (error) {
-      console.error('Failed to check subscription status:', error);
+      logger.error('Failed to check subscription status:', error);
       return false;
     }
   }
@@ -244,7 +245,7 @@ export class PushNotificationService {
 
       return await this.registration.pushManager.getSubscription();
     } catch (error) {
-      console.error('Failed to get subscription:', error);
+      logger.error('Failed to get subscription:', error);
       return null;
     }
   }
@@ -277,16 +278,16 @@ export class PushNotificationService {
       if (error) {
         // Handle RLS policy violations gracefully
         if (error.code === '42501') {
-          console.warn('Push subscription save blocked by RLS - will retry on next visit');
+          logger.warn('Push subscription save blocked by RLS - will retry on next visit');
           return;
         }
-        console.error('Failed to save subscription to database:', error);
+        logger.error('Failed to save subscription to database:', error);
         throw error;
       }
 
-      console.log('Subscription saved to database');
+      logger.info('Subscription saved to database');
     } catch (error) {
-      console.error('Error saving subscription:', error);
+      logger.error('Error saving subscription:', error);
       throw error;
     }
   }
@@ -304,16 +305,16 @@ export class PushNotificationService {
       if (error) {
         // Handle RLS policy violations gracefully
         if (error.code === '42501') {
-          console.warn('Push subscription removal blocked by RLS - subscription may remain active');
+          logger.warn('Push subscription removal blocked by RLS - subscription may remain active');
           return;
         }
-        console.error('Failed to remove subscription from database:', error);
+        logger.error('Failed to remove subscription from database:', error);
         throw error;
       }
 
-      console.log('Subscription removed from database');
+      logger.info('Subscription removed from database');
     } catch (error) {
-      console.error('Error removing subscription:', error);
+      logger.error('Error removing subscription:', error);
       throw error;
     }
   }
@@ -352,7 +353,7 @@ export async function initializePushNotifications(): Promise<boolean> {
     const service = pushNotificationService;
 
     if (!service.isSupported()) {
-      console.log('Push notifications not supported in this browser');
+      logger.info('Push notifications not supported in this browser');
       return false;
     }
 
@@ -363,48 +364,48 @@ export async function initializePushNotifications(): Promise<boolean> {
 
     return false;
   } catch (error) {
-    console.error('Failed to initialize push notifications:', error);
+    logger.error('Failed to initialize push notifications:', error);
     return false;
   }
 }
 
 // Debug function to test push notifications - can be called from browser console
 export async function testPushNotifications(): Promise<void> {
-  console.log('=== Push Notification Debug ===');
+  logger.info('=== Push Notification Debug ===');
 
   const service = pushNotificationService;
 
   // Check support
-  console.log('1. Browser support:', service.isSupported());
+  logger.info('1. Browser support:', service.isSupported());
   if (!service.isSupported()) {
-    console.error('Push notifications not supported in this browser');
+    logger.error('Push notifications not supported in this browser');
     return;
   }
 
   // Check permission
-  console.log('2. Permission status:', service.getPermission());
+  logger.info('2. Permission status:', service.getPermission());
 
   // Check service worker
   const registration = await navigator.serviceWorker.getRegistration();
-  console.log('3. Service worker registered:', !!registration);
+  logger.info('3. Service worker registered:', !!registration);
 
   // Check subscription
   const subscription = await service.getSubscription();
-  console.log('4. Current subscription:', subscription ? 'Active' : 'None');
+  logger.info('4. Current subscription:', subscription ? 'Active' : 'None');
   if (subscription) {
-    console.log('   Endpoint:', subscription.endpoint);
+    logger.info('   Endpoint:', subscription.endpoint);
   }
 
   // Test local notification via service worker
   if (registration && service.getPermission() === 'granted') {
-    console.log('5. Sending test notification via service worker...');
+    logger.info('5. Sending test notification via service worker...');
     registration.active?.postMessage({ type: 'TEST_NOTIFICATION' });
-    console.log('   Test notification sent! Check if it appears.');
+    logger.info('   Test notification sent! Check if it appears.');
   } else {
-    console.log('5. Cannot send test notification - permission not granted or no service worker');
+    logger.info('5. Cannot send test notification - permission not granted or no service worker');
   }
 
-  console.log('=== End Debug ===');
+  logger.info('=== End Debug ===');
 }
 
 // Make test function available globally for console debugging
