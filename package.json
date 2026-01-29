@@ -19,8 +19,7 @@
     "video:3d": "remotion render remotion/index.ts CaberuMarketing3D out/video-3d.mp4",
     "video:3d-short": "remotion render remotion/index.ts CaberuMarketing3D-Short out/video-3d-short.mp4",
     "video:3d-square": "remotion render remotion/index.ts CaberuMarketing3D-Square out/video-3d-square.mp4",
-    "video:3d-vertical": "remotion render remotion/index.ts CaberuMarketing3D-Vertical out/video-3d-vertical.mp4",
-    "generate:splash": "node scripts/generate-splash-screens.js"
+    "video:3d-vertical": "remotion render remotion/index.ts CaberuMarketing3D-Vertical out/video-3d-vertical.mp4"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -119,7 +118,6 @@
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
     "remotion": "^4.0.409",
-    "sharp": "^0.33.2",
     "tailwindcss": "^3.4.11",
     "terser": "^5.44.0",
     "three": "^0.168.0",

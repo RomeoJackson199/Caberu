@@ -8,7 +8,7 @@ import { LanguageProvider } from "./hooks/useLanguage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BusinessProvider } from "./hooks/useBusinessContext";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
-import { useState, useEffect, lazy, Suspense, useCallback } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -36,7 +36,6 @@ import { SmartNotificationBanner } from "@/components/notifications/SmartNotific
 import { NotificationPermissionPrompt } from "@/components/notifications/NotificationPermissionPrompt";
 import { initializePushNotifications } from "@/lib/pushNotifications";
 import { SkipNavigation } from "@/components/accessibility/SkipNavigation";
-import { SplashScreen } from "@/components/SplashScreen";
 
 // Force resync: 2025-12-07T19:03
 
@@ -193,13 +192,6 @@ const App = () => {
   const [showBusinessPicker, setShowBusinessPicker] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [showSplash, setShowSplash] = useState(true);
-  const [appReady, setAppReady] = useState(false);
-
-  // Mark app as ready after initial auth check completes
-  const markAppReady = useCallback(() => {
-    setAppReady(true);
-  }, []);
 
   // Initialize error reporting on mount - deferred to avoid blocking
   useEffect(() => {
@@ -300,9 +292,6 @@ const App = () => {
         
         // Log unexpected errors at error level
         logger.error('Auth check failed:', error);
-      } finally {
-        // Mark app ready regardless of auth result
-        markAppReady();
       }
     };
 
@@ -319,7 +308,7 @@ const App = () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [markAppReady]);
+  }, []);
 
   // Fetch notifications when user is logged in
   useEffect(() => {
@@ -418,12 +407,6 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      {/* PWA Splash Screen - simple logo, tagline, solid background */}
-      <SplashScreen
-        show={showSplash}
-        isReady={appReady}
-        onComplete={() => setShowSplash(false)}
-      />
       <QueryClientProvider client={queryClient}>
         <ThemeProvider
           attribute="class"
