@@ -230,7 +230,7 @@ const CalendarView = ({
  * Appointments Tab - Read-only index for finding appointments
  * All actions happen in Appointment Detail
  */
-export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user }) => {
+export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAssistant }) => {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -381,7 +381,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user }) => {
           icon={CalendarCheck}
           title="No appointments yet"
           description="Your upcoming appointments will appear here once you book them. Get started by booking your first appointment."
-          actionLabel="Book Appointment"
+          actionLabel={onOpenAssistant ? "Book Appointment" : undefined}
           onAction={onOpenAssistant}
           variant="illustrated"
           illustration="calendar"
