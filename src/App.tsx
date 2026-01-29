@@ -91,6 +91,7 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
+const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
 
 // Business gate component - DISABLED: Now using dedicated /select-business page
 const BusinessGate = () => {
@@ -449,6 +450,7 @@ const App = () => {
                         {/* Demo routes */}
                         <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
                         <Route path="/demo/undo" element={<UndoDemo />} />
+                        <Route path="/test-phone" element={<TestPhoneVerification />} />
                         {/* Auth routes */}
                         <Route path="/mobile-auth" element={<MobileAuthScreen />} />
                         <Route path="/welcome" element={<Welcome />} />
