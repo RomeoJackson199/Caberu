@@ -21,7 +21,7 @@ export const generateSymptomSummary = async (
     if (error) throw error;
     return (data.response || data.fallback_response || '').trim();
   } catch (err) {
-    console.error('Error generating symptom summary:', err);
+    logger.error('Error generating symptom summary:', err);
     return '';
   }
 };
@@ -45,7 +45,7 @@ export const generateAppointmentReason = async (
     const reason = (data.response || data.fallback_response || '').trim();
     return reason || 'General consultation';
   } catch (err) {
-    console.error('Error generating appointment reason:', err);
+    logger.error('Error generating appointment reason:', err);
     return 'General consultation';
   }
 };

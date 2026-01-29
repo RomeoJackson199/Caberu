@@ -3,25 +3,15 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User as UserIcon, Calendar, Camera, Mail, ImageIcon, Mic, Square } from "lucide-react";
 import { ChatMessage } from "@/types/chat";
-import { PhotoUpload } from "@/components/PhotoUpload";
-import { DentistSelection } from "@/components/DentistSelection";
-import { QuickPhotoUpload } from "@/components/QuickPhotoUpload";
-import { PatientSelection } from "@/components/PatientSelection";
 import { ChatAppointmentManager } from "@/components/chat/ChatAppointmentManager";
 import { ChatBookingFlow } from "@/components/chat/ChatBookingFlow";
 import { ChatSettingsManager } from "@/components/chat/ChatSettingsManager";
-import { generateSymptomSummary } from "@/lib/symptoms";
-import { generateMedicalRecordFromChat, createMedicalRecord } from "@/lib/medicalRecords";
-import { AiDisclaimer } from "@/components/AiDisclaimer";
-import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
-import { RecommendedDentistWidget } from "@/components/chat/RecommendedDentistWidget";
+import { ChatMessageList } from "@/components/chat/ChatMessageList";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatHeader } from "@/components/chat/ChatHeader";
 import { logger } from '@/lib/logger';
 
 interface DentalChatbotProps {
@@ -58,12 +48,6 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
   const [showChatBooking, setShowChatBooking] = useState(false);
   const [symptomSummary, setSymptomSummary] = useState<string>("");
   const [activeWidget, setActiveWidget] = useState<string>("");
-
-  // Voice recording states
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
-  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -598,80 +582,6 @@ Type your request...`;
     }
   };
 
-  // Voice recording functions
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 44100,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
-
-      const chunks: Blob[] = [];
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
-      };
-
-      recorder.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-        await processVoiceMessage(audioBlob);
-
-        // Stop all tracks
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-          setMediaStream(null);
-        }
-      };
-
-      setMediaRecorder(recorder);
-      setMediaStream(stream);
-      setAudioChunks(chunks);
-      recorder.start();
-      setIsRecording(true);
-
-      toast({
-        title: "🎤 Enregistrement en cours",
-        description: "Parlez maintenant...",
-      });
-
-    } catch (error) {
-      logger.error('Error starting recording:', error);
-      toast({
-        title: t.error,
-        description: t.microphoneAccessError,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder && isRecording) {
-      mediaRecorder.stop();
-      setIsRecording(false);
-      setMediaRecorder(null);
-    }
-  };
-
-  // Cleanup media stream on component unmount
-  useEffect(() => {
-    return () => {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [mediaStream]);
-
   // Cleanup component mounted state
   useEffect(() => {
     return () => {
@@ -679,68 +589,34 @@ Type your request...`;
     };
   }, []);
 
-  const processVoiceMessage = async (audioBlob: Blob) => {
-    try {
-      setIsLoading(true);
+  // Voice recording hook
+  const handleVoiceTranscription = async (transcribedText: string) => {
+    setIsLoading(true);
+    // Create user message with transcribed text
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      session_id: sessionId,
+      message: transcribedText,
+      is_bot: false,
+      message_type: "voice",
+      created_at: new Date().toISOString(),
+    };
 
-      // Convert audio to base64
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    setMessages(prev => [...prev, userMessage]);
+    await saveMessage(userMessage);
 
-      // Send to voice-to-text edge function
-      const { data, error } = await supabase.functions.invoke('voice-to-text', {
-        body: { audio: base64Audio }
-      });
-
-      if (error) throw error;
-
-      const transcribedText = data.text;
-
-      if (transcribedText && transcribedText.trim()) {
-        // Create user message with transcribed text
-        const userMessage: ChatMessage = {
-          id: crypto.randomUUID(),
-          session_id: sessionId,
-          message: transcribedText,
-          is_bot: false,
-          message_type: "voice",
-          created_at: new Date().toISOString(),
-        };
-
-        setMessages(prev => [...prev, userMessage]);
-        await saveMessage(userMessage);
-
-        // Generate bot response
-        setTimeout(async () => {
-          const botResponse = await generateBotResponse(transcribedText);
-          setMessages(prev => [...prev, botResponse]);
-          await saveMessage(botResponse);
-          setIsLoading(false);
-        }, 1000);
-
-        toast({
-          title: "✅ Message vocal reçu",
-          description: `"${transcribedText}"`,
-        });
-      } else {
-        toast({
-          title: "Aucun texte détecté",
-          description: "Veuillez réessayer",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-      }
-
-    } catch (error) {
-      logger.error('Error processing voice message:', error);
-      toast({
-        title: t.error,
-        description: t.voiceProcessingError,
-        variant: "destructive",
-      });
+    // Generate bot response
+    setTimeout(async () => {
+      const botResponse = await generateBotResponse(transcribedText);
+      setMessages(prev => [...prev, botResponse]);
+      await saveMessage(botResponse);
       setIsLoading(false);
-    }
+    }, 1000);
   };
+
+  const { isRecording, startRecording, stopRecording } = useVoiceRecording({
+    onTranscription: handleVoiceTranscription
+  });
 
   const handleVoiceOrSend = () => {
     if (inputMessage.trim()) {
@@ -758,122 +634,23 @@ Type your request...`;
 
   return (
     <div className="flex flex-col h-full max-h-[600px] bg-white rounded-lg border shadow-sm">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-            <Bot className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Caberu Assistant</h3>
-            <p className="text-sm text-gray-600">How can I help you today?</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsRecording(!isRecording)}
-            className={`${isRecording ? 'bg-red-100 text-red-600' : ''}`}
-          >
-            <Mic className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      <ChatHeader
+        isRecording={isRecording}
+        onToggleRecording={() => isRecording ? stopRecording() : startRecording()}
+      />
 
-      {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4 space-y-4">
-        {messages.map((message) => {
-          // Check if this is a widget message
-          if (message.message_type === 'widget' && message.is_bot) {
-            try {
-              const widgetData = JSON.parse(message.message);
-
-              if (widgetData.type === 'recommended-dentist-widget') {
-                return (
-                  <div key={message.id} className="my-4">
-                    <RecommendedDentistWidget
-                      dentist={widgetData.dentist}
-                      matchReason={widgetData.matchReason}
-                      symptoms={widgetData.symptoms}
-                      onSelectDentist={(dentist) => {
-                        setSelectedDentist(dentist);
-                        setShowChatBooking(true);
-                      }}
-                      onSeeAlternatives={() => {
-                        setCurrentFlow('dentist-selection');
-                      }}
-                    />
-                  </div>
-                );
-              }
-            } catch (e) {
-              logger.error('Error parsing widget data:', e);
-            }
-          }
-
-          // Regular message rendering
-          return (
-            <div
-              key={message.id}
-              className={`flex ${message.is_bot ? 'justify-start' : 'justify-end'}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.is_bot
-                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100'
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
-                  }`}
-              >
-                <div className="flex items-start gap-2">
-                  {message.is_bot && (
-                    <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    {message.is_bot ? (
-                      <MarkdownRenderer content={message.message} />
-                    ) : (
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.message}
-                      </p>
-                    )}
-                    {(message.metadata as any)?.ai_generated && (
-                      <div className="mt-2 text-xs opacity-70">
-                        AI Assistant
-                      </div>
-                    )}
-                  </div>
-                  {!message.is_bot && (
-                    <div className="w-6 h-6 bg-gradient-to-r from-gray-500 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <UserIcon className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                  <Bot className="w-3 h-3 text-white" />
-                </div>
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </ScrollArea>
+      <ChatMessageList
+        ref={messagesEndRef}
+        messages={messages}
+        isLoading={isLoading}
+        onSelectDentist={(dentist) => {
+          setSelectedDentist(dentist);
+          setShowChatBooking(true);
+        }}
+        onSeeAlternatives={() => {
+          setCurrentFlow('dentist-selection');
+        }}
+      />
 
       {/* Action Buttons */}
       {actionButtons.length > 0 && (
@@ -895,39 +672,14 @@ Type your request...`;
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="p-4 border-t bg-white">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 relative">
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="pr-12 rounded-full border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-              disabled={isLoading}
-            />
-            {isRecording && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              </div>
-            )}
-          </div>
-          <Button
-            onClick={handleVoiceOrSend}
-            disabled={isLoading || (!inputMessage.trim() && !isRecording)}
-            className="rounded-full w-10 h-10 p-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-          >
-            {isRecording ? (
-              <Square className="w-4 h-4 text-white" />
-            ) : inputMessage.trim() ? (
-              <Send className="w-4 h-4 text-white" />
-            ) : (
-              <Mic className="w-4 h-4 text-white" />
-            )}
-          </Button>
-        </div>
-      </div>
+      <ChatInput
+        value={inputMessage}
+        onChange={setInputMessage}
+        onSend={handleSendMessage}
+        onVoiceToggle={() => isRecording ? stopRecording() : startRecording()}
+        isLoading={isLoading}
+        isRecording={isRecording}
+      />
 
       {/* Chat Booking Flow Modal */}
       {showChatBooking && user && (

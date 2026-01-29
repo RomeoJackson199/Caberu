@@ -47,7 +47,6 @@ type AdjustmentType = 'none' | 'discount_percent' | 'discount_amount' | 'surchar
 export function CompletionSheet({ open, onOpenChange, appointment, dentistId, onCompleted }: CompletionSheetProps) {
 	const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
 	const { toast } = useToast();
-	const sb: any = supabase;
 	const [loading, setLoading] = useState(false);
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -104,15 +103,15 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 
 		(async () => {
 			try {
-				const user = await sb.auth.getUser();
+				const user = await supabase.auth.getUser();
 				if (!isMounted) return;
 				setCurrentUserId(user.data.user?.id || null);
 
-				const { data: dent, error: dentErr } = await sb.from('dentists').select('id, profile_id').eq('id', dentistId).single();
+				const { data: dent, error: dentErr } = await supabase.from('dentists').select('id, profile_id').eq('id', dentistId).single();
 				if (dentErr) {
 					logger.error('Failed to fetch dentist data:', dentErr);
 				} else if (dent?.profile_id && isMounted) {
-					const { data: prof, error: profErr } = await sb.from('secure_profiles_view').select('first_name, last_name').eq('id', dent.profile_id).single();
+					const { data: prof, error: profErr } = await supabase.from('secure_profiles_view').select('first_name, last_name').eq('id', dent.profile_id).single();
 					if (profErr) {
 						logger.error('Failed to fetch dentist profile:', profErr);
 					} else if (isMounted) {
@@ -120,14 +119,14 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 					}
 				}
 
-				const { data: pat, error: patErr } = await sb.from('secure_profiles_view').select('first_name, last_name').eq('id', appointment.patient_id).single();
+				const { data: pat, error: patErr } = await supabase.from('secure_profiles_view').select('first_name, last_name').eq('id', appointment.patient_id).single();
 				if (patErr) {
 					logger.error('Failed to fetch patient data:', patErr);
 				} else if (isMounted) {
 					setPatientName(pat ? `${pat.first_name || ''} ${pat.last_name || ''}`.trim() : '');
 				}
 
-				const { data: inv, error: invErr } = await sb.from('inventory_items').select('id, name, quantity, min_threshold').eq('dentist_id', dentistId).order('name');
+				const { data: inv, error: invErr } = await supabase.from('inventory_items').select('id, name, quantity, min_threshold').eq('dentist_id', dentistId).order('name');
 				if (invErr) {
 					logger.error('Failed to fetch inventory items:', invErr);
 				} else if (isMounted) {
@@ -201,7 +200,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 			// Audit: price change per line
 			if (currentUserId) {
 				const before = procedures.find(p => p.id === id)?.unitPrice;
-				await sb.from('audit_logs').insert({
+				await supabase.from('audit_logs').insert({
 					user_id: currentUserId,
 					action: 'completion_price_change',
 					resource_type: 'appointment',
@@ -287,7 +286,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 				vat_amount: 0
 			}));
 			if (treatmentsPayload.length > 0) {
-				await sb.from('appointment_treatments').insert(treatmentsPayload);
+				await supabase.from('appointment_treatments').insert(treatmentsPayload);
 				for (const t of treatmentsPayload) {
 					await emitAnalyticsEvent('TREATMENTS_PERFORMED', dentistId, { appointmentId: appointment.id, code: t.code, quantity: t.quantity });
 				}
@@ -295,13 +294,13 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 
 			// 2) Notes
 			if (notes.trim()) {
-				await sb.from('appointment_outcomes').insert({ appointment_id: appointment.id, outcome: 'successful', notes, created_by: dentistId });
+				await supabase.from('appointment_outcomes').insert({ appointment_id: appointment.id, outcome: 'successful', notes, created_by: dentistId });
 			}
 
 			// 3) Prescriptions
 			for (const r of rxItems) {
 				if (!r.name.trim()) continue;
-				await sb.from('prescriptions').insert({
+				await supabase.from('prescriptions').insert({
 					patient_id: appointment.patient_id,
 					dentist_id: appointment.dentist_id,
 					medication_name: r.name,
@@ -332,8 +331,8 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						vat_cents: 0
 					}));
 					const deductions = supplies.map(s => ({ item_id: s.item_id, quantity: s.quantity }));
-					const { data: prof } = await sb.from('profiles').select('id').eq('user_id', (await sb.auth.getUser()).data.user?.id).single();
-					const { data: rpcRes, error: rpcErr } = await sb.rpc('complete_visit_atomic', {
+					const { data: prof } = await supabase.from('profiles').select('id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
+					const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_visit_atomic', {
 						p_appointment_id: appointment.id,
 						p_dentist_id: appointment.dentist_id,
 						p_patient_id: appointment.patient_id,
@@ -349,7 +348,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						const notFound = code === 'PGRST202' || code === '404';
 						if (missingFunction || notFound) {
 							// Fallback: create invoice and items non-atomically; inventory deduction handled later
-							const invoice = await withSchemaReloadRetry(() => sb.from('invoices').insert({
+							const invoice = await withSchemaReloadRetry(() => supabase.from('invoices').insert({
 								appointment_id: appointment.id,
 								patient_id: appointment.patient_id,
 								dentist_id: appointment.dentist_id,
@@ -367,7 +366,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 								throw err;
 							}), sb) as { id: string };
 							invoiceId = invoice.id;
-							await sb.from('invoice_items').insert(procedures.map(p => ({
+							await supabase.from('invoice_items').insert(procedures.map(p => ({
 								invoice_id: invoice.id,
 								code: `PROC-${p.key.toUpperCase()}`,
 								description: p.name,
@@ -386,7 +385,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						atomicSuccess = true;
 					}
 				} else {
-					const invoice = await withSchemaReloadRetry(() => sb.from('invoices').insert({
+					const invoice = await withSchemaReloadRetry(() => supabase.from('invoices').insert({
 						appointment_id: appointment.id,
 						patient_id: appointment.patient_id,
 						dentist_id: appointment.dentist_id,
@@ -404,7 +403,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						throw err;
 					}), sb) as { id: string };
 					invoiceId = invoice.id;
-					await sb.from('invoice_items').insert(procedures.map(p => ({
+					await supabase.from('invoice_items').insert(procedures.map(p => ({
 						invoice_id: invoice.id,
 						code: `PROC-${p.key.toUpperCase()}`,
 						description: p.name,
@@ -433,24 +432,24 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 					const proceed = window.confirm(`Stock insufficient for: ${wouldGoNegative.map(w => `${w.name} (need ${w.need}, have ${w.have})`).join(', ')}. Continue anyway?`);
 					if (!proceed) throw new Error('Edit quantities');
 					if (currentUserId) {
-						await sb.from('audit_logs').insert({ user_id: currentUserId, action: 'inventory_negative_override', resource_type: 'appointment', resource_id: appointment.id, details: { offenders: wouldGoNegative } });
+						await supabase.from('audit_logs').insert({ user_id: currentUserId, action: 'inventory_negative_override', resource_type: 'appointment', resource_id: appointment.id, details: { offenders: wouldGoNegative } });
 					}
 				}
 				// apply deductions (only if not using atomic path)
-				const { data: prof } = await sb.from('profiles').select('id').eq('user_id', (await sb.auth.getUser()).data.user?.id).single();
+				const { data: prof } = await supabase.from('profiles').select('id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
 				for (const s of supplies) {
 					try {
-						const { data: it } = await sb.from('inventory_items').select('quantity, min_threshold, name').eq('id', s.item_id).single();
+						const { data: it } = await supabase.from('inventory_items').select('quantity, min_threshold, name').eq('id', s.item_id).single();
 						const beforeQty = it?.quantity || 0;
 						const newQty = Math.max(0, beforeQty - Math.abs(s.quantity));
-						await sb.from('inventory_adjustments').insert({ item_id: s.item_id, dentist_id: dentistId, appointment_id: appointment.id, change: -Math.abs(s.quantity), adjustment_type: 'usage', reason: `Appointment ${appointment.id}`, notes: JSON.stringify({ before: beforeQty, after: newQty }), created_by: prof?.id });
-						await sb.from('inventory_items').update({ quantity: newQty }).eq('id', s.item_id);
+						await supabase.from('inventory_adjustments').insert({ item_id: s.item_id, dentist_id: dentistId, appointment_id: appointment.id, change: -Math.abs(s.quantity), adjustment_type: 'usage', reason: `Appointment ${appointment.id}`, notes: JSON.stringify({ before: beforeQty, after: newQty }), created_by: prof?.id });
+						await supabase.from('inventory_items').update({ quantity: newQty }).eq('id', s.item_id);
 						if (it && newQty < it.min_threshold) {
-							const { data: dent } = await sb.from('dentists').select('profile_id').eq('id', dentistId).single();
+							const { data: dent } = await supabase.from('dentists').select('profile_id').eq('id', dentistId).single();
 							if (dent) {
-								const { data: dprof } = await sb.from('profiles').select('user_id').eq('id', dent.profile_id).single();
+								const { data: dprof } = await supabase.from('profiles').select('user_id').eq('id', dent.profile_id).single();
 								if (dprof?.user_id) {
-									await sb.from('notifications').insert({ user_id: dprof.user_id, dentist_id: dentistId, type: 'inventory', title: 'Low Stock Alert', message: `${it.name} is below threshold (${newQty} remaining)`, priority: 'high', action_label: 'Open Inventory', action_url: `/dashboard#inventory?item=${s.item_id}`, metadata: { item_id: s.item_id } });
+									await supabase.from('notifications').insert({ user_id: dprof.user_id, dentist_id: dentistId, type: 'inventory', title: 'Low Stock Alert', message: `${it.name} is below threshold (${newQty} remaining)`, priority: 'high', action_label: 'Open Inventory', action_url: `/dashboard#inventory?item=${s.item_id}`, metadata: { item_id: s.item_id } });
 								}
 							}
 						}
@@ -464,10 +463,10 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 			if (withInvoice && createInvoiceAndLink && invoiceId) {
 				try {
 					const amountCents = Math.round(finalTotal * 100);
-					const { data: payment, error: payErr } = await supabase.functions.invoke('create-payment-request', { body: { patient_id: appointment.patient_id, dentist_id: appointment.dentist_id, amount: amountCents, description: `Appointment ${appointment.id} patient share`, patient_email: (await sb.from('profiles').select('email').eq('id', appointment.patient_id).single()).data?.email } });
+					const { data: payment, error: payErr } = await supabase.functions.invoke('create-payment-request', { body: { patient_id: appointment.patient_id, dentist_id: appointment.dentist_id, amount: amountCents, description: `Appointment ${appointment.id} patient share`, patient_email: (await supabase.from('profiles').select('email').eq('id', appointment.patient_id).single()).data?.email } });
 					if (!payErr && payment?.payment_url) {
 						if (payment?.payment_request_id) {
-							await sb.from('invoices').update({ payment_request_id: payment.payment_request_id }).eq('id', invoiceId);
+							await supabase.from('invoices').update({ payment_request_id: payment.payment_request_id }).eq('id', invoiceId);
 						}
 						window.open(payment.payment_url, '_blank');
 					}
@@ -488,11 +487,11 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 
 			// 8) Final total override audit
 			if (currentUserId && finalTotalOverride !== undefined) {
-				await sb.from('audit_logs').insert({ user_id: currentUserId, action: 'completion_final_total_override', resource_type: 'appointment', resource_id: appointment.id, details: { final_total: finalTotalOverride, subtotal, adjustmentType, adjustmentValue } });
+				await supabase.from('audit_logs').insert({ user_id: currentUserId, action: 'completion_final_total_override', resource_type: 'appointment', resource_id: appointment.id, details: { final_total: finalTotalOverride, subtotal, adjustmentType, adjustmentValue } });
 			}
 
 			// 9) Mark appointment status
-			await sb.from('appointments').update({ status: withInvoice ? 'completed' : 'confirmed', treatment_completed_at: withInvoice ? new Date().toISOString() : null }).eq('id', appointment.id);
+			await supabase.from('appointments').update({ status: withInvoice ? 'completed' : 'confirmed', treatment_completed_at: withInvoice ? new Date().toISOString() : null }).eq('id', appointment.id);
 			await emitAnalyticsEvent('APPOINTMENT_COMPLETED', dentistId, { appointmentId: appointment.id, totals: { subtotal, finalTotal }, outcome: 'successful' });
 
 			toast({ title: withInvoice ? 'Saved & invoiced' : 'Saved as draft' });
