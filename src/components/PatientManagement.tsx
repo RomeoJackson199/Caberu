@@ -200,7 +200,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
         .eq('business_id', businessId);  // Multi-tenant isolation
 
       if (appointmentError) {
-        console.error('Error fetching appointments:', appointmentError);
+        logger.error('Error fetching appointments:', appointmentError);
         throw appointmentError;
       }
 

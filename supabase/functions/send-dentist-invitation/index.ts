@@ -1,12 +1,20 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 interface SendDentistInviteRequest {
   invitee_email: string;
   business_id: string;
   business_name: string;
 }
+
+// Rate limit: 10 invitations per hour per user
+const RATE_LIMIT_CONFIG = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 10,
+  keyPrefix: 'dentist_invite'
+};
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -57,6 +65,14 @@ serve(async (req) => {
     }
 
     const authedUserId = userResult.user.id;
+
+    // Apply rate limiting per user
+    const rateLimitResult = await checkRateLimitDB(supabase, authedUserId, RATE_LIMIT_CONFIG);
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for user ${authedUserId} on dentist invitations`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
+    }
+
     const email = requestBody.invitee_email.trim().toLowerCase();
 
     // Verify the user has permission to invite to this business

@@ -94,7 +94,7 @@ export const validateAddress = async (address: string): Promise<{ valid: boolean
 
     if (!response.ok) {
       // If geocoding service fails, just check basic validation
-      console.warn('Address geocoding service unavailable, skipping location verification');
+      logger.warn('Address geocoding service unavailable, skipping location verification');
       return { valid: true };
     }
 
@@ -107,7 +107,7 @@ export const validateAddress = async (address: string): Promise<{ valid: boolean
     return { valid: true };
   } catch (error) {
     // If geocoding fails, just proceed with basic validation
-    console.warn('Address validation error:', error);
+    logger.warn('Address validation error:', error);
     return { valid: true };
   }
 };
@@ -215,7 +215,7 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
       .select();
 
     if (updateError) {
-      console.error('Database update error:', updateError);
+      logger.error('Database update error:', updateError);
       throw updateError;
     }
 
@@ -224,7 +224,7 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
         .from('profiles')
         .insert({ user_id: user.id, ...cleanData });
       if (insertError) {
-        console.error('Database insert error:', insertError);
+        logger.error('Database insert error:', insertError);
         throw insertError;
       }
     }
@@ -237,7 +237,7 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
       .maybeSingle();
 
     if (verifyError) {
-      console.error('Verification error:', verifyError);
+      logger.error('Verification error:', verifyError);
       throw new Error('Failed to verify saved data');
     }
 
@@ -245,7 +245,7 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
 
     return { success: true, data: verifyData };
   } catch (error) {
-    console.error('Profile save failed:', error);
+    logger.error('Profile save failed:', error);
     throw error;
   }
 };
@@ -260,7 +260,7 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
       .maybeSingle();
 
     if (error) {
-      console.error('Database load error:', error);
+      logger.error('Database load error:', error);
       throw error;
     }
 
@@ -278,7 +278,7 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
 
     return profileData;
   } catch (error) {
-    console.error('Profile load failed:', error);
+    logger.error('Profile load failed:', error);
 
     // Removed localStorage fallback for security - sensitive PII should not be stored locally
     throw error;
@@ -293,13 +293,13 @@ export const testDatabaseConnection = async () => {
       .limit(1);
 
     if (error) {
-      console.error('Database connection test failed:', error);
+      logger.error('Database connection test failed:', error);
       return { success: false, error };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Database connection test failed:', error);
+    logger.error('Database connection test failed:', error);
     return { success: false, error };
   }
 };

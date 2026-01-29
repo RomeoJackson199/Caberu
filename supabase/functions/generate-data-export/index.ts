@@ -1,11 +1,19 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitDB, getClientIP, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 interface ExportRequest {
   bundleId: string;
   exportType: 'full_export' | 'portability';
 }
+
+// Rate limit: 5 exports per hour (resource-intensive operation)
+const RATE_LIMIT_CONFIG = {
+  windowMs: 60 * 60 * 1000,  // 1 hour
+  maxRequests: 5,
+  keyPrefix: 'data_export'
+};
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -37,7 +45,7 @@ serve(async (req) => {
     // Get the export bundle info
     const { data: bundle, error: bundleError } = await supabase
       .from('gdpr_export_bundles')
-      .select('*, patient_id')
+      .select('*, patient_id, user_id')
       .eq('id', bundleId)
       .single();
 
@@ -47,6 +55,14 @@ serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    // Apply rate limiting per user
+    const rateLimitKey = bundle.user_id || getClientIP(req);
+    const rateLimitResult = await checkRateLimitDB(supabase, rateLimitKey, RATE_LIMIT_CONFIG);
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for user ${rateLimitKey} on data export`);
+      return rateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     // Update status to processing

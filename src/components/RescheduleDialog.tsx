@@ -13,6 +13,7 @@ import { isPublicHoliday } from "@/lib/belgianHolidays";
 import { cn } from "@/lib/utils";
 import { showAppointmentRescheduled } from "@/lib/successNotifications";
 import { Skeleton } from "@/components/ui/skeleton";
+import { logger } from "@/lib/logger";
 
 interface RescheduleDialogProps {
   appointmentId: string | null;
@@ -100,7 +101,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       };
       setAppointment(transformedData);
     } catch (error) {
-      console.error('Error loading appointment:', error);
+      logger.error('Error loading appointment:', error);
       toast({
         title: "Error",
         description: "Failed to load appointment details",
@@ -136,7 +137,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       });
 
       if (generateError) {
-        console.warn('Slot generation warning:', generateError);
+        logger.warn('Slot generation warning:', generateError);
       }
 
       const businessId = await getCurrentBusinessId();
@@ -180,7 +181,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         });
       }
     } catch (error) {
-      console.error('Error loading slots:', error);
+      logger.error('Error loading slots:', error);
       toast({
         title: "Error",
         description: "Failed to load available time slots",
@@ -226,11 +227,12 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       onOpenChange(false);
       if (onSuccess) onSuccess();
 
-    } catch (error: any) {
-      console.error('Error rescheduling appointment:', error);
-      const message = (error?.message || '').includes('slot_unavailable')
+    } catch (error: unknown) {
+      logger.error('Error rescheduling appointment:', error);
+      const errorMessage = error instanceof Error ? error.message : '';
+      const message = errorMessage.includes('slot_unavailable')
         ? 'This time slot is no longer available. Please select another time.'
-        : (error?.message || 'Failed to reschedule appointment');
+        : (errorMessage || 'Failed to reschedule appointment');
       toast({
         title: "Error",
         description: message,
