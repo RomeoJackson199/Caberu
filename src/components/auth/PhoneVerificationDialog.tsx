@@ -108,10 +108,10 @@ export function PhoneVerificationDialog({
   };
 
   const verifyCode = async () => {
-    if (verificationCode.length !== 6) {
+    if (verificationCode.length < 4) {
       toast({
         title: "Invalid Code",
-        description: "Please enter a 6-digit code",
+        description: "Please enter the code from your SMS",
         variant: "destructive",
       });
       return;
@@ -237,10 +237,10 @@ export function PhoneVerificationDialog({
                 <Label htmlFor="code">Verification Code</Label>
                 <Input
                   id="code"
-                  placeholder="Enter 6-digit code"
+                  placeholder="Enter code"
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  maxLength={6}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  maxLength={8}
                   className="text-center text-2xl tracking-widest"
                   autoFocus
                 />
@@ -260,7 +260,7 @@ export function PhoneVerificationDialog({
                 </Button>
                 <Button
                   onClick={verifyCode}
-                  disabled={loading || verificationCode.length !== 6}
+                  disabled={loading || verificationCode.length < 4}
                   className="flex-1"
                 >
                   {loading ? (
