@@ -155,3 +155,9 @@ verify_jwt = true
 
 [functions.check-stripe-connect-status]
 verify_jwt = true
+
+[functions.send-sms-verification]
+verify_jwt = false
+
+[functions.verify-sms-code]
+verify_jwt = false
