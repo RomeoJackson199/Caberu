@@ -2875,6 +2875,8 @@ export type Database = {
           patient_status: string | null
           phone: string | null
           phone_encrypted: string | null
+          phone_verified: boolean | null
+          phone_verified_at: string | null
           profile_completion_status: string
           profile_picture_url: string | null
           role: string | null
@@ -2911,6 +2913,8 @@ export type Database = {
           patient_status?: string | null
           phone?: string | null
           phone_encrypted?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
           role?: string | null
@@ -2947,6 +2951,8 @@ export type Database = {
           patient_status?: string | null
           phone?: string | null
           phone_encrypted?: string | null
+          phone_verified?: boolean | null
+          phone_verified_at?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
           role?: string | null

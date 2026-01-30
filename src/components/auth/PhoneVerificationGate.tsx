@@ -3,60 +3,69 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Phone, Shield } from "lucide-react";
+import { Loader2, Phone, MessageSquare, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { logger } from '@/lib/logger';
+import { PhoneNumberInput } from "@/components/ui/phone-input";
+import { User } from "@supabase/supabase-js";
 
-interface PhoneVerificationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  phoneNumber?: string;
-  onSuccess: (phoneNumber: string) => void;
-  mode?: 'verify' | 'login';
-  userId?: string;
+interface PhoneVerificationGateProps {
+  user: User | null;
 }
 
-export function PhoneVerificationDialog({
-  open,
-  onOpenChange,
-  phoneNumber: initialPhoneNumber = "",
-  onSuccess,
-  mode = 'verify',
-  userId: propUserId
-}: PhoneVerificationDialogProps) {
-  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
+export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
+  const [open, setOpen] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [userId, setUserId] = useState<string | undefined>(propUserId);
+  const [dismissed, setDismissed] = useState(false);
   const { toast } = useToast();
 
-  const isLoginMode = mode === 'login';
-
-  // Get current user ID if not provided
+  // Check if user needs phone verification
   useEffect(() => {
-    if (!propUserId && open) {
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          setUserId(user.id);
+    if (!user || dismissed) return;
+
+    const checkPhoneVerification = async () => {
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("phone, phone_verified, onboarding_completed")
+          .eq("user_id", user.id)
+          .single();
+
+        // Only show if onboarding is completed but phone is not verified
+        // This prevents showing during the onboarding flow
+        if (profile?.onboarding_completed && !profile?.phone_verified) {
+          // Check if user has already dismissed this session
+          const dismissedKey = `phone_verification_dismissed_${user.id}`;
+          const wasDismissed = sessionStorage.getItem(dismissedKey);
+
+          if (!wasDismissed) {
+            // Delay showing the dialog slightly to not be intrusive
+            setTimeout(() => setOpen(true), 2000);
+          }
+
+          // Pre-fill phone if available
+          if (profile?.phone) {
+            setPhoneNumber(profile.phone);
+          }
         }
-      });
-    }
-  }, [propUserId, open]);
+      } catch (error) {
+        console.error("Error checking phone verification status:", error);
+      }
+    };
 
-  // Format phone number with country code
+    checkPhoneVerification();
+  }, [user, dismissed]);
+
   const formatPhoneNumber = (value: string) => {
-    // Remove all non-digit characters except +
     let cleaned = value.replace(/[^\d+]/g, '');
-
-    // Ensure it starts with +
     if (cleaned && !cleaned.startsWith('+')) {
       cleaned = '+' + cleaned;
     }
-
     return cleaned;
   };
 
@@ -72,7 +81,6 @@ export function PhoneVerificationDialog({
 
     const formattedPhone = formatPhoneNumber(phoneNumber);
 
-    // Basic validation
     if (!formattedPhone || formattedPhone.length < 8) {
       toast({
         title: "Invalid Phone Number",
@@ -109,11 +117,11 @@ export function PhoneVerificationDialog({
         title: "Verification Code Sent",
         description: "Check your phone for the 6-digit SMS code",
       });
-    } catch (error: any) {
-      logger.error('Error sending SMS code:', error);
+    } catch (error: unknown) {
+      console.error('Error sending SMS code:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to send verification code",
+        description: error instanceof Error ? error.message : "Failed to send verification code",
         variant: "destructive",
       });
     } finally {
@@ -136,21 +144,17 @@ export function PhoneVerificationDialog({
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('verify-sms-code', {
-        body: { phoneNumber: formattedPhone, code: verificationCode, userId }
+        body: { phoneNumber: formattedPhone, code: verificationCode, userId: user?.id }
       });
 
       if (error) throw error;
 
       if (data?.verified) {
         toast({
-          title: "Phone Verified",
-          description: "Your phone number has been verified successfully",
+          title: "Phone Verified!",
+          description: "You can now use voice calls with our AI assistant",
         });
-        onSuccess(formattedPhone);
-        onOpenChange(false);
-        // Reset state
-        setVerificationCode("");
-        setCodeSent(false);
+        handleClose();
       } else {
         toast({
           title: "Invalid Code",
@@ -158,11 +162,11 @@ export function PhoneVerificationDialog({
           variant: "destructive",
         });
       }
-    } catch (error: any) {
-      logger.error('Error verifying SMS code:', error);
+    } catch (error: unknown) {
+      console.error('Error verifying SMS code:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to verify code",
+        description: error instanceof Error ? error.message : "Failed to verify code",
         variant: "destructive",
       });
     } finally {
@@ -170,52 +174,66 @@ export function PhoneVerificationDialog({
     }
   };
 
-  const handleClose = (newOpen: boolean) => {
-    if (!newOpen) {
-      // Reset state when closing
-      setVerificationCode("");
-      setCodeSent(false);
-      if (!initialPhoneNumber) {
-        setPhoneNumber("");
-      }
-    }
-    onOpenChange(newOpen);
+  const handleClose = () => {
+    setOpen(false);
+    setVerificationCode("");
+    setCodeSent(false);
   };
 
+  const handleSkip = () => {
+    // Remember dismissal for this session
+    if (user) {
+      sessionStorage.setItem(`phone_verification_dismissed_${user.id}`, 'true');
+    }
+    setDismissed(true);
+    handleClose();
+  };
+
+  if (!user) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!newOpen) {
+        handleSkip();
+      }
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            {isLoginMode ? 'Phone Verification' : 'Verify Phone Number'}
+            <Phone className="h-5 w-5 text-blue-600" />
+            Verify Your Phone Number
           </DialogTitle>
           <DialogDescription>
-            {isLoginMode
-              ? "Enter the verification code sent to your phone to complete sign in"
-              : "We'll send an SMS with a verification code to confirm your phone number"
-            }
+            Enable voice calls with our AI assistant
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Info Banner */}
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex gap-3">
+              <MessageSquare className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-blue-900 text-sm">Why verify your phone?</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  With a verified phone, you can call our AI assistant to book appointments,
+                  ask questions, and get help. You'll also receive SMS reminders.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {!codeSent ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="+32467881965"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                    className="flex-1"
-                  />
-                </div>
+                <PhoneNumberInput
+                  value={phoneNumber}
+                  onChange={(val) => setPhoneNumber(val || "")}
+                  placeholder="Enter phone number"
+                />
                 <p className="text-xs text-muted-foreground">
-                  Enter your phone number with country code (e.g., +32 for Belgium)
+                  We'll send a verification code to this number
                 </p>
               </div>
 
@@ -251,16 +269,13 @@ export function PhoneVerificationDialog({
                 <Label htmlFor="code">Verification Code</Label>
                 <Input
                   id="code"
-                  placeholder="Enter code"
+                  placeholder="Enter 6-digit code"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
                   maxLength={8}
                   className="text-center text-2xl tracking-widest"
                   autoFocus
                 />
-                <p className="text-xs text-muted-foreground">
-                  Enter the 6-digit code from the SMS
-                </p>
               </div>
 
               <div className="flex gap-2">
@@ -283,12 +298,25 @@ export function PhoneVerificationDialog({
                       Verifying...
                     </>
                   ) : (
-                    isLoginMode ? "Verify & Sign In" : "Verify"
+                    "Verify"
                   )}
                 </Button>
               </div>
             </>
           )}
+
+          <Button
+            variant="ghost"
+            onClick={handleSkip}
+            className="w-full text-muted-foreground"
+          >
+            <X className="mr-2 h-4 w-4" />
+            Skip for now
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            You can verify your phone number anytime in your account settings
+          </p>
         </div>
       </DialogContent>
     </Dialog>
