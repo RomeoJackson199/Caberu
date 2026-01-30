@@ -34,6 +34,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const sendGridApiKey = Deno.env.get('TWILIO_API_KEY');
+    
+    // Service role client for bypassing RLS
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Rate limit check
@@ -43,9 +46,6 @@ serve(async (req) => {
       console.warn(`Rate limit exceeded for create-patient-profile from IP: ${clientIP}`);
       return rateLimitResponse(rateLimitResult, corsHeaders);
     }
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const sendGridApiKey = Deno.env.get('TWILIO_API_KEY');
 
     // Verify authenticated user
     const authHeader = req.headers.get('authorization');
@@ -62,9 +62,6 @@ serve(async (req) => {
     if (authError || !user) {
       throw new Error('Invalid or expired token');
     }
-
-    // Service role client for bypassing RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const patientData: PatientData = await req.json();
     console.log('📝 Creating patient profile:', { 

@@ -67,7 +67,7 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
                         {message.message}
                       </p>
                     )}
-                    {(message.metadata as Record<string, unknown>)?.ai_generated && (
+                    {(message.metadata as Record<string, unknown>)?.ai_generated === true && (
                       <div className="mt-2 text-xs opacity-70">
                         AI Assistant
                       </div>
