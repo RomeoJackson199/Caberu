@@ -1,11 +1,15 @@
+/**
+ * @deprecated Use BusinessPicker from '@/components/shared/BusinessPicker' instead
+ * This file is kept for backward compatibility with different prop interface
+ */
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, MapPin, Check } from 'lucide-react';
+import { Building2, Check } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { logger } from '@/lib/logger';
 
 interface Business {
   id: string;
@@ -22,6 +26,10 @@ interface BusinessSelectionForPatientsProps {
   selectedBusinessId?: string;
 }
 
+/**
+ * Patient-specific business selection with name callback
+ * @deprecated Consider migrating to BusinessPicker from shared components
+ */
 export function BusinessSelectionForPatients({ onSelectBusiness, selectedBusinessId }: BusinessSelectionForPatientsProps) {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
