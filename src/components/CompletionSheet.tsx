@@ -348,23 +348,21 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						const notFound = code === 'PGRST202' || code === '404';
 						if (missingFunction || notFound) {
 							// Fallback: create invoice and items non-atomically; inventory deduction handled later
-							const invoice = await withSchemaReloadRetry(() => supabase.from('invoices').insert({
-								appointment_id: appointment.id,
-								patient_id: appointment.patient_id,
-								dentist_id: appointment.dentist_id,
-								total_amount_cents: totalCents,
-								patient_amount_cents: totalCents,
-								mutuality_amount_cents: 0,
-								vat_amount_cents: 0,
-								status: 'draft',
-								claim_status: 'to_be_submitted'
-							}).select('*').single().then((res: any) => {
+							const invoice = await withSchemaReloadRetry(async () => {
+								const res = await supabase.from('invoices').insert({
+									appointment_id: appointment.id,
+									patient_id: appointment.patient_id,
+									dentist_id: appointment.dentist_id,
+									total_amount_cents: totalCents,
+									patient_amount_cents: totalCents,
+									mutuality_amount_cents: 0,
+									vat_amount_cents: 0,
+									status: 'draft',
+									claim_status: 'to_be_submitted'
+								}).select('*').single();
 								if (res.error) throw res.error;
-								return res.data;
-							}).catch((err: any) => {
-								console.error('Error creating invoice:', err);
-								throw err;
-							}), sb) as { id: string };
+								return res.data as { id: string };
+							}, supabase);
 							invoiceId = invoice.id;
 							await supabase.from('invoice_items').insert(procedures.map(p => ({
 								invoice_id: invoice.id,
@@ -385,23 +383,21 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						atomicSuccess = true;
 					}
 				} else {
-					const invoice = await withSchemaReloadRetry(() => supabase.from('invoices').insert({
-						appointment_id: appointment.id,
-						patient_id: appointment.patient_id,
-						dentist_id: appointment.dentist_id,
-						total_amount_cents: totalCents,
-						patient_amount_cents: totalCents,
-						mutuality_amount_cents: 0,
-						vat_amount_cents: 0,
-						status: 'draft',
-						claim_status: 'to_be_submitted'
-					}).select('*').single().then((res: any) => {
+					const invoice = await withSchemaReloadRetry(async () => {
+						const res = await supabase.from('invoices').insert({
+							appointment_id: appointment.id,
+							patient_id: appointment.patient_id,
+							dentist_id: appointment.dentist_id,
+							total_amount_cents: totalCents,
+							patient_amount_cents: totalCents,
+							mutuality_amount_cents: 0,
+							vat_amount_cents: 0,
+							status: 'draft',
+							claim_status: 'to_be_submitted'
+						}).select('*').single();
 						if (res.error) throw res.error;
-						return res.data;
-					}).catch((err: any) => {
-						console.error('Error creating invoice:', err);
-						throw err;
-					}), sb) as { id: string };
+						return res.data as { id: string };
+					}, supabase);
 					invoiceId = invoice.id;
 					await supabase.from('invoice_items').insert(procedures.map(p => ({
 						invoice_id: invoice.id,

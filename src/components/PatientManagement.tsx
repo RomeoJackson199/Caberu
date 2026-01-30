@@ -5,12 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { format } from "date-fns";
 import {
   Users,
   Search,
   User,
   Plus,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  CreditCard,
 } from "lucide-react";
+import { sanitizeText } from '@/utils/sanitize';
+import { getAge } from '@/lib/patient-utils';
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Accordion } from "@/components/ui/accordion";

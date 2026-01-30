@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ClipboardList as ClipboardListIcon,
   Plus,
   RefreshCw,
+  Target,
+  Trash2,
 } from "lucide-react";
 import { TreatmentPlan, NewTreatmentPlanForm } from "@/types/dental";
 import { logger } from '@/lib/logger';
@@ -45,7 +53,59 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
     notes: ''
   });
   const [showDetailView, setShowDetailView] = useState(false);
+  const [newGoal, setNewGoal] = useState("");
+  const [newProcedure, setNewProcedure] = useState("");
   const { toast } = useToast();
+
+  const addGoal = () => {
+    if (newGoal.trim()) {
+      setFormData({ ...formData, treatment_goals: [...formData.treatment_goals, newGoal.trim()] });
+      setNewGoal("");
+    }
+  };
+
+  const removeGoal = (index: number) => {
+    setFormData({ ...formData, treatment_goals: formData.treatment_goals.filter((_, i) => i !== index) });
+  };
+
+  const addProcedure = () => {
+    if (newProcedure.trim()) {
+      setFormData({ ...formData, procedures: [...formData.procedures, newProcedure.trim()] });
+      setNewProcedure("");
+    }
+  };
+
+  const removeProcedure = (index: number) => {
+    setFormData({ ...formData, procedures: formData.procedures.filter((_, i) => i !== index) });
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const colors: Record<string, string> = {
+      low: 'bg-gray-100 text-gray-800',
+      normal: 'bg-blue-100 text-blue-800',
+      high: 'bg-orange-100 text-orange-800',
+      urgent: 'bg-red-100 text-red-800'
+    };
+    return colors[priority] || colors.normal;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      draft: 'bg-gray-100 text-gray-800',
+      active: 'bg-green-100 text-green-800',
+      completed: 'bg-blue-100 text-blue-800',
+      cancelled: 'bg-red-100 text-red-800'
+    };
+    return colors[status] || colors.draft;
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString();
+    } catch {
+      return dateStr;
+    }
+  };
 
   useEffect(() => {
     fetchTreatmentPlans();
