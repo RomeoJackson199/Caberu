@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use BusinessPicker from '@/components/shared/BusinessPicker' instead
+ * This component is kept for backward compatibility with its specific prop interface
+ */
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +26,10 @@ interface BusinessPickerHomepageProps {
   onBusinessSelected: (businessId: string) => void;
 }
 
+/**
+ * Homepage-specific business picker with location filtering
+ * @deprecated Consider migrating to BusinessPicker from shared components
+ */
 export function BusinessPickerHomepage({ onBusinessSelected }: BusinessPickerHomepageProps) {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +114,7 @@ export function BusinessPickerHomepage({ onBusinessSelected }: BusinessPickerHom
       if (error) throw error;
       setBusinesses(data || []);
     } catch (error) {
-      console.error("Error loading businesses:", error);
+      logger.error("Error loading businesses:", error);
     } finally {
       setLoading(false);
     }
