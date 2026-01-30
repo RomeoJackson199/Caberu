@@ -1,9 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
 
 interface VerifySMSRequest {
   phoneNumber: string;
   code: string;
+  userId?: string;
 }
 
 serve(async (req) => {
@@ -14,7 +16,7 @@ serve(async (req) => {
   if (preflightResponse) return preflightResponse;
 
   try {
-    const { phoneNumber, code }: VerifySMSRequest = await req.json();
+    const { phoneNumber, code, userId }: VerifySMSRequest = await req.json();
 
     if (!phoneNumber || !code) {
       return new Response(
@@ -102,6 +104,37 @@ serve(async (req) => {
     // Check verification status from Twilio
     if (twilioData.status === 'approved') {
       console.log(`SMS verification approved for ${cleanPhone}`);
+
+      // Update profile with verified phone if userId is provided
+      if (userId) {
+        try {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL');
+          const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+          if (supabaseUrl && supabaseServiceKey) {
+            const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                phone: cleanPhone,
+                phone_verified: true,
+                phone_verified_at: new Date().toISOString(),
+              })
+              .eq('user_id', userId);
+
+            if (updateError) {
+              console.error('Error updating profile phone verification:', updateError);
+            } else {
+              console.log(`Profile updated with verified phone for user ${userId}`);
+            }
+          }
+        } catch (profileError) {
+          console.error('Error updating profile:', profileError);
+          // Don't fail the verification, just log the error
+        }
+      }
+
       return new Response(
         JSON.stringify({
           verified: true,

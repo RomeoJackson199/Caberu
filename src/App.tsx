@@ -23,6 +23,7 @@ import { SubscriptionGuard } from "@/components/auth/SubscriptionGuard";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CookieConsent } from "@/components/CookieConsent";
 import { OnboardingOrchestrator } from "@/components/onboarding/OnboardingOrchestrator";
+import { PhoneVerificationGate } from "@/components/auth/PhoneVerificationGate";
 import { initializeErrorReporting } from "@/lib/errorReporting";
 import { GlobalDashboardErrorListener } from "@/components/dashboard/GlobalDashboardErrorListener";
 import { getUserFriendlyErrorMessage } from "@/lib/errorHandling";
@@ -443,6 +444,7 @@ const App = () => {
                     <KeyboardShortcutsGuide />
                     <CookieConsent isAuthenticated={!!user} />
                     <OnboardingOrchestrator user={user} />
+                    <PhoneVerificationGate user={user} />
                     <SeoManager />
                     <Suspense fallback={<LoadingSpinner variant="overlay" message="Loading..." />}>
                       <Routes>
