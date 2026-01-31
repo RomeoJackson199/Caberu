@@ -256,17 +256,21 @@ serve(async (req) => {
     
     if (isPatientLookup) {
       try {
-        console.log('Patient lookup request:', { phone: body?.phone || body?.caller_phone, name: body?.name, dob: body?.date_of_birth || body?.dob });
+        const phoneRaw = body?.phone || body?.phoneNumber || body?.caller_phone || null;
+        const name = body?.name || null;
+        const dobRaw = body?.date_of_birth || body?.dob || null;
+        
+        console.log('Patient lookup request:', { phoneRaw, name, dob: dobRaw });
+        
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL')!,
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
         );
 
-        const phoneRaw = body?.phone || body?.phoneNumber || body?.caller_phone || null;
-        const name = body?.name || null;
-        const dobRaw = body?.date_of_birth || body?.dob || null;
-
+        // Normalize phone: strip all non-digits
         const normalizedPhone = phoneRaw ? String(phoneRaw).replace(/[^0-9]/g, '') : null;
+        // Also try with + prefix for international format
+        const phoneWithPlus = normalizedPhone ? `+${normalizedPhone}` : null;
 
         let firstName: string | null = null;
         let lastName: string | null = null;
@@ -294,9 +298,11 @@ serve(async (req) => {
 
         let patient: any = null;
 
-        // Strategy 1: phone (exact -> normalized)
-        if (!patient && (phoneRaw || normalizedPhone)) {
-          console.log('Attempting phone lookup...');
+        // Strategy 1: phone lookup (try multiple formats)
+        if (!patient && (phoneRaw || normalizedPhone || phoneWithPlus)) {
+          console.log('Attempting phone lookup with formats:', { phoneRaw, normalizedPhone, phoneWithPlus });
+          
+          // Try exact match first
           if (phoneRaw) {
             const r1 = await supabase
               .from('secure_profiles_view')
@@ -305,13 +311,37 @@ serve(async (req) => {
               .maybeSingle();
             patient = r1.data || null;
           }
-          if (!patient && normalizedPhone) {
+          
+          // Try with + prefix (international format)
+          if (!patient && phoneWithPlus) {
             const r2 = await supabase
+              .from('secure_profiles_view')
+              .select('id, first_name, last_name, email, phone, date_of_birth')
+              .eq('phone', phoneWithPlus)
+              .maybeSingle();
+            patient = r2.data || null;
+          }
+          
+          // Try normalized (digits only)
+          if (!patient && normalizedPhone) {
+            const r3 = await supabase
               .from('secure_profiles_view')
               .select('id, first_name, last_name, email, phone, date_of_birth')
               .eq('phone', normalizedPhone)
               .maybeSingle();
-            patient = r2.data || null;
+            patient = r3.data || null;
+          }
+          
+          // Try ILIKE pattern match as fallback (handles various formats)
+          if (!patient && normalizedPhone && normalizedPhone.length >= 6) {
+            const lastDigits = normalizedPhone.slice(-9); // Last 9 digits for matching
+            const r4 = await supabase
+              .from('secure_profiles_view')
+              .select('id, first_name, last_name, email, phone, date_of_birth')
+              .ilike('phone', `%${lastDigits}`)
+              .limit(1)
+              .maybeSingle();
+            patient = r4.data || null;
           }
         }
 
