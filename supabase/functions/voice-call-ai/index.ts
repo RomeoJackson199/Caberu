@@ -248,7 +248,13 @@ serve(async (req) => {
     }
     
     // Patient lookup-only mode (no message needed)
-    if (body?.action === 'lookup_patient' || ((body?.phone || body?.name || body?.date_of_birth || body?.dob) && !body?.appointment_date && !body?.message)) {
+    // Support multiple action names: lookup_patient, find_patient, get_patient
+    const lookupActions = ['lookup_patient', 'find_patient', 'get_patient'];
+    const isPatientLookup = (body?.action && lookupActions.includes(body.action)) || 
+                            ((body?.phone || body?.phoneNumber || body?.caller_phone || body?.name || body?.date_of_birth || body?.dob) && 
+                             !body?.appointment_date && !body?.message);
+    
+    if (isPatientLookup) {
       try {
         console.log('Patient lookup request:', { phone: body?.phone || body?.caller_phone, name: body?.name, dob: body?.date_of_birth || body?.dob });
         const supabase = createClient(
@@ -256,7 +262,7 @@ serve(async (req) => {
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
         );
 
-        const phoneRaw = body?.phone || body?.caller_phone || null;
+        const phoneRaw = body?.phone || body?.phoneNumber || body?.caller_phone || null;
         const name = body?.name || null;
         const dobRaw = body?.date_of_birth || body?.dob || null;
 
