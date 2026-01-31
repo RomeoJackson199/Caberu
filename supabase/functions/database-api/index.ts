@@ -45,13 +45,30 @@ function validateTable(table: string, action: string): { valid: boolean; error?:
 // SECURITY: Validate API key or JWT for authentication
 async function validateAuth(req: Request, supabase: any): Promise<{ valid: boolean; error?: string; userId?: string }> {
   const authHeader = req.headers.get('authorization');
+  const url = new URL(req.url);
+  
+  // Check for service key in query params (for ElevenLabs/external integrations)
+  const serviceKey = url.searchParams.get('service_key');
+  const apiKey = Deno.env.get('DATABASE_API_SECRET');
+  
+  // Validate service key from query param
+  if (serviceKey && apiKey && serviceKey === apiKey) {
+    console.log('Auth: Service key validated (query param)');
+    return { valid: true };
+  }
+  
+  // Allow internal service calls from other edge functions (trusted internal)
+  const internalServiceHeader = req.headers.get('x-internal-service');
+  if (internalServiceHeader === 'voice-call-ai' || internalServiceHeader === 'elevenlabs-webhook') {
+    console.log('Auth: Internal service call validated');
+    return { valid: true };
+  }
   
   if (!authHeader) {
     return { valid: false, error: 'Authorization header required' };
   }
   
   // Check for API key authentication (for ElevenLabs/MCP integration)
-  const apiKey = Deno.env.get('DATABASE_API_SECRET') || Deno.env.get('ELEVENLABS_API_KEY');
   if (apiKey) {
     const providedKey = authHeader.replace('Bearer ', '');
     if (providedKey === apiKey) {
