@@ -458,6 +458,65 @@ function SkeletonStats({
   );
 }
 
+/**
+ * LoadingSkeleton - Simple loading skeleton (consolidated from loading-skeleton.tsx)
+ */
+function LoadingSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("space-y-3", className)}>
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-4 w-2/3" />
+    </div>
+  );
+}
+
+/**
+ * AppointmentSkeleton - Appointment form loading skeleton
+ */
+function AppointmentSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ChatSkeleton - Chat interface loading skeleton
+ */
+function ChatSkeleton() {
+  return (
+    <div className="space-y-4 p-4">
+      <div className="flex items-start space-x-2">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <div className="space-y-2 flex-1">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+      <div className="flex items-start space-x-2 justify-end">
+        <div className="space-y-2 flex-1 max-w-xs">
+          <Skeleton className="h-4 w-full" />
+        </div>
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
 export {
   Skeleton,
   SkeletonText,
@@ -468,4 +527,8 @@ export {
   SkeletonList,
   SkeletonTable,
   SkeletonStats,
+  // Consolidated from loading-skeleton.tsx
+  LoadingSkeleton,
+  AppointmentSkeleton,
+  ChatSkeleton,
 };

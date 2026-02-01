@@ -28,6 +28,8 @@ const buttonVariants = cva(
         icon: "h-10 w-10",
         desktop: "h-11 px-8",
         mobile: "h-12 px-6 text-base",
+        // WCAG AAA compliant touch target (48px minimum)
+        touch: "h-12 min-w-[48px] px-6 text-base",
       },
     },
     defaultVariants: {

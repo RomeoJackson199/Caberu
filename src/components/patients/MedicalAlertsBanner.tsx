@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { usePatientAllergies, PatientAllergy } from "@/hooks/usePatientAllergies";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +23,7 @@ const severityConfig = {
   'life-threatening': { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-700', icon: 'text-red-600' },
 };
 
-export function MedicalAlertsBanner({ patientId, businessId, compact = false }: MedicalAlertsBannerProps) {
+export const MedicalAlertsBanner = memo(function MedicalAlertsBanner({ patientId, businessId, compact = false }: MedicalAlertsBannerProps) {
   const { allergies, isLoading, addAllergy, deleteAllergy, hasSevereAllergies } = usePatientAllergies({ patientId, businessId });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newAllergy, setNewAllergy] = useState({
@@ -244,4 +244,4 @@ export function MedicalAlertsBanner({ patientId, businessId, compact = false }: 
       )}
     </AnimatePresence>
   );
-}
+});

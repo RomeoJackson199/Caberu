@@ -65,7 +65,7 @@ export interface HomeTabProps {
   onBookAppointment?: () => void;
 }
 
-export const HomeTab: React.FC<HomeTabProps> = ({
+export const HomeTab = React.memo<HomeTabProps>(({
   userId,
   firstName,
   profileImageUrl,
@@ -179,4 +179,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       />
     </div>
   );
-};
+});
+
+HomeTab.displayName = 'HomeTab';

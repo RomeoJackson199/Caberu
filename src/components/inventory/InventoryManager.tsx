@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ interface InventoryManagerProps {
   userId: string; // Supabase auth user id for notifications
 }
 
-export function InventoryManager({ dentistId, userId }: InventoryManagerProps) {
+export const InventoryManager = memo(function InventoryManager({ dentistId, userId }: InventoryManagerProps) {
   const { toast } = useToast();
   const sb: any = supabase;
 
@@ -501,4 +501,4 @@ export function InventoryManager({ dentistId, userId }: InventoryManagerProps) {
       </Card>
     </div>
   );
-}
+});
