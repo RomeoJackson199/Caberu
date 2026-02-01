@@ -8,7 +8,7 @@
  * - Final-state language only ("Completed", "Final invoice", "Issued prescription")
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PatientAppointmentDetail } from "@/components/patients/PatientAppointmentDetail";
@@ -58,7 +58,7 @@ interface TimelineRecord {
   planItemsPreview?: string;
 }
 
-export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProps) {
+export const PatientRecordsTimeline = memo(function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProps) {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -629,4 +629,4 @@ export function PatientRecordsTimeline({ patientId }: PatientRecordsTimelineProp
       />
     </div>
   );
-}
+});
