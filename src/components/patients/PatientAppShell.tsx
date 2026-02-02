@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMobileOptimizations } from "@/components/mobile/MobileOptimizations";
 import { useClinicBranding } from "@/hooks/useClinicBranding";
-import { LanguageSelectorMenu } from "@/components/LanguageSelector";
+import { LanguageSelectorMenu } from "@/components/shared/LanguagePicker";
 import { RoleSwitcherMenu } from "@/components/RoleSwitcher";
 import { UserTour, useUserTour } from "@/components/UserTour";
 import { useTemplate } from "@/contexts/TemplateContext";

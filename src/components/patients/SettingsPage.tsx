@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { LanguageSettings } from "@/components/LanguageSettings";
+import { LanguageSettings } from "@/components/shared/LanguagePicker";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

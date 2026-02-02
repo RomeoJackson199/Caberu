@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SimpleCalendar } from "@/components/SimpleCalendar";
-import { DentistSelection } from "@/components/DentistSelection";
+import { PractitionerPicker as DentistSelection, type Practitioner } from "@/components/shared/PractitionerPicker";
 import { PatientSelection } from "@/components/PatientSelection";
 import { IntakeSummaryInput } from "@/components/booking/IntakeSummaryInput";
 import { CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
@@ -183,11 +183,12 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
       case 'dentist':
         return (
           <DentistSelection
-            onSelectDentist={(dentist: any) => {
+            variant="cards"
+            onSelect={(dentist: Practitioner) => {
               setSelectedDentist(dentist);
               setStep('symptoms');
             }}
-            selectedDentistId={selectedDentist?.id}
+            selectedId={selectedDentist?.id}
           />
         );
 

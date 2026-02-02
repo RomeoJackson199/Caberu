@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useClinicBranding } from "@/hooks/useClinicBranding";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BusinessSelector } from "@/components/BusinessSelector";
+import { BusinessPicker as BusinessSelector } from "@/components/shared/BusinessPicker";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { useTemplateNavigation } from "@/hooks/useTemplateNavigation";
 import { useNavigate } from "react-router-dom";
