@@ -5,7 +5,7 @@ import { Bell, User, Shield, Globe } from 'lucide-react';
 import { ReminderPreferences } from '@/components/patients/ReminderPreferences';
 import { PatientSecuritySettings } from '@/components/patients/PatientSecuritySettings';
 import { AnimatedBackground, SectionHeader } from '@/components/ui/polished-components';
-import { LanguageSettings } from '@/components/LanguageSettings';
+import { LanguageSettings } from '@/components/shared/LanguagePicker';
 import { useLanguage } from '@/hooks/useLanguage';
 
 export default function PatientSettingsPage() {

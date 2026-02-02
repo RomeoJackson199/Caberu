@@ -274,3 +274,135 @@ export const BusinessSelector = () => <BusinessPicker variant="dropdown" />;
 export const BusinessPickerDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange?: (open: boolean) => void }) => (
   <BusinessPicker variant="dialog" open={open} onOpenChange={onOpenChange} />
 );
+
+/**
+ * BusinessSelectionForPatients - Patient-specific business selection
+ * Used in booking flow and patient business selection dialogs
+ */
+interface BusinessSelectionForPatientsProps {
+  onSelectBusiness: (businessId: string, businessName: string) => void;
+  selectedBusinessId?: string;
+}
+
+export function BusinessSelectionForPatients({ onSelectBusiness, selectedBusinessId }: BusinessSelectionForPatientsProps) {
+  const [businesses, setBusinesses] = useState<Array<{
+    id: string;
+    name: string;
+    slug: string;
+    tagline?: string;
+    logo_url?: string;
+    primary_color?: string;
+    template_type?: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('businesses')
+          .select('id, name, slug, tagline, logo_url, primary_color, template_type')
+          .in('template_type', ['healthcare', 'dentist'])
+          .order('name');
+
+        if (!error && data) {
+          setBusinesses(data);
+        }
+      } catch (error) {
+        console.error('Error fetching businesses:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBusinesses();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (businesses.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="text-center">
+          <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <CardDescription>No businesses available at the moment.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold mb-2">Choose Your Business</h2>
+        <p className="text-muted-foreground">Select the business where you'd like to book your appointment</p>
+      </div>
+      
+      {businesses.map((business) => (
+        <Card
+          key={business.id}
+          className={`cursor-pointer transition-all hover:shadow-lg ${
+            selectedBusinessId === business.id
+              ? 'ring-2 ring-primary shadow-lg'
+              : 'hover:bg-muted/50'
+          }`}
+          onClick={() => onSelectBusiness(business.id, business.name)}
+        >
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                {business.logo_url ? (
+                  <img 
+                    src={business.logo_url} 
+                    alt={business.name}
+                    className="h-12 w-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Building2 className="h-6 w-6 text-primary" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {business.name}
+                    {selectedBusinessId === business.id && (
+                      <Check className="h-5 w-5 text-primary" />
+                    )}
+                  </CardTitle>
+                  {business.tagline && (
+                    <CardDescription className="mt-1">
+                      {business.tagline}
+                    </CardDescription>
+                  )}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant={selectedBusinessId === business.id ? 'default' : 'outline'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectBusiness(business.id, business.name);
+                }}
+              >
+                {selectedBusinessId === business.id ? 'Selected' : 'Select'}
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+      ))}
+    </div>
+  );
+}

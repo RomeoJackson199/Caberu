@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BusinessSelectionForPatients } from "@/components/BusinessSelectionForPatients";
+import { BusinessSelectionForPatients } from "@/components/shared/BusinessPicker";
 import { AppointmentSuccessDialog } from "@/components/AppointmentSuccessDialog";
 import { AppointmentErrorBoundary } from "@/components/stability/AppointmentErrorBoundary";
 import { OfflineBanner } from "@/components/stability/OfflineIndicator";
@@ -43,7 +43,7 @@ function BookAppointmentContent() {
                 appointment.
               </p>
               <BusinessSelectionForPatients
-                onSelectBusiness={(id) => booking.switchBusiness(id)}
+                onSelectBusiness={(id: string) => booking.switchBusiness(id)}
               />
             </CardContent>
           </Card>

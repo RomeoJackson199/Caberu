@@ -13,7 +13,7 @@ import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
-import { LanguageSettings } from "@/components/LanguageSettings";
+import { LanguageSettings } from "@/components/shared/LanguagePicker";
 import { useLanguage } from "@/hooks/useLanguage";
 
 

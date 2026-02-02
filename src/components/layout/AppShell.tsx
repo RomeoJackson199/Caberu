@@ -66,10 +66,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { cn } from "@/lib/utils";
 import { emitAnalyticsEvent } from "@/lib/analyticsEvents";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
-import { BusinessSelector } from "@/components/BusinessSelector";
+import { BusinessPicker as BusinessSelector } from "@/components/shared/BusinessPicker";
 import { useClinicBranding } from "@/hooks/useClinicBranding";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
-import { BusinessSelectionForPatients } from "@/components/BusinessSelectionForPatients";
+import { BusinessSelectionForPatients } from "@/components/shared/BusinessPicker";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logger } from '@/lib/logger';
 
@@ -277,8 +277,8 @@ function TopBar() {
             </DialogHeader>
             <BusinessSelectionForPatients
               selectedBusinessId={businessId ?? undefined}
-              onSelectBusiness={async (businessId) => {
-                await switchBusiness(businessId);
+              onSelectBusiness={async (selectedBusinessId: string) => {
+                await switchBusiness(selectedBusinessId);
                 setOpenPatientPicker(false);
                 toast({
                   title: "Clinic changed",
