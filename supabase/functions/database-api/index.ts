@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import crypto from 'node:crypto';
 
 // SECURITY: Allowed tables for read operations (whitelist approach)
 const READ_ALLOWED_TABLES = new Set([
@@ -80,7 +81,9 @@ async function validateAuth(req: Request, supabase: any): Promise<{ valid: boole
   // Check for API key authentication (for ElevenLabs/MCP integration)
   if (apiKey) {
     const providedKey = authHeader.replace('Bearer ', '');
-    if (providedKey === apiKey) {
+    const actual = crypto.createHash('sha256').update(providedKey).digest();
+    const expected = crypto.createHash('sha256').update(apiKey).digest();
+    if (crypto.timingSafeEqual(actual, expected)) {
       console.log('Auth: API key validated');
       return { valid: true };
     }
