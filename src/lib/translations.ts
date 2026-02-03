@@ -1876,13 +1876,13 @@ export const translations: Record<Language, TranslationEntry> = {
         closeWindow: "Close Window",
 
         // Downtime page
-        downtimeTitle: "We'll Be Back Soon",
-        downtimeMessage: "We're currently performing scheduled maintenance to improve your experience.",
-        downtimeStatus: "Maintenance in Progress",
-        downtimeInfo: "Our team is working hard to bring you an even better experience. This usually takes just a few minutes.",
-        downtimeRefresh: "Refresh Page",
+        downtimeTitle: "Security Updates in Progress",
+        downtimeMessage: "We're implementing important security updates to keep your data safe and make your experience even better.",
+        downtimeStatus: "Estimated downtime: 48 hours",
+        downtimeInfo: "Our team is working around the clock to ensure your data remains secure. We're upgrading our security infrastructure to provide you with the best possible protection.",
+        downtimeRefresh: "Check Status",
         downtimeGoHome: "Go to Homepage",
-        downtimeApology: "Thank you for your patience. We apologize for any inconvenience.",
+        downtimeApology: "Thank you for your patience. Your security is our top priority.",
 
         // Billing empty states
         billingNotAvailable: "Billing Not Available",
@@ -2669,13 +2669,13 @@ export const translations: Record<Language, TranslationEntry> = {
         closeWindow: "Fermer la Fenêtre",
 
         // Downtime page
-        downtimeTitle: "Nous Revenons Bientôt",
-        downtimeMessage: "Nous effectuons actuellement une maintenance planifiée pour améliorer votre expérience.",
-        downtimeStatus: "Maintenance en Cours",
-        downtimeInfo: "Notre équipe travaille dur pour vous offrir une meilleure expérience. Cela ne prend généralement que quelques minutes.",
-        downtimeRefresh: "Actualiser la Page",
+        downtimeTitle: "Mises à Jour de Sécurité en Cours",
+        downtimeMessage: "Nous mettons en place d'importantes mises à jour de sécurité pour protéger vos données et améliorer votre expérience.",
+        downtimeStatus: "Temps d'arrêt estimé : 48 heures",
+        downtimeInfo: "Notre équipe travaille sans relâche pour garantir la sécurité de vos données. Nous améliorons notre infrastructure de sécurité pour vous offrir la meilleure protection possible.",
+        downtimeRefresh: "Vérifier le Statut",
         downtimeGoHome: "Aller à l'Accueil",
-        downtimeApology: "Merci de votre patience. Nous nous excusons pour tout désagrément.",
+        downtimeApology: "Merci de votre patience. Votre sécurité est notre priorité absolue.",
 
         // Billing empty states
         billingNotAvailable: "Facturation Non Disponible",
@@ -3724,13 +3724,13 @@ export const translations: Record<Language, TranslationEntry> = {
         closeWindow: "Venster Sluiten",
 
         // Downtime page
-        downtimeTitle: "We Zijn Zo Terug",
-        downtimeMessage: "We voeren momenteel gepland onderhoud uit om je ervaring te verbeteren.",
-        downtimeStatus: "Onderhoud Bezig",
-        downtimeInfo: "Ons team werkt hard om je een nog betere ervaring te bieden. Dit duurt meestal maar een paar minuten.",
-        downtimeRefresh: "Pagina Vernieuwen",
+        downtimeTitle: "Beveiligingsupdates Bezig",
+        downtimeMessage: "We implementeren belangrijke beveiligingsupdates om je gegevens veilig te houden en je ervaring te verbeteren.",
+        downtimeStatus: "Geschatte downtime: 48 uur",
+        downtimeInfo: "Ons team werkt dag en nacht om ervoor te zorgen dat je gegevens veilig blijven. We upgraden onze beveiligingsinfrastructuur om je de best mogelijke bescherming te bieden.",
+        downtimeRefresh: "Status Controleren",
         downtimeGoHome: "Naar Startpagina",
-        downtimeApology: "Bedankt voor je geduld. Onze excuses voor het ongemak.",
+        downtimeApology: "Bedankt voor je geduld. Jouw veiligheid is onze hoogste prioriteit.",
 
         // Common
         'common.cancel': "Annuleren",

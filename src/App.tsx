@@ -40,6 +40,9 @@ import { SkipNavigation } from "@/components/accessibility/SkipNavigation";
 
 // Force resync: 2025-12-07T19:03
 
+// MAINTENANCE MODE - Set to true to redirect all traffic to the downtime page
+const MAINTENANCE_MODE = true;
+
 const Invite = lazy(() => import("./pages/Invite"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
@@ -449,6 +452,14 @@ const App = () => {
                     <SeoManager />
                     <Suspense fallback={<LoadingSpinner variant="overlay" message="Loading..." />}>
                       <Routes>
+                        {/* Maintenance Mode - Redirect all traffic to downtime page */}
+                        {MAINTENANCE_MODE ? (
+                          <>
+                            <Route path="/downtime" element={<Downtime />} />
+                            <Route path="*" element={<Navigate to="/downtime" replace />} />
+                          </>
+                        ) : (
+                        <>
                         <Route path="/" element={<Index />} />
                         {/* Demo routes */}
                         <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
@@ -529,6 +540,8 @@ const App = () => {
                         <Route path="/clinic/:slug" element={<BusinessPortal />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
+                        </>
+                        )}
                       </Routes>
                     </Suspense>
 
