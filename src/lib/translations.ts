@@ -822,15 +822,6 @@ export interface Translations {
     paymentCancelledMessage: string;
     closeWindow: string;
 
-    // Downtime page
-    downtimeTitle: string;
-    downtimeMessage: string;
-    downtimeStatus: string;
-    downtimeInfo: string;
-    downtimeRefresh: string;
-    downtimeGoHome: string;
-    downtimeApology: string;
-
     // Billing empty states
     billingNotAvailable: string;
     billingNotAvailableDesc: string;
@@ -1875,15 +1866,6 @@ export const translations: Record<Language, TranslationEntry> = {
         paymentCancelledMessage: "Your payment was cancelled. You can try again or contact your dentist if you need assistance.",
         closeWindow: "Close Window",
 
-        // Downtime page
-        downtimeTitle: "Security Updates in Progress",
-        downtimeMessage: "We're implementing important security updates to keep your data safe and make your experience even better.",
-        downtimeStatus: "Estimated downtime: 48 hours",
-        downtimeInfo: "Our team is working around the clock to ensure your data remains secure. We're upgrading our security infrastructure to provide you with the best possible protection.",
-        downtimeRefresh: "Check Status",
-        downtimeGoHome: "Go to Homepage",
-        downtimeApology: "Thank you for your patience. Your security is our top priority.",
-
         // Billing empty states
         billingNotAvailable: "Billing Not Available",
         billingNotAvailableDesc: "Payment requests are not enabled for this practice. Please contact your provider for payment information.",
@@ -2667,15 +2649,6 @@ export const translations: Record<Language, TranslationEntry> = {
         paymentCancelled: "Paiement Annulé",
         paymentCancelledMessage: "Votre paiement a été annulé. Vous pouvez réessayer ou contacter votre dentiste si vous avez besoin d'aide.",
         closeWindow: "Fermer la Fenêtre",
-
-        // Downtime page
-        downtimeTitle: "Mises à Jour de Sécurité en Cours",
-        downtimeMessage: "Nous mettons en place d'importantes mises à jour de sécurité pour protéger vos données et améliorer votre expérience.",
-        downtimeStatus: "Temps d'arrêt estimé : 48 heures",
-        downtimeInfo: "Notre équipe travaille sans relâche pour garantir la sécurité de vos données. Nous améliorons notre infrastructure de sécurité pour vous offrir la meilleure protection possible.",
-        downtimeRefresh: "Vérifier le Statut",
-        downtimeGoHome: "Aller à l'Accueil",
-        downtimeApology: "Merci de votre patience. Votre sécurité est notre priorité absolue.",
 
         // Billing empty states
         billingNotAvailable: "Facturation Non Disponible",
@@ -3722,15 +3695,6 @@ export const translations: Record<Language, TranslationEntry> = {
         paymentCancelled: "Betaling Geannuleerd",
         paymentCancelledMessage: "Je betaling is geannuleerd. Je kunt het opnieuw proberen of contact opnemen met je tandarts als je hulp nodig hebt.",
         closeWindow: "Venster Sluiten",
-
-        // Downtime page
-        downtimeTitle: "Beveiligingsupdates Bezig",
-        downtimeMessage: "We implementeren belangrijke beveiligingsupdates om je gegevens veilig te houden en je ervaring te verbeteren.",
-        downtimeStatus: "Geschatte downtime: 48 uur",
-        downtimeInfo: "Ons team werkt dag en nacht om ervoor te zorgen dat je gegevens veilig blijven. We upgraden onze beveiligingsinfrastructuur om je de best mogelijke bescherming te bieden.",
-        downtimeRefresh: "Status Controleren",
-        downtimeGoHome: "Naar Startpagina",
-        downtimeApology: "Bedankt voor je geduld. Jouw veiligheid is onze hoogste prioriteit.",
 
         // Common
         'common.cancel': "Annuleren",

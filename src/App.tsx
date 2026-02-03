@@ -40,9 +40,6 @@ import { SkipNavigation } from "@/components/accessibility/SkipNavigation";
 
 // Force resync: 2025-12-07T19:03
 
-// MAINTENANCE MODE - Set to true to redirect all traffic to the downtime page
-const MAINTENANCE_MODE = true;
-
 const Invite = lazy(() => import("./pages/Invite"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
@@ -60,7 +57,6 @@ const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreeme
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
-const Downtime = lazy(() => import("./pages/Downtime"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Messages = lazy(() => import("./pages/Messages"));
 const DemoDentistDashboard = lazy(() => import("./pages/demo/DemoDentistDashboard"));
@@ -452,14 +448,6 @@ const App = () => {
                     <SeoManager />
                     <Suspense fallback={<LoadingSpinner variant="overlay" message="Loading..." />}>
                       <Routes>
-                        {/* Maintenance Mode - Redirect all traffic to downtime page */}
-                        {MAINTENANCE_MODE ? (
-                          <>
-                            <Route path="/downtime" element={<Downtime />} />
-                            <Route path="*" element={<Navigate to="/downtime" replace />} />
-                          </>
-                        ) : (
-                        <>
                         <Route path="/" element={<Index />} />
                         {/* Demo routes */}
                         <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
@@ -517,7 +505,6 @@ const App = () => {
                         <Route path="/about" element={<About />} />
                         <Route path="/payment-success" element={<PaymentSuccess />} />
                         <Route path="/payment-cancelled" element={<PaymentCancelled />} />
-                        <Route path="/downtime" element={<Downtime />} />
                         <Route path="/support" element={<Support />} />
                         <Route path="/features/:id" element={<FeatureDetail />} />
                         <Route path="/chat" element={<Chat />} />
@@ -540,8 +527,6 @@ const App = () => {
                         <Route path="/clinic/:slug" element={<BusinessPortal />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
-                        </>
-                        )}
                       </Routes>
                     </Suspense>
 
