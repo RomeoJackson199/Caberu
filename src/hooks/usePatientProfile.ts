@@ -22,6 +22,7 @@ interface PatientProfile {
 
 /**
  * Fetch patient profile by user_id
+ * Uses secure_profiles_view for transparent PHI decryption
  */
 export function usePatientProfile(userId: string | null | undefined) {
   return useQuery({
@@ -29,14 +30,15 @@ export function usePatientProfile(userId: string | null | undefined) {
     queryFn: async (): Promise<PatientProfile | null> => {
       if (!userId) return null;
       
+      // Use secure view for automatic PHI decryption
       const { data, error } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
         
       if (error) throw error;
-      return data;
+      return data as PatientProfile | null;
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -46,6 +48,7 @@ export function usePatientProfile(userId: string | null | undefined) {
 
 /**
  * Fetch patient profile by profile_id
+ * Uses secure_profiles_view for transparent PHI decryption
  */
 export function usePatientProfileById(profileId: string | null | undefined) {
   return useQuery({
@@ -53,14 +56,15 @@ export function usePatientProfileById(profileId: string | null | undefined) {
     queryFn: async (): Promise<PatientProfile | null> => {
       if (!profileId) return null;
       
+      // Use secure view for automatic PHI decryption
       const { data, error } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('*')
         .eq('id', profileId)
         .maybeSingle();
         
       if (error) throw error;
-      return data;
+      return data as PatientProfile | null;
     },
     enabled: !!profileId,
     staleTime: 5 * 60 * 1000,
