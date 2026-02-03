@@ -57,6 +57,7 @@ const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreeme
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("./pages/PaymentCancelled"));
+const Downtime = lazy(() => import("./pages/Downtime"));
 const Chat = lazy(() => import("./pages/Chat"));
 const Messages = lazy(() => import("./pages/Messages"));
 const DemoDentistDashboard = lazy(() => import("./pages/demo/DemoDentistDashboard"));
@@ -505,6 +506,7 @@ const App = () => {
                         <Route path="/about" element={<About />} />
                         <Route path="/payment-success" element={<PaymentSuccess />} />
                         <Route path="/payment-cancelled" element={<PaymentCancelled />} />
+                        <Route path="/downtime" element={<Downtime />} />
                         <Route path="/support" element={<Support />} />
                         <Route path="/features/:id" element={<FeatureDetail />} />
                         <Route path="/chat" element={<Chat />} />

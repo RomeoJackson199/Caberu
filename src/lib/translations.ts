@@ -822,6 +822,15 @@ export interface Translations {
     paymentCancelledMessage: string;
     closeWindow: string;
 
+    // Downtime page
+    downtimeTitle: string;
+    downtimeMessage: string;
+    downtimeStatus: string;
+    downtimeInfo: string;
+    downtimeRefresh: string;
+    downtimeGoHome: string;
+    downtimeApology: string;
+
     // Billing empty states
     billingNotAvailable: string;
     billingNotAvailableDesc: string;
@@ -1866,6 +1875,15 @@ export const translations: Record<Language, TranslationEntry> = {
         paymentCancelledMessage: "Your payment was cancelled. You can try again or contact your dentist if you need assistance.",
         closeWindow: "Close Window",
 
+        // Downtime page
+        downtimeTitle: "We'll Be Back Soon",
+        downtimeMessage: "We're currently performing scheduled maintenance to improve your experience.",
+        downtimeStatus: "Maintenance in Progress",
+        downtimeInfo: "Our team is working hard to bring you an even better experience. This usually takes just a few minutes.",
+        downtimeRefresh: "Refresh Page",
+        downtimeGoHome: "Go to Homepage",
+        downtimeApology: "Thank you for your patience. We apologize for any inconvenience.",
+
         // Billing empty states
         billingNotAvailable: "Billing Not Available",
         billingNotAvailableDesc: "Payment requests are not enabled for this practice. Please contact your provider for payment information.",
@@ -2649,6 +2667,15 @@ export const translations: Record<Language, TranslationEntry> = {
         paymentCancelled: "Paiement Annulé",
         paymentCancelledMessage: "Votre paiement a été annulé. Vous pouvez réessayer ou contacter votre dentiste si vous avez besoin d'aide.",
         closeWindow: "Fermer la Fenêtre",
+
+        // Downtime page
+        downtimeTitle: "Nous Revenons Bientôt",
+        downtimeMessage: "Nous effectuons actuellement une maintenance planifiée pour améliorer votre expérience.",
+        downtimeStatus: "Maintenance en Cours",
+        downtimeInfo: "Notre équipe travaille dur pour vous offrir une meilleure expérience. Cela ne prend généralement que quelques minutes.",
+        downtimeRefresh: "Actualiser la Page",
+        downtimeGoHome: "Aller à l'Accueil",
+        downtimeApology: "Merci de votre patience. Nous nous excusons pour tout désagrément.",
 
         // Billing empty states
         billingNotAvailable: "Facturation Non Disponible",
@@ -3695,6 +3722,15 @@ export const translations: Record<Language, TranslationEntry> = {
         paymentCancelled: "Betaling Geannuleerd",
         paymentCancelledMessage: "Je betaling is geannuleerd. Je kunt het opnieuw proberen of contact opnemen met je tandarts als je hulp nodig hebt.",
         closeWindow: "Venster Sluiten",
+
+        // Downtime page
+        downtimeTitle: "We Zijn Zo Terug",
+        downtimeMessage: "We voeren momenteel gepland onderhoud uit om je ervaring te verbeteren.",
+        downtimeStatus: "Onderhoud Bezig",
+        downtimeInfo: "Ons team werkt hard om je een nog betere ervaring te bieden. Dit duurt meestal maar een paar minuten.",
+        downtimeRefresh: "Pagina Vernieuwen",
+        downtimeGoHome: "Naar Startpagina",
+        downtimeApology: "Bedankt voor je geduld. Onze excuses voor het ongemak.",
 
         // Common
         'common.cancel': "Annuleren",
