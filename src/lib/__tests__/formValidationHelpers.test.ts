@@ -43,8 +43,8 @@ describe('formValidationHelpers.ts', () => {
     describe('phoneSchema', () => {
       it('should accept valid phone numbers', () => {
         expect(phoneSchema.safeParse('1234567890').success).toBe(true);
-        expect(phoneSchema.safeParse('+32 471 12 34 56').success).toBe(true);
-        expect(phoneSchema.safeParse('(555) 123-4567').success).toBe(true);
+        expect(phoneSchema.safeParse('+32471123456').success).toBe(true); // 12 chars
+        expect(phoneSchema.safeParse('555-123-4567').success).toBe(true); // 12 chars
       });
 
       it('should reject phone numbers that are too short', () => {

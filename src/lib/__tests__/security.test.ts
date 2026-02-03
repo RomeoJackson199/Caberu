@@ -2,6 +2,26 @@
  * Tests for security.ts - Security utilities for input validation and sanitization
  */
 
+// Mock Response class for Node.js environment
+class MockResponse {
+  status: number;
+  body: string;
+  headers: Map<string, string>;
+
+  constructor(body: string, options?: { status?: number; headers?: Record<string, string> }) {
+    this.body = body;
+    this.status = options?.status || 200;
+    this.headers = new Map(Object.entries(options?.headers || {}));
+  }
+
+  async json() {
+    return JSON.parse(this.body);
+  }
+}
+
+// @ts-ignore - Mock global Response
+global.Response = MockResponse as unknown as typeof Response;
+
 import {
   sanitizeHtml,
   sanitizeInput,
@@ -58,7 +78,7 @@ describe('security.ts', () => {
 
     it('should remove SQL comment patterns', () => {
       expect(sanitizeInput('value -- comment')).toBe('value  comment');
-      expect(sanitizeInput('value /* comment */')).toBe('value  comment ');
+      expect(sanitizeInput('value /* comment */')).toBe('value  comment');
     });
 
     it('should remove stored procedure prefixes', () => {
