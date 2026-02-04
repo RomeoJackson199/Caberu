@@ -1,6 +1,3 @@
-"use client"
-
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,24 +9,12 @@ import {
   Settings,
   Building2,
   Stethoscope,
-  Clock,
-  CheckCircle2,
   ArrowRight,
   Sparkles
 } from "lucide-react"
 import Link from "next/link"
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return null
-  }
-
   const features = [
     {
       icon: Calendar,
