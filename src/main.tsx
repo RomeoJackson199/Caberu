@@ -5,6 +5,9 @@ import { performanceTracker } from './utils/performance'
 import { notify } from './lib/notify'
 import { logger } from '@/lib/logger';
 import { initPerformanceMonitoring } from '@/lib/performance';
+import { offlineStorage } from '@/lib/offlineStorage';
+import { syncManager } from '@/lib/syncManager';
+import { clearEncryptionKeys } from '@/lib/encryption';
 
 // Suppress ResizeObserver loop errors (benign browser warning)
 const resizeObserverErr = (e: ErrorEvent) => {
@@ -23,6 +26,36 @@ if (process.env.NODE_ENV === 'development') {
   // Enable in production if explicitly enabled
   initPerformanceMonitoring();
 }
+
+// Initialize offline storage and sync manager
+(async () => {
+  try {
+    await offlineStorage.init();
+    logger.info('Offline storage initialized');
+
+    // Check for unsynced data and attempt sync if online
+    const unsyncedCount = await syncManager.getUnsyncedCount();
+    if (unsyncedCount > 0 && navigator.onLine) {
+      logger.info(`Found ${unsyncedCount} unsynced records, starting sync...`);
+      setTimeout(() => syncManager.syncAll(), 2000); // Delay to ensure app is ready
+    }
+  } catch (error) {
+    logger.error('Failed to initialize offline storage:', error);
+  }
+})();
+
+// Clear encryption keys on logout/session end
+window.addEventListener('beforeunload', () => {
+  // Don't clear keys on page refresh, only on actual logout
+  // The session is managed by Supabase auth
+});
+
+// Clear keys when navigating to login page (logout)
+window.addEventListener('hashchange', () => {
+  if (window.location.hash.includes('/login') || window.location.hash.includes('/signup')) {
+    clearEncryptionKeys();
+  }
+});
 
 // Register service worker with better error handling
 if ('serviceWorker' in navigator) {
