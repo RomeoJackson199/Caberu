@@ -310,14 +310,19 @@ class OfflineStorage {
 export const offlineStorage = new OfflineStorage();
 
 /**
- * Helper function to generate temporary IDs for offline records
+ * Generate a unique temporary ID for offline records.
+ *
+ * @param prefix - Prefix to use at the start of the ID (defaults to `"temp"`)
+ * @returns A string ID in the form `<prefix>-<timestamp>-<random>` (e.g., `temp-1616161616161-abc123def`)
  */
 export function generateTempId(prefix: string = 'temp'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**
- * Check if an ID is a temporary offline ID
+ * Determines whether an ID is a temporary offline identifier.
+ *
+ * @returns `true` if the ID starts with `'temp-'`, `false` otherwise.
  */
 export function isTempId(id: string): boolean {
   return id.startsWith('temp-');

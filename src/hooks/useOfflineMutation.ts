@@ -239,8 +239,17 @@ export function useOfflineMutation<TData = unknown, TVariables = unknown>(
 }
 
 /**
- * Simplified offline mutation for common Supabase operations
- */
+ * Creates a preconfigured offline-capable mutation hook for common Supabase-style table operations.
+ *
+ * @param options - Configuration for the offline mutation.
+ * @param options.table - Database table name used for generating temporary IDs and storage mapping.
+ * @param options.operation - One of `'create' | 'update' | 'delete'` determining optimistic behavior and offline message.
+ * @param options.queryKey - React Query key to invalidate after successful sync.
+ * @param options.storeName - IndexedDB store key where offline records will be persisted.
+ * @param options.successMessage - Optional success toast message shown when the operation completes online.
+ * @param options.dataType - Optional encryption data type used when persisting the record.
+ * @param options.mutationFn - The actual mutation function to execute when online.
+ * @returns The mutation object from `useOfflineMutation` configured for the provided table and operation, including optimistic updates and offline queuing.
 export function useOfflineSupabaseMutation<TData extends { id?: string }, TVariables = Partial<TData>>(
   options: {
     table: string;
