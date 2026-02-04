@@ -1799,6 +1799,7 @@ export type Database = {
           created_at: string
           dentist_id: string
           description: string | null
+          description_encrypted: string | null
           findings: string | null
           findings_encrypted: string | null
           id: string
@@ -1806,7 +1807,9 @@ export type Database = {
           record_date: string
           record_type: string
           title: string
+          title_encrypted: string | null
           treatment_provided: string | null
+          treatment_provided_encrypted: string | null
           updated_at: string
         }
         Insert: {
@@ -1814,6 +1817,7 @@ export type Database = {
           created_at?: string
           dentist_id: string
           description?: string | null
+          description_encrypted?: string | null
           findings?: string | null
           findings_encrypted?: string | null
           id?: string
@@ -1821,7 +1825,9 @@ export type Database = {
           record_date?: string
           record_type?: string
           title: string
+          title_encrypted?: string | null
           treatment_provided?: string | null
+          treatment_provided_encrypted?: string | null
           updated_at?: string
         }
         Update: {
@@ -1829,6 +1835,7 @@ export type Database = {
           created_at?: string
           dentist_id?: string
           description?: string | null
+          description_encrypted?: string | null
           findings?: string | null
           findings_encrypted?: string | null
           id?: string
@@ -1836,7 +1843,9 @@ export type Database = {
           record_date?: string
           record_type?: string
           title?: string
+          title_encrypted?: string | null
           treatment_provided?: string | null
+          treatment_provided_encrypted?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3715,14 +3724,18 @@ export type Database = {
           estimated_duration_weeks: number | null
           id: string
           notes: string | null
+          notes_encrypted: string | null
           patient_id: string
           priority: string
+          procedures_encrypted: string | null
           procedures: string[] | null
           start_date: string | null
           status: string
           target_completion_date: string | null
           title: string
+          title_encrypted: string | null
           total_estimated_cents: number | null
+          treatment_goals_encrypted: string | null
           treatment_goals: string[] | null
           updated_at: string
           version: number
@@ -3744,14 +3757,18 @@ export type Database = {
           estimated_duration_weeks?: number | null
           id?: string
           notes?: string | null
+          notes_encrypted?: string | null
           patient_id: string
           priority?: string
+          procedures_encrypted?: string | null
           procedures?: string[] | null
           start_date?: string | null
           status?: string
           target_completion_date?: string | null
           title: string
+          title_encrypted?: string | null
           total_estimated_cents?: number | null
+          treatment_goals_encrypted?: string | null
           treatment_goals?: string[] | null
           updated_at?: string
           version?: number
@@ -3773,14 +3790,18 @@ export type Database = {
           estimated_duration_weeks?: number | null
           id?: string
           notes?: string | null
+          notes_encrypted?: string | null
           patient_id?: string
           priority?: string
+          procedures_encrypted?: string | null
           procedures?: string[] | null
           start_date?: string | null
           status?: string
           target_completion_date?: string | null
           title?: string
+          title_encrypted?: string | null
           total_estimated_cents?: number | null
+          treatment_goals_encrypted?: string | null
           treatment_goals?: string[] | null
           updated_at?: string
           version?: number

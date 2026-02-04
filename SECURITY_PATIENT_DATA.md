@@ -8,6 +8,22 @@ This document outlines security measures implemented and **required additional p
 
 ## ✅ Implemented Security Measures
 
+### 0. **Field-Level Encryption Scope** ✅ IMPLEMENTED
+The following patient data is encrypted at the column level (PGP symmetric encryption with Vault-managed key) and accessed through secure views:
+
+- **Appointment reason / chief complaint** → `appointments.reason`
+- **Diagnosis & treatment plan details** → `treatment_plans.diagnosis`, `treatment_plans.description`, `treatment_plans.title`, `treatment_plans.notes`, `treatment_plans.procedures`, `treatment_plans.treatment_goals`
+- **Procedure notes (what was done)** → `treatment_procedures.procedure_name`, `treatment_procedures.description`, `treatment_procedures.notes`, `medical_records.treatment_provided`
+- **Prescriptions / medication info** → `prescriptions.medication_name`, `prescriptions.dosage`, `prescriptions.frequency`, `prescriptions.duration_days`, `prescriptions.instructions`
+- **Allergies, conditions, risks** → `patient_allergies.allergy_name`, `patient_allergies.notes`
+- **Clinician observations (free text)** → `notes.content`, `notes.title`
+- **Referrals, lab/imaging results** → `medical_records.title`, `medical_records.description`, `medical_records.findings`
+- **Media & documents metadata** → `imaging_sets.notes`, `imaging_files.metadata`, `patient_documents.title`, `patient_documents.file_name`
+
+Storage objects (X-rays, intraoral photos, scans, PDFs, and uploaded documents) are stored in private buckets with signed URL access and provider-managed encryption at rest.
+
+Patient identifiers (names, phone numbers, addresses, dates of birth) are intentionally left unencrypted for operational needs; only the appointment reason is encrypted on appointments.
+
 ### 1. **AI Response Sanitization** (Edge Functions)
 - ✅ Filters patient IDs and user IDs from AI responses
 - ✅ Blocks disclosure of system prompts and technical details
