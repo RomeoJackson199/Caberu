@@ -13,7 +13,13 @@ const KEY_LENGTH = 256;
 const IV_LENGTH = 12; // 96 bits for GCM
 
 /**
- * Generate or retrieve encryption key for current session
+ * Retrieve or create a per-session AES-GCM CryptoKey for encrypting and decrypting data.
+ *
+ * If a serialized key is present in sessionStorage under "caberu_crypto_key", this function
+ * imports and returns it. If not present (or import fails), it generates a new 256-bit AES-GCM
+ * key, exports and stores its raw bytes in sessionStorage, and returns the new key.
+ *
+ * @returns A CryptoKey usable for AES-GCM encryption and decryption.
  */
 async function getEncryptionKey(): Promise<CryptoKey> {
   // Check if we have a key stored in session
@@ -49,7 +55,13 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 }
 
 /**
- * Encrypt sensitive data
+ * Encrypts a UTF-8 string using the session-scoped AES-GCM key and returns a storable representation.
+ *
+ * The result is the IV concatenated with the ciphertext, encoded as a base64 string.
+ *
+ * @param data - Plaintext string to encrypt
+ * @returns A base64 string containing the IV followed by the ciphertext
+ * @throws Error when encryption fails
  */
 export async function encrypt(data: string): Promise<string> {
   try {
@@ -77,7 +89,11 @@ export async function encrypt(data: string): Promise<string> {
 }
 
 /**
- * Decrypt sensitive data
+ * Decrypts a base64-encoded string that contains a prepended IV followed by AES-GCM ciphertext.
+ *
+ * @param encryptedData - Base64 string where the first 12 bytes are the IV and the remainder is the ciphertext
+ * @returns The decrypted plaintext string
+ * @throws Error when decryption fails
  */
 export async function decrypt(encryptedData: string): Promise<string> {
   try {
@@ -104,7 +120,11 @@ export async function decrypt(encryptedData: string): Promise<string> {
 }
 
 /**
- * Encrypt an object (recursively encrypts specified fields)
+ * Create a shallow copy of the object with the specified fields replaced by their encrypted string values.
+ *
+ * @param obj - Source object whose fields may be encrypted
+ * @param fieldsToEncrypt - Keys of `obj` to encrypt; non-string values are JSON-stringified before encryption. Fields with `null` or `undefined` are left unchanged.
+ * @returns A new object with the same shape as `obj` where each specified field contains its encrypted string; other fields are unchanged.
  */
 export async function encryptObject<T extends Record<string, any>>(
   obj: T,
@@ -125,7 +145,14 @@ export async function encryptObject<T extends Record<string, any>>(
 }
 
 /**
- * Decrypt an object (recursively decrypts specified fields)
+ * Decrypts specified string fields of an object and returns a shallow copy with decrypted values.
+ *
+ * For each key in `fieldsToDecrypt`, if the corresponding value in `obj` is a string this function
+ * attempts to decrypt it and replaces the field with the decrypted value. If decryption fails for
+ * a field, the original value is retained and a warning is logged.
+ *
+ * @param fieldsToDecrypt - List of keys on `obj` to attempt decryption for
+ * @returns A shallow copy of `obj` with successfully decrypted fields replaced by their decrypted values
  */
 export async function decryptObject<T extends Record<string, any>>(
   obj: T,
@@ -149,7 +176,7 @@ export async function decryptObject<T extends Record<string, any>>(
 }
 
 /**
- * Clear encryption keys (call on logout)
+ * Removes the per-session encryption key stored in sessionStorage.
  */
 export function clearEncryptionKeys(): void {
   sessionStorage.removeItem('caberu_crypto_key');
@@ -200,7 +227,11 @@ export const ENCRYPTED_FIELDS = {
 } as const;
 
 /**
- * Helper to encrypt record before storing offline
+ * Encrypts the fields of a record that are defined for the given data type and returns the transformed record.
+ *
+ * @param record - The record whose fields will be selectively encrypted
+ * @param dataType - Key identifying which predefined field list to encrypt (looks up fields in `ENCRYPTED_FIELDS`)
+ * @returns The input record with the configured fields replaced by their encrypted string values
  */
 export async function encryptRecordForStorage<T extends Record<string, any>>(
   record: T,
@@ -211,7 +242,11 @@ export async function encryptRecordForStorage<T extends Record<string, any>>(
 }
 
 /**
- * Helper to decrypt record after retrieving from offline storage
+ * Decrypts the configured encrypted fields of a stored record for the given data type.
+ *
+ * @param record - The stored record whose fields may be encrypted
+ * @param dataType - Key in `ENCRYPTED_FIELDS` that determines which fields to decrypt
+ * @returns The same record object with the specified fields decrypted; fields not listed for the data type are left unchanged
  */
 export async function decryptRecordFromStorage<T extends Record<string, any>>(
   record: T,
