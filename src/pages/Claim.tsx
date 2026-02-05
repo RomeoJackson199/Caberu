@@ -90,7 +90,7 @@ const Claim = () => {
       if (!proceedPassword) {
         // Fallback: direct DB check under RLS; safe query that reveals minimal info
         const { data: rows, error: dbErr } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id, email, user_id, first_name, last_name')
           .ilike('email', normalizedEmail);
 

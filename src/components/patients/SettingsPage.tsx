@@ -267,11 +267,11 @@ const LegalSupport: React.FC = () => {
         { data: invoices },
         { data: paymentRequests }
       ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-        supabase.from('appointments').select('*').eq('patient_id', user.id),
+        supabase.from('secure_profiles_view').select('*').eq('user_id', user.id).single(),
+        supabase.from('secure_appointments_view').select('*').eq('patient_id', user.id),
         supabase.from('prescriptions').select('*').eq('patient_id', user.id),
-        supabase.from('notes').select('*').eq('patient_id', user.id),
-        supabase.from('treatment_plans').select('*').eq('patient_id', user.id),
+        supabase.from('secure_notes_view').select('*').eq('patient_id', user.id),
+        supabase.from('secure_treatment_plans_view').select('*').eq('patient_id', user.id),
         supabase.from('invoices').select('*').eq('patient_id', user.id),
         supabase.from('payment_requests').select('*').eq('patient_id', user.id)
       ]);
@@ -346,7 +346,7 @@ const LegalSupport: React.FC = () => {
 
       // Get profile ID first
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', user.id)
         .single();

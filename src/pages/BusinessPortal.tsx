@@ -72,7 +72,7 @@ export default function BusinessPortal() {
         
         // Get user's role to determine redirect
         const { data: profile } = await supabase
-          .from("profiles")
+          .from("secure_profiles_view")
           .select("id")
           .eq("user_id", currentUser.id)
           .single();

@@ -28,7 +28,7 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('patient_allergies')
+        .from('secure_patient_allergies_view')
         .select('*')
         .eq('patient_id', patientId)
         .eq('business_id', businessId)
@@ -50,7 +50,7 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
       if (!user?.user?.id) throw new Error('Not authenticated');
       
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', user.user.id)
         .single();

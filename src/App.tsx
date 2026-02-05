@@ -227,7 +227,7 @@ const App = () => {
 
         if (user) {
           const { data: profile, error: profileError } = await supabase
-            .from('profiles')
+            .from('secure_profiles_view')
             .select('id')
             .eq('user_id', user.id)
             .single();
@@ -324,7 +324,7 @@ const App = () => {
     const fetchNotifications = async () => {
       try {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id')
           .eq('user_id', user.id)
           .single();

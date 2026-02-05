@@ -442,8 +442,8 @@ export function DiagnosticsCard() {
       // Test concurrent database connections
       const connectionTests = await Promise.allSettled([
         supabase.from('businesses').select('id').limit(1),
-        supabase.from('profiles').select('id').limit(1),
-        supabase.from('appointments').select('id').limit(1),
+        supabase.from('secure_profiles_view').select('id').limit(1),
+        supabase.from('secure_appointments_view').select('id').limit(1),
       ]);
 
       const latency = Math.round(performance.now() - start);
@@ -482,7 +482,7 @@ export function DiagnosticsCard() {
       // This should fail (which is good - means RLS is working)
       const rlsTests = await Promise.allSettled([
         supabase.from('businesses').select('*').limit(1),
-        supabase.from('profiles').select('*').limit(1),
+        supabase.from('secure_profiles_view').select('*').limit(1),
       ]);
 
       const latency = Math.round(performance.now() - start);
@@ -609,7 +609,7 @@ export function DiagnosticsCard() {
       const tests = await Promise.allSettled([
         supabase.rpc('get_system_stats'),
         supabase.from('businesses').select('id').limit(1),
-        supabase.from('appointments').select('id').limit(1),
+        supabase.from('secure_appointments_view').select('id').limit(1),
       ]);
 
       const latency = Math.round(performance.now() - start);

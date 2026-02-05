@@ -122,7 +122,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
 
     try {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("secure_profiles_view")
         .select("*")
         .eq("user_id", user.id)
         .single();
@@ -218,7 +218,7 @@ export const DentalChatbot = ({ user, triggerBooking, onBookingTriggered, onScro
       if (user) {
         try {
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('secure_profiles_view')
             .select('id')
             .eq('user_id', user.id)
             .single();

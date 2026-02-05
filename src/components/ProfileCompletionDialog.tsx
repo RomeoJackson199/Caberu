@@ -50,7 +50,7 @@ const ProfileCompletionDialog = () => {
 
   const checkProfile = async (userId: string) => {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("secure_profiles_view")
       .select(
         `id, role, first_name, last_name, phone, date_of_birth, address, emergency_contact, profile_completion_status, import_session_id,
          dentists(clinic_address, specialization)`

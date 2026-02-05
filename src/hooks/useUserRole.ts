@@ -40,7 +40,7 @@ export function useUserRole() {
         // Second, check business_members table (multi-tenancy system)
         // Get profile_id first
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id')
           .eq('user_id', user.id)
           .single();

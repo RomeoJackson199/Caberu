@@ -89,14 +89,14 @@ export const HomeTab = React.memo<HomeTabProps>(({
   useEffect(() => {
     (async () => {
       // Load patient profile id, active recall, and dentist
-      const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', userId).single();
+      const { data: profile } = await supabase.from('secure_profiles_view').select('id').eq('user_id', userId).single();
       if (profile?.id) {
         const rec = await getPatientActiveRecall(profile.id);
         setActiveRecall(rec);
 
         // Get patient's dentist from most recent appointment
         const { data: recentAppointment } = await supabase
-          .from('appointments')
+          .from('secure_appointments_view')
           .select('dentist_id')
           .eq('patient_id', profile.id)
           .order('appointment_date', { ascending: false })

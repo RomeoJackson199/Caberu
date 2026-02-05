@@ -65,7 +65,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         if (!uid) return;
 
         const { data: profile } = await supabase
-          .from("profiles")
+          .from("secure_profiles_view")
           .select("language_preference")
           .eq("user_id", uid)
           .maybeSingle();

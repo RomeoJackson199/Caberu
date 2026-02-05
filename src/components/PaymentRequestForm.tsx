@@ -34,7 +34,7 @@ export const PaymentRequestForm: React.FC<PaymentRequestFormProps> = ({
     try {
       // First get patient IDs from appointments for this dentist
       const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('appointments')
+        .from('secure_appointments_view')
         .select('patient_id')
         .eq('dentist_id', dentistId);
 
@@ -53,7 +53,7 @@ export const PaymentRequestForm: React.FC<PaymentRequestFormProps> = ({
 
       // Fetch patient profiles
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name, email')
         .in('id', patientIds);
 
@@ -94,7 +94,7 @@ export const PaymentRequestForm: React.FC<PaymentRequestFormProps> = ({
 
       // Get the patient's user_id from profiles table
       const { data: patientProfile, error: profileError } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('user_id')
         .eq('id', selectedPatient.id)
         .single();

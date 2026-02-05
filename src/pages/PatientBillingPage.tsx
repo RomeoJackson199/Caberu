@@ -26,7 +26,7 @@ export default function PatientBillingPage() {
       const { data } = await supabase.auth.getUser();
       setUser(data.user as any);
       if (data.user?.id) {
-        const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', data.user.id).maybeSingle();
+        const { data: profile } = await supabase.from('secure_profiles_view').select('id').eq('user_id', data.user.id).maybeSingle();
         if (profile?.id) setPatientId(profile.id);
       }
     })();

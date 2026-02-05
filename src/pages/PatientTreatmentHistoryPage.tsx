@@ -17,7 +17,7 @@ export default function PatientTreatmentHistoryPage() {
       const { data } = await supabase.auth.getUser();
       if (data.user?.id) {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id')
           .eq('user_id', data.user.id)
           .maybeSingle();

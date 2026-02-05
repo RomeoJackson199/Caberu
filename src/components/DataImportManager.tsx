@@ -168,7 +168,7 @@ export default function DataImportManager() {
 
       // First get the user's profile
       const { data: userProfile, error: profileError } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, role')
         .eq('user_id', session.user.id)
         .single();

@@ -331,7 +331,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						vat_cents: 0
 					}));
 					const deductions = supplies.map(s => ({ item_id: s.item_id, quantity: s.quantity }));
-					const { data: prof } = await supabase.from('profiles').select('id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
+					const { data: prof } = await supabase.from('secure_profiles_view').select('id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
 					const { data: rpcRes, error: rpcErr } = await supabase.rpc('complete_visit_atomic', {
 						p_appointment_id: appointment.id,
 						p_dentist_id: appointment.dentist_id,
@@ -432,7 +432,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 					}
 				}
 				// apply deductions (only if not using atomic path)
-				const { data: prof } = await supabase.from('profiles').select('id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
+				const { data: prof } = await supabase.from('secure_profiles_view').select('id').eq('user_id', (await supabase.auth.getUser()).data.user?.id).single();
 				for (const s of supplies) {
 					try {
 						const { data: it } = await supabase.from('inventory_items').select('quantity, min_threshold, name').eq('id', s.item_id).single();
@@ -443,7 +443,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 						if (it && newQty < it.min_threshold) {
 							const { data: dent } = await supabase.from('dentists').select('profile_id').eq('id', dentistId).single();
 							if (dent) {
-								const { data: dprof } = await supabase.from('profiles').select('user_id').eq('id', dent.profile_id).single();
+								const { data: dprof } = await supabase.from('secure_profiles_view').select('user_id').eq('id', dent.profile_id).single();
 								if (dprof?.user_id) {
 									await supabase.from('notifications').insert({ user_id: dprof.user_id, dentist_id: dentistId, type: 'inventory', title: 'Low Stock Alert', message: `${it.name} is below threshold (${newQty} remaining)`, priority: 'high', action_label: 'Open Inventory', action_url: `/dashboard#inventory?item=${s.item_id}`, metadata: { item_id: s.item_id } });
 								}
@@ -459,7 +459,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 			if (withInvoice && createInvoiceAndLink && invoiceId) {
 				try {
 					const amountCents = Math.round(finalTotal * 100);
-					const { data: payment, error: payErr } = await supabase.functions.invoke('create-payment-request', { body: { patient_id: appointment.patient_id, dentist_id: appointment.dentist_id, amount: amountCents, description: `Appointment ${appointment.id} patient share`, patient_email: (await supabase.from('profiles').select('email').eq('id', appointment.patient_id).single()).data?.email } });
+					const { data: payment, error: payErr } = await supabase.functions.invoke('create-payment-request', { body: { patient_id: appointment.patient_id, dentist_id: appointment.dentist_id, amount: amountCents, description: `Appointment ${appointment.id} patient share`, patient_email: (await supabase.from('secure_profiles_view').select('email').eq('id', appointment.patient_id).single()).data?.email } });
 					if (!payErr && payment?.payment_url) {
 						if (payment?.payment_request_id) {
 							await supabase.from('invoices').update({ payment_request_id: payment.payment_request_id }).eq('id', invoiceId);

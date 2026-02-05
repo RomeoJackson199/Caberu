@@ -29,7 +29,7 @@ export function usePatientBadgeCounts() {
         }
 
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id')
           .eq('user_id', userId)
           .maybeSingle();
@@ -49,7 +49,7 @@ export function usePatientBadgeCounts() {
 
         const [apptsResult, payReqsResult] = await Promise.allSettled([
           supabase
-            .from('appointments')
+            .from('secure_appointments_view')
             .select('id, status, appointment_date')
             .eq('patient_id', patientId)
             .gte('appointment_date', now.toISOString())

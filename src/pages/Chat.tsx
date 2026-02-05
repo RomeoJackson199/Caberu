@@ -32,7 +32,7 @@ export default function Chat() {
       setUser(authUser);
 
       const { data: profileData, error } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('*')
         .eq('user_id', authUser.id)
         .maybeSingle();

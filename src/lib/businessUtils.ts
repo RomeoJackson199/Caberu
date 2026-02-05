@@ -45,7 +45,7 @@ export async function isBusinessMember(businessId: string): Promise<boolean> {
   if (!user) return false;
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('secure_profiles_view')
     .select('id')
     .eq('user_id', user.id)
     .single();
@@ -70,7 +70,7 @@ export async function getBusinessRole(businessId: string): Promise<string | null
   if (!user) return null;
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('secure_profiles_view')
     .select('id')
     .eq('user_id', user.id)
     .single();

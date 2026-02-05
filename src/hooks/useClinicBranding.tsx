@@ -53,14 +53,14 @@ export function useClinicBranding(options: UseClinicBrandingOptions = {}) {
             // If still not found, fall back to most recent appointment's business
             if (!targetBusinessId) {
               const { data: profile } = await supabase
-                .from('profiles')
+                .from('secure_profiles_view')
                 .select('id')
                 .eq('user_id', user.id)
                 .maybeSingle();
 
               if (profile?.id) {
                 const { data: appt } = await supabase
-                  .from('appointments')
+                  .from('secure_appointments_view')
                   .select('business_id, appointment_date, created_at')
                   .eq('patient_id', profile.id)
                   .order('appointment_date', { ascending: false })

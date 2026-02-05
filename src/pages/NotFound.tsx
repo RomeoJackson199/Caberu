@@ -28,7 +28,7 @@ const NotFound = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
-          .from("profiles")
+          .from("secure_profiles_view")
           .select("role")
           .eq("id", user.id)
           .single();

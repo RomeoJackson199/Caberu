@@ -72,7 +72,7 @@ export const AuthCallbackHandler = () => {
                 
                 // Check if this user has an imported profile to claim
                 const { data: existingProfile } = await supabase
-                  .from('profiles')
+                  .from('secure_profiles_view')
                   .select('*')
                   .eq('email', email)
                   .is('user_id', null)
@@ -115,7 +115,7 @@ export const AuthCallbackHandler = () => {
               } else {
                 // No pre-selected business, check if user's profile has a business_id
                 const { data: userProfile } = await supabase
-                  .from('profiles')
+                  .from('secure_profiles_view')
                   .select('business_id')
                   .eq('user_id', session?.user?.id)
                   .maybeSingle();
