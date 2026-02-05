@@ -144,6 +144,13 @@ export type Database = {
             referencedRelation: "secure_appointments_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       appointment_slots: {
@@ -193,6 +200,13 @@ export type Database = {
             columns: ["appointment_id"]
             isOneToOne: false
             referencedRelation: "secure_appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_slots_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -298,6 +312,7 @@ export type Database = {
           consultation_notes: string | null
           consultation_notes_encrypted: string | null
           conversation_transcript: Json | null
+          conversation_transcript_encrypted: string | null
           created_at: string
           dentist_id: string
           duration_minutes: number | null
@@ -329,6 +344,7 @@ export type Database = {
           consultation_notes?: string | null
           consultation_notes_encrypted?: string | null
           conversation_transcript?: Json | null
+          conversation_transcript_encrypted?: string | null
           created_at?: string
           dentist_id: string
           duration_minutes?: number | null
@@ -360,6 +376,7 @@ export type Database = {
           consultation_notes?: string | null
           consultation_notes_encrypted?: string | null
           conversation_transcript?: Json | null
+          conversation_transcript_encrypted?: string | null
           created_at?: string
           dentist_id?: string
           duration_minutes?: number | null
@@ -430,6 +447,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -451,6 +475,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_treatment_plans_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_appointments_patient"
             columns: ["patient_id"]
             isOneToOne: false
@@ -462,6 +493,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -602,6 +640,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -811,6 +856,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "businesses_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       chat_messages: {
@@ -869,6 +921,13 @@ export type Database = {
             columns: ["appointment_id"]
             isOneToOne: false
             referencedRelation: "secure_appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -946,6 +1005,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "communication_logs_sent_by_fkey"
             columns: ["sent_by"]
             isOneToOne: false
@@ -957,6 +1023,13 @@ export type Database = {
             columns: ["sent_by"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -1259,6 +1332,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "dentist_invitations_invitee_profile_id_fkey"
+            columns: ["invitee_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dentist_invitations_inviter_profile_id_fkey"
             columns: ["inviter_profile_id"]
             isOneToOne: false
@@ -1270,6 +1350,13 @@ export type Database = {
             columns: ["inviter_profile_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_invitations_inviter_profile_id_fkey"
+            columns: ["inviter_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -1425,6 +1512,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -1736,6 +1830,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "imaging_sets_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "imaging_sets_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
@@ -1764,6 +1865,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "imaging_sets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
@@ -1775,6 +1883,13 @@ export type Database = {
             columns: ["treatment_plan_id"]
             isOneToOne: false
             referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_treatment_plans_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -1791,6 +1906,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "imaging_sets_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       medical_records: {
@@ -1799,6 +1921,7 @@ export type Database = {
           created_at: string
           dentist_id: string
           description: string | null
+          description_encrypted: string | null
           findings: string | null
           findings_encrypted: string | null
           id: string
@@ -1807,6 +1930,7 @@ export type Database = {
           record_type: string
           title: string
           treatment_provided: string | null
+          treatment_provided_encrypted: string | null
           updated_at: string
         }
         Insert: {
@@ -1814,6 +1938,7 @@ export type Database = {
           created_at?: string
           dentist_id: string
           description?: string | null
+          description_encrypted?: string | null
           findings?: string | null
           findings_encrypted?: string | null
           id?: string
@@ -1822,6 +1947,7 @@ export type Database = {
           record_type?: string
           title: string
           treatment_provided?: string | null
+          treatment_provided_encrypted?: string | null
           updated_at?: string
         }
         Update: {
@@ -1829,6 +1955,7 @@ export type Database = {
           created_at?: string
           dentist_id?: string
           description?: string | null
+          description_encrypted?: string | null
           findings?: string | null
           findings_encrypted?: string | null
           id?: string
@@ -1837,6 +1964,7 @@ export type Database = {
           record_type?: string
           title?: string
           treatment_provided?: string | null
+          treatment_provided_encrypted?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1880,6 +2008,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -1948,6 +2083,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
             isOneToOne: false
@@ -1959,6 +2101,13 @@ export type Database = {
             columns: ["sender_profile_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -2025,6 +2174,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notes_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -2064,6 +2220,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -2237,6 +2400,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_allergies_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -2248,6 +2418,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -2311,6 +2488,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_consents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -2391,6 +2575,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
@@ -2402,6 +2593,13 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -2494,6 +2692,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_preferences_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_preferences_preferred_dentist_id_fkey"
             columns: ["preferred_dentist_id"]
             isOneToOne: false
@@ -2547,6 +2752,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_tag_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_tag_assignments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -2558,6 +2770,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_tag_assignments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -2776,6 +2995,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_requests_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payment_requests_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
@@ -2804,6 +3030,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payment_requests_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -2829,6 +3062,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -3211,6 +3451,13 @@ export type Database = {
             referencedRelation: "secure_appointments_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reschedule_suggestions_original_appointment_id_fkey"
+            columns: ["original_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       session_business: {
@@ -3296,6 +3543,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "slot_recommendations_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "slot_recommendations_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
@@ -3335,6 +3589,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "slot_recommendations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -3695,6 +3956,13 @@ export type Database = {
             referencedRelation: "treatment_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "treatment_plan_items_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_treatment_plans_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       treatment_plans: {
@@ -3829,6 +4097,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
+            columns: ["created_from_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "treatment_plans_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -3854,6 +4129,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4052,6 +4334,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       public_businesses_view: {
@@ -4134,6 +4423,13 @@ export type Database = {
             columns: ["appointment_id"]
             isOneToOne: false
             referencedRelation: "secure_appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4268,6 +4564,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "appointments_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -4289,6 +4592,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "appointments_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_treatment_plans_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_appointments_patient"
             columns: ["patient_id"]
             isOneToOne: false
@@ -4300,6 +4610,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4354,6 +4671,13 @@ export type Database = {
             columns: ["appointment_id"]
             isOneToOne: false
             referencedRelation: "secure_appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4425,6 +4749,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "communication_logs_sent_by_fkey"
             columns: ["sent_by"]
             isOneToOne: false
@@ -4436,6 +4767,13 @@ export type Database = {
             columns: ["sent_by"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4604,6 +4942,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "imaging_sets_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "imaging_sets_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
@@ -4632,6 +4977,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "imaging_sets_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
@@ -4646,6 +4998,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_treatment_plans_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "imaging_sets_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
@@ -4657,6 +5016,13 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "imaging_sets_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4747,6 +5113,13 @@ export type Database = {
             referencedRelation: "secure_profiles_view"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
         ]
       }
       secure_messages_view: {
@@ -4810,6 +5183,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "messages_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
             isOneToOne: false
@@ -4821,6 +5201,13 @@ export type Database = {
             columns: ["sender_profile_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4881,6 +5268,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notes_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -4920,6 +5314,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -4988,6 +5389,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_allergies_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -4999,6 +5407,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -5073,6 +5488,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "patient_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patient_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
@@ -5084,6 +5506,13 @@ export type Database = {
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -5271,6 +5700,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
+            columns: ["created_from_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "treatment_plans_dentist_id_fkey"
             columns: ["dentist_id"]
             isOneToOne: false
@@ -5296,6 +5732,971 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_appointments_decrypted: {
+        Row: {
+          ai_summary: string | null
+          amount_paid_cents: number | null
+          appointment_date: string | null
+          appointment_type_id: string | null
+          booking_source: string | null
+          business_id: string | null
+          completed_at: string | null
+          consultation_notes: string | null
+          conversation_transcript: Json | null
+          created_at: string | null
+          dentist_id: string | null
+          duration_minutes: number | null
+          id: string | null
+          notes: string | null
+          patient_id: string | null
+          patient_name: string | null
+          payment_intent_id: string | null
+          payment_status: string | null
+          reason: string | null
+          service_id: string | null
+          status: string | null
+          treatment_plan_id: string | null
+          updated_at: string | null
+          urgency: string | null
+        }
+        Insert: {
+          ai_summary?: never
+          amount_paid_cents?: number | null
+          appointment_date?: string | null
+          appointment_type_id?: string | null
+          booking_source?: string | null
+          business_id?: string | null
+          completed_at?: string | null
+          consultation_notes?: never
+          conversation_transcript?: never
+          created_at?: string | null
+          dentist_id?: string | null
+          duration_minutes?: number | null
+          id?: string | null
+          notes?: never
+          patient_id?: string | null
+          patient_name?: never
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          reason?: never
+          service_id?: string | null
+          status?: string | null
+          treatment_plan_id?: string | null
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Update: {
+          ai_summary?: never
+          amount_paid_cents?: number | null
+          appointment_date?: string | null
+          appointment_type_id?: string | null
+          booking_source?: string | null
+          business_id?: string | null
+          completed_at?: string | null
+          consultation_notes?: never
+          conversation_transcript?: never
+          created_at?: string | null
+          dentist_id?: string | null
+          duration_minutes?: number | null
+          id?: string | null
+          notes?: never
+          patient_id?: string | null
+          patient_name?: never
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          reason?: never
+          service_id?: string | null
+          status?: string | null
+          treatment_plan_id?: string | null
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_appointment_type_id_fkey"
+            columns: ["appointment_type_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "business_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "secure_treatment_plans_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_treatment_plan_id_fkey"
+            columns: ["treatment_plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_treatment_plans_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_appointments_patient"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_chat_messages_decrypted: {
+        Row: {
+          appointment_id: string | null
+          created_at: string | null
+          id: string | null
+          is_bot: boolean | null
+          message: string | null
+          message_type: string | null
+          metadata: Json | null
+          session_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_bot?: boolean | null
+          message?: never
+          message_type?: string | null
+          metadata?: never
+          session_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_bot?: boolean | null
+          message?: never
+          message_type?: string | null
+          metadata?: never
+          session_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "secure_appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_communication_logs_decrypted: {
+        Row: {
+          business_id: string | null
+          channel: string | null
+          content: string | null
+          created_at: string | null
+          direction: string | null
+          id: string | null
+          patient_id: string | null
+          sent_by: string | null
+          status: string | null
+          subject: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          channel?: string | null
+          content?: never
+          created_at?: string | null
+          direction?: string | null
+          id?: string | null
+          patient_id?: string | null
+          sent_by?: string | null
+          status?: string | null
+          subject?: never
+        }
+        Update: {
+          business_id?: string | null
+          channel?: string | null
+          content?: never
+          created_at?: string | null
+          direction?: string | null
+          id?: string | null
+          patient_id?: string | null
+          sent_by?: string | null
+          status?: string | null
+          subject?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_logs_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_medical_records_decrypted: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          dentist_id: string | null
+          description: string | null
+          findings: string | null
+          id: string | null
+          patient_id: string | null
+          record_date: string | null
+          record_type: string | null
+          title: string | null
+          treatment_provided: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          dentist_id?: string | null
+          description?: never
+          findings?: never
+          id?: string | null
+          patient_id?: string | null
+          record_date?: string | null
+          record_type?: string | null
+          title?: string | null
+          treatment_provided?: never
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          dentist_id?: string | null
+          description?: never
+          findings?: never
+          id?: string | null
+          patient_id?: string | null
+          record_date?: string | null
+          record_type?: string | null
+          title?: string | null
+          treatment_provided?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_records_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_messages_decrypted: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          id: string | null
+          is_read: boolean | null
+          message_text: string | null
+          recipient_profile_id: string | null
+          sender_profile_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_read?: boolean | null
+          message_text?: never
+          recipient_profile_id?: string | null
+          sender_profile_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_read?: boolean | null
+          message_text?: never
+          recipient_profile_id?: string | null
+          sender_profile_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_notes_decrypted: {
+        Row: {
+          appointment_id: string | null
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          dentist_id: string | null
+          id: string | null
+          is_private: boolean | null
+          note_type: string | null
+          patient_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          content?: never
+          created_at?: string | null
+          created_by?: string | null
+          dentist_id?: string | null
+          id?: string | null
+          is_private?: boolean | null
+          note_type?: string | null
+          patient_id?: string | null
+          title?: never
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          content?: never
+          created_at?: string | null
+          created_by?: string | null
+          dentist_id?: string | null
+          id?: string | null
+          is_private?: boolean | null
+          note_type?: string | null
+          patient_id?: string | null
+          title?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "secure_appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_patient_allergies_decrypted: {
+        Row: {
+          allergy_name: string | null
+          business_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          notes: string | null
+          patient_id: string | null
+          severity: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allergy_name?: never
+          business_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          notes?: never
+          patient_id?: string | null
+          severity?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allergy_name?: never
+          business_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          notes?: never
+          patient_id?: string | null
+          severity?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_allergies_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_profiles_decrypted: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          medical_history: string | null
+          phone: string | null
+          profile_completion_status: string | null
+          role: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          medical_history?: never
+          phone?: string | null
+          profile_completion_status?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          medical_history?: never
+          phone?: string | null
+          profile_completion_status?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      v_treatment_plans_decrypted: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          created_by_dentist_id: string | null
+          created_from_appointment_id: string | null
+          currency: string | null
+          dentist_id: string | null
+          description: string | null
+          diagnosis: string | null
+          end_date: string | null
+          estimated_cost: number | null
+          estimated_duration: string | null
+          estimated_duration_weeks: number | null
+          id: string | null
+          notes: string | null
+          patient_id: string | null
+          priority: string | null
+          procedures: string[] | null
+          start_date: string | null
+          status: string | null
+          target_completion_date: string | null
+          title: string | null
+          total_estimated_cents: number | null
+          treatment_goals: string[] | null
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          created_by_dentist_id?: string | null
+          created_from_appointment_id?: string | null
+          currency?: string | null
+          dentist_id?: string | null
+          description?: never
+          diagnosis?: never
+          end_date?: string | null
+          estimated_cost?: number | null
+          estimated_duration?: string | null
+          estimated_duration_weeks?: number | null
+          id?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          priority?: string | null
+          procedures?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          title?: string | null
+          total_estimated_cents?: number | null
+          treatment_goals?: string[] | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          created_by_dentist_id?: string | null
+          created_from_appointment_id?: string | null
+          currency?: string | null
+          dentist_id?: string | null
+          description?: never
+          diagnosis?: never
+          end_date?: string | null
+          estimated_cost?: number | null
+          estimated_duration?: string | null
+          estimated_duration_weeks?: number | null
+          id?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          priority?: string | null
+          procedures?: string[] | null
+          start_date?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          title?: string | null
+          total_estimated_cents?: number | null
+          treatment_goals?: string[] | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_plans_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_by_dentist_id_fkey"
+            columns: ["created_by_dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_by_dentist_id_fkey"
+            columns: ["created_by_dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
+            columns: ["created_from_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
+            columns: ["created_from_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "secure_appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
+            columns: ["created_from_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_plans_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -5398,10 +6799,13 @@ export type Database = {
       clean_encrypted_display: { Args: { input_text: string }; Returns: string }
       cleanup_old_audit_logs: { Args: never; Returns: Json }
       cleanup_old_rate_limits: { Args: never; Returns: number }
+      decrypt_phi: { Args: { encrypted_data: string }; Returns: string }
+      decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       dentist_has_patient_access: {
         Args: { _patient_id: string; _user_id: string }
         Returns: boolean
       }
+      encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       ensure_daily_slots: {
         Args: { p_date: string; p_dentist_id: string }
         Returns: undefined
@@ -5456,6 +6860,10 @@ export type Database = {
           total_calls: number
           total_seconds: number
         }[]
+      }
+      get_decrypted_or_plain: {
+        Args: { encrypted_data: string; plain_data: string }
+        Returns: string
       }
       get_dentist_available_slots: {
         Args: { p_business_id: string; p_date: string; p_dentist_id: string }
