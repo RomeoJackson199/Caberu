@@ -86,7 +86,7 @@ export const InventoryManager = memo(function InventoryManager({ dentistId, user
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await sb.from('profiles').select('id').eq('user_id', userId).single();
+      const { data, error } = await sb.from('secure_profiles_view').select('id').eq('user_id', userId).single();
       if (!error && data) setProfileId(data.id);
     })();
   }, [userId]);
@@ -210,7 +210,7 @@ export const InventoryManager = memo(function InventoryManager({ dentistId, user
       .single();
     if (!data) return userId;
     const { data: prof } = await sb
-      .from('profiles')
+      .from('secure_profiles_view')
       .select('user_id')
       .eq('id', data.profile_id)
       .single();

@@ -292,7 +292,7 @@ const PatientDashboardComponent = ({
       // Fetch appointments
       const {
         data: appointmentsData
-      } = await supabase.from('appointments').select('*').eq('patient_id', profileId);
+      } = await supabase.from('secure_appointments_view').select('*').eq('patient_id', profileId);
       const upcomingAppointments = appointmentsData?.filter(apt => new Date(apt.appointment_date) > new Date() && apt.status === 'confirmed').length || 0;
       const completedAppointments = appointmentsData?.filter(apt => apt.status === 'completed').length || 0;
       const lastVisit = appointmentsData?.filter(apt => apt.status === 'completed').sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())[0]?.appointment_date || null;
@@ -311,7 +311,7 @@ const PatientDashboardComponent = ({
       // Fetch patient notes
       const {
         data: notesData
-      } = await supabase.from('notes').select('*').eq('patient_id', profileId);
+      } = await supabase.from('secure_notes_view').select('*').eq('patient_id', profileId);
       setPatientStats({
         upcomingAppointments,
         completedAppointments,
@@ -330,7 +330,7 @@ const PatientDashboardComponent = ({
       const {
         data: appointmentsData,
         error
-      } = await supabase.from('appointments').select(`
+      } = await supabase.from('secure_appointments_view').select(`
           *,
           dentists:dentist_id(
             specialization,
@@ -387,7 +387,7 @@ const PatientDashboardComponent = ({
       // Fetch medical records
       const {
         data: medicalRecordsData
-      } = await supabase.from('medical_records').select('*').eq('patient_id', profileId).order('record_date', {
+      } = await supabase.from('secure_medical_records_view').select('*').eq('patient_id', profileId).order('record_date', {
         ascending: false
       });
       setMedicalRecords((medicalRecordsData || []).map(record => ({
@@ -398,7 +398,7 @@ const PatientDashboardComponent = ({
       // Fetch patient notes
       const {
         data: notesData
-      } = await supabase.from('notes').select('*').eq('patient_id', profileId).order('created_at', {
+      } = await supabase.from('secure_notes_view').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
       setPatientNotes(notesData || []);

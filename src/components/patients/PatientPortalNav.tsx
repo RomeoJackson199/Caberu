@@ -70,7 +70,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
     const loadUserProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from('profiles').select('profile_picture_url').eq('user_id', user.id).maybeSingle();
+      const { data } = await supabase.from('secure_profiles_view').select('profile_picture_url').eq('user_id', user.id).maybeSingle();
       setUserProfilePicture(data?.profile_picture_url || null);
     };
     loadUserProfile();
