@@ -588,6 +588,57 @@ export type Database = {
           },
         ]
       }
+      business_encryption_keys: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          encrypted_key: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          key_version: number
+          rotated_at: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          encrypted_key: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          key_version?: number
+          rotated_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          encrypted_key?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          key_version?: number
+          rotated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_encryption_keys_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_encryption_keys_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_members: {
         Row: {
           business_id: string
