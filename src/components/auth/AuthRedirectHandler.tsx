@@ -299,9 +299,10 @@ export function AuthRedirectHandler() {
           return;
         }
 
-        logger.info('AuthRedirectHandler: Profile complete, redirecting to patient dashboard');
+        // Always prompt business selection so users can choose/switch businesses
+        logger.info('AuthRedirectHandler: Profile complete, redirecting to business selection');
         sessionStorage.removeItem(REDIRECT_KEY);
-        navigate('/dashboard', { replace: true });
+        navigate('/select-business', { replace: true });
       } catch (error) {
         logger.error("Error in AuthRedirectHandler:", error);
 

@@ -57,15 +57,6 @@ const DropdownVariant = () => {
     return null;
   }
 
-  if (memberships.length === 1) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
-        <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{businessName}</span>
-      </div>
-    );
-  }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
