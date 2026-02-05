@@ -132,8 +132,8 @@ describe('useOfflineStatus', () => {
     expect(typeof result.current.queueOperation).toBe('function');
 
     // Call the queueOperation
-    result.current.queueOperation({ type: 'test', data: {} });
+    result.current.queueOperation({ type: 'test', data: {} } as any, 'test-table' as any);
 
-    expect(mockQueueOperation).toHaveBeenCalledWith({ type: 'test', data: {} });
+    expect(mockQueueOperation).toHaveBeenCalledWith({ type: 'test', data: {} }, 'test-table');
   });
 });
