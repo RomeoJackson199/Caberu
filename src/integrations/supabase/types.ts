@@ -2166,6 +2166,7 @@ export type Database = {
       notes: {
         Row: {
           appointment_id: string | null
+          business_id: string | null
           content: string
           content_encrypted: string | null
           created_at: string | null
@@ -2181,6 +2182,7 @@ export type Database = {
         }
         Insert: {
           appointment_id?: string | null
+          business_id?: string | null
           content: string
           content_encrypted?: string | null
           created_at?: string | null
@@ -2196,6 +2198,7 @@ export type Database = {
         }
         Update: {
           appointment_id?: string | null
+          business_id?: string | null
           content?: string
           content_encrypted?: string | null
           created_at?: string | null
@@ -2229,6 +2232,20 @@ export type Database = {
             columns: ["appointment_id"]
             isOneToOne: false
             referencedRelation: "v_appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
