@@ -154,7 +154,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
 
     try {
       const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();

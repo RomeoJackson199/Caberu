@@ -68,7 +68,7 @@ export default function DentistAdminUsers() {
 
       // Fetch profiles for these members only
       const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, email, first_name, last_name, created_at, user_id')
         .in('id', profileIds)
         .order('created_at', { ascending: false });

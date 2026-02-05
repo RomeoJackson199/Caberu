@@ -64,7 +64,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				// Fetch all data in parallel
 				const [todayApptsResult, weekCompletedResult, patientsResult, pendingResult, nextAptResult] = await Promise.allSettled([
 					supabase
-						.from('appointments')
+						.from('secure_appointments_view')
 						.select(`
 							id,
 							appointment_date,
@@ -89,23 +89,23 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 						.neq('status', 'cancelled')
 						.order('appointment_date', { ascending: true }),
 					supabase
-						.from('appointments')
+						.from('secure_appointments_view')
 						.select('id')
 						.eq('dentist_id', dentistId)
 						.gte('appointment_date', weekStart.toISOString())
 						.eq('status', 'completed'),
 					supabase
-						.from('appointments')
+						.from('secure_appointments_view')
 						.select('patient_id')
 						.eq('dentist_id', dentistId),
 					supabase
-						.from('appointments')
+						.from('secure_appointments_view')
 						.select('id')
 						.eq('dentist_id', dentistId)
 						.eq('status', 'pending')
 						.gte('appointment_date', new Date().toISOString()),
 					supabase
-						.from('appointments')
+						.from('secure_appointments_view')
 						.select(`
 							id,
 							appointment_date,

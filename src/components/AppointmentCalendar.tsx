@@ -88,7 +88,7 @@ export const AppointmentCalendar = ({ user, onComplete, onCancel, onBackToDentis
 
     try {
       const { data: profile, error: profileError } = await supabase
-        .from("profiles")
+        .from("secure_profiles_view")
         .select("id")
         .eq("user_id", user.id)
         .single();

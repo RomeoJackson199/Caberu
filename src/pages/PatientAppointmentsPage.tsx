@@ -33,14 +33,14 @@ export default function PatientAppointmentsPage() {
       if (data.user) {
         // Fetch appointment stats
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id')
           .eq('user_id', data.user.id)
           .single();
 
         if (profile) {
           const { data: appointments } = await supabase
-            .from('appointments')
+            .from('secure_appointments_view')
             .select('id, status, appointment_date')
             .eq('patient_id', profile.id);
 

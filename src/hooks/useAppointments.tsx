@@ -130,7 +130,7 @@ export async function createAppointmentWithNotification(appointmentData: {
 
   // Fetch patient data separately for reliability
   const { data: patient, error: patientError } = await supabase
-    .from('profiles')
+    .from('secure_profiles_view')
     .select('first_name, last_name, email, phone')
     .eq('id', appointment.patient_id)
     .single();
@@ -309,7 +309,7 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
       setError(null);
 
       let query = supabase
-        .from('appointments')
+        .from('secure_appointments_view')
         .select(`
           id,
           patient_id,
@@ -323,14 +323,14 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
           duration_minutes,
           created_at,
           updated_at,
-          profiles(
+          profiles:secure_profiles_view(
             first_name,
             last_name,
             email,
             phone
           ),
           dentists(
-            profiles(
+            profiles:secure_profiles_view(
               first_name,
               last_name
             )

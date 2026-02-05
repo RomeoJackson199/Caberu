@@ -176,7 +176,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
 
       // Get business_id from business_members (use current session business or first available)
       const { data: profileData } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', session.user.id)
         .maybeSingle();

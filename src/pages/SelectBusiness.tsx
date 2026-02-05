@@ -30,7 +30,7 @@ export default function SelectBusiness() {
                 setIsAuthenticated(true);
                 // Get profile ID to determine ownership
                 const { data: profile } = await supabase
-                    .from('profiles')
+                    .from('secure_profiles_view')
                     .select('id')
                     .eq('user_id', user.id)
                     .maybeSingle();
@@ -128,7 +128,7 @@ export default function SelectBusiness() {
     const getDentistId = async (userId: string, businessId: string): Promise<string | null> => {
         try {
             const { data: profile } = await supabase
-                .from('profiles')
+                .from('secure_profiles_view')
                 .select('id')
                 .eq('user_id', userId)
                 .single();

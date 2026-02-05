@@ -58,7 +58,7 @@ export const PatientAnalytics = ({ userId }: PatientAnalyticsProps) => {
       
       // Get patient profile
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', userId)
         .single();
@@ -67,20 +67,20 @@ export const PatientAnalytics = ({ userId }: PatientAnalyticsProps) => {
 
       // Get appointments data
       const { data: appointments } = await supabase
-        .from('appointments')
+        .from('secure_appointments_view')
         .select('*')
         .eq('patient_id', profile.id)
         .order('appointment_date', { ascending: false });
 
       // Get notes
       const { data: notes } = await supabase
-        .from('notes')
+        .from('secure_notes_view')
         .select('*')
         .eq('patient_id', profile.id);
 
       // Get treatment plans
       const { data: treatmentPlans } = await supabase
-        .from('treatment_plans')
+        .from('secure_treatment_plans_view')
         .select('*')
         .eq('patient_id', profile.id)
         .eq('status', 'active');

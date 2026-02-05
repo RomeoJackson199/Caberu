@@ -61,7 +61,7 @@ export function useAuth(): UseAuthResult {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, user_id, first_name, last_name, email, role')
         .eq('user_id', userId)
         .single();

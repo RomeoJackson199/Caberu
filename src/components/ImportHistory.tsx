@@ -37,7 +37,7 @@ export function ImportHistory() {
       if (!session) return;
 
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('dentists(id)')
         .eq('user_id', session.user.id)
         .single();

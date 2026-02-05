@@ -320,13 +320,13 @@ export const HealthData = ({
 
   const loadAppointments = async (profileId: string) => {
     let query = supabase
-      .from('appointments')
+      .from('secure_appointments_view')
       .select(`
-        id, 
-        appointment_date, 
-        status, 
-        reason, 
-        consultation_notes, 
+        id,
+        appointment_date,
+        status,
+        reason,
+        consultation_notes,
         urgency,
         dentist:dentists(
           profile:profiles(first_name, last_name)

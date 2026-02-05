@@ -59,7 +59,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
   const fetchPatients = async () => {
     try {
       const { data, error } = await supabase
-        .from('appointments')
+        .from('secure_appointments_view')
         .select('patient_id, profiles(id, first_name, last_name)')
         .eq('dentist_id', dentistId);
 
@@ -140,7 +140,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
 
       // Send notification to patient
       const { data: patientProfile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('user_id')
         .eq('id', newPrescription.patient_id)
         .single();

@@ -172,7 +172,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
       try {
         // Appointments in range for this dentist
         const { data: appts } = await supabase
-          .from('appointments')
+          .from('secure_appointments_view')
           .select('id, appointment_date, status, patient_id, reason, dentist_id')
           .eq('dentist_id', dentistId)
           .eq('business_id', businessId!)
@@ -190,7 +190,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
 
         // Treatment plans for follow-ups/opportunities (not strictly time-bound)
         const { data: plans } = await supabase
-          .from('treatment_plans')
+          .from('secure_treatment_plans_view')
           .select('id, patient_id, status, estimated_cost, title, start_date, end_date')
           .eq('dentist_id', dentistId)
           .eq('business_id', businessId!);
@@ -288,7 +288,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
           const userIdMap = new Map((profs || []).map(p => [p.id, p.user_id || undefined]));
           enriched = highNoShowEntries.map(([id, count]) => ({ id, name: nameMap.get(id) || id, count: count as number, user_id: userIdMap.get(id) }));
           // Read deposit flags from notes content
-          const { data: notes } = await supabase.from('notes').select('id, patient_id, content').in('patient_id', ids).eq('dentist_id', dentistId);
+          const { data: notes } = await supabase.from('secure_notes_view').select('id, patient_id, content').in('patient_id', ids).eq('dentist_id', dentistId);
           const flags: Record<string, boolean> = {};
           (notes || []).forEach(n => {
             if ((n.content || '').toLowerCase().includes('require_deposit')) flags[n.patient_id || ''] = true;
@@ -365,7 +365,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
       for (let i = 0; i < currentPatients.length; i += chunkSize) {
         const chunk = currentPatients.slice(i, i + chunkSize);
         const { data: prior } = await supabase
-          .from('appointments')
+          .from('secure_appointments_view')
           .select('id, patient_id, appointment_date')
           .eq('dentist_id', dentistId)
           .in('patient_id', chunk)
@@ -522,7 +522,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
           .eq('business_id', businessId!)
           .gte('created_at', prevStart.toISOString())
           .lte('created_at', prevEnd.toISOString()),
-        supabase.from('appointments')
+        supabase.from('secure_appointments_view')
           .select('id, appointment_date, status, patient_id')
           .eq('dentist_id', dentistId)
           .eq('business_id', businessId!)
@@ -548,7 +548,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
       if (prevPatients.length) {
         const sixMonthsBeforePrev = subMonths(prevStart, 6);
         const { data: priorPrev } = await supabase
-          .from('appointments')
+          .from('secure_appointments_view')
           .select('patient_id, appointment_date')
           .eq('dentist_id', dentistId)
           .in('patient_id', prevPatients)
@@ -1052,7 +1052,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
                 for (const f of selected) {
                   try {
                     // Find patient userId
-                    const { data: prof } = await supabase.from('profiles').select('user_id').eq('id', f.patientId).maybeSingle();
+                    const { data: prof } = await supabase.from('secure_profiles_view').select('user_id').eq('id', f.patientId).maybeSingle();
                     const userId = prof?.user_id;
                     if (userId) {
                       // Send follow-up link (placeholder to schedule page)
@@ -1210,7 +1210,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
             <Button onClick={async () => {
               if (!reminderPatient) return;
               try {
-                const { data: prof } = await supabase.from('profiles').select('user_id, email').eq('id', reminderPatient.id).maybeSingle();
+                const { data: prof } = await supabase.from('secure_profiles_view').select('user_id, email').eq('id', reminderPatient.id).maybeSingle();
                 const userId = prof?.user_id;
                 if (userId) {
                   // await NotificationService.createNotification(

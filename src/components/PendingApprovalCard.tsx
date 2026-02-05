@@ -63,7 +63,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
         // Fetch pending appointments
         const { data: appointments, error } = await supabase
-          .from('appointments')
+          .from('secure_appointments_view')
           .select(`
             id,
             appointment_date,

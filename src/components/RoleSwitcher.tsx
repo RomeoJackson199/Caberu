@@ -40,7 +40,7 @@ export function useRoleSwitcher(): RoleSwitcherState {
         }
 
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id')
           .eq('user_id', user.id)
           .single();

@@ -129,7 +129,7 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
       if (!user) throw new Error("Not authenticated");
 
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', user.id)
         .single();

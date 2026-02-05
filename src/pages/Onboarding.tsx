@@ -65,7 +65,7 @@ const Onboarding = () => {
 
       // Check if profile is already complete
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("secure_profiles_view")
         .select("first_name, last_name, date_of_birth, phone, address, phone_verified, onboarding_completed")
         .eq("user_id", user.id)
         .single();

@@ -52,7 +52,7 @@ export default function DentistAdminProfile() {
     try {
       const [{ data: dentistData }, { data: profileData }] = await Promise.all([
         supabase.from('dentists').select('*').eq('id', dentistId).single(),
-        supabase.from('profiles').select('*').eq('id', profileId).single(),
+        supabase.from('secure_profiles_view').select('*').eq('id', profileId).single(),
       ]);
 
       if (dentistData && profileData) {

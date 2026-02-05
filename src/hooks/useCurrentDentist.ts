@@ -34,7 +34,7 @@ export function useCurrentDentist(businessId?: string | null): CurrentDentistSta
       }
 
       const { data: profileRow, error: profileErr } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();

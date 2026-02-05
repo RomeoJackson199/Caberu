@@ -77,7 +77,7 @@ export const PaymentRequestManager: React.FC<PaymentRequestManagerProps> = ({ de
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data: profile } = await (supabase as any)
-          .from('profiles')
+          .from('secure_profiles_view')
           .select('id')
           .eq('user_id', user.id)
           .single();

@@ -72,7 +72,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
 
       // Get user profile first
       const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id, first_name, last_name, role')
         .eq('user_id', user.id)
         .single();
@@ -88,7 +88,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
 
       // Fetch appointments with dentist information
       const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('appointments')
+        .from('secure_appointments_view')
         .select(`
           id,
           appointment_date,

@@ -70,25 +70,25 @@ export function AIConversationDialog({
     try {
       // Get patient context
       const { data: patient } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('*')
         .eq('id', patientId)
         .single();
 
       const { data: medicalHistory } = await supabase
-        .from('medical_records')
+        .from('secure_medical_records_view')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
 
       const { data: notes } = await supabase
-        .from('notes')
+        .from('secure_notes_view')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
 
       const { data: treatmentPlans } = await supabase
-        .from('treatment_plans')
+        .from('secure_treatment_plans_view')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
