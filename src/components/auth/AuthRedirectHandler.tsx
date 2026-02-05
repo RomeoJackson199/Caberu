@@ -225,23 +225,19 @@ export function AuthRedirectHandler() {
             }
           }
 
-          if (businessId) {
-            // Business already selected, go to dashboard
-            logger.info('AuthRedirectHandler: Redirecting dentist to /dentist/dashboard', { businessId });
-            sessionStorage.removeItem(REDIRECT_KEY);
-            navigate('/dentist/dashboard', { replace: true });
-            return;
-          } else if (memberships.length === 0) {
+          if (memberships.length === 0) {
             // No memberships, go to dashboard (might show create business option)
             logger.info('AuthRedirectHandler: Dentist with no memberships, redirecting to /dentist/dashboard');
             sessionStorage.removeItem(REDIRECT_KEY);
             navigate('/dentist/dashboard', { replace: true });
             return;
           } else {
-            // Always show business selection for any number of memberships
-            // This ensures users can see all available businesses and choose
+            // Always show business selection for dentists with memberships
+            // This ensures users explicitly choose which business to work with
+            // and prevents confusion about business context
             logger.info('AuthRedirectHandler: Dentist with memberships, showing business selection', {
-              membershipsCount: memberships.length
+              membershipsCount: memberships.length,
+              currentBusinessId: businessId
             });
             sessionStorage.removeItem(REDIRECT_KEY);
             navigate('/select-business', { replace: true });
