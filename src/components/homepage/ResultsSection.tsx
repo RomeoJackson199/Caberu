@@ -42,16 +42,13 @@ export const ResultsSection = () => {
 
                 <div className="p-6 bg-white rounded-2xl shadow-xl border border-gray-100 max-w-md">
                     <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                            <span className="text-2xl">😊</span>
+                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <CheckCircle2 className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <div className="text-sm text-gray-500">Patient Satisfaction</div>
-                            <div className="text-2xl font-bold text-gray-900">4.9/5.0</div>
+                            <div className="text-sm text-gray-500">Built With Dentists</div>
+                            <div className="text-xl font-bold text-gray-900">Designed from real practice feedback</div>
                         </div>
-                    </div>
-                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 rounded-full" style={{ width: "98%" }} />
                     </div>
                 </div>
             </div>

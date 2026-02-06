@@ -54,11 +54,6 @@ const seoMap: Record<string, { title: string; description: string; structuredDat
             price: "0",
             priceCurrency: "USD"
           },
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: "4.8",
-            ratingCount: "127"
-          },
           description: "AI-powered dental practice management software with scheduling, patient records, billing, and inventory management"
         },
         {
@@ -73,57 +68,6 @@ const seoMap: Record<string, { title: string; description: string; structuredDat
           },
           medicalSpecialty: "Dentistry",
           priceRange: "$$",
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: "4.8",
-            reviewCount: "127",
-            bestRating: "5",
-            worstRating: "1"
-          },
-          review: [
-            {
-              "@type": "Review",
-              author: {
-                "@type": "Person",
-                name: "Dr. Sarah Mitchell"
-              },
-              datePublished: "2024-11-15",
-              reviewRating: {
-                "@type": "Rating",
-                ratingValue: "5",
-                bestRating: "5"
-              },
-              reviewBody: "Caberu has transformed how we manage our dental practice. The AI scheduling saves us hours every week, and our patients love the easy booking system."
-            },
-            {
-              "@type": "Review",
-              author: {
-                "@type": "Person",
-                name: "Dr. Michael Chen"
-              },
-              datePublished: "2024-11-10",
-              reviewRating: {
-                "@type": "Rating",
-                ratingValue: "5",
-                bestRating: "5"
-              },
-              reviewBody: "The HIPAA compliance and security features give us peace of mind. Patient records management is seamless and the analytics help us make better business decisions."
-            },
-            {
-              "@type": "Review",
-              author: {
-                "@type": "Person",
-                name: "Dr. Emily Rodriguez"
-              },
-              datePublished: "2024-11-05",
-              reviewRating: {
-                "@type": "Rating",
-                ratingValue: "5",
-                bestRating: "5"
-              },
-              reviewBody: "Best practice management software we've used. The interface is intuitive, features are comprehensive, and customer support is outstanding."
-            }
-          ],
           sameAs: [
             "https://twitter.com/caberu_be"
           ]

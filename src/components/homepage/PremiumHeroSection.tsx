@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -116,42 +116,15 @@ const TrustBadges = ({ isMobile }: { isMobile: boolean }) => {
   );
 };
 
-// Animated counter for social proof
-const AnimatedCounter = ({ end, suffix, label, isMobile }: { end: number; suffix: string; label: string; isMobile: boolean }) => {
-  const [count, setCount] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  useEffect(() => {
-    if (hasAnimated) return;
-    
-    const duration = 2000;
-    const steps = 60;
-    const increment = end / steps;
-    let current = 0;
-
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= end) {
-        setCount(end);
-        setHasAnimated(true);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(current));
-      }
-    }, duration / steps);
-
-    return () => clearInterval(timer);
-  }, [end, hasAnimated]);
-
-  return (
-    <div className="text-center">
-      <div className={`font-bold text-white ${isMobile ? 'text-xl' : 'text-2xl md:text-3xl'}`}>
-        {count.toLocaleString()}{suffix}
-      </div>
-      <div className={`text-slate-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>{label}</div>
+// Highlight card for early-stage social proof
+const HighlightItem = ({ label, value, isMobile }: { label: string; value: string; isMobile: boolean }) => (
+  <div className="text-center">
+    <div className={`font-bold text-white ${isMobile ? 'text-lg' : 'text-xl md:text-2xl'}`}>
+      {value}
     </div>
-  );
-};
+    <div className={`text-slate-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>{label}</div>
+  </div>
+);
 
 export function PremiumHeroSection() {
   const navigate = useNavigate();
@@ -241,9 +214,9 @@ export function PremiumHeroSection() {
           >
             <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4">
               <div className="grid grid-cols-3 gap-2">
-                <AnimatedCounter end={500} suffix="+" label="Practices" isMobile={true} />
-                <AnimatedCounter end={50} suffix="k+" label="Appointments" isMobile={true} />
-                <AnimatedCounter end={98} suffix="%" label="Satisfaction" isMobile={true} />
+                <HighlightItem value="AI-Powered" label="Scheduling" isMobile={true} />
+                <HighlightItem value="HIPAA" label="Compliant" isMobile={true} />
+                <HighlightItem value="All-in-One" label="Platform" isMobile={true} />
               </div>
             </div>
           </motion.div>
@@ -449,36 +422,19 @@ export function PremiumHeroSection() {
               {/* Stats card */}
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
                 <div className="text-center mb-8">
-                  <h3 className="text-lg font-semibold text-white mb-2">Trusted by dental practices</h3>
-                  <p className="text-slate-400 text-sm">Join hundreds of practices automating their workflow</p>
+                  <h3 className="text-lg font-semibold text-white mb-2">Built for dental practices</h3>
+                  <p className="text-slate-400 text-sm">Everything you need to run your practice, in one place</p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-6">
-                  <AnimatedCounter end={500} suffix="+" label="Practices" isMobile={false} />
-                  <AnimatedCounter end={50} suffix="k+" label="Appointments" isMobile={false} />
-                  <AnimatedCounter end={98} suffix="%" label="Satisfaction" isMobile={false} />
+                  <HighlightItem value="AI-Powered" label="Scheduling" isMobile={false} />
+                  <HighlightItem value="HIPAA" label="Compliant" isMobile={false} />
+                  <HighlightItem value="All-in-One" label="Platform" isMobile={false} />
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-white/10">
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="flex -space-x-3">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div
-                          key={i}
-                          className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 border-2 border-slate-900 flex items-center justify-center text-white text-sm font-bold"
-                        >
-                          {String.fromCharCode(64 + i)}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <span key={i} className="text-yellow-400">★</span>
-                        ))}
-                      </div>
-                      <p className="text-slate-400 text-xs">4.9/5 from 200+ reviews</p>
-                    </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-slate-400 text-sm">Now onboarding early dental practices</p>
                   </div>
                 </div>
               </div>
