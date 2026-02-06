@@ -301,62 +301,61 @@ export default function SelectBusiness() {
                                     onClick={() => !isSelecting && handleSelectBusiness(business.id)}
                                 >
                                     <CardHeader className="pb-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                {business.logo_url ? (
-                                                    <img
-                                                        src={business.logo_url}
-                                                        alt={business.name}
-                                                        className="w-12 h-12 rounded-lg object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                                                        <Building2 className="h-6 w-6 text-white" />
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <CardTitle className="text-lg flex items-center gap-2">
-                                                        {business.name}
-                                                        {isSelected && (
-                                                            <Check className="h-5 w-5 text-primary" />
-                                                        )}
-                                                    </CardTitle>
-                                                    <CardDescription className="mt-1">
-                                                        {business.tagline || business.template_type || 'Healthcare'}
-                                                    </CardDescription>
+                                        <div className="flex items-center gap-4">
+                                            {business.logo_url ? (
+                                                <img
+                                                    src={business.logo_url}
+                                                    alt={business.name}
+                                                    className="w-12 h-12 rounded-lg object-cover shrink-0"
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
+                                                    <Building2 className="h-6 w-6 text-white" />
+                                                </div>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                <CardTitle className="text-lg flex items-center gap-2">
+                                                    <span className="truncate">{business.name}</span>
+                                                    {isSelected && (
+                                                        <Check className="h-5 w-5 text-primary shrink-0" />
+                                                    )}
+                                                </CardTitle>
+                                                <CardDescription className="mt-1 truncate">
+                                                    {business.tagline || business.template_type || 'Healthcare'}
+                                                </CardDescription>
+                                                <div className="flex items-center flex-wrap gap-2 mt-2">
+                                                    {isOwner && (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                                            <Crown className="h-3 w-3" />
+                                                            Owner
+                                                        </span>
+                                                    )}
+                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${role !== 'Patient'
+                                                        ? 'bg-primary/10 text-primary'
+                                                        : 'bg-muted text-muted-foreground'
+                                                        }`}>
+                                                        {role}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                {isOwner && (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                                                        <Crown className="h-3 w-3" />
-                                                        Owner
-                                                    </span>
+                                            <Button
+                                                size="sm"
+                                                variant={isSelected ? 'default' : 'outline'}
+                                                disabled={isSelecting}
+                                                className="shrink-0"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSelectBusiness(business.id);
+                                                }}
+                                            >
+                                                {isSelecting ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : isSelected ? (
+                                                    'Continue'
+                                                ) : (
+                                                    'Select'
                                                 )}
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium capitalize ${role !== 'Patient'
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'bg-muted text-muted-foreground'
-                                                    }`}>
-                                                    {role}
-                                                </span>
-                                                <Button
-                                                    size="sm"
-                                                    variant={isSelected ? 'default' : 'outline'}
-                                                    disabled={isSelecting}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleSelectBusiness(business.id);
-                                                    }}
-                                                >
-                                                    {isSelecting ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : isSelected ? (
-                                                        'Continue'
-                                                    ) : (
-                                                        'Select'
-                                                    )}
-                                                </Button>
-                                            </div>
+                                            </Button>
                                         </div>
                                     </CardHeader>
                                 </Card>
