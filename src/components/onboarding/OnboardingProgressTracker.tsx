@@ -95,7 +95,7 @@ export function OnboardingProgressTracker({
         {
           id: "profile",
           title: "Complete Your Profile",
-          description: "Set up your practice information",
+          description: "Add your name, specialty, and practice info so patients can find you",
           icon: Settings,
           completed: hasCompletedProfile,
           action: () => navigate("/dentist/settings"),
@@ -104,16 +104,16 @@ export function OnboardingProgressTracker({
         {
           id: "availability",
           title: "Set Your Availability",
-          description: "Configure your working hours",
+          description: "Define your working hours so patients can book appointments at the right times",
           icon: Calendar,
           completed: hasSetAvailability,
-          action: () => navigate("/dentist/settings"),
+          action: () => navigate("/dentist/settings?tab=schedule"),
           actionLabel: "Set Hours",
         },
         {
           id: "demo-data",
-          title: "Add Demo Data",
-          description: "Explore features with sample data",
+          title: "Try with Demo Data",
+          description: "Generate sample patients and appointments to explore the platform risk-free",
           icon: Sparkles,
           completed: hasGeneratedDemo,
           actionLabel: "Generate Data",
@@ -121,7 +121,7 @@ export function OnboardingProgressTracker({
         {
           id: "patients",
           title: "Add Your First Patient",
-          description: "Start building your patient database",
+          description: "Add a real patient to start managing appointments and records",
           icon: Users,
           completed: hasPatients,
           action: () => navigate("/dentist/patients"),
@@ -130,7 +130,7 @@ export function OnboardingProgressTracker({
         {
           id: "tour",
           title: "Take the Product Tour",
-          description: "Learn about all the features",
+          description: "A quick interactive walkthrough of all features and where to find them",
           icon: FileText,
           completed: localStorage.getItem("dentist-tour-completed") === "true",
           action: onStartTour,
@@ -184,6 +184,11 @@ export function OnboardingProgressTracker({
                   </CardTitle>
                   <CardDescription className="mt-1">
                     {Math.round(progress)}% Complete
+                    {progress < 100 && steps.length > 0 && (
+                      <span className="block text-xs mt-0.5">
+                        Next: {steps.find(s => !s.completed)?.title}
+                      </span>
+                    )}
                   </CardDescription>
                 </div>
                 <div className="flex gap-1">

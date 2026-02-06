@@ -1,105 +1,71 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { X, Info } from 'lucide-react';
+import { Info, Lightbulb } from 'lucide-react';
 
 interface BusinessCreationTourProps {
   currentStep: number;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-const TOUR_CONTENT = {
+const TOUR_CONTENT: Record<number, { title: string; description: string; tips: string[] }> = {
   1: {
-    title: 'Welcome! Create Your Account',
-    description: 'First, create your account or sign in if you already have one. This will be your business admin account.',
+    title: 'Step 1: Sign In or Create Account',
+    description: 'Create your business admin account or sign in if you already have one.',
     tips: [
-      'Use a professional email address',
-      'Choose a secure password',
-      'You\'ll need to verify your email',
+      'Use a professional email address for your business',
+      'Choose a strong password (12+ characters)',
+      'Already have an account? Just sign in to continue',
     ],
   },
   2: {
-    title: 'Choose Your Business Template',
-    description: 'Select a template that matches your business type. Each template comes with pre-configured features and terminology.',
+    title: 'Step 2: Your Business Details',
+    description: 'Tell us about your business. This information will be visible to your customers on your public page.',
     tips: [
-      'Templates customize the platform for your industry',
-      'You can preview each template before selecting',
-      'Choose "Custom" if you need specific features',
+      'Pick a clear, memorable business name',
+      'Your URL slug is auto-generated from the name',
+      'A good tagline helps patients find you',
+      'You can update all of this later in Settings',
     ],
   },
   3: {
-    title: 'Tell Us About Your Business',
-    description: 'Add your business details. This information will be visible to your customers.',
+    title: 'Step 3: Choose a Plan',
+    description: 'Select a subscription plan that fits your practice. You can upgrade or downgrade anytime.',
     tips: [
-      'Choose a clear, memorable business name',
-      'Write a compelling tagline (optional)',
-      'Describe what makes your business unique',
-    ],
-  },
-  4: {
-    title: 'Add Your Services',
-    description: 'Define the services you offer, their prices, and duration. You can always add more later.',
-    tips: [
-      'Use quick-add buttons for common services',
-      'Set realistic durations for scheduling',
-      'You can edit prices anytime',
-    ],
-  },
-  5: {
-    title: 'Complete Setup with Payment',
-    description: 'A one-time $0.50 activation fee unlocks your full business account with unlimited features.',
-    tips: [
-      'Secure payment via Stripe',
-      'Instant activation after payment',
-      'Get access to all platform features',
+      'All plans include unlimited appointments',
+      'Have a promo code? Apply it for a discount',
+      'Yearly billing saves you 17%',
+      'Your business goes live immediately after payment',
     ],
   },
 };
 
-export function BusinessCreationTour({ currentStep, isOpen, onClose }: BusinessCreationTourProps) {
-  const content = TOUR_CONTENT[currentStep as keyof typeof TOUR_CONTENT];
+export function BusinessCreationTour({ currentStep }: BusinessCreationTourProps) {
+  const content = TOUR_CONTENT[currentStep];
 
   if (!content) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Info className="w-4 h-4 text-primary" />
-              </div>
-              <DialogTitle>{content.title}</DialogTitle>
-            </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <DialogDescription className="text-base">
-            {content.description}
-          </DialogDescription>
-
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-            <p className="font-medium text-sm">Tips:</p>
-            <ul className="space-y-1">
-              {content.tips.map((tip, index) => (
-                <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                  <span className="text-primary">•</span>
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <Button onClick={onClose} className="w-full">
-            Got it!
-          </Button>
+    <div className="bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm text-blue-900 dark:text-blue-100 mb-1">
+            {content.title}
+          </p>
+          <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+            {content.description}
+          </p>
+          <ul className="space-y-1">
+            {content.tips.map((tip, index) => (
+              <li key={index} className="text-xs text-blue-600 dark:text-blue-400 flex items-start gap-2">
+                <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                <span>{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }
