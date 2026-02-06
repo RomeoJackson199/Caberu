@@ -135,7 +135,7 @@ describe('appointmentStateMachine.ts', () => {
         expect(deriveAppointmentState(input)).toBe('COMPLETED_FINAL_PAID');
       });
 
-      it('should return COMPLETED_FINAL_PAID for finalized with no payment required', () => {
+      it('should return COMPLETED_FINAL_UNPAID for finalized with null payment_status', () => {
         const input: AppointmentStateInput = {
           status: 'completed',
           payment_status: null,
@@ -143,7 +143,17 @@ describe('appointmentStateMachine.ts', () => {
           completed_at: '2024-01-01T11:00:00',
           amount_due_cents: 0,
         };
-        expect(deriveAppointmentState(input)).toBe('COMPLETED_FINAL_PAID');
+        expect(deriveAppointmentState(input)).toBe('COMPLETED_FINAL_UNPAID');
+      });
+
+      it('should return COMPLETED_FINAL_UNPAID for finalized with undefined payment_status fields', () => {
+        const input: AppointmentStateInput = {
+          status: 'completed',
+          payment_status: null,
+          appointment_date: pastDate,
+          completed_at: '2024-01-01T11:00:00',
+        };
+        expect(deriveAppointmentState(input)).toBe('COMPLETED_FINAL_UNPAID');
       });
     });
   });

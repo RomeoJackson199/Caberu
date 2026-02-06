@@ -441,7 +441,7 @@ export function PatientAppointmentDetail({
       appointment_date: appointment.appointment_date,
       completed_at: appointment.completed_at,
       is_finalized: !!(appointment.consultation_notes || appointment.ai_summary),
-      amount_due_cents: appointment.amount_paid_cents,
+      amount_due_cents: appointment.amount_paid_cents, // DB field stores charges/amount due despite name
     };
 
     return deriveAppointmentState(stateInput);
