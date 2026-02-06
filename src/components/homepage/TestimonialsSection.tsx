@@ -73,12 +73,15 @@ export const TestimonialsSection = () => {
         </div>
 
         <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-50 border border-blue-200">
+          <a
+            href="mailto:Romeo@caberu.be?subject=Early%20Access%20Request%20-%20Caberu"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors"
+          >
             <p className="text-sm font-medium text-gray-700">
               Currently onboarding dental practices —{" "}
               <span className="font-bold text-blue-700">get early access</span>
             </p>
-          </div>
+          </a>
         </div>
       </div>
     </section>
