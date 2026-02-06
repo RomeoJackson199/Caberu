@@ -25,12 +25,11 @@ DROP POLICY IF EXISTS "Users can view slots for their business" ON appointment_s
 DROP POLICY IF EXISTS "Staff can manage slots" ON appointment_slots;
 
 -- RLS policies
+-- Users can only view slots for businesses they are a member of
 CREATE POLICY "Users can view slots for their business" ON appointment_slots
   FOR SELECT USING (
     business_id IN (
       SELECT business_id FROM business_members WHERE profile_id = auth.uid()
-    ) OR business_id IN (
-      SELECT id FROM businesses WHERE id = business_id
     )
   );
 

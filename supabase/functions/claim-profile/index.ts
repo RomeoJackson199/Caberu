@@ -65,18 +65,26 @@ serve(async (req) => {
 
     if (!email || !email.includes('@')) {
       console.log('Invalid email format');
-      return new Response(JSON.stringify({ error: 'Invalid request' }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      return new Response(JSON.stringify({ error: 'Invalid request' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Fetch profiles by email and determine claimable state server-side
+    // Validate password strength when provided
+    if (password && password.length < 8) {
+      return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Fetch profiles by email using exact match (email is already lowercased)
     console.log('Fetching profiles for email:', email);
     const { data: profiles, error: qErr } = await admin
       .from('profiles')
       .select('id, email, user_id, first_name, last_name')
-      .ilike('email', email);
+      .eq('email', email);
 
     console.log('Profile query result:', profiles, 'Error:', qErr);
 

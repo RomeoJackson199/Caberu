@@ -43,43 +43,43 @@ function validateTable(table: string, action: string): { valid: boolean; error?:
   return { valid: true };
 }
 
-// SECURITY: This API is protected by Supabase Edge Function isolation
-// Only accessible via direct URL - no public exposure
-// For PHI operations, audit logging is performed
+// SECURITY: Validate all requests - require proper authentication
+// No request is allowed without a valid credential
 async function validateAuth(req: Request, supabase: any): Promise<{ valid: boolean; error?: string; userId?: string }> {
   const authHeader = req.headers.get('authorization');
   const url = new URL(req.url);
-  
-  // Check for service key in query params (for ElevenLabs/external integrations)
-  const serviceKey = url.searchParams.get('service_key');
   const apiKey = Deno.env.get('DATABASE_API_SECRET');
-  
-  // Validate service key from query param
-  if (serviceKey && apiKey && serviceKey === apiKey) {
-    console.log('Auth: Service key validated (query param)');
-    return { valid: true };
+
+  // 1. Check for service key in query params (for ElevenLabs/external integrations)
+  const serviceKey = url.searchParams.get('service_key');
+  if (serviceKey && apiKey && serviceKey.length > 0) {
+    const actual = crypto.createHash('sha256').update(serviceKey).digest();
+    const expected = crypto.createHash('sha256').update(apiKey).digest();
+    if (crypto.timingSafeEqual(actual, expected)) {
+      console.log('Auth: Service key validated (query param)');
+      return { valid: true };
+    }
   }
-  
-  // Allow internal service calls from other edge functions (trusted internal)
+
+  // 2. Validate internal service calls with shared secret (not just a spoofable header)
   const internalServiceHeader = req.headers.get('x-internal-service');
-  if (internalServiceHeader) {
-    console.log('Auth: Internal service call from:', internalServiceHeader);
-    return { valid: true };
+  const internalSecret = req.headers.get('x-internal-secret');
+  if (internalServiceHeader && internalSecret && apiKey) {
+    const actual = crypto.createHash('sha256').update(internalSecret).digest();
+    const expected = crypto.createHash('sha256').update(apiKey).digest();
+    if (crypto.timingSafeEqual(actual, expected)) {
+      console.log('Auth: Internal service call validated from:', internalServiceHeader);
+      return { valid: true };
+    }
   }
-  
-  // IMPORTANT: Allow unauthenticated calls for internal edge function communication
-  // This is safe because:
-  // 1. Edge functions are not publicly discoverable
-  // 2. Service role key is used for actual DB operations
-  // 3. All PHI access is audit logged
-  // 4. Rate limiting is applied at Supabase level
+
+  // 3. Require auth header for all other requests
   if (!authHeader) {
-    console.log('Auth: No auth header - allowing internal call');
-    return { valid: true };
+    return { valid: false, error: 'Authorization header required' };
   }
-  
-  // Check for API key authentication (for ElevenLabs/MCP integration)
-  if (apiKey) {
+
+  // 4. Check for API key authentication (for ElevenLabs/MCP integration)
+  if (apiKey && authHeader.startsWith('Bearer ')) {
     const providedKey = authHeader.replace('Bearer ', '');
     const actual = crypto.createHash('sha256').update(providedKey).digest();
     const expected = crypto.createHash('sha256').update(apiKey).digest();
@@ -88,27 +88,21 @@ async function validateAuth(req: Request, supabase: any): Promise<{ valid: boole
       return { valid: true };
     }
   }
-  
-  // Check for JWT authentication
+
+  // 5. Check for JWT authentication
   if (authHeader.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');
-    
-    // Validate JWT using Supabase
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
-      // Don't block - just log and allow (for internal calls with invalid tokens)
-      console.log('Auth: JWT validation skipped, allowing request');
-      return { valid: true };
+      return { valid: false, error: 'Invalid or expired token' };
     }
-    
+
     console.log('Auth: JWT validated for user:', user.id);
     return { valid: true, userId: user.id };
   }
-  
-  // Allow all requests - this API is internal only
-  console.log('Auth: Allowing request (internal API)');
-  return { valid: true };
+
+  return { valid: false, error: 'Invalid authentication method' };
 }
 
 serve(async (req) => {
@@ -753,17 +747,14 @@ serve(async (req) => {
         break;
       }
 
-      // Execute custom SQL SELECT query
+      // Execute custom SQL SELECT query - DISABLED for security
+      // Raw SQL execution is a security risk even with SELECT-only checks
+      // (bypassed via CTEs, subqueries, or semicolons). Use specific actions instead.
       case 'execute_query': {
-        const { query } = params;
-        if (!query.trim().toUpperCase().startsWith('SELECT')) {
-          throw new Error('Only SELECT queries are allowed');
-        }
-
-        const { data, error } = await supabase.rpc('exec_sql', { query });
-        if (error) throw error;
-        result = { success: true, data };
-        break;
+        return new Response(
+          JSON.stringify({ success: false, error: 'execute_query is disabled for security. Use specific actions like read_table, search_patients, etc.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Get table schema

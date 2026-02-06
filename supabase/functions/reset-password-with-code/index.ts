@@ -75,44 +75,27 @@ serve(async (req) => {
 
         if (updateError) throw updateError;
 
-        // 3. Find user by email using auth admin API
-        const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+        // 3. Find user by email via profiles table (efficient - avoids loading all users into memory)
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('email', email.toLowerCase())
+            .maybeSingle();
 
-        if (listError) throw listError;
-
-        const authUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-
-        if (!authUser) {
-            // Fallback: try to find via profiles table
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('user_id')
-                .eq('email', email)
-                .single();
-
-            if (profileError || !profile || !profile.user_id) {
-                return new Response(
-                    JSON.stringify({ error: 'No account found with this email address' }),
-                    { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-                );
-            }
-
-            // 4. Update password using profile's user_id
-            const { error: authError } = await supabase.auth.admin.updateUserById(
-                profile.user_id,
-                { password: newPassword }
+        if (profileError || !profile || !profile.user_id) {
+            return new Response(
+                JSON.stringify({ error: 'No account found with this email address' }),
+                { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
-
-            if (authError) throw authError;
-        } else {
-            // 4. Update password using auth user's ID
-            const { error: authError } = await supabase.auth.admin.updateUserById(
-                authUser.id,
-                { password: newPassword }
-            );
-
-            if (authError) throw authError;
         }
+
+        // 4. Update password
+        const { error: authError } = await supabase.auth.admin.updateUserById(
+            profile.user_id,
+            { password: newPassword }
+        );
+
+        if (authError) throw authError;
 
         return new Response(
             JSON.stringify({ success: true, message: 'Password updated successfully' }),

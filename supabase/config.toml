@@ -100,7 +100,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.make-super-admin]
-verify_jwt = false
+verify_jwt = true
 
 [functions.health-check]
 verify_jwt = false
