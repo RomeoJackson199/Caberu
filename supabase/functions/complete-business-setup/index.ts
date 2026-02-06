@@ -225,11 +225,9 @@ serve(async (req) => {
                 .eq('id', business.id);
         }
 
-        // 10. Mark Onboarding Complete
-        await supabaseClient
-            .from('profiles')
-            .update({ onboarding_completed: true })
-            .eq('id', profile.id);
+        // 10. Do NOT mark onboarding as complete here.
+        // The DentistOnboardingFlow modal will set onboarding_completed = true
+        // after the user actually goes through the onboarding steps.
 
         return new Response(
             JSON.stringify({ success: true, slug: finalSlug, business_id: business.id }),
