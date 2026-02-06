@@ -562,6 +562,10 @@ const Signup = () => {
                 setShowEmailVerificationAlert(false);
                 if (userType === "business") {
                   setTimeout(() => navigate("/create-business"), 300);
+                } else {
+                  // Client users: redirect to auth-redirect which will route them
+                  // to the appropriate dashboard after email verification
+                  setTimeout(() => navigate("/auth-redirect"), 300);
                 }
               }}
               className="w-full bg-blue-600 hover:bg-blue-700"
