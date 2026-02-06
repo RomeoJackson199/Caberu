@@ -74,7 +74,9 @@ export const TestimonialsSection = () => {
 
         <div className="mt-12 text-center">
           <a
-            href="mailto:Romeo@caberu.be?subject=Early%20Access%20Request%20-%20Caberu"
+            href="https://mail.google.com/mail/?view=cm&to=Romeo@caberu.be&su=Early%20Access%20Request%20-%20Caberu"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors"
           >
             <p className="text-sm font-medium text-gray-700">
