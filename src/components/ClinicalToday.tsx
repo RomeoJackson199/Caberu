@@ -3,6 +3,7 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from '@/lib/logger';
 import { useLanguage } from "@/hooks/useLanguage";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { DashboardSkeleton } from "@/components/ui/page-skeletons";
 import { AnimatedBackground } from "@/components/ui/polished-components";
 import { TimeGreeting } from "@/components/ui/page-enhancements";
@@ -43,6 +44,7 @@ interface TodayAppointment {
 export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppointmentsTab }: ClinicalTodayProps) {
 	const today = new Date();
 	const { t } = useLanguage();
+	const { businessId } = useBusinessContext();
 	const [stats, setStats] = useState({
 		todayCount: 0,
 		pendingCount: 0,
@@ -61,72 +63,92 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				const weekStart = new Date(today);
 				weekStart.setDate(today.getDate() - today.getDay());
 
+				// Build queries scoped to current business
+				let todayQuery = supabase
+					.from('secure_appointments_view')
+					.select(`
+						id,
+						appointment_date,
+						patient_id,
+						patient_name,
+						reason,
+						status,
+						urgency,
+						duration_minutes,
+						profiles!appointments_patient_id_fkey (
+							first_name,
+							last_name,
+							email,
+							phone,
+							allergies,
+							medical_conditions
+						)
+					`)
+					.eq('dentist_id', dentistId)
+					.gte('appointment_date', startOfDay.toISOString())
+					.lt('appointment_date', endOfDay.toISOString())
+					.neq('status', 'cancelled')
+					.order('appointment_date', { ascending: true });
+
+				let weekQuery = supabase
+					.from('secure_appointments_view')
+					.select('id')
+					.eq('dentist_id', dentistId)
+					.gte('appointment_date', weekStart.toISOString())
+					.eq('status', 'completed');
+
+				let patientsQuery = supabase
+					.from('secure_appointments_view')
+					.select('patient_id')
+					.eq('dentist_id', dentistId);
+
+				let pendingQuery = supabase
+					.from('secure_appointments_view')
+					.select('id')
+					.eq('dentist_id', dentistId)
+					.eq('status', 'pending')
+					.gte('appointment_date', new Date().toISOString());
+
+				let nextQuery = supabase
+					.from('secure_appointments_view')
+					.select(`
+						id,
+						appointment_date,
+						patient_id,
+						patient_name,
+						reason,
+						status,
+						urgency,
+						duration_minutes,
+						profiles!appointments_patient_id_fkey (
+							first_name,
+							last_name,
+							email,
+							phone
+						)
+					`)
+					.eq('dentist_id', dentistId)
+					.gte('appointment_date', new Date().toISOString())
+					.neq('status', 'cancelled')
+					.order('appointment_date', { ascending: true })
+					.limit(1);
+
+				// Apply business_id filter to all queries
+				if (businessId) {
+					todayQuery = todayQuery.eq('business_id', businessId);
+					weekQuery = weekQuery.eq('business_id', businessId);
+					patientsQuery = patientsQuery.eq('business_id', businessId);
+					pendingQuery = pendingQuery.eq('business_id', businessId);
+					nextQuery = nextQuery.eq('business_id', businessId);
+				}
+
 				// Fetch all data in parallel
 				const [todayApptsResult, weekCompletedResult, patientsResult, pendingResult, nextAptResult] = await Promise.allSettled([
-					supabase
-						.from('secure_appointments_view')
-						.select(`
-							id,
-							appointment_date,
-							patient_id,
-							patient_name,
-							reason,
-							status,
-							urgency,
-							duration_minutes,
-							profiles!appointments_patient_id_fkey (
-								first_name,
-								last_name,
-								email,
-								phone,
-								allergies,
-								medical_conditions
-							)
-						`)
-						.eq('dentist_id', dentistId)
-						.gte('appointment_date', startOfDay.toISOString())
-						.lt('appointment_date', endOfDay.toISOString())
-						.neq('status', 'cancelled')
-						.order('appointment_date', { ascending: true }),
-					supabase
-						.from('secure_appointments_view')
-						.select('id')
-						.eq('dentist_id', dentistId)
-						.gte('appointment_date', weekStart.toISOString())
-						.eq('status', 'completed'),
-					supabase
-						.from('secure_appointments_view')
-						.select('patient_id')
-						.eq('dentist_id', dentistId),
-					supabase
-						.from('secure_appointments_view')
-						.select('id')
-						.eq('dentist_id', dentistId)
-						.eq('status', 'pending')
-						.gte('appointment_date', new Date().toISOString()),
-					supabase
-						.from('secure_appointments_view')
-						.select(`
-							id,
-							appointment_date,
-							patient_id,
-							patient_name,
-							reason,
-							status,
-							urgency,
-							duration_minutes,
-							profiles!appointments_patient_id_fkey (
-								first_name,
-								last_name,
-								email,
-								phone
-							)
-						`)
-						.eq('dentist_id', dentistId)
-						.gte('appointment_date', new Date().toISOString())
-						.neq('status', 'cancelled')
-						.order('appointment_date', { ascending: true })
-						.limit(1)
+					todayQuery,
+					weekQuery,
+					patientsQuery,
+					pendingQuery,
+					nextQuery
 				]);
 
 				// Extract results with graceful fallbacks
@@ -175,7 +197,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 		};
 
 		fetchDashboardData();
-	}, [dentistId]);
+	}, [dentistId, businessId]);
 
 	const handleStatClick = (stat: 'today' | 'pending' | 'week' | 'patients') => {
 		switch (stat) {

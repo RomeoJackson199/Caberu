@@ -137,7 +137,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
 
   useEffect(() => {
     fetchPatients();
-  }, [dentistId]);
+  }, [dentistId, businessId]);
 
   // Preselect patient if requested from another tab
   useEffect(() => {
@@ -156,7 +156,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
       fetchPatientData(selectedPatient.id);
       fetchPatientOutcomes(selectedPatient.id);
     }
-  }, [selectedPatient, dentistId]);
+  }, [selectedPatient, dentistId, businessId]);
 
   const fetchPatients = async () => {
     try {
@@ -223,25 +223,37 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
 
   const fetchPatientData = async (patientId: string) => {
     try {
-      // Fetch appointments
-      const { data: appointmentsData, error: appointmentsError } = await supabase
+      // Fetch appointments scoped to current business
+      let appointmentsQuery = supabase
         .from('appointments')
         .select('*')
         .eq('patient_id', patientId)
-        .eq('dentist_id', dentistId)
+        .eq('dentist_id', dentistId);
+
+      if (businessId) {
+        appointmentsQuery = appointmentsQuery.eq('business_id', businessId);
+      }
+
+      const { data: appointmentsData, error: appointmentsError } = await appointmentsQuery
         .order('appointment_date', { ascending: false });
 
       if (appointmentsError) throw appointmentsError;
       setAppointments(appointmentsData || []);
       setLastAppointment((appointmentsData || []).find(a => a.status !== 'cancelled') || null);
 
-      // Fetch treatment plans only if feature is enabled
+      // Fetch treatment plans only if feature is enabled, scoped to current business
       if (hasFeature('treatmentPlans')) {
-        const { data: treatmentData, error: treatmentError } = await supabase
+        let treatmentQuery = supabase
           .from('treatment_plans')
           .select('*')
           .eq('patient_id', patientId)
-          .eq('dentist_id', dentistId)
+          .eq('dentist_id', dentistId);
+
+        if (businessId) {
+          treatmentQuery = treatmentQuery.eq('business_id', businessId);
+        }
+
+        const { data: treatmentData, error: treatmentError } = await treatmentQuery
           .order('created_at', { ascending: false });
 
         if (treatmentError) throw treatmentError;
@@ -250,13 +262,19 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
         setTreatmentPlans([]);
       }
 
-      // Fetch prescriptions only if feature is enabled
+      // Fetch prescriptions only if feature is enabled, scoped to current business
       if (hasFeature('prescriptions')) {
-        const { data: prescriptionData, error: prescriptionError } = await supabase
+        let prescriptionQuery = supabase
           .from('prescriptions')
           .select('*')
           .eq('patient_id', patientId)
-          .eq('dentist_id', dentistId)
+          .eq('dentist_id', dentistId);
+
+        if (businessId) {
+          prescriptionQuery = prescriptionQuery.eq('business_id', businessId);
+        }
+
+        const { data: prescriptionData, error: prescriptionError } = await prescriptionQuery
           .order('created_at', { ascending: false });
 
         if (prescriptionError) throw prescriptionError;
@@ -297,7 +315,11 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
       // Outstanding balance (sum pending payment_requests + unpaid invoices patient_amount_cents)
       let outstandingCents = 0;
       try {
-        const { data: prs } = await supabase.from('payment_requests').select('amount, status').eq('patient_id', patientId).eq('dentist_id', dentistId);
+        let paymentQuery = supabase.from('payment_requests').select('amount, status').eq('patient_id', patientId).eq('dentist_id', dentistId);
+        if (businessId) {
+          paymentQuery = paymentQuery.eq('business_id', businessId);
+        }
+        const { data: prs } = await paymentQuery;
         type PaymentRequest = { amount: number | null; status: string };
         outstandingCents += (prs || []).filter((p: PaymentRequest) => p.status !== 'paid' && p.status !== 'cancelled').reduce((s: number, p: PaymentRequest) => s + (p.amount || 0), 0);
       } catch {
