@@ -43,9 +43,21 @@ export default function CreateBusiness() {
       if (subscriptionSuccess === 'success' && sessionId) {
         toast.loading('Creating your business...');
 
+        // Restore business data from sessionStorage (persisted before Stripe redirect)
+        let savedBusinessData = {};
+        try {
+          const stored = sessionStorage.getItem('pending_business_data');
+          if (stored) {
+            savedBusinessData = JSON.parse(stored);
+            sessionStorage.removeItem('pending_business_data');
+          }
+        } catch {
+          console.error('Failed to restore business data from sessionStorage');
+        }
+
         try {
           const { data, error } = await supabase.functions.invoke('complete-business-setup', {
-            body: { session_id: sessionId, business_data: {} },
+            body: { session_id: sessionId, business_data: savedBusinessData },
           });
 
           if (error) throw error;

@@ -63,7 +63,6 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
     if (name) {
       const slug = generateSlug(name);
       validateSlug(slug);
-      onUpdate({ slug });
     }
   }, [name]);
 

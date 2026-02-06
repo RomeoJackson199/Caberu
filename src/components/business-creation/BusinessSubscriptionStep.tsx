@@ -149,9 +149,9 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
 
         if (memberError) throw memberError;
 
-        // Get the selected plan name
+        // Get the selected plan slug for consistent storage
         const selectedPlanData = plans?.find(p => p.id === selectedPlan);
-        const planName = selectedPlanData?.name || 'Free';
+        const planSlug = selectedPlanData?.slug || 'free';
 
         // Update subscription status for promo activation
         const now = new Date();
@@ -162,7 +162,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
           .from('businesses')
           .update({
             subscription_status: 'active',
-            subscription_plan: planName,
+            subscription_plan: planSlug,
             subscription_started_at: now.toISOString(),
             subscription_ends_at: oneMonthFromNow.toISOString(),
             promo_code_used: validPromo.code,
@@ -191,6 +191,14 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
 
     setLoading(true);
     try {
+      // Persist business data to sessionStorage before Stripe redirect
+      // so it can be restored when the user returns after payment
+      try {
+        sessionStorage.setItem('pending_business_data', JSON.stringify(businessData));
+      } catch {
+        console.error('Failed to persist business data to sessionStorage');
+      }
+
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
         body: {
           planId: selectedPlan,

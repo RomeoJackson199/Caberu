@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { validatePassword } from '@/utils/passwordValidation';
 
 interface BusinessCreationAuthProps {
   onComplete: () => void;
@@ -43,6 +44,15 @@ export function BusinessCreationAuth({ onComplete }: BusinessCreationAuthProps) 
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
+    }
+
+    // Validate password strength for signups
+    if (isSignUp) {
+      const strength = validatePassword(password);
+      if (!strength.isValid) {
+        toast.error(strength.feedback.join('. ') || 'Password is too weak. Use 12+ characters with uppercase, lowercase, numbers, and special characters.');
+        return;
+      }
     }
 
     setLoading(true);
