@@ -179,6 +179,11 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
           promo_id: validPromo.id,
         });
 
+        // Set flag to auto-start the dashboard tour for new business owners
+        localStorage.setItem('should-start-tour', 'true');
+        localStorage.removeItem('dentist-tour-completed');
+        localStorage.removeItem('tour_completed_dentist');
+
         toast.success('Business created successfully!');
         window.location.href = '/auth-redirect';
       } catch (error: any) {

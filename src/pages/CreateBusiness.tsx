@@ -61,6 +61,11 @@ export default function CreateBusiness() {
 
           if (error) throw error;
 
+          // Set flag to auto-start the dashboard tour for new business owners
+          localStorage.setItem('should-start-tour', 'true');
+          localStorage.removeItem('dentist-tour-completed');
+          localStorage.removeItem('tour_completed_dentist');
+
           toast.success('Business created successfully!');
           navigate('/auth-redirect');
         } catch (error: unknown) {

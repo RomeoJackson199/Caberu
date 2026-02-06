@@ -63,6 +63,10 @@ const PaymentSuccess: React.FC = () => {
           sessionStorage.removeItem('pending_business_data');
           sessionStorage.removeItem('promo_code_used');
           localStorage.removeItem('tour_completed_dentist');
+          localStorage.removeItem('dentist-tour-completed');
+
+          // Set flag to auto-start the dashboard tour for new business owners
+          localStorage.setItem('should-start-tour', 'true');
 
           // Business Created Successfully
           const businessUrl = `${window.location.origin}/${data.slug}`;
