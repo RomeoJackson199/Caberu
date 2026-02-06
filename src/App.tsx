@@ -68,6 +68,7 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const AIInfo = lazy(() => import("./pages/AIInfo"));
 const UnifiedDashboard = lazy(() => import("./components/UnifiedDashboard"));
 const About = lazy(() => import("./pages/About"));
+const WatchDemo = lazy(() => import("./pages/WatchDemo"));
 const Claim = lazy(() => import("./pages/Claim"));
 // PublicBooking removed - unused
 const BookAppointmentAI = lazy(() => import("./pages/BookAppointmentAI"));
@@ -503,6 +504,7 @@ const App = () => {
                         <Route path="/privacy" element={<PrivacyPolicy />} />
                         <Route path="/dpa" element={<DataProcessingAgreement />} />
                         <Route path="/about" element={<About />} />
+                        <Route path="/watch-demo" element={<WatchDemo />} />
                         <Route path="/payment-success" element={<PaymentSuccess />} />
                         <Route path="/payment-cancelled" element={<PaymentCancelled />} />
                         <Route path="/support" element={<Support />} />

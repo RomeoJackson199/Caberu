@@ -19,7 +19,8 @@
     "video:3d": "remotion render remotion/index.ts CaberuMarketing3D out/video-3d.mp4",
     "video:3d-short": "remotion render remotion/index.ts CaberuMarketing3D-Short out/video-3d-short.mp4",
     "video:3d-square": "remotion render remotion/index.ts CaberuMarketing3D-Square out/video-3d-square.mp4",
-    "video:3d-vertical": "remotion render remotion/index.ts CaberuMarketing3D-Vertical out/video-3d-vertical.mp4"
+    "video:3d-vertical": "remotion render remotion/index.ts CaberuMarketing3D-Vertical out/video-3d-vertical.mp4",
+    "video:premium": "remotion render remotion/index.ts CaberuMarketingPremium out/video-premium.mp4"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
