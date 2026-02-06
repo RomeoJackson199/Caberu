@@ -77,8 +77,9 @@ export function deriveAppointmentState(input: AppointmentStateInput): Appointmen
       return 'COMPLETED_FINAL_UNPAID';
     }
 
-    // Finalized with no payment required (e.g., covered by insurance, free consultation)
-    return 'COMPLETED_FINAL_PAID';
+    // If payment_status is null/unset, default to unpaid to avoid falsely showing "paid"
+    // Only explicitly 'paid' status (handled above) should resolve to PAID
+    return 'COMPLETED_FINAL_UNPAID';
   }
 
   // 3. Future appointment
