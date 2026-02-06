@@ -2,6 +2,7 @@ import React from 'react';
 import { Composition } from 'remotion';
 import { CaberuMarketing } from './CaberuMarketing';
 import { CaberuMarketing3D } from './CaberuMarketing3D';
+import { CaberuMarketingPremium } from './CaberuMarketingPremium';
 import { OnboardingComposition, TOTAL_FRAMES } from './OnboardingComposition';
 
 export const RemotionRoot: React.FC = () => {
@@ -80,6 +81,19 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
+        defaultProps={{
+          title: 'Caberu - AI-Powered Practice Management',
+        }}
+      />
+
+      {/* Premium Marketing Video - Improved version (60 seconds) */}
+      <Composition
+        id="CaberuMarketingPremium"
+        component={CaberuMarketingPremium}
+        durationInFrames={1800}
+        fps={30}
+        width={1920}
+        height={1080}
         defaultProps={{
           title: 'Caberu - AI-Powered Practice Management',
         }}
