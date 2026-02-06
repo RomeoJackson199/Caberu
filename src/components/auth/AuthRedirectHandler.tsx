@@ -18,7 +18,7 @@ export function AuthRedirectHandler() {
   const { toast } = useToast();
   const { data: isSuperAdmin, isLoading: superAdminLoading } = useIsSuperAdmin();
   const { loading: roleLoading, isDentist } = useUserRole();
-  const { loading: businessLoading, businessId, memberships } = useBusinessContext();
+  const { loading: businessLoading, businessId, memberships, switchBusiness } = useBusinessContext();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'auth' | 'role' | 'business' | 'redirect'>('auth');
   const timeoutRef = useRef<NodeJS.Timeout>();
@@ -231,18 +231,36 @@ export function AuthRedirectHandler() {
             sessionStorage.removeItem(REDIRECT_KEY);
             navigate('/dentist/dashboard', { replace: true });
             return;
-          } else {
-            // Always show business selection for dentists with memberships
-            // This ensures users explicitly choose which business to work with
-            // and prevents confusion about business context
-            logger.info('AuthRedirectHandler: Dentist with memberships, showing business selection', {
-              membershipsCount: memberships.length,
-              currentBusinessId: businessId
-            });
-            sessionStorage.removeItem(REDIRECT_KEY);
-            navigate('/select-business', { replace: true });
-            return;
           }
+
+          // Check if user owns a business - auto-select it and skip business selection
+          const ownerMembership = memberships.find(m => m.role === 'owner');
+          if (ownerMembership) {
+            logger.info('AuthRedirectHandler: Owner detected, auto-selecting owned business', {
+              businessId: ownerMembership.business_id,
+              businessName: ownerMembership.business?.name
+            });
+
+            // Auto-switch to the owner's business
+            try {
+              await switchBusiness(ownerMembership.business_id);
+              sessionStorage.removeItem(REDIRECT_KEY);
+              navigate('/dentist/dashboard', { replace: true });
+              return;
+            } catch (switchError) {
+              logger.error('AuthRedirectHandler: Failed to auto-select owner business, falling back to selection', switchError);
+              // Fall through to business selection
+            }
+          }
+
+          // Non-owner dentists or fallback: show business selection
+          logger.info('AuthRedirectHandler: Dentist with memberships, showing business selection', {
+            membershipsCount: memberships.length,
+            currentBusinessId: businessId
+          });
+          sessionStorage.removeItem(REDIRECT_KEY);
+          navigate('/select-business', { replace: true });
+          return;
         }
 
         // Priority 3: Check for email verification and profile completion for patients
@@ -355,7 +373,7 @@ export function AuthRedirectHandler() {
     };
 
     performRedirect();
-  }, [isSuperAdmin, isDentist, superAdminLoading, roleLoading, businessLoading, businessId, memberships, navigate, isRedirecting, toast]);
+  }, [isSuperAdmin, isDentist, superAdminLoading, roleLoading, businessLoading, businessId, memberships, switchBusiness, navigate, isRedirecting, toast]);
 
   // Determine loading message based on stage
   const getLoadingMessage = () => {

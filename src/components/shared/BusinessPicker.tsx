@@ -25,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, Check, ChevronDown } from 'lucide-react';
+import { Building2, Check, ChevronDown, Crown } from 'lucide-react';
 
 type BusinessPickerVariant = 'dropdown' | 'dialog' | 'compact';
 
@@ -78,7 +78,14 @@ const DropdownVariant = () => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Switch Business</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {memberships.map((membership) => (
+        {[...memberships]
+          .sort((a, b) => {
+            // Owner memberships first
+            if (a.role === 'owner' && b.role !== 'owner') return -1;
+            if (a.role !== 'owner' && b.role === 'owner') return 1;
+            return (a.business?.name || '').localeCompare(b.business?.name || '');
+          })
+          .map((membership) => (
           <DropdownMenuItem
             key={membership.id}
             onClick={() => handleSwitchBusiness(membership.business_id, membership.role)}
@@ -90,7 +97,12 @@ const DropdownVariant = () => {
               }`}
             />
             <div className="flex flex-col">
-              <span className="font-medium">{membership.business?.name}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium">{membership.business?.name}</span>
+                {membership.role === 'owner' && (
+                  <Crown className="h-3 w-3 text-amber-500" />
+                )}
+              </div>
               <span className="text-xs text-muted-foreground capitalize">{membership.role}</span>
             </div>
           </DropdownMenuItem>
@@ -108,10 +120,26 @@ const DialogVariant = ({ open, onOpenChange }: { open?: boolean; onOpenChange?: 
   const [selecting, setSelecting] = useState(false);
   const [allBusinesses, setAllBusinesses] = useState<any[]>([]);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
+  const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
+      // Get current user's profile ID for owner sorting
+      const fetchProfileId = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('secure_profiles_view')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (profile) {
+            setCurrentUserProfileId(profile.id);
+          }
+        }
+      };
+
       const fetchBusinesses = async () => {
         setIsLoadingAll(true);
         let { data, error } = await supabase
@@ -122,7 +150,7 @@ const DialogVariant = ({ open, onOpenChange }: { open?: boolean; onOpenChange?: 
         if (error || !data || data.length === 0) {
           const fallback = await supabase
             .from('businesses')
-            .select('id, name, slug, logo_url, tagline, template_type')
+            .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id')
             .order('name');
           data = fallback.data;
         }
@@ -132,6 +160,8 @@ const DialogVariant = ({ open, onOpenChange }: { open?: boolean; onOpenChange?: 
         }
         setIsLoadingAll(false);
       };
+
+      fetchProfileId();
       fetchBusinesses();
     }
   }, [open]);
@@ -151,7 +181,19 @@ const DialogVariant = ({ open, onOpenChange }: { open?: boolean; onOpenChange?: 
     }
   };
 
-  const businessList = allBusinesses.length > 0 ? allBusinesses : memberships;
+  const rawBusinessList = allBusinesses.length > 0 ? allBusinesses : memberships;
+
+  // Sort: owned businesses first, then alphabetically
+  const businessList = [...rawBusinessList].sort((a, b) => {
+    const aIsOwned = a.owner_profile_id === currentUserProfileId;
+    const bIsOwned = b.owner_profile_id === currentUserProfileId;
+
+    if (aIsOwned && !bIsOwned) return -1;
+    if (!aIsOwned && bIsOwned) return 1;
+    const aName = a.name || (a as any).business?.name || '';
+    const bName = b.name || (b as any).business?.name || '';
+    return aName.localeCompare(bName);
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,11 +217,12 @@ const DialogVariant = ({ open, onOpenChange }: { open?: boolean; onOpenChange?: 
             </div>
           ) : (
             businessList.map((item) => {
-              const businessName = item.name || (item as any).business?.name;
+              const businessItemName = item.name || (item as any).business?.name;
               const bId = item.id || (item as any).business_id;
               const membership = memberships.find(m => m.business_id === bId);
               const role = membership?.role || 'Guest';
               const isSelected = businessId === bId;
+              const isOwner = item.owner_profile_id === currentUserProfileId;
 
               return (
                 <Card
@@ -193,19 +236,27 @@ const DialogVariant = ({ open, onOpenChange }: { open?: boolean; onOpenChange?: 
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <CardTitle className="text-lg flex items-center gap-2">
-                          {businessName}
+                          {businessItemName}
                           {isSelected && <Check className="h-5 w-5 text-primary" />}
                         </CardTitle>
                         <CardDescription className="mt-1">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize ${
-                              role !== 'Guest'
-                                ? 'bg-primary/10 text-primary'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
-                          >
-                            {role}
-                          </span>
+                          <div className="flex items-center flex-wrap gap-2">
+                            {isOwner && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                <Crown className="h-3 w-3" />
+                                Owner
+                              </span>
+                            )}
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                                role !== 'Guest'
+                                  ? 'bg-primary/10 text-primary'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              {role}
+                            </span>
+                          </div>
                         </CardDescription>
                       </div>
                       <Button
