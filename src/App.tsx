@@ -449,6 +449,7 @@ const App = () => {
                     <Suspense fallback={<LoadingSpinner variant="overlay" message="Loading..." />}>
                       <Routes>
                         <Route path="/" element={<Index />} />
+                        <Route path="/homepage" element={<Index />} />
                         {/* Demo routes */}
                         <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
                         <Route path="/demo/undo" element={<UndoDemo />} />
