@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Sparkles, Loader2 } from "lucide-react";
+import { Check, Sparkles, Zap, Crown, Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -79,6 +79,24 @@ const FALLBACK_PLANS: SubscriptionPlan[] = [
   }
 ];
 
+const PLAN_META: Record<string, { icon: React.ElementType; description: string; color: string }> = {
+  starter: {
+    icon: Zap,
+    description: "Perfect for solo practitioners getting started with AI",
+    color: "text-blue-500",
+  },
+  professional: {
+    icon: Crown,
+    description: "The most popular choice for growing practices",
+    color: "text-primary",
+  },
+  enterprise: {
+    icon: Building2,
+    description: "For large practices and multi-location clinics",
+    color: "text-amber-500",
+  },
+};
+
 export const PricingSection = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const navigate = useNavigate();
@@ -112,14 +130,17 @@ export const PricingSection = () => {
     return (
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
+            <div className="h-8 w-48 bg-muted animate-pulse rounded-full mx-auto mb-6" />
             <div className="h-10 w-80 bg-muted animate-pulse rounded-lg mx-auto mb-4" />
             <div className="h-6 w-64 bg-muted animate-pulse rounded-lg mx-auto" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="h-12 w-72 mx-auto bg-muted animate-pulse rounded-full mb-16" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-8 animate-pulse">
+              <Card key={i} className="p-8 animate-pulse rounded-2xl">
                 <div className="space-y-6">
+                  <div className="h-10 w-10 bg-muted rounded-xl" />
                   <div className="h-8 w-32 bg-muted rounded" />
                   <div className="h-12 w-24 bg-muted rounded" />
                   <div className="space-y-3">
@@ -140,96 +161,161 @@ export const PricingSection = () => {
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-foreground mb-4">
-            Simple, Transparent Pricing
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
+            <Sparkles className="w-3.5 h-3.5" />
+            Simple, transparent pricing
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+            Choose the right plan
+            <br />
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              for your practice
+            </span>
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
             Everything you need to run your practice efficiently
           </p>
         </div>
 
-        <div>
-          {/* Billing Cycle Toggle */}
-          <div className="flex justify-center gap-2 p-1 bg-muted rounded-xl max-w-xs mx-auto border border-border mb-12">
-            <Button
-              variant={billingCycle === 'monthly' ? 'default' : 'ghost'}
+        {/* Billing Cycle Toggle */}
+        <div className="flex justify-center mb-16">
+          <div className="relative inline-flex items-center gap-1 p-1 bg-muted/60 rounded-full border border-border/50">
+            <button
               onClick={() => setBillingCycle('monthly')}
-              className={`flex-1 rounded-lg ${billingCycle === 'monthly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              className={`relative z-10 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                billingCycle === 'monthly'
+                  ? 'bg-background text-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               Monthly
-            </Button>
-            <Button
-              variant={billingCycle === 'yearly' ? 'default' : 'ghost'}
+            </button>
+            <button
               onClick={() => setBillingCycle('yearly')}
-              className={`flex-1 rounded-lg ${billingCycle === 'yearly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+              className={`relative z-10 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                billingCycle === 'yearly'
+                  ? 'bg-background text-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              Yearly <span className="ml-1 text-xs text-green-700 dark:text-green-400 font-medium">(Save 17%)</span>
-            </Button>
+              Yearly
+            </button>
+            {billingCycle === 'yearly' && (
+              <span className="absolute -top-2.5 -right-2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow-sm">
+                -17%
+              </span>
+            )}
+            {billingCycle === 'monthly' && (
+              <span className="ml-2 mr-1 px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium rounded-full">
+                Save 17% yearly
+              </span>
+            )}
           </div>
+        </div>
 
-          {/* Pricing Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {plans.map((plan) => {
-              const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
-              const isPro = plan.isPopular;
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          {plans.map((plan) => {
+            const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
+            const monthlyEquivalent = billingCycle === 'yearly' ? Math.round(plan.price_yearly / 12) : null;
+            const isPro = plan.isPopular;
+            const meta = PLAN_META[plan.slug] || PLAN_META.starter;
+            const PlanIcon = meta.icon;
 
-              return (
-                <Card
-                  key={plan.id}
-                  className={`relative p-8 transition-all duration-300 ${isPro
-                    ? "bg-gradient-to-b from-primary/5 via-background to-background border-primary/30 shadow-xl lg:scale-105 z-10"
-                    : "bg-card border-border hover:border-primary/20 hover:shadow-lg"
-                    }`}
-                >
-                  {isPro && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <div className="flex items-center gap-1 bg-primary px-4 py-1 rounded-full text-primary-foreground text-sm font-semibold shadow-md">
-                        <Sparkles className="w-3 h-3" />
-                        Popular
-                      </div>
+            return (
+              <Card
+                key={plan.id}
+                className={`relative flex flex-col p-0 overflow-hidden transition-all duration-300 rounded-2xl ${
+                  isPro
+                    ? "border-2 border-primary/40 shadow-[0_0_40px_rgba(139,92,246,0.15)] lg:scale-[1.03] z-10"
+                    : "border border-border/60 hover:border-primary/20 hover:shadow-lg"
+                }`}
+              >
+                {/* Popular banner */}
+                {isPro && (
+                  <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-primary-foreground text-sm font-semibold">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Most Popular
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  <div className="space-y-6">
+                <div className={`flex flex-col flex-1 p-8 ${isPro ? '' : 'pt-8'}`}>
+                  <div className="space-y-5 flex-1">
+                    {/* Plan icon and name */}
                     <div>
-                      <h3 className="text-2xl font-bold text-foreground mb-2">{plan.name}</h3>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-5xl font-bold text-foreground">€{price}</span>
-                        <span className="text-muted-foreground font-medium">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
+                      <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl mb-4 ${
+                        isPro ? 'bg-primary/10' : 'bg-muted'
+                      }`}>
+                        <PlanIcon className={`w-5 h-5 ${isPro ? 'text-primary' : meta.color}`} />
                       </div>
+                      <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{meta.description}</p>
                     </div>
 
-                    <div className="space-y-4">
-                      {plan.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-start gap-3">
-                          <div className={`mt-0.5 rounded-full p-1 ${isPro ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                            }`}>
-                            <Check className="w-3 h-3" />
-                          </div>
-                          <span className="text-sm text-muted-foreground leading-tight pt-0.5">{feature}</span>
-                        </div>
-                      ))}
+                    {/* Price */}
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
+                          €{price}
+                        </span>
+                        <span className="text-muted-foreground text-sm font-medium">
+                          /{billingCycle === 'monthly' ? 'mo' : 'yr'}
+                        </span>
+                      </div>
+                      {monthlyEquivalent && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          €{monthlyEquivalent}/mo billed annually
+                        </p>
+                      )}
                     </div>
 
+                    {/* CTA Button */}
                     <Button
                       onClick={() => navigate('/signup')}
-                      className={`w-full h-12 font-semibold rounded-xl transition-all duration-200 ${isPro
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-primary/25"
-                        : "bg-background border-2 border-border hover:border-primary/30 text-foreground hover:bg-muted"
-                        }`}
+                      size="lg"
+                      className={`w-full h-12 font-semibold rounded-xl transition-all duration-200 ${
+                        isPro
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                          : "bg-foreground hover:bg-foreground/90 text-background"
+                      }`}
                     >
                       Get Started
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
 
-          <div className="text-center mt-12 text-sm text-muted-foreground">
-            <p>All plans include free updates and can be cancelled anytime.</p>
-          </div>
+                    {/* Divider */}
+                    <div className="border-t border-border/60" />
+
+                    {/* Features */}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+                        What's included
+                      </p>
+                      <div className="space-y-3">
+                        {plan.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className={`mt-0.5 rounded-full p-0.5 flex-shrink-0 ${
+                              isPro ? 'text-primary' : 'text-muted-foreground'
+                            }`}>
+                              <Check className="w-4 h-4" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-sm text-muted-foreground leading-snug">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        <div className="text-center mt-12 text-sm text-muted-foreground">
+          <p>All plans include free updates and can be cancelled anytime.</p>
         </div>
       </div>
     </section>

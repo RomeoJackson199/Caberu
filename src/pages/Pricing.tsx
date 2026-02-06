@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, Sparkles, Loader2, Tag, CheckCircle2 } from "lucide-react";
+import { Check, Sparkles, Loader2, Tag, CheckCircle2, Zap, Building2, Crown, ArrowRight, Shield, Clock, HeadphonesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,24 @@ interface SubscriptionPlan {
   features: string[];
   isPopular?: boolean;
 }
+
+const PLAN_META: Record<string, { icon: React.ElementType; description: string; color: string }> = {
+  starter: {
+    icon: Zap,
+    description: "Perfect for solo practitioners getting started with AI",
+    color: "text-blue-500",
+  },
+  professional: {
+    icon: Crown,
+    description: "The most popular choice for growing practices",
+    color: "text-primary",
+  },
+  enterprise: {
+    icon: Building2,
+    description: "For large practices and multi-location clinics",
+    color: "text-amber-500",
+  },
+};
 
 export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
@@ -259,22 +277,26 @@ export default function Pricing() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Header user={null} minimal={false} />
-        <div className="container mx-auto px-4 py-16 pt-24">
+        <div className="container mx-auto px-4 py-16 pt-32">
           {/* Header skeleton */}
-          <div className="text-center mb-12">
-            <div className="h-20 w-64 mx-auto bg-muted animate-pulse rounded-lg mb-4" />
+          <div className="text-center mb-16">
+            <div className="h-8 w-32 mx-auto bg-muted animate-pulse rounded-full mb-6" />
+            <div className="h-14 w-96 mx-auto bg-muted animate-pulse rounded-lg mb-4" />
             <div className="h-5 w-80 mx-auto bg-muted animate-pulse rounded" />
           </div>
           {/* Toggle skeleton */}
-          <div className="h-10 w-64 mx-auto bg-muted animate-pulse rounded-xl mb-12" />
+          <div className="h-12 w-72 mx-auto bg-muted animate-pulse rounded-full mb-16" />
           {/* Cards skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="p-8 rounded-xl border bg-card/50 space-y-6">
-                <div className="space-y-2">
+              <div key={i} className="p-8 rounded-2xl border bg-card/50 space-y-6">
+                <div className="space-y-3">
+                  <div className="h-10 w-10 bg-muted animate-pulse rounded-xl" />
                   <div className="h-6 w-24 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-48 bg-muted animate-pulse rounded" />
                   <div className="h-12 w-32 bg-muted animate-pulse rounded" />
                 </div>
+                <div className="h-px bg-muted" />
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((j) => (
                     <div key={j} className="flex items-center gap-3">
@@ -283,7 +305,7 @@ export default function Pricing() {
                     </div>
                   ))}
                 </div>
-                <div className="h-10 w-full bg-muted animate-pulse rounded-lg" />
+                <div className="h-12 w-full bg-muted animate-pulse rounded-xl" />
               </div>
             ))}
           </div>
@@ -297,174 +319,266 @@ export default function Pricing() {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <Header user={null} minimal={false} />
 
-      <div className="container mx-auto px-4 py-16 pt-24">
+      <div className="container mx-auto px-4 py-16 pt-32">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-7xl md:text-9xl font-bold mb-4 bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-            PRICING
+        <div className="text-center mb-16 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
+            <Sparkles className="w-3.5 h-3.5" />
+            Simple, transparent pricing
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 text-foreground leading-tight">
+            Choose the right plan
+            <br />
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              for your practice
+            </span>
           </h1>
-          <p className="text-muted-foreground text-lg">Choose the perfect plan for your practice</p>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Start automating your patient communication today. All plans include free updates and can be cancelled anytime.
+          </p>
         </div>
 
         {/* Billing Cycle Toggle */}
-        <div className="flex justify-center gap-2 p-1 bg-muted/50 rounded-xl max-w-xs mx-auto border mb-12">
-          <Button
-            variant={billingCycle === 'monthly' ? 'default' : 'ghost'}
-            onClick={() => setBillingCycle('monthly')}
-            className="flex-1 rounded-lg"
-          >
-            Monthly
-          </Button>
-          <Button
-            variant={billingCycle === 'yearly' ? 'default' : 'ghost'}
-            onClick={() => setBillingCycle('yearly')}
-            className="flex-1 rounded-lg"
-          >
-            Yearly <span className="ml-1 text-xs">(Save 17%)</span>
-          </Button>
+        <div className="flex justify-center mb-16">
+          <div className="relative inline-flex items-center gap-1 p-1 bg-muted/60 rounded-full border border-border/50">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`relative z-10 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                billingCycle === 'monthly'
+                  ? 'bg-background text-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('yearly')}
+              className={`relative z-10 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                billingCycle === 'yearly'
+                  ? 'bg-background text-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Yearly
+            </button>
+            {billingCycle === 'yearly' && (
+              <span className="absolute -top-2.5 -right-2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow-sm">
+                -17%
+              </span>
+            )}
+            {billingCycle === 'monthly' && (
+              <span className="ml-2 mr-1 px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium rounded-full">
+                Save 17% yearly
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans?.map((plan) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          {plans?.map((plan, index) => {
             const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
+            const monthlyEquivalent = billingCycle === 'yearly' ? Math.round(plan.price_yearly / 12) : null;
             const isPro = plan.isPopular;
+            const meta = PLAN_META[plan.slug] || PLAN_META.starter;
+            const PlanIcon = meta.icon;
 
             return (
               <Card
                 key={plan.id}
-                className={`relative p-8 transition-all duration-500 ${isPro
-                  ? "bg-gradient-to-b from-primary/20 via-primary/10 to-background border-primary/50 shadow-[0_0_50px_rgba(139,92,246,0.3)]"
-                  : "bg-card/50 border-border/50 hover:border-border"
-                  }`}
+                className={`relative flex flex-col p-0 overflow-hidden transition-all duration-500 rounded-2xl ${
+                  isPro
+                    ? "border-2 border-primary/40 shadow-[0_0_40px_rgba(139,92,246,0.15)] lg:scale-[1.03] z-10"
+                    : "border border-border/60 hover:border-primary/20 hover:shadow-lg"
+                }`}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                }}
               >
+                {/* Popular banner */}
                 {isPro && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <div className="flex items-center gap-1 bg-gradient-to-r from-primary to-primary-glow px-4 py-1 rounded-full text-primary-foreground text-sm font-semibold">
-                      <Sparkles className="w-3 h-3" />
-                      Popular
+                  <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-primary-foreground text-sm font-semibold">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Most Popular
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-2xl font-semibold mb-2">{plan.name}</h3>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-5xl font-bold">€{price}</span>
-                      <span className="text-muted-foreground">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
+                <div className={`flex flex-col flex-1 p-8 ${isPro ? '' : 'pt-8'}`}>
+                  <div className="space-y-5 flex-1">
+                    {/* Plan icon and name */}
+                    <div>
+                      <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl mb-4 ${
+                        isPro
+                          ? 'bg-primary/10'
+                          : 'bg-muted'
+                      }`}>
+                        <PlanIcon className={`w-5 h-5 ${isPro ? 'text-primary' : meta.color}`} />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{meta.description}</p>
+                    </div>
+
+                    {/* Price */}
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
+                          €{price}
+                        </span>
+                        <span className="text-muted-foreground text-sm font-medium">
+                          /{billingCycle === 'monthly' ? 'mo' : 'yr'}
+                        </span>
+                      </div>
+                      {monthlyEquivalent && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          €{monthlyEquivalent}/mo billed annually
+                        </p>
+                      )}
+                    </div>
+
+                    {/* CTA Button */}
+                    <Button
+                      onClick={() => handleSubscribe(plan.id, plan.name)}
+                      disabled={loading === plan.id}
+                      size="lg"
+                      className={`w-full rounded-xl h-12 font-semibold transition-all duration-200 ${
+                        isPro
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                          : "bg-foreground hover:bg-foreground/90 text-background"
+                      }`}
+                    >
+                      {loading === plan.id ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : pendingChange?.planName.toLowerCase() === plan.name.toLowerCase() ? (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Pending Change
+                        </>
+                      ) : currentPlan?.name.toLowerCase() === plan.name.toLowerCase() ? (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Current Plan
+                        </>
+                      ) : validPromo ? (
+                        <>
+                          <Tag className="mr-2 h-4 w-4" />
+                          Apply Promo & Activate
+                        </>
+                      ) : currentPlan?.status === 'active' ? (
+                        <>
+                          Schedule Change
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          Get Started
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Divider */}
+                    <div className="border-t border-border/60" />
+
+                    {/* Features */}
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+                        What's included
+                      </p>
+                      <div className="space-y-3">
+                        {plan.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className={`mt-0.5 rounded-full p-0.5 flex-shrink-0 ${
+                              isPro ? 'text-primary' : 'text-muted-foreground'
+                            }`}>
+                              <Check className="w-4 h-4" strokeWidth={2.5} />
+                            </div>
+                            <span className="text-sm text-muted-foreground leading-snug">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="space-y-3">
-                    {plan.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className={`mt-0.5 rounded-full p-0.5 ${isPro ? 'bg-primary/20' : 'bg-muted'
-                          }`}>
-                          <Check className={`w-4 h-4 ${isPro ? 'text-primary' : 'text-muted-foreground'
-                            }`} />
-                        </div>
-                        <span className="text-sm text-muted-foreground">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <Button
-                    onClick={() => handleSubscribe(plan.id, plan.name)}
-                    disabled={loading === plan.id}
-                    className={`w-full ${isPro
-                      ? "bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 text-primary-foreground shadow-lg"
-                      : "bg-background border-2 border-border hover:bg-muted text-foreground"
-                      }`}
-                  >
-                    {loading === plan.id ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : pendingChange?.planName.toLowerCase() === plan.name.toLowerCase() ? (
-                      'Pending Change ✓'
-                    ) : currentPlan?.name.toLowerCase() === plan.name.toLowerCase() ? (
-                      'Current Plan ✓'
-                    ) : validPromo ? (
-                      'Apply Promo & Activate'
-                    ) : currentPlan?.status === 'active' ? (
-                      'Schedule Change'
-                    ) : (
-                      'Get Started'
-                    )}
-                  </Button>
                 </div>
               </Card>
             );
           })}
         </div>
 
-        <div className="text-center mt-12 text-sm text-muted-foreground">
-          <p>All plans include free updates and can be cancelled anytime.</p>
+        {/* Trust indicators */}
+        <div className="flex flex-wrap justify-center gap-8 mt-16 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            <span>Secure payment via Stripe</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            <span>Cancel anytime, no lock-in</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <HeadphonesIcon className="w-4 h-4" />
+            <span>Dedicated support included</span>
+          </div>
         </div>
 
-        {/* Promo Code Section - Same as BusinessPaymentStep */}
-        <Card className="max-w-md mx-auto mt-12 p-6 border-2 border-primary/20">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-              <Tag className="w-8 h-8 text-primary" />
-            </div>
-
-            <div>
-              <h3 className="text-xl font-semibold">Have a Promo Code?</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Redeem your promo code for free access
-              </p>
-            </div>
-
-            {/* Promo Code Input */}
-            <div className="border-t pt-4 space-y-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Tag className="w-4 h-4" />
-                <span>Enter your promo code below</span>
+        {/* Promo Code Section */}
+        <div className="max-w-lg mx-auto mt-20">
+          <Card className="p-8 rounded-2xl border border-border/60 bg-card/50 backdrop-blur-sm">
+            <div className="space-y-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Tag className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Have a promo code?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Redeem your code for a discount or free access
+                  </p>
+                </div>
               </div>
+
               <div className="flex gap-2">
                 <Input
                   placeholder="Enter promo code"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                   disabled={validatingPromo || !!validPromo}
-                  className="flex-1"
+                  className="flex-1 h-11 rounded-xl"
                 />
                 <Button
                   onClick={validatePromoCode}
                   disabled={validatingPromo || !promoCode.trim() || !!validPromo}
                   variant="outline"
+                  className="h-11 rounded-xl px-5"
                 >
                   {validatingPromo && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   {validPromo && <Check className="w-4 h-4 mr-2" />}
                   {validPromo ? 'Applied' : 'Apply'}
                 </Button>
               </div>
+
               {validPromo && (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm text-green-700 dark:text-green-400">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span className="font-medium">
-                      {validPromo.discount_type === 'free' ? 'FREE!' : `Discount applied: ${validPromo.discount_value}%`}
-                    </span>
+                <>
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 text-sm text-green-700 dark:text-green-400">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium">
+                        {validPromo.discount_type === 'free' ? 'FREE access unlocked!' : `Discount applied: ${validPromo.discount_value}% off`}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                  <p className="text-sm font-medium text-primary text-center">
+                    Select a plan above to activate with your promo code
+                  </p>
+                </>
               )}
             </div>
-
-            {validPromo && (
-              <p className="text-sm font-medium text-primary">
-                ✓ Now click on a plan above to activate with your promo code
-              </p>
-            )}
-
-            <p className="text-xs text-muted-foreground">
-              Promo codes are applied when you select a plan
-            </p>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
 
       <Footer />
