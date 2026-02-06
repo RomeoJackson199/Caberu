@@ -31,10 +31,34 @@ serve(async (req) => {
             throw new Error("Unauthorized");
         }
 
-        const { session_id, business_data, promo_code_id } = await req.json();
+        let { session_id, business_data, promo_code_id } = await req.json();
 
         if (!session_id && !promo_code_id) {
             throw new Error("Missing proof of payment (session_id or promo_code_id)");
+        }
+
+        // Validate that business_data has a name - this is required for business creation
+        if (!business_data?.name) {
+            // Try to recover business data from Stripe session metadata
+            if (session_id) {
+                try {
+                    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
+                        apiVersion: "2023-10-16",
+                    });
+                    const stripeSession = await stripe.checkout.sessions.retrieve(session_id);
+                    if (stripeSession.metadata?.business_data) {
+                        const recoveredData = JSON.parse(stripeSession.metadata.business_data);
+                        business_data = { ...business_data, ...recoveredData };
+                    }
+                } catch (e) {
+                    console.error('Failed to recover business data from Stripe metadata:', e);
+                }
+            }
+
+            // If still no name after recovery attempt, throw an error
+            if (!business_data?.name) {
+                throw new Error("Business name is required");
+            }
         }
 
         // 2. Verify Payment with Stripe (if session_id provided)

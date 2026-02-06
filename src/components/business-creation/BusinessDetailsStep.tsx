@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Globe, Building2 } from 'lucide-react';
 
 interface BusinessDetailsStepProps {
   businessData: {
@@ -13,6 +13,9 @@ interface BusinessDetailsStepProps {
   };
   onUpdate: (data: any) => void;
 }
+
+const TAGLINE_MAX = 120;
+const BIO_MAX = 500;
 
 export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsStepProps) {
   const [name, setName] = useState(businessData.name || '');
@@ -42,17 +45,9 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
   };
 
   const validateSlug = (slug: string): boolean => {
-    if (slug.includes('/')) {
-      setSlugError("Business name cannot be converted to a valid URL (contains /)");
-      return false;
-    }
-    if (slug.includes(' ')) {
-      setSlugError("Business name cannot contain spaces");
-      return false;
-    }
     const dotCount = (slug.match(/\./g) || []).length;
     if (dotCount > 1) {
-      setSlugError("Business name can only contain one dot (.)");
+      setSlugError("Name can only contain one dot (.)");
       return false;
     }
     setSlugError('');
@@ -63,7 +58,8 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
     if (name) {
       const slug = generateSlug(name);
       validateSlug(slug);
-      onUpdate({ slug });
+    } else {
+      setSlugError('');
     }
   }, [name]);
 
@@ -75,68 +71,99 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
       updates.slug = slug;
       validateSlug(slug);
     }
-    if (field === 'tagline') setTagline(value);
-    if (field === 'bio') setBio(value);
+    if (field === 'tagline') {
+      if (value.length <= TAGLINE_MAX) {
+        setTagline(value);
+      }
+    }
+    if (field === 'bio') {
+      if (value.length <= BIO_MAX) {
+        setBio(value);
+      }
+    }
     onUpdate(updates);
   };
+
+  const slug = name ? generateSlug(name) : '';
 
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-3">
+          <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        </div>
         <h2 className="text-2xl font-bold">Business Details</h2>
-        <p className="text-muted-foreground mt-2">
-          Tell us about your business
+        <p className="text-muted-foreground mt-1 text-sm">
+          This information will appear on your public business page. You can change it anytime in Settings.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {/* Business Name */}
         <div className="space-y-2">
           <Label htmlFor="businessName">Business Name *</Label>
           <Input
             id="businessName"
-            placeholder="Enter your business name"
+            placeholder="e.g., Bright Smiles Dental"
             value={name}
             onChange={(e) => handleChange('name', e.target.value)}
-            className={slugError ? "border-destructive" : ""}
+            className={`h-12 text-base ${slugError ? "border-destructive" : ""}`}
+            autoFocus
           />
-          {name && (
-            <div className="text-xs text-muted-foreground">
-              Your business URL will be: <span className="font-mono">{window.location.origin}/{generateSlug(name)}</span>
+          {name && !slugError && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Globe className="h-3 w-3" />
+              <span>Your page: </span>
+              <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{window.location.host}/clinic/{slug}</span>
             </div>
           )}
           {slugError && (
-            <Alert variant="destructive" className="mt-2">
+            <Alert variant="destructive" className="py-2">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-xs">{slugError}</AlertDescription>
             </Alert>
           )}
         </div>
 
-        <Alert className="bg-muted/50 border-muted">
-          <AlertDescription className="text-xs">
-            ⚠️ Business name restrictions: No spaces, no forward slashes (/), maximum one dot (.)
-          </AlertDescription>
-        </Alert>
-
+        {/* Tagline */}
         <div className="space-y-2">
-          <Label htmlFor="tagline">Tagline</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="tagline">Tagline</Label>
+            <span className={`text-xs ${tagline.length > TAGLINE_MAX * 0.9 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+              {tagline.length}/{TAGLINE_MAX}
+            </span>
+          </div>
           <Input
             id="tagline"
-            placeholder="A short description of your business"
+            placeholder="e.g., Your smile, our passion"
             value={tagline}
             onChange={(e) => handleChange('tagline', e.target.value)}
+            maxLength={TAGLINE_MAX}
           />
+          <p className="text-xs text-muted-foreground">
+            A short phrase that describes what your practice is about
+          </p>
         </div>
 
+        {/* Bio */}
         <div className="space-y-2">
-          <Label htmlFor="bio">About Your Business</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="bio">About Your Business</Label>
+            <span className={`text-xs ${bio.length > BIO_MAX * 0.9 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+              {bio.length}/{BIO_MAX}
+            </span>
+          </div>
           <Textarea
             id="bio"
-            placeholder="Tell customers about your business, services, and what makes you unique..."
+            placeholder="Tell patients about your practice, services, team, and what makes you unique..."
             value={bio}
             onChange={(e) => handleChange('bio', e.target.value)}
-            rows={6}
+            rows={5}
+            maxLength={BIO_MAX}
           />
+          <p className="text-xs text-muted-foreground">
+            This appears on your public profile. Patients read this before booking.
+          </p>
         </div>
       </div>
     </div>

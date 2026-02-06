@@ -49,15 +49,13 @@ const Signup = () => {
   }, [formData.password]);
 
   useEffect(() => {
+    // Only redirect if user already has a session when landing on the page.
+    // Don't set up onAuthStateChange redirect here because it would
+    // prematurely redirect business users away from the email verification
+    // dialog after a successful signup.
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate("/auth-redirect");
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) navigate("/auth-redirect");
-    });
-
-    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -220,13 +218,6 @@ const Signup = () => {
       });
       setIsLoading(false);
     }
-  };
-
-  // Password requirements for validation display (may be used in future UI)
-  const _passwordValidation = {
-    minLength: formData.password.length >= 8,
-    hasUpper: /[A-Z]/.test(formData.password),
-    hasLower: /[a-z]/.test(formData.password),
   };
 
   return (

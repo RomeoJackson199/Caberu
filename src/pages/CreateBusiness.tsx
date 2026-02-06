@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, ArrowRight, Sparkles, Building2, CreditCard, UserPlus } from 'lucide-react';
 import { BusinessCreationAuth } from '@/components/business-creation/BusinessCreationAuth';
 import { BusinessDetailsStep } from '@/components/business-creation/BusinessDetailsStep';
 import { BusinessSubscriptionStep } from '@/components/business-creation/BusinessSubscriptionStep';
@@ -21,9 +21,9 @@ interface BusinessData {
 }
 
 const STEPS = [
-  { id: 1, name: 'Sign Up', description: 'Create your account' },
-  { id: 2, name: 'Details', description: 'Enter business information' },
-  { id: 3, name: 'Subscription', description: 'Choose your plan' },
+  { id: 1, name: 'Sign Up', description: 'Create your account', icon: UserPlus },
+  { id: 2, name: 'Business Details', description: 'Tell us about your practice', icon: Building2 },
+  { id: 3, name: 'Choose Plan', description: 'Select your subscription', icon: CreditCard },
 ];
 
 export default function CreateBusiness() {
@@ -32,7 +32,6 @@ export default function CreateBusiness() {
   const [currentStep, setCurrentStep] = useState(1);
   const [businessData, setBusinessData] = useState<BusinessData>({});
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showTour, setShowTour] = useState(false);
 
   // Handle successful subscription return
   useEffect(() => {
@@ -43,9 +42,21 @@ export default function CreateBusiness() {
       if (subscriptionSuccess === 'success' && sessionId) {
         toast.loading('Creating your business...');
 
+        // Restore business data from sessionStorage (persisted before Stripe redirect)
+        let savedBusinessData = {};
+        try {
+          const stored = sessionStorage.getItem('pending_business_data');
+          if (stored) {
+            savedBusinessData = JSON.parse(stored);
+            sessionStorage.removeItem('pending_business_data');
+          }
+        } catch {
+          console.error('Failed to restore business data from sessionStorage');
+        }
+
         try {
           const { data, error } = await supabase.functions.invoke('complete-business-setup', {
-            body: { session_id: sessionId, business_data: {} },
+            body: { session_id: sessionId, business_data: savedBusinessData },
           });
 
           if (error) throw error;
@@ -69,7 +80,7 @@ export default function CreateBusiness() {
     if (demoBusinessName) {
       setBusinessData({ name: demoBusinessName });
       sessionStorage.removeItem('demo_business_name');
-      sessionStorage.removeItem('demo_template'); // Clear old template data if exists
+      sessionStorage.removeItem('demo_template');
     }
   }, []);
 
@@ -102,67 +113,65 @@ export default function CreateBusiness() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-background dark:via-background dark:to-primary/5">
-      <BusinessCreationTour
-        currentStep={currentStep}
-        isOpen={showTour}
-        onClose={() => setShowTour(false)}
-      />
-
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white mb-4 shadow-lg">
-            <Sparkles className="w-8 h-8" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white mb-4 shadow-lg">
+            <Sparkles className="w-7 h-7" />
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
             Create Your Business
           </h1>
-          <p className="text-muted-foreground text-lg">Set up your business in just 3 simple steps</p>
+          <p className="text-muted-foreground">Set up your dental practice in just 3 simple steps</p>
         </div>
 
-        {/* Enhanced Progress Bar */}
-        <div className="max-w-5xl mx-auto mb-10">
-          <div className="flex items-center justify-between mb-6">
-            {STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex flex-col items-center">
-                  <motion.div
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: currentStep === step.id ? 1.1 : 1 }}
-                    transition={{ duration: 0.3 }}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold transition-all shadow-lg ${currentStep > step.id
-                      ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
-                      : currentStep === step.id
-                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white ring-4 ring-blue-200 dark:ring-blue-900'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                      }`}
-                  >
-                    {currentStep > step.id ? <CheckCircle2 className="w-6 h-6" /> : step.id}
-                  </motion.div>
-                  <div className="mt-3 text-center hidden md:block">
-                    <p className={`text-sm font-semibold ${currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {step.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">{step.description}</p>
-                  </div>
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div className="flex-1 h-1.5 mx-3 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+        {/* Progress Steps */}
+        <div className="max-w-3xl mx-auto mb-8">
+          <div className="flex items-center justify-between mb-4">
+            {STEPS.map((step, index) => {
+              const StepIcon = step.icon;
+              return (
+                <div key={step.id} className="flex items-center flex-1">
+                  <div className="flex flex-col items-center">
                     <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: currentStep > step.id ? '100%' : '0%' }}
-                      transition={{ duration: 0.5 }}
-                      className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
-                    />
+                      initial={{ scale: 0.8 }}
+                      animate={{ scale: currentStep === step.id ? 1.1 : 1 }}
+                      transition={{ duration: 0.3 }}
+                      className={`w-11 h-11 rounded-full flex items-center justify-center font-semibold transition-all shadow-md ${currentStep > step.id
+                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
+                        : currentStep === step.id
+                          ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white ring-4 ring-blue-200 dark:ring-blue-900'
+                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        }`}
+                    >
+                      {currentStep > step.id ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <StepIcon className="w-5 h-5" />
+                      )}
+                    </motion.div>
+                    <div className="mt-2 text-center hidden md:block">
+                      <p className={`text-xs font-semibold ${currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        {step.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  {index < STEPS.length - 1 && (
+                    <div className="flex-1 h-1 mx-3 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: currentStep > step.id ? '100%' : '0%' }}
+                        transition={{ duration: 0.5 }}
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <Progress value={progress} className="h-3 shadow-inner" />
-          <p className="text-center text-sm text-muted-foreground mt-3">
-            Step {currentStep} of {STEPS.length} - {Math.round(progress)}% Complete
-          </p>
+          <Progress value={progress} className="h-2" />
         </div>
 
         {/* Step Content */}
@@ -175,7 +184,10 @@ export default function CreateBusiness() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="p-8">
+              {/* Inline contextual tips */}
+              <BusinessCreationTour currentStep={currentStep} />
+
+              <Card className="p-6 md:p-8">
                 {currentStep === 1 && (
                   <BusinessCreationAuth onComplete={handleAuthComplete} />
                 )}
@@ -206,12 +218,13 @@ export default function CreateBusiness() {
                       Back
                     </Button>
 
-                    {currentStep < STEPS.length && currentStep !== 3 && (
+                    {currentStep === 2 && (
                       <Button
                         onClick={handleNext}
-                        disabled={currentStep === 2 && !businessData.name}
+                        disabled={!businessData.name}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                       >
-                        Next
+                        Continue to Plans
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     )}

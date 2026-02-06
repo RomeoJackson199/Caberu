@@ -470,33 +470,53 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             </div>
             <div>
               <h3 className="text-2xl font-bold mb-2">Welcome to Caberu!</h3>
-              <p className="text-gray-600 max-w-md mx-auto">
-                We're excited to help you manage your dental practice more efficiently.
-                This quick setup will take about 3-5 minutes.
+              <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                Let's set up your practice in a few quick steps. This takes about 3 minutes
+                and you can always change everything later in Settings.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <Calendar className="h-6 w-6 text-blue-600 mb-2" />
-              <h4 className="font-semibold text-sm mb-1">Smart Scheduling</h4>
-              <p className="text-xs text-gray-600">AI-powered appointment management</p>
+          {/* What we'll set up */}
+          <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-4 mt-6">
+            <p className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">Here's what we'll configure:</p>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                'Your personal info & role',
+                'Practice name, type & specialty',
+                'Location & contact details',
+                'Working hours for each day',
+                'Services you offer & your goals',
+                'Security preferences',
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-xs font-semibold text-blue-600">{i + 1}</div>
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <Users className="h-6 w-6 text-purple-600 mb-2" />
-              <h4 className="font-semibold text-sm mb-1">Patient Records</h4>
-              <p className="text-xs text-gray-600">Complete digital health records</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+              <Calendar className="h-5 w-5 text-blue-600 mb-1.5" />
+              <h4 className="font-semibold text-xs mb-0.5">Smart Scheduling</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">AI-powered appointments</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <Briefcase className="h-6 w-6 text-green-600 mb-2" />
-              <h4 className="font-semibold text-sm mb-1">Billing & Payments</h4>
-              <p className="text-xs text-gray-600">Streamlined revenue management</p>
+            <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
+              <Users className="h-5 w-5 text-purple-600 mb-1.5" />
+              <h4 className="font-semibold text-xs mb-0.5">Patient Records</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Digital health records</p>
             </div>
-            <div className="p-4 bg-orange-50 rounded-lg">
-              <Settings className="h-6 w-6 text-orange-600 mb-2" />
-              <h4 className="font-semibold text-sm mb-1">Practice Analytics</h4>
-              <p className="text-xs text-gray-600">Insights to grow your practice</p>
+            <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
+              <Briefcase className="h-5 w-5 text-green-600 mb-1.5" />
+              <h4 className="font-semibold text-xs mb-0.5">Billing & Payments</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Revenue management</p>
+            </div>
+            <div className="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
+              <Settings className="h-5 w-5 text-orange-600 mb-1.5" />
+              <h4 className="font-semibold text-xs mb-0.5">Practice Analytics</h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Insights to grow</p>
             </div>
           </div>
 
@@ -559,7 +579,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     // Step 1: Practice Information
     {
       title: "Practice Information",
-      description: "Tell us about your dental practice",
+      description: "This helps patients understand your practice when they visit your page",
       icon: Building2,
       content: (
         <div className="space-y-4 py-4">
@@ -614,7 +634,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     // Step 2: Location & Contact
     {
       title: "Location & Contact",
-      description: "Where can patients find you?",
+      description: "Patients will see this on your booking page so they can find and reach you",
       icon: MapPin,
       content: (
         <div className="space-y-4 py-4">
@@ -683,7 +703,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     // Step 3: Working Hours
     {
       title: "Working Hours",
-      description: "When is your practice open?",
+      description: "Patients can only book appointments during these hours",
       icon: Clock,
       content: (
         <div className="space-y-3 py-4 max-h-[400px] overflow-y-auto">
@@ -733,7 +753,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     // Step 4: Services Offered
     {
       title: "Services Offered",
-      description: "What services do you provide?",
+      description: "Select the services you provide - these will appear on your booking page",
       icon: Briefcase,
       content: (
         <div className="space-y-4 py-4">
@@ -774,7 +794,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     // Step 5: Goals
     {
       title: "Your Goals",
-      description: "What do you want to achieve with Caberu?",
+      description: "We'll customize your dashboard and suggestions based on your priorities",
       icon: Settings,
       content: (
         <div className="space-y-4 py-4">
@@ -811,7 +831,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     // Step 6: Security & Completion
     {
       title: "Security & Preferences",
-      description: "Final settings before you get started",
+      description: "Last step! Configure security options for your practice",
       icon: Shield,
       content: (
         <div className="space-y-4 py-4">
