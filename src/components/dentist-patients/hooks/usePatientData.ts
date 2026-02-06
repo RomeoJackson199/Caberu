@@ -75,12 +75,18 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
     try {
       const now = new Date();
 
-      // Fetch appointments
-      const { data: appointmentsData } = await supabase
+      // Fetch appointments scoped to current business
+      let appointmentsQuery = supabase
         .from('appointments')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
+
+      if (businessId) {
+        appointmentsQuery = appointmentsQuery.eq('business_id', businessId);
+      }
+
+      const { data: appointmentsData } = await appointmentsQuery;
 
       const hasUpcomingAppointment = (appointmentsData || []).some(a => {
         try { return new Date(a.appointment_date) > now && a.status !== 'cancelled'; } catch { return false; }
@@ -95,23 +101,35 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
         .filter(a => new Date(a.appointment_date) > now && a.status !== 'cancelled')
         .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime())[0]?.appointment_date;
 
-      // Fetch treatment plans
-      const { data: treatmentData } = await supabase
+      // Fetch treatment plans scoped to current business
+      let treatmentQuery = supabase
         .from('treatment_plans')
         .select('status')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
 
+      if (businessId) {
+        treatmentQuery = treatmentQuery.eq('business_id', businessId);
+      }
+
+      const { data: treatmentData } = await treatmentQuery;
+
       const hasActiveTreatmentPlan = (treatmentData || []).some(t => t.status === 'active');
 
-      // Fetch payment requests
+      // Fetch payment requests scoped to current business
       let outstandingCents = 0;
       try {
-        const { data: prs } = await supabase
+        let paymentQuery = supabase
           .from('payment_requests')
           .select('amount, status')
           .eq('patient_id', patientId)
           .eq('dentist_id', dentistId);
+
+        if (businessId) {
+          paymentQuery = paymentQuery.eq('business_id', businessId);
+        }
+
+        const { data: prs } = await paymentQuery;
         outstandingCents = (prs || [])
           .filter((p) => p.status !== 'paid' && p.status !== 'cancelled')
           .reduce((s: number, p) => s + (p.amount || 0), 0);
@@ -134,7 +152,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       console.error('Error fetching patient flags:', error);
       return null;
     }
-  }, [dentistId]);
+  }, [dentistId, businessId]);
 
   const fetchPatientAppointments = useCallback(async (
     patientId: string,

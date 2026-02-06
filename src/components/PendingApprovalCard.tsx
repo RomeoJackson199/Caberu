@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatClinicTime } from "@/lib/timezone";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useNavigate } from "react-router-dom";
+import { useBusinessContext } from "@/hooks/useBusinessContext";
 
 interface PendingAppointment {
   id: string;
@@ -42,6 +43,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
   const { toast } = useToast();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { businessId } = useBusinessContext();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,8 +63,8 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
         setRequiresApproval(true);
 
-        // Fetch pending appointments
-        const { data: appointments, error } = await supabase
+        // Fetch pending appointments scoped to current business
+        let query = supabase
           .from('secure_appointments_view')
           .select(`
             id,
@@ -79,6 +81,12 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
           .eq('status', 'pending')
           .gte('appointment_date', new Date().toISOString())
           .order('appointment_date', { ascending: true });
+
+        if (businessId) {
+          query = query.eq('business_id', businessId);
+        }
+
+        const { data: appointments, error } = await query;
 
         if (error) throw error;
 
@@ -98,7 +106,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
     if (dentistId) {
       fetchData();
     }
-  }, [dentistId]);
+  }, [dentistId, businessId]);
 
   const getPatientName = (apt: PendingAppointment) => {
     if (apt.profiles) {
