@@ -233,27 +233,7 @@ export function AuthRedirectHandler() {
             return;
           }
 
-          // Check if user owns a business - auto-select it and skip business selection
-          const ownerMembership = memberships.find(m => m.role === 'owner');
-          if (ownerMembership) {
-            logger.info('AuthRedirectHandler: Owner detected, auto-selecting owned business', {
-              businessId: ownerMembership.business_id,
-              businessName: ownerMembership.business?.name
-            });
-
-            // Auto-switch to the owner's business
-            try {
-              await switchBusiness(ownerMembership.business_id);
-              sessionStorage.removeItem(REDIRECT_KEY);
-              navigate('/dentist/dashboard', { replace: true });
-              return;
-            } catch (switchError) {
-              logger.error('AuthRedirectHandler: Failed to auto-select owner business, falling back to selection', switchError);
-              // Fall through to business selection
-            }
-          }
-
-          // Non-owner dentists or fallback: show business selection
+          // Always show business selection for dentists with memberships
           logger.info('AuthRedirectHandler: Dentist with memberships, showing business selection', {
             membershipsCount: memberships.length,
             currentBusinessId: businessId
