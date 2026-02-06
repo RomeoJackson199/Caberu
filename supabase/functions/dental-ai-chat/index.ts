@@ -350,17 +350,32 @@ serve(async (req) => {
           .eq('is_active', true)
           .order('name');
 
+        // Define service type for type safety
+        type ServiceRecord = {
+          name: string;
+          description?: string;
+          price_cents: number;
+          currency: string;
+          duration_minutes?: number;
+        };
+        
         if (!servicesError && services && services.length > 0) {
           const formatPrice = (cents: number, currency: string) => {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(cents / 100);
           };
           
-          servicesContent = `\n\nAVAILABLE SERVICES:\nThe clinic offers these services. When patients ask about booking or what you offer, mention relevant services:\n${services.map(s => `- ${s.name}: ${s.description || 'No description'} | Price: ${formatPrice(s.price_cents, s.currency)} | Duration: ${s.duration_minutes || 30} minutes`).join('\n')}\n\nIMPORTANT: When proceeding to booking (code 12345), always mention which service seems most appropriate for the patient's needs and include the service details in your summary.`;
+          servicesContent = `\n\nAVAILABLE SERVICES:\nThe clinic offers these services. When patients ask about booking or what you offer, mention relevant services:\n${services.map((s: ServiceRecord) => `- ${s.name}: ${s.description || 'No description'} | Price: ${formatPrice(s.price_cents, s.currency)} | Duration: ${s.duration_minutes || 30} minutes`).join('\n')}\n\nIMPORTANT: When proceeding to booking (code 12345), always mention which service seems most appropriate for the patient's needs and include the service details in your summary.`;
           
           if (Deno.env.get('ENVIRONMENT') === 'development') {
             console.log(`Loaded ${services.length} business services`);
           }
         }
+
+        // Define document type for type safety
+        type KnowledgeDocument = {
+          file_name: string;
+          content?: string;
+        };
 
         // Fetch knowledge documents
         const { data: documents, error: docError } = await supabase
@@ -370,7 +385,7 @@ serve(async (req) => {
           .eq('status', 'active');
 
         if (!docError && documents && documents.length > 0) {
-          knowledgeBaseContent = `\n\nKNOWLEDGE BASE:\nYou have access to the following business documentation. Use this information to provide accurate and specific answers:\n\n${documents.map(doc => `Document: ${doc.file_name}\n${doc.content || '[Content pending extraction]'}`).join('\n\n---\n\n')}`;
+          knowledgeBaseContent = `\n\nKNOWLEDGE BASE:\nYou have access to the following business documentation. Use this information to provide accurate and specific answers:\n\n${documents.map((doc: KnowledgeDocument) => `Document: ${doc.file_name}\n${doc.content || '[Content pending extraction]'}`).join('\n\n---\n\n')}`;
           
           if (Deno.env.get('ENVIRONMENT') === 'development') {
             console.log(`Loaded ${documents.length} knowledge documents`);
@@ -908,9 +923,18 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
           // Intelligent matching based on symptoms and context
           let bestMatch = dentists[0]; // Default to first dentist
           
+          // Define dentist type for type safety
+          type DentistRecord = {
+            id: string;
+            first_name?: string;
+            last_name?: string;
+            specialty?: string;
+            bio?: string;
+          };
+          
           // Pediatric case
           if (pediatricKeywords.test(fullContext)) {
-            const pediatricDentist = dentists.find(d => 
+            const pediatricDentist = dentists.find((d: DentistRecord) => 
               d.specialty?.toLowerCase().includes('pediatric') || 
               d.specialty?.toLowerCase().includes('pédiatrique') ||
               d.bio?.toLowerCase().includes('child')
@@ -920,7 +944,7 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
           
           // Orthodontic case
           else if (orthodonticKeywords.test(fullContext)) {
-            const orthodontist = dentists.find(d => 
+            const orthodontist = dentists.find((d: DentistRecord) => 
               d.specialty?.toLowerCase().includes('orthodontic') ||
               d.specialty?.toLowerCase().includes('orthodontie')
             );
@@ -929,7 +953,7 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
           
           // Urgent/pain case - prefer general dentist
           else if (urgentKeywords.test(fullContext)) {
-            const generalDentist = dentists.find(d => 
+            const generalDentist = dentists.find((d: DentistRecord) => 
               d.specialty?.toLowerCase().includes('general') ||
               d.specialty?.toLowerCase().includes('générale')
             );

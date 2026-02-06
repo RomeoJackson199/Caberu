@@ -299,9 +299,17 @@ export function AuthRedirectHandler() {
           return;
         }
 
-        logger.info('AuthRedirectHandler: Profile complete, redirecting to patient dashboard');
+        // For patients, always show business selection if there are businesses to choose from
+        // This ensures patients explicitly pick which business they're interacting with
+        logger.info('AuthRedirectHandler: Profile complete, checking if business selection needed', {
+          hasMemberships: memberships.length > 0,
+          hasBusinessId: !!businessId
+        });
+        
+        // Always show business selection for patients on login
+        // This ensures they choose which practice to interact with
         sessionStorage.removeItem(REDIRECT_KEY);
-        navigate('/dashboard', { replace: true });
+        navigate('/select-business', { replace: true });
       } catch (error) {
         logger.error("Error in AuthRedirectHandler:", error);
 
