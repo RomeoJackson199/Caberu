@@ -96,7 +96,7 @@ export function TreatmentPlanDetailView({
 
         try {
             const { data: plan, error: planError } = await supabase
-                .from('secure_treatment_plans_view' as any)
+                .from('treatment_plans_decrypted' as any)
                 .select('*')
                 .eq('id', treatmentPlanId)
                 .single();
@@ -105,7 +105,7 @@ export function TreatmentPlanDetailView({
             setTreatmentPlan(plan);
 
             const { data: appointments, error: apptError } = await supabase
-                .from('secure_appointments_view' as any)
+                .from('appointments_decrypted' as any)
                 .select('id, appointment_date, status, reason, notes, consultation_notes')
                 .eq('patient_id', patientId)
                 .in('status', ['completed', 'confirmed', 'scheduled'])

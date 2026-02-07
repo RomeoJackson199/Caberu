@@ -357,7 +357,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'list_appointments': {
-        let query = supabase.from('appointments').select('*');
+        let query = supabase.from('appointments_decrypted').select('*');
 
         if (args.business_id) query = query.eq('business_id', args.business_id);
         if (args.dentist_id) query = query.eq('dentist_id', args.dentist_id);
@@ -492,7 +492,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
           // Fetch all last appointments in one query
           const { data: lastAppointments } = await supabase
-            .from('appointments')
+            .from('appointments_decrypted')
             .select('patient_id, dentist_id, appointment_date, dentists!inner(id, first_name, last_name, specialization)')
             .in('patient_id', patientIds)
             .order('appointment_date', { ascending: false });
@@ -533,14 +533,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (patientError) throw patientError;
 
         const { data: appointments } = await supabase
-          .from('appointments')
+          .from('appointments_decrypted')
           .select('id, appointment_date, status, reason, notes, dentists!inner(id, first_name, last_name), businesses!inner(id, name)')
           .eq('patient_id', args.patient_id)
           .order('appointment_date', { ascending: false })
           .limit(10);
 
         const { data: medicalRecords } = await supabase
-          .from('medical_records')
+          .from('medical_records_decrypted')
           .select('*')
           .eq('patient_id', args.patient_id)
           .order('record_date', { ascending: false })
@@ -571,7 +571,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         if (patient) {
           const { data: lastAppt } = await supabase
-            .from('appointments')
+            .from('appointments_decrypted')
             .select('dentist_id, appointment_date, dentists!inner(first_name, last_name)')
             .eq('patient_id', patient.id)
             .order('appointment_date', { ascending: false })
@@ -623,7 +623,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           .maybeSingle();
 
         const { count: upcomingCount } = await supabase
-          .from('appointments')
+          .from('appointments_decrypted')
           .select('*', { count: 'exact', head: true })
           .eq('dentist_id', args.dentist_id)
           .gte('appointment_date', new Date().toISOString())

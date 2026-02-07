@@ -28,7 +28,7 @@ export function usePatientAllergies({ patientId, businessId }: UsePatientAllergi
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('secure_patient_allergies_view')
+        .from('patient_allergies_decrypted')
         .select('*')
         .eq('patient_id', patientId)
         .eq('business_id', businessId)

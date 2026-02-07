@@ -73,7 +73,7 @@ export const PatientRecordsTimeline = memo(function PatientRecordsTimeline({ pat
     queryKey: ["patient-completed-appointments", patientId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select(`
           id,
           appointment_date,
@@ -109,7 +109,7 @@ export const PatientRecordsTimeline = memo(function PatientRecordsTimeline({ pat
     queryKey: ["patient-documents", patientId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("patient_documents")
+        .from("patient_documents_decrypted")
         .select(`
           id,
           title,
@@ -138,7 +138,7 @@ export const PatientRecordsTimeline = memo(function PatientRecordsTimeline({ pat
 
       // Simple query first - no joins
       const { data, error } = await supabase
-        .from("treatment_plans")
+        .from("treatment_plans_decrypted")
         .select(`
           id,
           title,

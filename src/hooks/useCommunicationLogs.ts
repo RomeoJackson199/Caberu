@@ -32,7 +32,7 @@ export function useCommunicationLogs({ patientId, businessId, limit = 20 }: UseC
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('secure_communication_logs_view')
+        .from('communication_logs_decrypted')
         .select('*')
         .eq('patient_id', patientId)
         .eq('business_id', businessId)

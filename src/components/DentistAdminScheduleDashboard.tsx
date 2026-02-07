@@ -96,7 +96,7 @@ export const DentistAdminScheduleDashboard = () => {
 
       if (dentistIds.length > 0) {
         const { data: appointmentsData, error: appointmentsError } = await supabase
-          .from('secure_appointments_view')
+          .from('appointments_decrypted')
           .select(`
             id,
             dentist_id,

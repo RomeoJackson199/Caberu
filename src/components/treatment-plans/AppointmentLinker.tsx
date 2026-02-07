@@ -68,7 +68,7 @@ export function AppointmentLinker({
     queryKey: ["available-treatment-plans", patientId, businessId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("treatment_plans")
+        .from("treatment_plans_decrypted")
         .select(`
           id,
           title,
@@ -95,7 +95,7 @@ export function AppointmentLinker({
       if (!currentPlanId) return null;
 
       const { data, error } = await supabase
-        .from("treatment_plans")
+        .from("treatment_plans_decrypted")
         .select("id, title, status, version")
         .eq("id", currentPlanId)
         .single();
@@ -293,7 +293,7 @@ export function LinkedAppointmentsList({
     queryKey: ["plan-linked-appointments", planId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select(`
           id,
           appointment_date,

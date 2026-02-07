@@ -65,7 +65,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 
 				// Build queries scoped to current business
 				let todayQuery = supabase
-					.from('secure_appointments_view')
+					.from('appointments_decrypted')
 					.select(`
 						id,
 						appointment_date,
@@ -91,26 +91,26 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 					.order('appointment_date', { ascending: true });
 
 				let weekQuery = supabase
-					.from('secure_appointments_view')
+					.from('appointments_decrypted')
 					.select('id')
 					.eq('dentist_id', dentistId)
 					.gte('appointment_date', weekStart.toISOString())
 					.eq('status', 'completed');
 
 				let patientsQuery = supabase
-					.from('secure_appointments_view')
+					.from('appointments_decrypted')
 					.select('patient_id')
 					.eq('dentist_id', dentistId);
 
 				let pendingQuery = supabase
-					.from('secure_appointments_view')
+					.from('appointments_decrypted')
 					.select('id')
 					.eq('dentist_id', dentistId)
 					.eq('status', 'pending')
 					.gte('appointment_date', new Date().toISOString());
 
 				let nextQuery = supabase
-					.from('secure_appointments_view')
+					.from('appointments_decrypted')
 					.select(`
 						id,
 						appointment_date,

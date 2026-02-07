@@ -60,7 +60,7 @@ export function useClinicBranding(options: UseClinicBrandingOptions = {}) {
 
               if (profile?.id) {
                 const { data: appt } = await supabase
-                  .from('secure_appointments_view')
+                  .from('appointments_decrypted')
                   .select('business_id, appointment_date, created_at')
                   .eq('patient_id', profile.id)
                   .order('appointment_date', { ascending: false })

@@ -53,7 +53,7 @@ export function useImaging() {
         setIsLoading(true);
         try {
             let query = supabase
-                .from('imaging_sets')
+                .from('imaging_sets_decrypted')
                 .select(`
           *,
           files:imaging_files(*)

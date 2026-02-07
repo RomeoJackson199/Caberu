@@ -68,7 +68,7 @@ export function TeamQuickStats({ className }: TeamQuickStatsProps) {
       // Get today's appointments count
       const todayStr = format(today, 'yyyy-MM-dd');
       const { count: todayCount } = await supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select('*', { count: 'exact', head: true })
         .eq('business_id', businessId)
         .eq('scheduled_date', todayStr)
@@ -78,7 +78,7 @@ export function TeamQuickStats({ className }: TeamQuickStatsProps) {
       const weekStartStr = format(weekStart, 'yyyy-MM-dd');
       const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
       const { count: weekCount } = await supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select('*', { count: 'exact', head: true })
         .eq('business_id', businessId)
         .gte('scheduled_date', weekStartStr)
@@ -87,7 +87,7 @@ export function TeamQuickStats({ className }: TeamQuickStatsProps) {
 
       // Get pending approvals
       const { count: pendingCount } = await supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select('*', { count: 'exact', head: true })
         .eq('business_id', businessId)
         .eq('status', 'pending');

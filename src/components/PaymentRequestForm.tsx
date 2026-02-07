@@ -34,7 +34,7 @@ export const PaymentRequestForm: React.FC<PaymentRequestFormProps> = ({
     try {
       // First get patient IDs from appointments for this dentist
       const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('secure_appointments_view')
+        .from('appointments_decrypted')
         .select('patient_id')
         .eq('dentist_id', dentistId);
 

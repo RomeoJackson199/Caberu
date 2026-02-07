@@ -67,20 +67,20 @@ export const PatientAnalytics = ({ userId }: PatientAnalyticsProps) => {
 
       // Get appointments data
       const { data: appointments } = await supabase
-        .from('secure_appointments_view')
+        .from('appointments_decrypted')
         .select('*')
         .eq('patient_id', profile.id)
         .order('appointment_date', { ascending: false });
 
       // Get notes
       const { data: notes } = await supabase
-        .from('secure_notes_view')
+        .from('notes_decrypted')
         .select('*')
         .eq('patient_id', profile.id);
 
       // Get treatment plans
       const { data: treatmentPlans } = await supabase
-        .from('secure_treatment_plans_view')
+        .from('treatment_plans_decrypted')
         .select('*')
         .eq('patient_id', profile.id)
         .eq('status', 'active');

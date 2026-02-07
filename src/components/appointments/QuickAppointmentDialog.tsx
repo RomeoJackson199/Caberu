@@ -107,7 +107,7 @@ export function QuickAppointmentDialog({
 
       // Try 4: Get from existing appointments for this dentist
       const { data: existingAppt } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select("business_id")
         .eq("dentist_id", dentistId)
         .not("business_id", "is", null)
@@ -139,7 +139,7 @@ export function QuickAppointmentDialog({
     queryKey: ["dentist-patients", dentistId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select(`
           patient_id,
           profiles!appointments_patient_id_fkey (
@@ -175,7 +175,7 @@ export function QuickAppointmentDialog({
       const dateEnd = endOfDay(new Date(appointmentDate));
 
       const { data, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select("appointment_date, duration_minutes, status")
         .eq("dentist_id", dentistId)
         .gte("appointment_date", dateStart.toISOString())

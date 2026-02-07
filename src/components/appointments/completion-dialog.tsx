@@ -139,7 +139,7 @@ export function CompletionDialog({
   useEffect(() => {
     const fetchTreatmentPlans = async () => {
       const { data } = await supabase
-        .from('secure_treatment_plans_view' as any)
+        .from('treatment_plans_decrypted' as any)
         .select('*')
         .eq('patient_id', appointment.patient_id)
         .in('status', ['active', 'draft']); // Include draft plans too

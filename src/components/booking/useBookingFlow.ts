@@ -206,7 +206,7 @@ export function useBookingFlow() {
 
       // Get existing appointments for this day (pending, confirmed, scheduled)
       const { data: existingAppts } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select("appointment_date, duration_minutes")
         .eq("dentist_id", dentistId)
         .eq("business_id", businessId)
@@ -394,7 +394,7 @@ export function useBookingFlow() {
       const serviceDuration = selectedService?.duration_minutes || 30;
 
       const { data: existingAppts } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select("appointment_date, duration_minutes, status")
         .eq("dentist_id", selectedDentist.id)
         .eq("business_id", businessId)

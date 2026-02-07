@@ -76,19 +76,19 @@ export function AIConversationDialog({
         .single();
 
       const { data: medicalHistory } = await supabase
-        .from('secure_medical_records_view')
+        .from('medical_records_decrypted')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
 
       const { data: notes } = await supabase
-        .from('secure_notes_view')
+        .from('notes_decrypted')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
 
       const { data: treatmentPlans } = await supabase
-        .from('secure_treatment_plans_view')
+        .from('treatment_plans_decrypted')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);

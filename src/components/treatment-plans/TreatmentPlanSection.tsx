@@ -56,7 +56,7 @@ export function TreatmentPlanSection({
       if (!existingPlanId) return null;
 
       const { data: plan, error: planError } = await supabase
-        .from("treatment_plans")
+        .from("treatment_plans_decrypted")
         .select("id, title, status, version, total_estimated_cents, currency")
         .eq("id", existingPlanId)
         .single();
@@ -80,7 +80,7 @@ export function TreatmentPlanSection({
     queryKey: ["patient-treatment-plans", patientId, businessId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("treatment_plans")
+        .from("treatment_plans_decrypted")
         .select(`
           id,
           title,

@@ -1105,7 +1105,7 @@ async function getPatientInfo(supabase: any, args: any, callerPhone: string, bus
   
   // Get upcoming appointments
   let appointmentQuery = supabase
-    .from('appointments')
+    .from('appointments_decrypted')
     .select('id, appointment_date, reason, status, dentists!inner(first_name, last_name)')
     .eq('patient_id', patient.id)
     .gte('appointment_date', new Date().toISOString())
@@ -1140,7 +1140,7 @@ async function cancelAppointment(supabase: any, args: any, businessId?: string) 
   
   // Get appointment details
   const { data: appointment, error: fetchError } = await supabase
-    .from('appointments')
+    .from('appointments_decrypted')
     .select('id, appointment_date, dentist_id')
     .eq('id', appointment_id)
     .single();

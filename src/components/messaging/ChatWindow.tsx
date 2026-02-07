@@ -76,7 +76,7 @@ export function ChatWindow({
     if (!currentProfileId) return;
 
     const { data, error } = await supabase
-      .from('secure_messages_view' as any)
+      .from('messages_decrypted' as any)
       .select('*')
       .or(
         `and(sender_profile_id.eq.${currentProfileId},recipient_profile_id.eq.${recipient.id}),and(sender_profile_id.eq.${recipient.id},recipient_profile_id.eq.${currentProfileId})`
@@ -104,7 +104,8 @@ export function ChatWindow({
         },
         (payload) => {
           if (payload.new.sender_profile_id === recipient.id) {
-            setMessages((prev) => [...prev, payload.new as Message]);
+            // Refetch from decrypted view instead of using encrypted realtime payload
+            loadMessages();
             markMessagesAsRead();
           }
         }

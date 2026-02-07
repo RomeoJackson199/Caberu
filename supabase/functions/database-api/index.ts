@@ -201,7 +201,7 @@ serve(async (req) => {
 
         case 'list_appointments': {
           const { business_id, dentist_id, patient_id, status, date_from, date_to, limit = 50 } = params;
-          let query = supabase.from('appointments').select('id, patient_id, dentist_id, appointment_date, reason, notes, status, urgency, duration_minutes, created_at, updated_at, business_id');
+          let query = supabase.from('appointments_decrypted').select('id, patient_id, dentist_id, appointment_date, reason, notes, status, urgency, duration_minutes, created_at, updated_at, business_id');
 
           if (business_id) query = query.eq('business_id', business_id);
           if (dentist_id) query = query.eq('dentist_id', dentist_id);
@@ -251,7 +251,7 @@ serve(async (req) => {
 
             // Fetch all last appointments in one query
             const { data: lastAppointments } = await supabase
-              .from('appointments')
+              .from('appointments_decrypted')
               .select(`
                 patient_id,
                 dentist_id,
@@ -315,7 +315,7 @@ serve(async (req) => {
 
           if (patient) {
             const { data: lastAppt } = await supabase
-              .from('appointments')
+              .from('appointments_decrypted')
               .select(`
                 dentist_id,
                 appointment_date,
@@ -679,7 +679,7 @@ serve(async (req) => {
       // List appointments with filters
       case 'list_appointments': {
         const { business_id, dentist_id, patient_id, status, date_from, date_to, limit = 50 } = params;
-        let query = supabase.from('appointments').select('*');
+        let query = supabase.from('appointments_decrypted').select('*');
 
         if (business_id) query = query.eq('business_id', business_id);
         if (dentist_id) query = query.eq('dentist_id', dentist_id);
@@ -866,7 +866,7 @@ serve(async (req) => {
           
           // Fetch all recent appointments for all patients in one query
           const { data: allAppointments } = await supabase
-            .from('appointments')
+            .from('appointments_decrypted')
             .select(`
               patient_id,
               dentist_id,
@@ -922,7 +922,7 @@ serve(async (req) => {
 
         // Get appointment history
         const { data: appointments } = await supabase
-          .from('appointments')
+          .from('appointments_decrypted')
           .select(`
             id,
             appointment_date,
@@ -948,7 +948,7 @@ serve(async (req) => {
 
         // Get medical records
         const { data: medicalRecords } = await supabase
-          .from('medical_records')
+          .from('medical_records_decrypted')
           .select('*')
           .eq('patient_id', patient_id)
           .order('record_date', { ascending: false })
@@ -1041,7 +1041,7 @@ serve(async (req) => {
 
         // Get upcoming appointments count
         const { count: upcomingCount } = await supabase
-          .from('appointments')
+          .from('appointments_decrypted')
           .select('*', { count: 'exact', head: true })
           .eq('dentist_id', dentist_id)
           .gte('appointment_date', new Date().toISOString())
@@ -1137,7 +1137,7 @@ serve(async (req) => {
         if (patient) {
           // Get last appointment
           const { data: lastAppt } = await supabase
-            .from('appointments')
+            .from('appointments_decrypted')
             .select(`
               dentist_id,
               appointment_date,

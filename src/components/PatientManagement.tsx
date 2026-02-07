@@ -174,7 +174,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
       }
 
       const { data: appointmentData, error: appointmentError } = await supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select(`
           patient_id,
           profiles(
@@ -225,7 +225,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
     try {
       // Fetch appointments scoped to current business
       let appointmentsQuery = supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
@@ -244,7 +244,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
       // Fetch treatment plans only if feature is enabled, scoped to current business
       if (hasFeature('treatmentPlans')) {
         let treatmentQuery = supabase
-          .from('secure_treatment_plans_view' as any)
+          .from('treatment_plans_decrypted' as any)
           .select('*')
           .eq('patient_id', patientId)
           .eq('dentist_id', dentistId);
@@ -285,7 +285,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
 
       // Fetch notes
       const { data: notesData, error: notesError } = await supabase
-        .from('secure_notes_view' as any)
+        .from('notes_decrypted' as any)
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId)

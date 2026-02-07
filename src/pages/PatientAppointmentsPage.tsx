@@ -40,7 +40,7 @@ export default function PatientAppointmentsPage() {
 
         if (profile) {
           const { data: appointments } = await supabase
-            .from('secure_appointments_view')
+            .from('appointments_decrypted')
             .select('id, status, appointment_date')
             .eq('patient_id', profile.id);
 

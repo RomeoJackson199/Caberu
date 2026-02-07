@@ -176,7 +176,7 @@ export function PatientAppointmentDetail({
     
     try {
       const { data, error } = await supabase
-        .from('secure_patient_documents_view' as any)
+        .from('patient_documents_decrypted' as any)
         .select('id, title, document_type, file_path, file_name, created_at')
         .eq('patient_id', appointment.patient_id)
         .eq('business_id', appointment.business?.id)
@@ -199,7 +199,7 @@ export function PatientAppointmentDetail({
     try {
       // First, get the imaging sets for this appointment
       const { data: imagingSets, error: setsError } = await supabase
-        .from('imaging_sets')
+        .from('imaging_sets_decrypted')
         .select('id, imaging_type, created_at')
         .eq('appointment_id', appointmentId)
         .order('created_at', { ascending: false });
@@ -251,7 +251,7 @@ export function PatientAppointmentDetail({
     
     try {
       const { data, error } = await supabase
-        .from('notes')
+        .from('notes_decrypted')
         .select('id, content, created_at, title')
         .eq('appointment_id', appointmentId)
         .eq('note_type', 'addendum')
@@ -352,7 +352,7 @@ export function PatientAppointmentDetail({
     
     try {
       const { data, error } = await supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select(`
           id,
           appointment_date,

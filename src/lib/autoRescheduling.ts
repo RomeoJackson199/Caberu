@@ -31,7 +31,7 @@ export async function findRescheduleOptions(
 
   // Get original appointment details
   const { data: appointment, error: aptError } = await supabase
-    .from('secure_appointments_view' as any)
+    .from('appointments_decrypted' as any)
     .select(`
       *,
       appointment_type_id,
@@ -178,7 +178,7 @@ export async function autoRescheduleAppointment(
   if (notifyPatient) {
     try {
       const { data: appointment } = await supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select('patient_id, appointment_date')
         .eq('id', appointmentId)
         .single();
@@ -224,7 +224,7 @@ export async function bulkRescheduleForDentist(
 
   // Get all appointments in the date range
   const { data: appointments, error } = await supabase
-    .from('appointments')
+    .from('appointments_decrypted')
     .select('id, appointment_date, patient_id')
     .eq('dentist_id', dentistId)
     .eq('business_id', businessId)
@@ -313,7 +313,7 @@ export async function sendRescheduleSuggestions(
 ): Promise<{ success: boolean; error?: string }> {
   // Get appointment and patient details
   const { data: appointment, error } = await supabase
-    .from('appointments')
+    .from('appointments_decrypted')
     .select(`
       id,
       patient_id,

@@ -182,7 +182,7 @@ async function generateExportData(supabase: any, patientId: string, exportType: 
 
     // Get appointments
     const { data: appointments } = await supabase
-      .from('appointments')
+      .from('appointments_decrypted')
       .select('*')
       .eq('patient_id', patientId);
 
@@ -202,7 +202,7 @@ async function generateExportData(supabase: any, patientId: string, exportType: 
 
     // Get treatment plans
     const { data: treatments } = await supabase
-      .from('treatment_plans')
+      .from('treatment_plans_decrypted')
       .select('*')
       .eq('patient_id', patientId);
 
