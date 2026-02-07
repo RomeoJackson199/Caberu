@@ -20,7 +20,7 @@ export function PatientSafetySnapshot({ patientId }: PatientSafetySnapshotProps)
     queryKey: ['patient-allergies', patientId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('patient_allergies')
+        .from('secure_patient_allergies_view' as any)
         .select('id, allergy_name, severity')
         .eq('patient_id', patientId);
       return data || [];
@@ -33,7 +33,7 @@ export function PatientSafetySnapshot({ patientId }: PatientSafetySnapshotProps)
     queryKey: ['patient-medical-notes', patientId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('notes')
+        .from('secure_notes_view' as any)
         .select('id, content, title')
         .eq('patient_id', patientId)
         .eq('note_type', 'medical_history')

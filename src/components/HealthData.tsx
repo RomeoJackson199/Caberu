@@ -272,7 +272,7 @@ export const HealthData = ({
 
   const loadMedicalRecords = async (profileId: string) => {
     const { data, error } = await supabase
-      .from('medical_records')
+      .from('secure_medical_records_view' as any)
       .select(`
         *,
         dentist:dentists(
