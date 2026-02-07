@@ -5,7 +5,7 @@
  * This is the main entry point used in DentistAppointmentDetail.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TreatmentPlanSummaryCard } from "./TreatmentPlanSummaryCard";
@@ -49,16 +49,25 @@ export function TreatmentPlanSection({
   const [linkSheetOpen, setLinkSheetOpen] = useState(false);
   const [linking, setLinking] = useState(false);
 
+  // Track the effective plan ID locally so linking updates the UI immediately
+  // without waiting for the parent's appointment prop to re-fetch
+  const [effectivePlanId, setEffectivePlanId] = useState(existingPlanId);
+
+  // Sync with parent prop when it changes (e.g., parent re-fetches appointment)
+  useEffect(() => {
+    setEffectivePlanId(existingPlanId);
+  }, [existingPlanId]);
+
   // Fetch plan summary for the card
   const { data: planSummary, isLoading } = useQuery({
-    queryKey: ["treatment-plan-summary", existingPlanId],
+    queryKey: ["treatment-plan-summary", effectivePlanId],
     queryFn: async () => {
-      if (!existingPlanId) return null;
+      if (!effectivePlanId) return null;
 
       const { data: plan, error: planError } = await supabase
         .from("treatment_plans_decrypted")
         .select("id, title, status, version, total_estimated_cents, currency")
-        .eq("id", existingPlanId)
+        .eq("id", effectivePlanId)
         .single();
 
       if (planError) throw planError;
@@ -66,13 +75,13 @@ export function TreatmentPlanSection({
       const { data: items, error: itemsError } = await supabase
         .from("treatment_plan_items")
         .select("id")
-        .eq("treatment_plan_id", existingPlanId);
+        .eq("treatment_plan_id", effectivePlanId);
 
       if (itemsError) throw itemsError;
 
       return { ...plan, items: items || [] };
     },
-    enabled: !!existingPlanId,
+    enabled: !!effectivePlanId,
   });
 
   // Fetch existing plans for this patient in this business
@@ -112,9 +121,12 @@ export function TreatmentPlanSection({
 
       if (error) throw error;
 
+      // Update local state immediately so the UI reflects the link
+      setEffectivePlanId(planId);
+
       queryClient.invalidateQueries({ queryKey: ["treatment-plan-summary"] });
       queryClient.invalidateQueries({ queryKey: ["appointment"] });
-      
+
       toast.success("Appointment linked to treatment plan");
       setLinkSheetOpen(false);
       onPlanCreated?.(planId);
@@ -143,7 +155,7 @@ export function TreatmentPlanSection({
         patientId={patientId}
         dentistId={dentistId}
         businessId={businessId}
-        existingPlanId={existingPlanId}
+        existingPlanId={effectivePlanId}
         isEditable={isEditable}
         onPlanCreated={onPlanCreated}
         onPlanUpdated={onPlanUpdated}

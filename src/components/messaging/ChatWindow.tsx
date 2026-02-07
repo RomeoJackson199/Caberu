@@ -1,16 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { FormEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Check, CheckCheck, Clock } from 'lucide-react';
+import { ArrowLeft, Send, Check, CheckCheck, Clock, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+
+const MESSAGES_PER_PAGE = 50;
 
 interface Message {
   id: string;
@@ -40,7 +42,10 @@ export function ChatWindow({
   const [newMessage, setNewMessage] = useState('');
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(MESSAGES_PER_PAGE);
+  const [isNearBottom, setIsNearBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isOnline] = useState(Math.random() > 0.5); // Mock online status
 
@@ -57,8 +62,25 @@ export function ChatWindow({
   }, [currentProfileId, recipient.id]);
 
   useEffect(() => {
-    scrollToBottom();
+    if (isNearBottom) {
+      scrollToBottom();
+    }
   }, [messages]);
+
+  // Track scroll position to show/hide "scroll to bottom" button
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      setIsNearBottom(distanceFromBottom < 100);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const loadCurrentProfile = async () => {
     const { data: profile } = await supabase
@@ -190,7 +212,17 @@ export function ChatWindow({
     }
   };
 
-  const groupedMessages = messages.reduce((groups, message) => {
+  // Show only the most recent messages, with option to load more
+  const hasOlderMessages = messages.length > displayLimit;
+  const displayedMessages = hasOlderMessages
+    ? messages.slice(messages.length - displayLimit)
+    : messages;
+
+  const handleLoadOlder = useCallback(() => {
+    setDisplayLimit(prev => prev + MESSAGES_PER_PAGE);
+  }, []);
+
+  const groupedMessages = displayedMessages.reduce((groups, message) => {
     const date = format(new Date(message.created_at), 'yyyy-MM-dd');
     if (!groups[date]) {
       groups[date] = [];
@@ -228,8 +260,22 @@ export function ChatWindow({
       </div>
 
       {/* Messages - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6">
+      <div className="relative flex-1 min-h-0 overflow-y-auto px-4 py-6" ref={scrollContainerRef}>
         <div className="w-full space-y-6">
+          {/* Load older messages button */}
+          {hasOlderMessages && (
+            <div className="flex justify-center pb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadOlder}
+                className="text-xs rounded-full"
+              >
+                Load older messages
+              </Button>
+            </div>
+          )}
+
           {Object.entries(groupedMessages).map(([date, msgs]) => (
             <div key={date} className="space-y-4">
               {/* Date divider */}
@@ -307,6 +353,27 @@ export function ChatWindow({
           ))}
           <div ref={scrollRef} />
         </div>
+
+        {/* Scroll to bottom FAB */}
+        <AnimatePresence>
+          {!isNearBottom && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="sticky bottom-3 flex justify-center pointer-events-none"
+            >
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={scrollToBottom}
+                className="h-10 w-10 rounded-full shadow-lg pointer-events-auto border"
+              >
+                <ChevronDown className="h-5 w-5" />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Input - Fixed at bottom */}
