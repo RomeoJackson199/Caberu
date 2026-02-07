@@ -76,7 +76,7 @@ export function ChatWindow({
     if (!currentProfileId) return;
 
     const { data, error } = await supabase
-      .from('messages')
+      .from('secure_messages_view' as any)
       .select('*')
       .or(
         `and(sender_profile_id.eq.${currentProfileId},recipient_profile_id.eq.${recipient.id}),and(sender_profile_id.eq.${recipient.id},recipient_profile_id.eq.${currentProfileId})`

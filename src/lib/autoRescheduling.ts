@@ -31,7 +31,7 @@ export async function findRescheduleOptions(
 
   // Get original appointment details
   const { data: appointment, error: aptError } = await supabase
-    .from('appointments')
+    .from('secure_appointments_view' as any)
     .select(`
       *,
       appointment_type_id,

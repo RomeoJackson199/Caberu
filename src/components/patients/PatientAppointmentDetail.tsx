@@ -176,7 +176,7 @@ export function PatientAppointmentDetail({
     
     try {
       const { data, error } = await supabase
-        .from('patient_documents')
+        .from('secure_patient_documents_view' as any)
         .select('id, title, document_type, file_path, file_name, created_at')
         .eq('patient_id', appointment.patient_id)
         .eq('business_id', appointment.business?.id)
