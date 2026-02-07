@@ -49,7 +49,7 @@ export function usePatientBadgeCounts() {
 
         const [apptsResult, payReqsResult] = await Promise.allSettled([
           supabase
-            .from('secure_appointments_view')
+            .from('appointments_decrypted')
             .select('id, status, appointment_date')
             .eq('patient_id', patientId)
             .gte('appointment_date', now.toISOString())

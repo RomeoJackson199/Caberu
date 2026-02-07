@@ -34,7 +34,7 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
       }
 
       const { data: appointments, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select(`
           id,
           appointment_date,

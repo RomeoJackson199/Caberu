@@ -110,7 +110,7 @@ export default function PatientCareHome() {
       // Fetch data in parallel after getting profile
       const [appointmentsResult, totalCountResult, prescriptionCountResult] = await Promise.allSettled([
         supabase
-          .from('secure_appointments_view')
+          .from('appointments_decrypted')
           .select(`
             id,
             appointment_date,
@@ -129,7 +129,7 @@ export default function PatientCareHome() {
           .order('appointment_date', { ascending: true })
           .limit(3),
         supabase
-          .from('secure_appointments_view')
+          .from('appointments_decrypted')
           .select('*', { count: 'exact', head: true })
           .eq('patient_id', profile.id),
         supabase

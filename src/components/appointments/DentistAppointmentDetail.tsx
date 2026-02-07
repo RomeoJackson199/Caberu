@@ -135,7 +135,7 @@ export function DentistAppointmentDetail({
 
 
       const { data, error } = await supabase
-        .from('secure_notes_view' as any)
+        .from('notes_decrypted' as any)
         .select('content')
         .eq('appointment_id', appointment.id)
         .eq('note_type', 'draft_charges')

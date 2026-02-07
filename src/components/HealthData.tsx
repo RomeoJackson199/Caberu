@@ -272,7 +272,7 @@ export const HealthData = ({
 
   const loadMedicalRecords = async (profileId: string) => {
     const { data, error } = await supabase
-      .from('secure_medical_records_view' as any)
+      .from('medical_records_decrypted' as any)
       .select(`
         *,
         dentist:dentists(
@@ -304,7 +304,7 @@ export const HealthData = ({
 
   const loadTreatmentPlans = async (profileId: string) => {
     const { data, error } = await supabase
-      .from('secure_treatment_plans_view')
+      .from('treatment_plans_decrypted')
       .select(`
         *,
         dentist:dentists(
@@ -320,7 +320,7 @@ export const HealthData = ({
 
   const loadAppointments = async (profileId: string) => {
     let query = supabase
-      .from('secure_appointments_view')
+      .from('appointments_decrypted')
       .select(`
         id,
         appointment_date,

@@ -64,7 +64,7 @@ export function TreatmentPlanDetailSheet({
       
       // Fetch plan first (no inner joins to avoid RLS issues)
       const { data: planData, error: planError } = await supabase
-        .from("treatment_plans")
+        .from("treatment_plans_decrypted")
         .select("*")
         .eq("id", planId)
         .single();

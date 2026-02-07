@@ -106,7 +106,7 @@ export const DentistAnalyticsDashboard = () => {
 
       // OPTIMIZED: Batch fetch ALL appointments for ALL dentists in one query
       let appointmentsQuery = supabase
-        .from('secure_appointments_view')
+        .from('appointments_decrypted')
         .select('id, status, dentist_id')
         .in('dentist_id', dentistIds)
         .eq('business_id', businessId);

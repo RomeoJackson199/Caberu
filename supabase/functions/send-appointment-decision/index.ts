@@ -47,7 +47,7 @@ serve(async (req) => {
 
         // Simple query first - just get the appointment
         const { data: appointment, error: aptError } = await supabase
-            .from('appointments')
+            .from('appointments_decrypted')
             .select('id, appointment_date, reason, patient_id, dentist_id')
             .eq('id', appointment_id)
             .maybeSingle();

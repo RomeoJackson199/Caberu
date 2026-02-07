@@ -55,7 +55,7 @@ export function DayCalendarView({
       dayEnd.setHours(23, 59, 59, 999);
 
       let query = supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select("*")
         .eq("dentist_id", dentistId)
         .gte("appointment_date", dayStart.toISOString())

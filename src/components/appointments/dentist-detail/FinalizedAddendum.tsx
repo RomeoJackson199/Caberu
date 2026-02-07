@@ -56,7 +56,7 @@ export function FinalizedAddendum({
     queryKey: ['addendum-notes', appointmentId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('secure_notes_view' as any)
+        .from('notes_decrypted' as any)
         .select('id, content, created_at, title')
         .eq('appointment_id', appointmentId)
         .eq('note_type', 'addendum')

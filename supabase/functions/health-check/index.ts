@@ -458,7 +458,7 @@ serve(async (req) => {
           const connectionTests = await Promise.allSettled([
             supabase.from('businesses').select('id').limit(1),
             supabase.from('profiles').select('id').limit(1),
-            supabase.from('appointments').select('id').limit(1),
+            supabase.from('appointments_decrypted').select('id').limit(1),
           ]);
 
           const poolLatency = Math.round(performance.now() - poolStart);
@@ -713,7 +713,7 @@ serve(async (req) => {
             supabase.rpc('is_super_admin'),
             supabase.from('businesses').select('id').limit(1),
             supabase.from('profiles').select('id').limit(1),
-            supabase.from('appointments').select('id').limit(1),
+            supabase.from('appointments_decrypted').select('id').limit(1),
           ]);
 
           const apiLatency = Math.round(performance.now() - apiStart);

@@ -180,13 +180,21 @@ const PatientDashboardComponent = ({
       schema: 'public',
       table: 'medical_records',
       filter: `patient_id=eq.${userProfile.id}`
-    }, payload => {
-      // Add the new medical record to the list
-      const newRecord = {
-        ...payload.new,
-        visit_date: payload.new.record_date
-      } as MedicalRecord;
-      setMedicalRecords(prev => [newRecord, ...prev]);
+    }, async (payload) => {
+      // Refetch from decrypted view instead of using encrypted realtime payload
+      const { data: decryptedRecord } = await supabase
+        .from('medical_records_decrypted')
+        .select('*')
+        .eq('id', payload.new.id)
+        .single();
+
+      if (decryptedRecord) {
+        const newRecord = {
+          ...decryptedRecord,
+          visit_date: decryptedRecord.record_date
+        } as MedicalRecord;
+        setMedicalRecords(prev => [newRecord, ...prev]);
+      }
 
       // Show a toast notification
       toast({
@@ -292,7 +300,7 @@ const PatientDashboardComponent = ({
       // Fetch appointments
       const {
         data: appointmentsData
-      } = await supabase.from('secure_appointments_view').select('*').eq('patient_id', profileId);
+      } = await supabase.from('appointments_decrypted').select('*').eq('patient_id', profileId);
       const upcomingAppointments = appointmentsData?.filter(apt => new Date(apt.appointment_date) > new Date() && apt.status === 'confirmed').length || 0;
       const completedAppointments = appointmentsData?.filter(apt => apt.status === 'completed').length || 0;
       const lastVisit = appointmentsData?.filter(apt => apt.status === 'completed').sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())[0]?.appointment_date || null;
@@ -305,13 +313,13 @@ const PatientDashboardComponent = ({
 
       const {
         data: treatmentPlansData
-      } = await supabase.from('secure_treatment_plans_view').select('*').eq('patient_id', profileId);
+      } = await supabase.from('treatment_plans_decrypted').select('*').eq('patient_id', profileId);
       const activeTreatmentPlans = treatmentPlansData?.filter(tp => tp.status === 'active').length || 0;
 
       // Fetch patient notes
       const {
         data: notesData
-      } = await supabase.from('secure_notes_view').select('*').eq('patient_id', profileId);
+      } = await supabase.from('notes_decrypted').select('*').eq('patient_id', profileId);
       setPatientStats({
         upcomingAppointments,
         completedAppointments,
@@ -330,7 +338,7 @@ const PatientDashboardComponent = ({
       const {
         data: appointmentsData,
         error
-      } = await supabase.from('secure_appointments_view').select(`
+      } = await supabase.from('appointments_decrypted').select(`
           *,
           dentists:dentist_id(
             specialization,
@@ -375,7 +383,7 @@ const PatientDashboardComponent = ({
 
       const {
         data: treatmentPlansData
-      } = await supabase.from('secure_treatment_plans_view').select('*').eq('patient_id', profileId).order('created_at', {
+      } = await supabase.from('treatment_plans_decrypted').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
       setTreatmentPlans((treatmentPlansData || []).map(plan => ({
@@ -387,7 +395,7 @@ const PatientDashboardComponent = ({
       // Fetch medical records
       const {
         data: medicalRecordsData
-      } = await supabase.from('secure_medical_records_view').select('*').eq('patient_id', profileId).order('record_date', {
+      } = await supabase.from('medical_records_decrypted').select('*').eq('patient_id', profileId).order('record_date', {
         ascending: false
       });
       setMedicalRecords((medicalRecordsData || []).map(record => ({
@@ -398,7 +406,7 @@ const PatientDashboardComponent = ({
       // Fetch patient notes
       const {
         data: notesData
-      } = await supabase.from('secure_notes_view').select('*').eq('patient_id', profileId).order('created_at', {
+      } = await supabase.from('notes_decrypted').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
       setPatientNotes(notesData || []);

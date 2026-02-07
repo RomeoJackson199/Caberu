@@ -52,7 +52,7 @@ serve(async (req) => {
         
         // Query appointments that fall within the vacation period
         const { data: appointments, error: aptError } = await supabase
-            .from('appointments')
+            .from('appointments_decrypted')
             .select(`
                 id,
                 appointment_date,

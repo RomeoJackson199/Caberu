@@ -62,7 +62,7 @@ export function HealthProgressDashboard() {
 
       // Fetch appointments
       const { data: appointments } = await supabase
-        .from('secure_appointments_view' as any)
+        .from('appointments_decrypted' as any)
         .select('*')
         .eq('patient_id', profile.id);
 

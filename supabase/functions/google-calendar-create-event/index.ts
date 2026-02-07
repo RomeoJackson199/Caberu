@@ -32,7 +32,7 @@ serve(async (req) => {
 
     // Get appointment details
     const { data: appointment, error: aptError } = await supabase
-      .from('appointments')
+      .from('appointments_decrypted')
       .select(`
         *,
         dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected),

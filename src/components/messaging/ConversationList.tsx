@@ -87,7 +87,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
   const loadConversations = async (profileId: string) => {
     try {
       const { data: messagesData, error } = await supabase
-        .from('secure_messages_view' as any)
+        .from('messages_decrypted' as any)
         .select('sender_profile_id, recipient_profile_id, message_text, created_at, is_read, business_id')
         .or(`sender_profile_id.eq.${profileId},recipient_profile_id.eq.${profileId}`)
         .order('created_at', { ascending: false });
@@ -171,7 +171,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
       if (!isDentistUser) {
         // Patients should see all dentists they've had appointments with
         const { data: appointments } = await supabase
-          .from('appointments')
+          .from('appointments_decrypted')
           .select('dentist_id, business_id')
           .eq('patient_id', profileId);
 
@@ -256,7 +256,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         if (!dentistData) return;
 
         const { data: appointments } = await supabase
-          .from('appointments')
+          .from('appointments_decrypted')
           .select('patient_id, business_id')
           .eq('dentist_id', dentistData.id);
 

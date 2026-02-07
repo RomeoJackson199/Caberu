@@ -88,7 +88,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
 
       // Fetch appointments with dentist information
       const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('secure_appointments_view')
+        .from('appointments_decrypted')
         .select(`
           id,
           appointment_date,

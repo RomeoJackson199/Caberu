@@ -121,7 +121,7 @@ export function TreatmentPlanEditorSheet({
       if (!currentPlanId) return null;
 
       const { data: plan, error: planError } = await supabase
-        .from("treatment_plans")
+        .from("treatment_plans_decrypted")
         .select("*")
         .eq("id", currentPlanId)
         .single();

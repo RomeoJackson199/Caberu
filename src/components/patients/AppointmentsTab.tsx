@@ -263,7 +263,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
       }
       
       const { data, error } = await supabase
-        .from('appointments')
+        .from('appointments_decrypted')
         .select(`
           id,
           appointment_date,

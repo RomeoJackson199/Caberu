@@ -450,7 +450,7 @@ export const InteractiveDentalChat = ({
       }
 
       const { data: appointments, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select(`
           id,
           appointment_date,
@@ -1175,7 +1175,7 @@ You'll receive a confirmation email shortly.`;
 
       // Get next upcoming appointment
       const { data: appointments, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select(`
           id,
           appointment_date,
@@ -1241,7 +1241,7 @@ You'll receive a confirmation email shortly.`;
 
       // Get next upcoming appointment
       const { data: appointments, error } = await supabase
-        .from("appointments")
+        .from("appointments_decrypted")
         .select(`
           id,
           appointment_date,
