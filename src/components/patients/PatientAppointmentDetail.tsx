@@ -51,6 +51,7 @@ import {
   AppointmentState,
   AppointmentStateInput,
 } from "@/lib/appointmentStateMachine";
+import { AppointmentProgressBar } from "./AppointmentProgressBar";
 
 interface PatientAppointmentDetailProps {
   appointmentId: string | null;
@@ -610,7 +611,18 @@ export function PatientAppointmentDetail({
           </div>
 
           {/* ============================================ */}
-          {/* 2. "WHAT'S HAPPENING NOW?" - Status sentence */}
+          {/* 2. PROGRESS BAR - 4-step appointment stepper */}
+          {/* ============================================ */}
+          <div className="px-6 py-4 border-b flex-shrink-0">
+            <AppointmentProgressBar
+              appointmentState={appointmentState}
+              rawStatus={appointment.status}
+              appointmentDate={appointment.appointment_date}
+            />
+          </div>
+
+          {/* ============================================ */}
+          {/* 3. "WHAT'S HAPPENING NOW?" - Status sentence */}
           {/* ============================================ */}
           <div className="px-6 py-4 border-b bg-muted/20 flex-shrink-0">
             <p className="text-sm text-foreground/80 leading-relaxed">
