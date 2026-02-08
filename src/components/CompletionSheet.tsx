@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, EllipsisVertical, Plus, Search, X } from "lucide-react";
+import { formatClinicTime } from "@/lib/timezone";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -518,7 +519,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 				</div>
 			</div>
 			<div className="max-w-full sm:max-w-2xl lg:max-w-5xl mx-auto px-3 pb-2 text-xs text-muted-foreground flex items-center gap-2">
-				<Calendar className="h-3 w-3" /> {new Date(appointment.appointment_date).toLocaleString()} • Dr. {dentistName || '—'} • In room
+				<Calendar className="h-3 w-3" /> {formatClinicTime(appointment.appointment_date, 'PPp')} • Dr. {dentistName || '—'} • In room
 			</div>
 		</div>
 	);

@@ -16,8 +16,8 @@ import {
   Edit,
   CheckCircle
 } from "lucide-react";
-import { format } from "date-fns";
 import { sanitizeText } from '@/utils/sanitize';
+import { formatClinicTime } from "@/lib/timezone";
 
 interface Appointment {
   id: string;
@@ -179,11 +179,11 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">
-                        {format(new Date(appointment.appointment_date), 'PPP')}
+                        {formatClinicTime(appointment.appointment_date, 'PPP')}
                       </h3>
                       <p className="text-muted-foreground flex items-center space-x-2">
                         <Clock className="h-4 w-4" />
-                        <span>{format(new Date(appointment.appointment_date), 'p')}</span>
+                        <span>{formatClinicTime(appointment.appointment_date, 'p')}</span>
                         <span>({appointment.duration_minutes} min)</span>
                       </p>
                     </div>

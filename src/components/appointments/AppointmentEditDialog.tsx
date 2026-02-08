@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOptimisticMutation } from "@/hooks/useOptimisticMutation";
-import { format } from "date-fns";
+import { formatClinicTime } from "@/lib/timezone";
 
 interface AppointmentEditDialogProps {
   appointment: any;
@@ -81,7 +81,7 @@ export function AppointmentEditDialog({ appointment, open, onOpenChange }: Appoi
             <div>
               <Label className="text-sm text-muted-foreground">Date & Time</Label>
               <p className="font-medium">
-                {format(new Date(appointment.appointment_date), "PPp")}
+                {formatClinicTime(appointment.appointment_date, "PPp")}
               </p>
             </div>
             <div>

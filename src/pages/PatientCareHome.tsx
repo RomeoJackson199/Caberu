@@ -5,8 +5,8 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Calendar, Clock, FileText, Heart, Activity, MessageSquare, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { formatClinicTime } from "@/lib/timezone";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { showEnhancedErrorToast } from "@/lib/enhancedErrorHandling";
@@ -406,11 +406,11 @@ export default function PatientCareHome() {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          <span>{format(new Date(appointment.appointment_date), 'MMMM d, yyyy')}</span>
+                          <span>{formatClinicTime(appointment.appointment_date, 'MMMM d, yyyy')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          <span>{format(new Date(appointment.appointment_date), 'h:mm a')}</span>
+                          <span>{formatClinicTime(appointment.appointment_date, 'h:mm a')}</span>
                         </div>
                       </div>
                       {appointment.dentists && (

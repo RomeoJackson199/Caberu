@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { formatClinicTime } from "@/lib/timezone";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -501,10 +502,7 @@ export function DentistAppointmentDetail({
               </span>
               {appointment?.appointment_date && (
                 <span className="block mt-2">
-                  Scheduled for: {new Date(appointment.appointment_date).toLocaleString('en-US', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                  })}
+                  Scheduled for: {formatClinicTime(appointment.appointment_date, 'PPp')}
                 </span>
               )}
               <span className="block mt-3 font-medium">

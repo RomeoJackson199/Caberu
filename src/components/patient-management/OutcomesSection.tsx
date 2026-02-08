@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { AccordionItem, AccordionContent, AccordionTrigger } from "@/components/ui/accordion";
 import { ClipboardList as ClipboardListIcon } from "lucide-react";
 import { sanitizeText } from '@/utils/sanitize';
+import { formatClinicTime } from '@/lib/timezone';
 import { Appointment } from "./types";
 
 interface AppointmentOutcome {
@@ -68,7 +69,7 @@ export function OutcomesSection({
                         <div className="flex items-center gap-2">
                           <Badge className="capitalize">{o.outcome}</Badge>
                           <span className="text-xs text-muted-foreground">
-                            {new Date(o.appointments.appointment_date).toLocaleString()}
+                            {formatClinicTime(o.appointments.appointment_date, 'PPp')}
                           </span>
                         </div>
                         {o.notes && (

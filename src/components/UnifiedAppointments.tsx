@@ -30,8 +30,8 @@ import {
   FileText,
   Pill
 } from "lucide-react";
-import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { createAppointmentDateTimeFromStrings, formatClinicTime, utcToClinicTime } from "@/lib/timezone";
 import { useLanguage } from "@/hooks/useLanguage";
 import PaymentWizard from "@/components/payments/PaymentWizard";
 import { PrescriptionManager } from "@/components/PrescriptionManager";
@@ -294,9 +294,12 @@ export function UnifiedAppointments({
 
   const handleReschedule = (appointment: UnifiedAppointment) => {
     setSelectedAppointment(appointment);
-    const date = new Date(appointment.appointment_date);
-    setRescheduleDate(date.toISOString().slice(0, 10));
-    setRescheduleTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+    const clinicDate = utcToClinicTime(appointment.appointment_date);
+    const year = clinicDate.getFullYear();
+    const month = String(clinicDate.getMonth() + 1).padStart(2, '0');
+    const day = String(clinicDate.getDate()).padStart(2, '0');
+    setRescheduleDate(`${year}-${month}-${day}`);
+    setRescheduleTime(`${String(clinicDate.getHours()).padStart(2, '0')}:${String(clinicDate.getMinutes()).padStart(2, '0')}`);
     setShowReschedule(true);
   };
 
@@ -328,7 +331,7 @@ export function UnifiedAppointments({
     if (!selectedAppointment || !rescheduleDate || !rescheduleTime) return;
 
     try {
-      const newDateTime = new Date(`${rescheduleDate}T${rescheduleTime}`).toISOString();
+      const newDateTime = createAppointmentDateTimeFromStrings(rescheduleDate, rescheduleTime).toISOString();
 
       const { error } = await supabase
         .from('appointments')
@@ -365,7 +368,7 @@ export function UnifiedAppointments({
         return;
       }
 
-      const appointmentDateTime = new Date(`${quickDate}T${quickTime}`).toISOString();
+      const appointmentDateTime = createAppointmentDateTimeFromStrings(quickDate, quickTime).toISOString();
 
       const { error } = await supabase
         .from('appointments')
@@ -483,10 +486,10 @@ export function UnifiedAppointments({
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-semibold text-base">
-                          {format(new Date(appointment.appointment_date), 'PPP')}
+                          {formatClinicTime(appointment.appointment_date, 'PPP')}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(appointment.appointment_date), 'p')}
+                          {formatClinicTime(appointment.appointment_date, 'p')}
                           {appointment.duration_minutes && ` • ${appointment.duration_minutes} minutes`}
                         </p>
                       </div>
