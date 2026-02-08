@@ -1,139 +1,119 @@
 
-# Encryption Cleanup and Per-Business Key Migration
 
-## Overview
-This plan consolidates the encryption system by removing broken/unused views, wiring up per-business encryption keys (so each business's data is cryptographically isolated), and cleaning up dead code.
+# Comprehensive Audit: Timezone Handling and Encryption Review
 
-## What Changes
+## Summary of Findings
 
-### 1. Drop 13 broken `secure_*_view` views
-These views are not used anywhere in the frontend or edge functions and return NULL for encrypted fields. Only `secure_profiles_view` is kept (used by 63+ files as a passthrough).
+After auditing 70+ files across the frontend and 57 edge functions, I found **14 distinct issues** across timezone handling, encryption correctness, and related concerns.
 
-Views to drop:
-- `secure_appointments_view`
-- `secure_notes_view`
-- `secure_medical_records_view`
-- `secure_treatment_plans_view`
-- `secure_messages_view`
-- `secure_chat_messages_view`
-- `secure_patient_allergies_view`
-- `secure_communication_logs_view`
-- `secure_email_logs_view`
-- `secure_imaging_sets_view`
-- `secure_imaging_files_view`
-- `secure_patient_documents_view`
-- `secure_appointment_reminders_view`
+---
 
-### 2. Switch encryption from master key to per-business keys
-Currently all data is encrypted with a single shared master key (`private.get_encryption_key()`). This defeats the purpose of having per-business encryption keys.
+## TIMEZONE ISSUES
 
-Changes:
-- Create `private.encrypt_with_business_key(plaintext, business_id)` -- encrypts using the business-specific key, falls back to master key if unavailable
-- Create `private.decrypt_with_business_key(ciphertext_b64, business_id)` -- decrypts using the business-specific key, falls back to master key
-- Update all 14 encryption trigger functions to pass `NEW.business_id` to the new encrypt function
-- For tables without a direct `business_id` (like `imaging_files`, `patient_documents`), look up business_id from the parent record (e.g., via `imaging_sets` or `appointments`)
-- Update all `*_decrypted` views to use the new `decrypt_with_business_key()` with the row's `business_id`
+### Issue 1: `send-appointment-reminders` uses browser-locale formatting instead of Brussels timezone
+**File:** `supabase/functions/send-appointment-reminders/index.ts` (lines 88-98)
+**Problem:** Uses `toLocaleDateString()` and `toLocaleTimeString()` which use the Deno server's locale (likely UTC), not `Europe/Brussels`. Patient reminder emails will show the wrong time.
+**Fix:** Import `date-fns-tz` and use `toZonedTime` + `format` with `Europe/Brussels`, matching the pattern already used in `send-appointment-decision` and `cancel-vacation-appointments`.
 
-### 3. Re-encrypt existing data with business keys
-A one-time migration script will:
-- For each business, retrieve its key
-- Decrypt all existing data (currently encrypted with master key)
-- Re-encrypt with the business-specific key
+### Issue 2: `useAppointments.tsx` email formatting uses browser-locale time
+**File:** `src/hooks/useAppointments.tsx` (lines 174-184)
+**Problem:** Confirmation emails built in the frontend hook use `toLocaleDateString()` / `toLocaleTimeString()` on the raw UTC date. If the user's browser is not in Brussels timezone, the email will show incorrect times.
+**Fix:** Replace with `formatClinicTime()` from `@/lib/timezone` for both date and time.
 
-### 4. Delete unused `src/lib/secureQueries.ts`
-No component imports this file. All 62+ frontend files already reference the `*_decrypted` views directly.
+### Issue 3: `exportUtils.ts` exports appointment times in browser-local timezone
+**File:** `src/lib/exportUtils.ts` (lines 136-138)
+**Problem:** CSV/data exports use `toLocaleDateString()` and `toLocaleTimeString()` which vary by browser. Exported data will have inconsistent timestamps.
+**Fix:** Use `formatClinicTime()` to ensure all exported times are in Brussels timezone.
 
-### 5. Update edge function reads (already correct)
-The 7 edge functions already use `*_decrypted` views for SELECTs and write to base tables. No changes needed -- the updated views will transparently handle business-key decryption.
+### Issue 4: `AIConversationDialog.tsx` displays timestamps with `toLocaleTimeString()`
+**File:** `src/components/AIConversationDialog.tsx` (line 272)
+**Problem:** Chat message timestamps use `toLocaleTimeString()` without timezone specification. Minor, since these are ephemeral UI elements, but inconsistent with the rest of the app.
+**Fix:** Use `formatClinicTime()` or at minimum specify `Europe/Brussels` as the timezone option.
 
-## Technical Details
+### Issue 5: `createAppointmentDateTime()` does NOT use Brussels timezone
+**File:** `src/lib/timezone.ts` (lines 50-62), used in `InteractiveDentalChat.tsx`
+**Problem:** This function creates a Date using raw `new Date(year, month, day, hours, minutes)` which interprets time in the **browser's local timezone**, not Brussels. Unlike its sibling `createAppointmentDateTimeFromStrings()` which correctly uses `fromZonedTime()`, this function is timezone-unsafe. If a user books from a different timezone, the appointment time will be wrong.
+**Fix:** Rewrite to use `fromZonedTime()` with `Europe/Brussels`, matching `createAppointmentDateTimeFromStrings()`.
 
-### Database Migration (single SQL migration)
+### Issue 6: Multiple frontend components use `format(new Date(...), ...)` without timezone conversion
+**Files:** `availability-settings.tsx` (line 645), `TreatmentPlanDetailView.tsx` (lines 358, 498-503, 528, 557), `DentistAnalyticsDashboard.tsx`, `DemoClinicalTodayEnhanced.tsx`
+**Problem:** `format(new Date(appointment.appointment_date), 'h:mm a')` displays in the browser's local timezone rather than Brussels. For users outside Belgium (or for consistency), these should all use `formatClinicTime()`.
+**Fix:** Replace `format(new Date(...), ...)` with `formatClinicTime(...)` for all appointment-related date displays.
 
-**Part A -- Drop broken views:**
-```sql
-DROP VIEW IF EXISTS public.secure_appointments_view;
-DROP VIEW IF EXISTS public.secure_notes_view;
--- ... (13 total)
-```
+---
 
-**Part B -- Business-aware encrypt/decrypt functions:**
-```sql
-CREATE OR REPLACE FUNCTION private.encrypt_with_business_key(
-  plaintext TEXT, p_business_id UUID
-) RETURNS TEXT ...
--- Tries business key first, falls back to master key
+## ENCRYPTION ISSUES
 
-CREATE OR REPLACE FUNCTION private.decrypt_with_business_key(
-  ciphertext_b64 TEXT, p_business_id UUID
-) RETURNS TEXT ...
--- Tries business key first, falls back to master key
-```
+### Issue 7: 12 of 14 encryption triggers still use `encrypt_to_base64()` (master key) instead of `encrypt_with_business_key()`
+**File:** `supabase/migrations/20260207060609_...` created triggers for appointments, medical_records, treatment_plans, notes, messages, chat_messages, patient_allergies, communication_logs, email_logs, imaging_sets, patient_documents, and the phone-related tables -- ALL using `encrypt_to_base64()`.
+**File:** `supabase/migrations/20260208072729_...` only fixed 2 triggers (appointment_reminders and imaging_files).
+**Problem:** The plan called for updating all 14 triggers to use `encrypt_with_business_key()`, but only 2 were actually updated. The remaining 12 still encrypt with the shared master key, defeating per-business key isolation.
+**Fix:** Create a new migration that replaces all 12 remaining trigger functions to use `encrypt_with_business_key(NEW.field, NEW.business_id)`.
 
-**Part C -- Updated trigger functions:**
-Each of the 14 table triggers will be updated. Example for appointments:
-```sql
-CREATE OR REPLACE FUNCTION private.trg_encrypt_appointments()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF TG_OP = 'INSERT' OR NEW.reason IS DISTINCT FROM OLD.reason THEN
-    NEW.reason := private.encrypt_with_business_key(NEW.reason, NEW.business_id);
-  END IF;
-  -- ... other PHI fields
-  RETURN NEW;
-END; $$;
-```
+### Issue 8: `send-appointment-reminders` reads encrypted `reason` from base `appointments` table via join
+**File:** `supabase/functions/send-appointment-reminders/index.ts` (lines 20-50)
+**Problem:** The function queries `appointment_reminders` with a join to `appointments`, which returns the **encrypted** PHI fields (reason, notes). Line 140 then puts `appointment.reason` directly into the email HTML -- this means patients receive emails with base64-encoded encrypted gibberish instead of the actual reason.
+**Fix:** Either query from `appointments_decrypted` view separately, or restructure the join through the decrypted view.
 
-For tables without `business_id` (like `imaging_files`), the trigger will look it up:
-```sql
--- imaging_files gets business_id from imaging_sets
-SELECT business_id INTO v_biz_id FROM imaging_sets WHERE id = NEW.imaging_set_id;
-NEW.metadata := private.encrypt_with_business_key(NEW.metadata::text, v_biz_id);
-```
+### Issue 9: `google-calendar-create-event` reads from base `appointments` table
+**File:** `supabase/functions/google-calendar-create-event/index.ts`
+**Problem:** Selects from `appointments` directly (not `appointments_decrypted`), so the `notes` field it reads and pushes to Google Calendar will be encrypted ciphertext.
+**Fix:** Change the SELECT to use `appointments_decrypted`.
 
-**Part D -- Updated decrypted views:**
-```sql
-CREATE OR REPLACE VIEW public.appointments_decrypted AS
-SELECT
-  id, patient_id, dentist_id, business_id, appointment_date, status, ...
-  private.decrypt_with_business_key(reason, business_id) AS reason,
-  private.decrypt_with_business_key(notes, business_id) AS notes,
-  -- ... other PHI fields
-FROM public.appointments;
-```
+### Issue 10: `database-api` returns encrypted data on `create_appointment` and `update_appointment`
+**File:** `supabase/functions/database-api/index.ts` (lines 630-663)
+**Problem:** After inserting/updating into the base `appointments` table, the `.select()` returns encrypted fields. The API response will contain ciphertext for `reason`, `notes`, etc. The `list_appointments` correctly uses `appointments_decrypted` (line 682), but the write operations do not.
+**Fix:** After insert/update, re-fetch from `appointments_decrypted` to return decrypted data.
 
-**Part E -- Re-encrypt existing data:**
-A DO block loops through each business and re-encrypts all data from master key to business key.
+---
 
-### Frontend Changes
-- Delete `src/lib/secureQueries.ts` (unused file)
-- No other frontend changes needed
+## DATA INTEGRITY / OTHER ISSUES
 
-### Tables and their business_id resolution
+### Issue 11: Re-encryption of historical data was only done for 2 tables
+**Problem:** The migration in `20260208072729` re-encrypted data in `appointment_reminders` and `imaging_files` only. The previous migration `20260207060609` created the triggers but the plan said data would be re-encrypted from master key to business keys across all 14 tables. The main 12 tables (appointments, medical_records, treatment_plans, notes, messages, chat_messages, patient_allergies, communication_logs, email_logs, imaging_sets, patient_documents) still have data encrypted with the master app key.
+**Fix:** Run a re-encryption migration for the remaining 12 tables, decrypting with the master key and re-encrypting with each row's business key.
 
-| Table | Has `business_id`? | Resolution |
-|---|---|---|
-| appointments | Yes | Direct |
-| medical_records | Yes | Direct |
-| treatment_plans | Yes | Direct |
-| notes | Yes | Direct |
-| messages | Yes | Direct |
-| chat_messages | No | Via `appointments.business_id` using `appointment_id` |
-| patient_allergies | No | Via `appointments.business_id` using `patient_id` (latest) |
-| communication_logs | Yes | Direct |
-| email_logs | Yes | Direct |
-| imaging_sets | Yes | Direct |
-| imaging_files | No | Via `imaging_sets.business_id` using `imaging_set_id` |
-| patient_documents | No | Via `appointments.business_id` using `patient_id` (latest) |
-| appointment_reminders | No | Via `appointments.business_id` using `appointment_id` |
+### Issue 12: `secure_profiles_view` still referenced by edge functions but is a passthrough
+**Status:** This is not a bug -- `secure_profiles_view` is deliberately kept as a passthrough to `profiles` (which is unencrypted). No action needed but noting for completeness.
 
-## Risk Mitigation
-- The decrypt function tries the business key first, then falls back to the master key, so existing data encrypted with the master key will still be readable during and after migration
-- If a business key is missing, encryption gracefully falls back to the master key
-- The re-encryption step is idempotent and can be re-run safely
+### Issue 13: `TreatmentPlanManager.tsx` uses raw `toLocaleDateString()` for dates
+**File:** `src/components/TreatmentPlanManager.tsx` (line 104)
+**Problem:** `new Date(dateStr).toLocaleDateString()` with no timezone or locale specification.
+**Fix:** Use `formatClinicTime()` for consistency.
 
-## Summary of Changes
-- 1 database migration (drop views + new functions + update triggers + update views + re-encrypt data)
-- 1 file deleted (`src/lib/secureQueries.ts`)
-- 0 frontend component changes
-- 0 edge function changes
+### Issue 14: Decrypted views for the 12 main tables may still use `decrypt_from_base64()` instead of `decrypt_with_business_key()`
+**Problem:** The `*_decrypted` views for the main 12 tables need to be verified. If they still use `decrypt_from_base64()` (which only knows the master key), they won't be able to decrypt data encrypted with business keys once the triggers are fixed.
+**Fix:** Verify and update all 12 `*_decrypted` views to use `decrypt_with_business_key(field, business_id)`.
+
+---
+
+## Implementation Plan
+
+### Phase 1: Fix Encryption Triggers (Critical -- data correctness)
+1. Create a database migration that:
+   - Replaces all 12 remaining `trg_encrypt_*` functions to use `encrypt_with_business_key()`
+   - Updates all 12 `*_decrypted` views to use `decrypt_with_business_key(field, business_id)`
+   - Re-encrypts historical data from master key to business keys across all tables
+
+### Phase 2: Fix Edge Function Encryption Reads (Critical -- emails show ciphertext)
+2. Update `send-appointment-reminders/index.ts` to read from `appointments_decrypted`
+3. Update `google-calendar-create-event/index.ts` to read from `appointments_decrypted`
+4. Update `database-api/index.ts` write responses to re-fetch from decrypted views
+
+### Phase 3: Fix Timezone Handling (High -- incorrect times in emails)
+5. Update `send-appointment-reminders/index.ts` to use `toZonedTime` + `format` with `Europe/Brussels`
+6. Update `src/hooks/useAppointments.tsx` email formatting to use `formatClinicTime()`
+7. Update `src/lib/exportUtils.ts` to use `formatClinicTime()`
+8. Fix `createAppointmentDateTime()` in `timezone.ts` to use `fromZonedTime()`
+
+### Phase 4: Frontend Timezone Consistency (Medium)
+9. Update `TreatmentPlanDetailView.tsx` appointment time displays to use `formatClinicTime()`
+10. Update `availability-settings.tsx` appointment display to use `formatClinicTime()`
+11. Update `TreatmentPlanManager.tsx`, `AIConversationDialog.tsx`, and other locale-dependent displays
+
+### Files Modified
+- **Database**: 1 migration (triggers, views, re-encryption)
+- **Edge Functions**: 3 files (`send-appointment-reminders`, `google-calendar-create-event`, `database-api`)
+- **Frontend**: ~10 files (timezone fixes across components and hooks)
+- **Shared**: `src/lib/timezone.ts` (fix `createAppointmentDateTime`)
+
