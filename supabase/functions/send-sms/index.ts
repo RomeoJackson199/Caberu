@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { checkRateLimitMemory, getClientIP, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
 
 interface SMSRequest {
   to: string;
@@ -42,6 +43,19 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       throw new Error('Invalid or expired token');
+    }
+
+    // Rate limiting: per-IP (50/hour) and per-user (100/day)
+    const clientIP = getClientIP(req);
+    const ipRateLimit = checkRateLimitMemory(clientIP, RATE_LIMITS.SMS);
+    if (!ipRateLimit.allowed) {
+      console.warn(`SMS rate limit exceeded for IP: ${clientIP}`);
+      return rateLimitResponse(ipRateLimit, corsHeaders);
+    }
+    const userRateLimit = checkRateLimitMemory(`${user.id}_${clientIP}`, RATE_LIMITS.SMS_USER);
+    if (!userRateLimit.allowed) {
+      console.warn(`SMS daily rate limit exceeded for user: ${user.id}`);
+      return rateLimitResponse(userRateLimit, corsHeaders);
     }
 
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');

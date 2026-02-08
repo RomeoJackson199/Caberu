@@ -263,5 +263,17 @@ export const RATE_LIMITS = {
     windowMs: 60 * 60 * 1000,
     maxRequests: 50,
     keyPrefix: 'support_chat'
+  },
+  // SMS: 50 messages per hour per IP
+  SMS: {
+    windowMs: 60 * 60 * 1000,
+    maxRequests: 50,
+    keyPrefix: 'sms'
+  },
+  // SMS User: 100 messages per day per user
+  SMS_USER: {
+    windowMs: 24 * 60 * 60 * 1000,
+    maxRequests: 100,
+    keyPrefix: 'sms_user'
   }
 } as const;
