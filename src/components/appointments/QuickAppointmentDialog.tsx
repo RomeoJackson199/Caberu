@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, addMinutes, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
+import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
 import { Calendar, Clock, User, Search, Loader2 } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -285,9 +286,7 @@ export function QuickAppointmentDialog({
 
     setLoading(true);
     try {
-      const appointmentDateTime = new Date(appointmentDate);
-      const [hours, minutes] = appointmentTime.split(":");
-      appointmentDateTime.setHours(parseInt(hours), parseInt(minutes || "0"), 0, 0);
+      const appointmentDateTime = createAppointmentDateTimeFromStrings(appointmentDate, appointmentTime);
 
       // Use createAppointmentWithNotification to send email to patient
       await createAppointmentWithNotification({

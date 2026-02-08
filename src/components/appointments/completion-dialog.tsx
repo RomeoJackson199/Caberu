@@ -26,6 +26,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { formatClinicTime } from '@/lib/timezone';
 import { NotificationService } from '@/lib/notificationService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
@@ -364,7 +365,7 @@ export function CompletionDialog({
 
         await supabase.from('notes').insert({
           patient_id: appointment.patient_id,
-          title: `Appointment Services - ${format(new Date(appointment.appointment_date), 'PPP')}`,
+          title: `Appointment Services - ${formatClinicTime(appointment.appointment_date, 'PPP')}`,
           content: treatmentNotes,
           note_type: 'treatment',
           created_by: appointment.dentist_id
@@ -375,7 +376,7 @@ export function CompletionDialog({
       if (formData.notes.trim() || formData.consultationNotes.trim()) {
         await supabase.from('notes').insert({
           patient_id: appointment.patient_id,
-          title: `Consultation Notes - ${format(new Date(appointment.appointment_date), 'PPP')}`,
+          title: `Consultation Notes - ${formatClinicTime(appointment.appointment_date, 'PPP')}`,
           content: formData.consultationNotes.trim() || formData.notes.trim(),
           note_type: 'consultation',
           created_by: appointment.dentist_id
@@ -435,7 +436,7 @@ export function CompletionDialog({
                 patient_id: appointment.patient_id,
                 dentist_id: appointment.dentist_id,
                 amount: Math.round(formData.totalAmount * 100),
-                description: `Appointment on ${format(new Date(appointment.appointment_date), 'PPP')} - ${treatmentDescription}`,
+                description: `Appointment on ${formatClinicTime(appointment.appointment_date, 'PPP')} - ${treatmentDescription}`,
                 patient_email: patientProfile.email,
                 send_now: true,
                 channels: ['email'],
@@ -616,10 +617,10 @@ export function CompletionDialog({
                   <Calendar className="h-5 w-5 text-primary mt-0.5" />
                   <div>
                     <p className="font-semibold text-base">
-                      {format(new Date(appointment.appointment_date), 'EEEE, MMMM do, yyyy')}
+                      {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM do, yyyy')}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(appointment.appointment_date), 'h:mm a')}
+                      {formatClinicTime(appointment.appointment_date, 'h:mm a')}
                     </p>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
-import { format } from "date-fns";
 import { Clock, User, FileText } from "lucide-react";
+import { formatClinicTime } from "@/lib/timezone";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -26,7 +26,7 @@ export function AppointmentCard({ appointment, compact = false, onClick }: Appoi
         onClick={onClick}
       >
         <div className="font-medium truncate">
-          {format(new Date(appointment.appointment_date), "HH:mm")} - {appointment.patient?.first_name}
+          {formatClinicTime(appointment.appointment_date, "HH:mm")} - {appointment.patient?.first_name}
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ export function AppointmentCard({ appointment, compact = false, onClick }: Appoi
 
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="w-4 h-4" />
-              <span>{format(new Date(appointment.appointment_date), "PPp")}</span>
+              <span>{formatClinicTime(appointment.appointment_date, "PPp")}</span>
             </div>
 
             {appointment.reason && (

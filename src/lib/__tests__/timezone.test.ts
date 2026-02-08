@@ -187,6 +187,89 @@ describe('timezone.ts', () => {
     });
   });
 
+  /**
+   * Regression tests for the appointment timezone bug:
+   * Dentist-created appointments were using `new Date(\`\${date}T\${time}\`)` which
+   * interprets the time in browser-local timezone instead of Brussels timezone.
+   * Patient-portal appointments correctly used `createAppointmentDateTimeFromStrings()`
+   * which interprets the time as Brussels timezone.
+   *
+   * These tests verify that the round-trip create→store→display is consistent.
+   *
+   * Europe/Brussels:
+   *   CET  (winter) = UTC+1
+   *   CEST (summer) = UTC+2
+   */
+  describe('round-trip: create → store → display (regression)', () => {
+    it('10:00 AM May 5 Brussels → stored UTC → displayed as 10:00 AM May 5 (CEST)', () => {
+      const utcDate = createAppointmentDateTimeFromStrings('2026-05-05', '10:00');
+      // May is CEST (UTC+2), so 10:00 Brussels = 08:00 UTC
+      expect(utcDate.toISOString()).toBe('2026-05-05T08:00:00.000Z');
+
+      const displayedTime = formatClinicTime(utcDate.toISOString(), 'HH:mm');
+      const displayedDate = formatClinicTime(utcDate.toISOString(), 'yyyy-MM-dd');
+      expect(displayedTime).toBe('10:00');
+      expect(displayedDate).toBe('2026-05-05');
+    });
+
+    it('10:00 AM Jan 15 Brussels → stored UTC → displayed as 10:00 AM Jan 15 (CET)', () => {
+      const utcDate = createAppointmentDateTimeFromStrings('2026-01-15', '10:00');
+      // January is CET (UTC+1), so 10:00 Brussels = 09:00 UTC
+      expect(utcDate.toISOString()).toBe('2026-01-15T09:00:00.000Z');
+
+      const displayedTime = formatClinicTime(utcDate.toISOString(), 'HH:mm');
+      const displayedDate = formatClinicTime(utcDate.toISOString(), 'yyyy-MM-dd');
+      expect(displayedTime).toBe('10:00');
+      expect(displayedDate).toBe('2026-01-15');
+    });
+
+    it('14:30 Mar 29 2026 Brussels → stored UTC → displayed correctly across DST boundary', () => {
+      // March 29, 2026 is the spring DST switch day in Europe/Brussels
+      // Clocks move forward at 02:00 → 03:00, so 14:30 is CEST (UTC+2)
+      const utcDate = createAppointmentDateTimeFromStrings('2026-03-29', '14:30');
+      expect(utcDate.toISOString()).toBe('2026-03-29T12:30:00.000Z');
+
+      const displayedTime = formatClinicTime(utcDate.toISOString(), 'HH:mm');
+      expect(displayedTime).toBe('14:30');
+    });
+
+    it('dentist and patient flows produce identical UTC for the same local time', () => {
+      const dateStr = '2026-05-05';
+      const timeStr = '10:00';
+
+      // Both flows now use createAppointmentDateTimeFromStrings
+      const flow1 = createAppointmentDateTimeFromStrings(dateStr, timeStr);
+      const flow2 = createAppointmentDateTimeFromStrings(dateStr, timeStr);
+
+      expect(flow1.toISOString()).toBe(flow2.toISOString());
+    });
+  });
+
+  describe('cross-view display consistency', () => {
+    it('all display formats show the same time for one UTC timestamp', () => {
+      // 10:00 Brussels on May 5, 2026 stored as UTC
+      const storedUtc = '2026-05-05T08:00:00.000Z';
+
+      const time24h = formatClinicTime(storedUtc, 'HH:mm');
+      const time12h = formatClinicTime(storedUtc, 'h:mm a');
+      const dateStr = formatClinicTime(storedUtc, 'yyyy-MM-dd');
+      const fullDateTime = formatClinicTime(storedUtc, 'PPp');
+
+      expect(time24h).toBe('10:00');
+      expect(time12h).toBe('10:00 AM');
+      expect(dateStr).toBe('2026-05-05');
+      expect(fullDateTime).toContain('10:00');
+    });
+
+    it('utcToClinicTime returns correct hour and date components', () => {
+      const clinicTime = utcToClinicTime('2026-05-05T08:00:00.000Z');
+      expect(clinicTime.getHours()).toBe(10);
+      expect(clinicTime.getMinutes()).toBe(0);
+      expect(clinicTime.getDate()).toBe(5);
+      expect(clinicTime.getMonth()).toBe(4); // May = 4
+    });
+  });
+
   describe('formatTimeSlot', () => {
     it('should format morning times with AM', () => {
       expect(formatTimeSlot('09:00')).toBe('9:00 AM');

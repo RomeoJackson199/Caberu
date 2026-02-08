@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { format } from 'date-fns';
+import { formatClinicTime } from '@/lib/timezone';
 import { AppointmentCard } from './AppointmentCard';
 import { AppointmentConfirmationWidget } from '@/components/AppointmentConfirmationWidget';
 import { Card, CardContent } from '@/components/ui/card';
@@ -81,7 +82,7 @@ const useFilteredAppointments = (appointments: Appointment[], searchTerm?: strin
         appointment.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         appointment.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         appointment.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        format(new Date(appointment.appointment_date), 'PPP p')
+        formatClinicTime(appointment.appointment_date, 'PPP p')
           .toLowerCase()
           .includes(searchTerm.toLowerCase())
       )

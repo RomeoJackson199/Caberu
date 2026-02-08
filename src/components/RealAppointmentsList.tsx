@@ -16,6 +16,7 @@ import {
   Phone
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatClinicTime } from '@/lib/timezone';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   AlertDialog,
@@ -198,16 +199,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
 
   const formatDate = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return 'Date not available';
-      }
-      return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      return formatClinicTime(dateString, 'EEEE, MMMM d, yyyy');
     } catch (error) {
       return 'Date not available';
     }
@@ -215,14 +207,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
 
   const formatTime = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return 'Time not available';
-      }
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      return formatClinicTime(dateString, 'hh:mm a');
     } catch (error) {
       return 'Time not available';
     }

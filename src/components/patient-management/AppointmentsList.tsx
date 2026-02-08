@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Eye } from "lucide-react";
-import { format } from "date-fns";
+import { formatClinicTime } from "@/lib/timezone";
 import { Appointment } from "./types";
 import { getStatusColor } from "./utils";
 
@@ -37,14 +37,14 @@ export function AppointmentsList({ appointments }: AppointmentsListProps) {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <p className="font-medium">
-                          {format(new Date(appointment.appointment_date), 'PPP')}
+                          {formatClinicTime(appointment.appointment_date, 'PPP')}
                         </p>
                         <Badge className={getStatusColor(appointment.status)}>
                           {appointment.status}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(appointment.appointment_date), 'p')}
+                        {formatClinicTime(appointment.appointment_date, 'p')}
                         {appointment.duration_minutes && ` • ${appointment.duration_minutes} minutes`}
                       </p>
                       {appointment.reason && (

@@ -42,6 +42,7 @@ import {
   Loader2
 } from "lucide-react";
 import { format, startOfDay, isSameDay } from "date-fns";
+import { formatClinicTime } from "@/lib/timezone";
 import { logger } from '@/lib/logger';
 
 type Dentist = any;
@@ -902,11 +903,11 @@ const RescheduleWidget = ({
           <div className="space-y-1 text-sm text-blue-800">
             <div className="flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
-              <span>{format(new Date(appointment.appointment_date), "EEEE, MMMM d, yyyy")}</span>
+              <span>{formatClinicTime(appointment.appointment_date, "EEEE, MMMM d, yyyy")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>{format(new Date(appointment.appointment_date), "h:mm a")}</span>
+              <span>{formatClinicTime(appointment.appointment_date, "h:mm a")}</span>
             </div>
             <div className="flex items-center gap-2">
               <UserIcon className="h-4 w-4" />
@@ -954,11 +955,11 @@ const CancelAppointmentWidget = ({
           <div className="space-y-1 text-sm text-red-800">
             <div className="flex items-center gap-2">
               <CalendarIcon className="h-4 w-4" />
-              <span>{format(new Date(appointment.appointment_date), "EEEE, MMMM d, yyyy")}</span>
+              <span>{formatClinicTime(appointment.appointment_date, "EEEE, MMMM d, yyyy")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>{format(new Date(appointment.appointment_date), "h:mm a")}</span>
+              <span>{formatClinicTime(appointment.appointment_date, "h:mm a")}</span>
             </div>
             <div className="flex items-center gap-2">
               <UserIcon className="h-4 w-4" />
