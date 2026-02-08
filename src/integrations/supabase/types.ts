@@ -138,7 +138,7 @@ export type Database = {
             foreignKeyName: "appointment_reminders_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -189,7 +189,7 @@ export type Database = {
             foreignKeyName: "appointment_slots_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -422,14 +422,14 @@ export type Database = {
             foreignKeyName: "appointments_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "secure_treatment_plans_view"
+            referencedRelation: "treatment_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "appointments_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "treatment_plans"
+            referencedRelation: "treatment_plans_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -849,6 +849,7 @@ export type Database = {
       chat_messages: {
         Row: {
           appointment_id: string | null
+          business_id: string | null
           created_at: string
           id: string
           is_bot: boolean
@@ -861,6 +862,7 @@ export type Database = {
         }
         Insert: {
           appointment_id?: string | null
+          business_id?: string | null
           created_at?: string
           id?: string
           is_bot?: boolean
@@ -873,6 +875,7 @@ export type Database = {
         }
         Update: {
           appointment_id?: string | null
+          business_id?: string | null
           created_at?: string
           id?: string
           is_bot?: boolean
@@ -895,7 +898,21 @@ export type Database = {
             foreignKeyName: "chat_messages_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
@@ -1690,7 +1707,7 @@ export type Database = {
             foreignKeyName: "imaging_files_imaging_set_id_fkey"
             columns: ["imaging_set_id"]
             isOneToOne: false
-            referencedRelation: "secure_imaging_sets_view"
+            referencedRelation: "imaging_sets_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -1744,7 +1761,7 @@ export type Database = {
             foreignKeyName: "imaging_sets_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -1779,14 +1796,14 @@ export type Database = {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "secure_treatment_plans_view"
+            referencedRelation: "treatment_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "treatment_plans"
+            referencedRelation: "treatment_plans_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -2024,7 +2041,7 @@ export type Database = {
             foreignKeyName: "notes_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -2777,7 +2794,7 @@ export type Database = {
             foreignKeyName: "payment_requests_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -3192,7 +3209,7 @@ export type Database = {
             foreignKeyName: "reschedule_suggestions_original_appointment_id_fkey"
             columns: ["original_appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -3276,7 +3293,7 @@ export type Database = {
             foreignKeyName: "slot_recommendations_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -3669,14 +3686,14 @@ export type Database = {
             foreignKeyName: "treatment_plan_items_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "secure_treatment_plans_view"
+            referencedRelation: "treatment_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "treatment_plan_items_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "treatment_plans"
+            referencedRelation: "treatment_plans_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -3803,7 +3820,7 @@ export type Database = {
             foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
             columns: ["created_from_appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -3975,94 +3992,7 @@ export type Database = {
       }
     }
     Views: {
-      providers: {
-        Row: {
-          average_rating: number | null
-          communication_score: number | null
-          created_at: string | null
-          id: string | null
-          is_active: boolean | null
-          license_number: string | null
-          profile_id: string | null
-          specialization: string | null
-          total_ratings: number | null
-          updated_at: string | null
-          wait_time_score: number | null
-        }
-        Insert: {
-          average_rating?: number | null
-          communication_score?: number | null
-          created_at?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          license_number?: string | null
-          profile_id?: string | null
-          specialization?: string | null
-          total_ratings?: number | null
-          updated_at?: string | null
-          wait_time_score?: number | null
-        }
-        Update: {
-          average_rating?: number | null
-          communication_score?: number | null
-          created_at?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          license_number?: string | null
-          profile_id?: string | null
-          specialization?: string | null
-          total_ratings?: number | null
-          updated_at?: string | null
-          wait_time_score?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dentists_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "dentists_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "secure_profiles_view"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      public_businesses_view: {
-        Row: {
-          custom_config: Json | null
-          id: string | null
-          logo_url: string | null
-          name: string | null
-          slug: string | null
-          tagline: string | null
-          template_type: string | null
-        }
-        Insert: {
-          custom_config?: Json | null
-          id?: string | null
-          logo_url?: string | null
-          name?: string | null
-          slug?: string | null
-          tagline?: string | null
-          template_type?: string | null
-        }
-        Update: {
-          custom_config?: Json | null
-          id?: string | null
-          logo_url?: string | null
-          name?: string | null
-          slug?: string | null
-          tagline?: string | null
-          template_type?: string | null
-        }
-        Relationships: []
-      }
-      secure_appointment_reminders_view: {
+      appointment_reminders_decrypted: {
         Row: {
           appointment_id: string | null
           created_at: string | null
@@ -4074,30 +4004,6 @@ export type Database = {
           sent_at: string | null
           status: string | null
           updated_at: string | null
-        }
-        Insert: {
-          appointment_id?: string | null
-          created_at?: string | null
-          error_message?: never
-          id?: string | null
-          notification_method?: string | null
-          reminder_type?: string | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          appointment_id?: string | null
-          created_at?: string | null
-          error_message?: never
-          id?: string | null
-          notification_method?: string | null
-          reminder_type?: string | null
-          scheduled_for?: string | null
-          sent_at?: string | null
-          status?: string | null
-          updated_at?: string | null
         }
         Relationships: [
           {
@@ -4111,12 +4017,12 @@ export type Database = {
             foreignKeyName: "appointment_reminders_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
         ]
       }
-      secure_appointments_view: {
+      appointments_decrypted: {
         Row: {
           ai_summary: string | null
           amount_paid_cents: number | null
@@ -4126,7 +4032,7 @@ export type Database = {
           business_id: string | null
           completed_at: string | null
           consultation_notes: string | null
-          conversation_transcript: Json | null
+          conversation_transcript: string | null
           created_at: string | null
           dentist_id: string | null
           duration_minutes: number | null
@@ -4256,14 +4162,14 @@ export type Database = {
             foreignKeyName: "appointments_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "secure_treatment_plans_view"
+            referencedRelation: "treatment_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "appointments_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "treatment_plans"
+            referencedRelation: "treatment_plans_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -4282,21 +4188,23 @@ export type Database = {
           },
         ]
       }
-      secure_chat_messages_view: {
+      chat_messages_decrypted: {
         Row: {
           appointment_id: string | null
+          business_id: string | null
           created_at: string | null
           id: string | null
           is_bot: boolean | null
           message: string | null
           message_type: string | null
-          metadata: Json | null
+          metadata: string | null
           session_id: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           appointment_id?: string | null
+          business_id?: string | null
           created_at?: string | null
           id?: string | null
           is_bot?: boolean | null
@@ -4309,6 +4217,7 @@ export type Database = {
         }
         Update: {
           appointment_id?: string | null
+          business_id?: string | null
           created_at?: string | null
           id?: string | null
           is_bot?: boolean | null
@@ -4331,12 +4240,26 @@ export type Database = {
             foreignKeyName: "chat_messages_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
       }
-      secure_communication_logs_view: {
+      communication_logs_decrypted: {
         Row: {
           business_id: string | null
           channel: string | null
@@ -4418,7 +4341,7 @@ export type Database = {
           },
         ]
       }
-      secure_email_logs_view: {
+      email_logs_decrypted: {
         Row: {
           business_id: string | null
           created_at: string | null
@@ -4469,48 +4392,20 @@ export type Database = {
           },
         ]
       }
-      secure_imaging_files_view: {
+      imaging_files_decrypted: {
         Row: {
           created_at: string | null
           filename: string | null
           height: number | null
           id: string | null
           imaging_set_id: string | null
-          metadata: Json | null
+          metadata: string | null
           mime_type: string | null
           original_filename: string | null
           size_bytes: number | null
           storage_path: string | null
           thumbnail_path: string | null
           width: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          filename?: string | null
-          height?: number | null
-          id?: string | null
-          imaging_set_id?: string | null
-          metadata?: never
-          mime_type?: string | null
-          original_filename?: string | null
-          size_bytes?: number | null
-          storage_path?: string | null
-          thumbnail_path?: string | null
-          width?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          filename?: string | null
-          height?: number | null
-          id?: string | null
-          imaging_set_id?: string | null
-          metadata?: never
-          mime_type?: string | null
-          original_filename?: string | null
-          size_bytes?: number | null
-          storage_path?: string | null
-          thumbnail_path?: string | null
-          width?: number | null
         }
         Relationships: [
           {
@@ -4524,12 +4419,12 @@ export type Database = {
             foreignKeyName: "imaging_files_imaging_set_id_fkey"
             columns: ["imaging_set_id"]
             isOneToOne: false
-            referencedRelation: "secure_imaging_sets_view"
+            referencedRelation: "imaging_sets_decrypted"
             referencedColumns: ["id"]
           },
         ]
       }
-      secure_imaging_sets_view: {
+      imaging_sets_decrypted: {
         Row: {
           appointment_id: string | null
           business_id: string | null
@@ -4578,7 +4473,7 @@ export type Database = {
             foreignKeyName: "imaging_sets_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -4613,14 +4508,14 @@ export type Database = {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "secure_treatment_plans_view"
+            referencedRelation: "treatment_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "imaging_sets_treatment_plan_id_fkey"
             columns: ["treatment_plan_id"]
             isOneToOne: false
-            referencedRelation: "treatment_plans"
+            referencedRelation: "treatment_plans_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -4639,7 +4534,7 @@ export type Database = {
           },
         ]
       }
-      secure_medical_records_view: {
+      medical_records_decrypted: {
         Row: {
           business_id: string | null
           created_at: string | null
@@ -4727,7 +4622,7 @@ export type Database = {
           },
         ]
       }
-      secure_messages_view: {
+      messages_decrypted: {
         Row: {
           business_id: string | null
           created_at: string | null
@@ -4803,9 +4698,10 @@ export type Database = {
           },
         ]
       }
-      secure_notes_view: {
+      notes_decrypted: {
         Row: {
           appointment_id: string | null
+          business_id: string | null
           content: string | null
           created_at: string | null
           created_by: string | null
@@ -4819,6 +4715,7 @@ export type Database = {
         }
         Insert: {
           appointment_id?: string | null
+          business_id?: string | null
           content?: never
           created_at?: string | null
           created_by?: string | null
@@ -4832,6 +4729,7 @@ export type Database = {
         }
         Update: {
           appointment_id?: string | null
+          business_id?: string | null
           content?: never
           created_at?: string | null
           created_by?: string | null
@@ -4855,7 +4753,21 @@ export type Database = {
             foreignKeyName: "notes_appointment_id_fkey"
             columns: ["appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
           {
@@ -4902,7 +4814,7 @@ export type Database = {
           },
         ]
       }
-      secure_patient_allergies_view: {
+      patient_allergies_decrypted: {
         Row: {
           allergy_name: string | null
           business_id: string | null
@@ -4981,7 +4893,7 @@ export type Database = {
           },
         ]
       }
-      secure_patient_documents_view: {
+      patient_documents_decrypted: {
         Row: {
           business_id: string | null
           created_at: string | null
@@ -5066,6 +4978,93 @@ export type Database = {
           },
         ]
       }
+      providers: {
+        Row: {
+          average_rating: number | null
+          communication_score: number | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          license_number: string | null
+          profile_id: string | null
+          specialization: string | null
+          total_ratings: number | null
+          updated_at: string | null
+          wait_time_score: number | null
+        }
+        Insert: {
+          average_rating?: number | null
+          communication_score?: number | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          license_number?: string | null
+          profile_id?: string | null
+          specialization?: string | null
+          total_ratings?: number | null
+          updated_at?: string | null
+          wait_time_score?: number | null
+        }
+        Update: {
+          average_rating?: number | null
+          communication_score?: number | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          license_number?: string | null
+          profile_id?: string | null
+          specialization?: string | null
+          total_ratings?: number | null
+          updated_at?: string | null
+          wait_time_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_businesses_view: {
+        Row: {
+          custom_config: Json | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+          tagline: string | null
+          template_type: string | null
+        }
+        Insert: {
+          custom_config?: Json | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          tagline?: string | null
+          template_type?: string | null
+        }
+        Update: {
+          custom_config?: Json | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          tagline?: string | null
+          template_type?: string | null
+        }
+        Relationships: []
+      }
       secure_profiles_view: {
         Row: {
           address: string | null
@@ -5123,7 +5122,7 @@ export type Database = {
         }
         Relationships: []
       }
-      secure_treatment_plans_view: {
+      treatment_plans_decrypted: {
         Row: {
           business_id: string | null
           created_at: string | null
@@ -5245,7 +5244,7 @@ export type Database = {
             foreignKeyName: "treatment_plans_created_from_appointment_id_fkey"
             columns: ["created_from_appointment_id"]
             isOneToOne: false
-            referencedRelation: "secure_appointments_view"
+            referencedRelation: "appointments_decrypted"
             referencedColumns: ["id"]
           },
           {
@@ -5375,12 +5374,10 @@ export type Database = {
       }
       cleanup_old_audit_logs: { Args: never; Returns: Json }
       cleanup_old_rate_limits: { Args: never; Returns: number }
-      decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       dentist_has_patient_access: {
         Args: { _patient_id: string; _user_id: string }
         Returns: boolean
       }
-      encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       ensure_daily_slots: {
         Args: { p_date: string; p_dentist_id: string }
         Returns: undefined
