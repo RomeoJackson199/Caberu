@@ -31,59 +31,54 @@ export function useUserRole() {
           .eq('user_id', user.id);
 
         if (roleError) {
-          logger.error('Error fetching user_roles:', roleError);
-          throw roleError;
+          logger.error('Error fetching user_roles (continuing with fallback):', roleError);
         }
 
         logger.info('useUserRole: Roles from user_roles table', { data: userRolesData, count: userRolesData?.length });
 
-        // Second, check business_members table (multi-tenancy system)
-        // Get profile_id first
-        const { data: profileData, error: profileError } = await supabase
-          .from('secure_profiles_view')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (profileError) {
-          logger.error('Error fetching profile:', profileError);
-        }
-
-        let businessRoles: string[] = [];
-        if (profileData) {
-          const { data: membershipData, error: membershipError } = await supabase
-            .from('business_members')
-            .select('role')
-            .eq('profile_id', profileData.id);
-
-          if (membershipError) {
-            logger.error('Error fetching business_members:', membershipError);
-          } else {
-            businessRoles = membershipData?.map((m: { role: string }) => m.role) || [];
-            logger.info('useUserRole: Roles from business_members table', {
-              businessRoles,
-              count: businessRoles.length
-            });
-          }
-        }
-
-        // Combine roles from both tables
+        // Build roles primarily from user_roles (source of truth for app roles)
         const allRoles = new Set<AppRole>();
-
-        // Add roles from user_roles table
         if (userRolesData && Array.isArray(userRolesData)) {
           userRolesData.forEach((r: { role: AppRole }) => {
             if (r.role) allRoles.add(r.role);
           });
         }
 
-        // Add dentist/provider role if user has business membership with dentist-like roles
-        if (businessRoles.length > 0) {
-          if (businessRoles.includes('owner') ||
-            businessRoles.includes('admin') ||
-            businessRoles.includes('dentist')) {
-            allRoles.add('dentist');
-            logger.info('useUserRole: Added dentist role based on business membership');
+        // Fallback: if user_roles has no dentist/provider/admin, infer provider access from business membership
+        const hasProviderAccessFromUserRoles =
+          allRoles.has('provider') || allRoles.has('dentist') || allRoles.has('admin');
+
+        if (!hasProviderAccessFromUserRoles) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            logger.error('Error fetching profile for business_members fallback:', profileError);
+          }
+
+          if (profileData) {
+            const { data: membershipData, error: membershipError } = await supabase
+              .from('business_members')
+              .select('role')
+              .eq('profile_id', profileData.id);
+
+            if (membershipError) {
+              logger.error('Error fetching business_members fallback:', membershipError);
+            } else {
+              const businessRoles = membershipData?.map((m: { role: string }) => m.role) || [];
+              logger.info('useUserRole: Fallback roles from business_members table', {
+                businessRoles,
+                count: businessRoles.length
+              });
+
+              if (businessRoles.includes('owner') || businessRoles.includes('admin') || businessRoles.includes('dentist')) {
+                allRoles.add('dentist');
+                logger.info('useUserRole: Added dentist role based on business membership fallback');
+              }
+            }
           }
         }
 
