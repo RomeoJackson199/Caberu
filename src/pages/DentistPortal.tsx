@@ -392,7 +392,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
           // Refresh tour completed state
           setTourCompleted(isTourMarkedCompleted());
         }}
-        onChangeSection={(section) => setActiveSection(section as DentistSection)}
+        onChangeSection={(section) => navigateToSection(section as DentistSection)}
       />
 
       {/* Onboarding Progress Tracker */}

@@ -78,6 +78,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
           size="icon"
           className={cn("relative", className)}
           aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
+          data-tour="notification-bell"
         >
           <Bell className="h-5 w-5" />
           <AnimatePresence>
