@@ -39,18 +39,41 @@ serve(async (req) => {
       );
 
       // Update payment request status and paid_at
-      const { error } = await supabaseService
+      const { data: updatedRequests, error } = await supabaseService
         .from('payment_requests')
         .update({ 
           status: 'paid',
           paid_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('stripe_session_id', session_id);
+        .eq('stripe_session_id', session_id)
+        .select('appointment_id');
 
       if (error) {
         console.error('Error updating payment status:', error);
         throw error;
+      }
+
+      // Also update the linked appointment's payment_status to 'paid'
+      if (updatedRequests && updatedRequests.length > 0) {
+        const appointmentIds = updatedRequests
+          .map(r => r.appointment_id)
+          .filter(Boolean);
+        
+        if (appointmentIds.length > 0) {
+          const { error: aptError } = await supabaseService
+            .from('appointments')
+            .update({ 
+              payment_status: 'paid',
+              updated_at: new Date().toISOString()
+            })
+            .in('id', appointmentIds);
+
+          if (aptError) {
+            console.error('Error updating appointment payment status:', aptError);
+            // Don't throw - payment was already marked as paid
+          }
+        }
       }
 
       return new Response(
