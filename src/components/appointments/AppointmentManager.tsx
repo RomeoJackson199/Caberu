@@ -183,7 +183,7 @@ const AppointmentManagerComponent: React.FC<AppointmentManagerProps> = ({ dentis
       };
 
       if (newStatus === 'completed') {
-        updateData.treatment_completed_at = new Date().toISOString();
+        updateData.completed_at = new Date().toISOString();
       }
 
       if (reason && (newStatus === 'cancelled')) {
@@ -249,7 +249,7 @@ const AppointmentManagerComponent: React.FC<AppointmentManagerProps> = ({ dentis
       };
 
       if (action === 'complete') {
-        updateData.treatment_completed_at = new Date().toISOString();
+        updateData.completed_at = new Date().toISOString();
       }
 
       if (reason && action === 'cancel') {

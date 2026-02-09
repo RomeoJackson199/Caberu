@@ -488,7 +488,7 @@ export function CompletionSheet({ open, onOpenChange, appointment, dentistId, on
 			}
 
 			// 9) Mark appointment status
-			await supabase.from('appointments').update({ status: withInvoice ? 'completed' : 'confirmed', treatment_completed_at: withInvoice ? new Date().toISOString() : null }).eq('id', appointment.id);
+			await supabase.from('appointments').update({ status: withInvoice ? 'completed' : 'confirmed', completed_at: withInvoice ? new Date().toISOString() : null }).eq('id', appointment.id);
 			await emitAnalyticsEvent('APPOINTMENT_COMPLETED', dentistId, { appointmentId: appointment.id, totals: { subtotal, finalTotal }, outcome: 'successful' });
 
 			toast({ title: withInvoice ? 'Saved & invoiced' : 'Saved as draft' });
