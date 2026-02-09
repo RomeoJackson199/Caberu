@@ -107,16 +107,24 @@ serve(async (req) => {
             );
         }
 
-        // 4. Generate Slug
-        const baseSlug = business_data.name
+        // 4. Generate Slug - use client-provided slug if available, otherwise generate from name
+        const baseSlug = (business_data.slug || business_data.name
             ?.toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '') || 'business';
+            .replace(/^-|-$/g, '')) || 'business';
 
-        // Ensure unique slug logic would go here, simplified for now:
-        // Ideally use a loop or random suffix if collision.
-        const slugSuffix = Math.random().toString(36).substring(2, 6);
-        const finalSlug = `${baseSlug}-${slugSuffix}`;
+        // Check for slug collision and append suffix only if needed
+        let finalSlug = baseSlug;
+        const { data: existingSlug } = await supabaseClient
+            .from('businesses')
+            .select('id')
+            .eq('slug', finalSlug)
+            .maybeSingle();
+
+        if (existingSlug) {
+            const slugSuffix = Math.random().toString(36).substring(2, 6);
+            finalSlug = `${baseSlug}-${slugSuffix}`;
+        }
 
         // 5. Create Business
         const { data: business, error: businessError } = await supabaseClient

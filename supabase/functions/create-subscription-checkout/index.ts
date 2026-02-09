@@ -85,7 +85,7 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'eur',
             product_data: {
               name: `${plan.name} Plan`,
               description: `${plan.name} subscription - ${plan.customer_limit} customers${plan.email_limit_monthly ? `, ${plan.email_limit_monthly} emails/month` : ''}`,
