@@ -69,6 +69,15 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     );
   };
 
+  // Listen for onboarding completion event from OnboardingOrchestrator
+  useEffect(() => {
+    const handleOnboardingCompleted = () => {
+      setOnboardingCompleted(true);
+    };
+    window.addEventListener('onboarding-completed', handleOnboardingCompleted);
+    return () => window.removeEventListener('onboarding-completed', handleOnboardingCompleted);
+  }, []);
+
   // Check if tour has been completed and if it should auto-start
   useEffect(() => {
     setTourCompleted(isTourMarkedCompleted());
@@ -82,7 +91,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       setTimeout(() => {
         setShowDemoTour(true);
         localStorage.removeItem('should-start-tour'); // Clear the flag
-      }, 1000);
+      }, 1500);
     }
   }, [onboardingCompleted]);
 
@@ -400,8 +409,8 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         onChangeSection={(section) => navigateToSection(section as DentistSection)}
       />
 
-      {/* Onboarding Progress Tracker */}
-      {user && businessInfo && (
+      {/* Onboarding Progress Tracker - only show after onboarding flow is complete */}
+      {user && businessInfo && onboardingCompleted === true && (
         <OnboardingProgressTracker
           userId={user.id}
           businessId={businessInfo.id}

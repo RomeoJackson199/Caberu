@@ -293,16 +293,18 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const updateData = (field: string, value: any) => {
-    setData({ ...data, [field]: value });
+    setData(prev => ({ ...prev, [field]: value }));
   };
 
   const toggleArrayItem = (field: "primaryServices" | "mainGoals", value: string) => {
-    const current = data[field];
-    if (current.includes(value)) {
-      updateData(field, current.filter((item) => item !== value));
-    } else {
-      updateData(field, [...current, value]);
-    }
+    setData(prev => {
+      const current = prev[field];
+      if (current.includes(value)) {
+        return { ...prev, [field]: current.filter((item) => item !== value) };
+      } else {
+        return { ...prev, [field]: [...current, value] };
+      }
+    });
   };
 
   const handleNext = () => {

@@ -33,7 +33,9 @@ export default function DentistAdminProfile() {
     email: "",
     phone: "",
     specialization: "",
-    clinic_address: "",
+    clinic_street: "",
+    clinic_postal_code: "",
+    clinic_city: "",
     bio: "",
     profile_picture_url: "",
   });
@@ -56,13 +58,32 @@ export default function DentistAdminProfile() {
       ]);
 
       if (dentistData && profileData) {
+        // Parse address into separate fields: "Street, PostalCode City" format
+        const rawAddress = dentistData.clinic_address || "";
+        let clinicStreet = "";
+        let clinicPostalCode = "";
+        let clinicCity = "";
+        if (rawAddress) {
+          const parts = rawAddress.split(", ");
+          if (parts.length >= 2) {
+            clinicStreet = parts[0];
+            const cityParts = parts.slice(1).join(", ").split(" ");
+            clinicPostalCode = cityParts[0] || "";
+            clinicCity = cityParts.slice(1).join(" ") || "";
+          } else {
+            clinicStreet = rawAddress;
+          }
+        }
+
         const data = {
           first_name: dentistData.first_name || profileData.first_name || "",
           last_name: dentistData.last_name || profileData.last_name || "",
           email: dentistData.email || profileData.email || "",
           phone: profileData.phone || "",
           specialization: dentistData.specialization || "",
-          clinic_address: dentistData.clinic_address || "",
+          clinic_street: clinicStreet,
+          clinic_postal_code: clinicPostalCode,
+          clinic_city: clinicCity,
           bio: profileData.bio || "",
           profile_picture_url: dentistData.profile_picture_url || profileData.profile_picture_url || "",
         };
@@ -87,6 +108,12 @@ export default function DentistAdminProfile() {
 
     setSaving(true);
     try {
+      // Combine address fields back into single string: "Street, PostalCode City"
+      const clinicAddress = [
+        formData.clinic_street,
+        [formData.clinic_postal_code, formData.clinic_city].filter(Boolean).join(" "),
+      ].filter(Boolean).join(", ");
+
       const [dentistUpdate, profileUpdate] = await Promise.all([
         supabase
           .from('dentists')
@@ -95,7 +122,7 @@ export default function DentistAdminProfile() {
             last_name: formData.last_name,
             email: formData.email,
             specialization: formData.specialization,
-            clinic_address: formData.clinic_address,
+            clinic_address: clinicAddress,
             profile_picture_url: formData.profile_picture_url,
           })
           .eq('id', dentistId),
@@ -232,13 +259,51 @@ export default function DentistAdminProfile() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="clinic_address">{t.clinicAddress || "Clinic Address"}</Label>
-              <AddressAutocomplete
-                value={formData.clinic_address}
-                onChange={(val) => handleInputChange('clinic_address', val)}
-                placeholder={t.clinicAddressPlaceholder || "123 Main Street, City, State, ZIP"}
-              />
+            <div className="space-y-4">
+              <Label>{t.clinicAddress || "Clinic Address"}</Label>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="clinic_street" className="text-sm text-muted-foreground">{t.streetAddress || "Street Address"}</Label>
+                  <AddressAutocomplete
+                    value={formData.clinic_street}
+                    onChange={(val) => {
+                      // If a full address was selected from autocomplete, parse it into parts
+                      const parts = val.split(", ");
+                      if (parts.length >= 2) {
+                        setFormData(prev => ({
+                          ...prev,
+                          clinic_street: parts[0],
+                          clinic_postal_code: parts.length >= 2 ? parts[1].split(" ")[0] || "" : "",
+                          clinic_city: parts.length >= 2 ? parts[1].split(" ").slice(1).join(" ") || (parts[2] || "") : "",
+                        }));
+                      } else {
+                        handleInputChange('clinic_street', val);
+                      }
+                    }}
+                    placeholder={t.streetPlaceholder || "123 Main Street"}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="clinic_postal_code" className="text-sm text-muted-foreground">{t.postalCode || "Postal Code"}</Label>
+                    <Input
+                      id="clinic_postal_code"
+                      value={formData.clinic_postal_code}
+                      onChange={(e) => handleInputChange('clinic_postal_code', e.target.value)}
+                      placeholder="1000"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="clinic_city" className="text-sm text-muted-foreground">{t.city || "City"}</Label>
+                    <Input
+                      id="clinic_city"
+                      value={formData.clinic_city}
+                      onChange={(e) => handleInputChange('clinic_city', e.target.value)}
+                      placeholder={t.cityPlaceholder || "Brussels"}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">

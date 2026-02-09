@@ -94,6 +94,8 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
         // Only hide onboarding if we confirmed the update was successful
         if (profile.onboarding_completed === true) {
           setShowOnboarding(false);
+          // Notify DentistPortal that onboarding is complete so it can start the tour
+          window.dispatchEvent(new CustomEvent('onboarding-completed'));
         } else {
           console.warn("Profile refetch shows onboarding not completed, keeping modal open");
         }

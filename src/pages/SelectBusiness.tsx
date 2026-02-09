@@ -78,16 +78,17 @@ export default function SelectBusiness() {
         const fetchBusinesses = async () => {
             setLoadingBusinesses(true);
 
-            // Try view first, fallback to businesses table
+            // Fetch from businesses table directly to include owner_profile_id for sorting
             let { data, error } = await supabase
-                .from('public_businesses_view')
-                .select('*')
+                .from('businesses')
+                .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id')
                 .order('name');
 
-            if (error || !data || data.length === 0) {
+            if (error || !data) {
+                // Fallback to view if direct table access fails
                 const fallback = await supabase
-                    .from('businesses')
-                    .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id')
+                    .from('public_businesses_view')
+                    .select('*')
                     .order('name');
                 data = fallback.data;
             }

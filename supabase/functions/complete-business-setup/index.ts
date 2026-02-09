@@ -86,6 +86,27 @@ serve(async (req) => {
 
         if (!profile) throw new Error("Profile not found");
 
+        // 3b. Check if user already owns a business (prevent duplicate creation on page refresh)
+        const { data: existingBusiness } = await supabaseClient
+            .from('business_members')
+            .select('business_id, businesses:business_id(id, name, slug)')
+            .eq('profile_id', profile.id)
+            .eq('role', 'owner')
+            .limit(1)
+            .maybeSingle();
+
+        if (existingBusiness?.business_id) {
+            // User already has a business - return existing one instead of creating duplicate
+            const existingSlug = (existingBusiness as any).businesses?.slug || 'existing';
+            return new Response(
+                JSON.stringify({ success: true, slug: existingSlug, business_id: existingBusiness.business_id, existing: true }),
+                {
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    status: 200,
+                }
+            );
+        }
+
         // 4. Generate Slug
         const baseSlug = business_data.name
             ?.toLowerCase()
