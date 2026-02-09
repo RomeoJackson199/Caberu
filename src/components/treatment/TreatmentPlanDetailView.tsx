@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useImaging, ImagingFile } from '@/hooks/useImaging';
-import { format } from 'date-fns';
+import { formatClinicTime } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -258,7 +258,7 @@ export function TreatmentPlanDetailView({
                                 {treatmentPlan.status}
                             </Badge>
                             <p className="text-xs text-slate-500 mt-2">
-                                Started {format(new Date(treatmentPlan.start_date || treatmentPlan.created_at), 'MMM d, yyyy')}
+                                Started {formatClinicTime(treatmentPlan.start_date || treatmentPlan.created_at, 'MMM d, yyyy')}
                             </p>
                         </div>
                     </div>
@@ -355,7 +355,7 @@ export function TreatmentPlanDetailView({
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-slate-800">{appt.reason || 'Appointment'}</p>
-                                                    <p className="text-sm text-slate-500">{format(new Date(appt.appointment_date), 'MMMM d, yyyy')}</p>
+                                                    <p className="text-sm text-slate-500">{formatClinicTime(appt.appointment_date, 'MMMM d, yyyy')}</p>
                                                 </div>
                                             </div>
                                             <Badge className={cn(
@@ -495,12 +495,12 @@ export function TreatmentPlanDetailView({
                                         <CardContent className="p-4 flex items-center justify-between">
                                             <div className="flex items-center gap-4">
                                                 <div className="text-center">
-                                                    <p className="text-xs text-teal-600 font-medium uppercase">{format(new Date(appt.appointment_date), 'MMM')}</p>
-                                                    <p className="text-2xl font-bold text-slate-800">{format(new Date(appt.appointment_date), 'd')}</p>
+                                                    <p className="text-xs text-teal-600 font-medium uppercase">{formatClinicTime(appt.appointment_date, 'MMM')}</p>
+                                                    <p className="text-2xl font-bold text-slate-800">{formatClinicTime(appt.appointment_date, 'd')}</p>
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-slate-800">{appt.reason || 'Appointment'}</p>
-                                                    <p className="text-sm text-slate-500">{format(new Date(appt.appointment_date), 'h:mm a')}</p>
+                                                    <p className="text-sm text-slate-500">{formatClinicTime(appt.appointment_date, 'h:mm a')}</p>
                                                 </div>
                                             </div>
                                             <Badge className={cn(
@@ -525,7 +525,7 @@ export function TreatmentPlanDetailView({
                                 </div>
                                 {linkedAppointments.filter(a => a.status === 'completed').map((appt) => (
                                     <div key={appt.id} className="flex items-center gap-4 py-3 border-b border-slate-100 last:border-0">
-                                        <p className="text-sm text-slate-500 w-16">{format(new Date(appt.appointment_date), 'MMM d')}</p>
+                                        <p className="text-sm text-slate-500 w-16">{formatClinicTime(appt.appointment_date, 'MMM d')}</p>
                                         <p className="flex-1 font-medium text-slate-700">{appt.reason || 'Appointment'}</p>
                                         <Badge className="bg-teal-50 text-teal-700">Attended</Badge>
                                     </div>
@@ -554,7 +554,7 @@ export function TreatmentPlanDetailView({
                                             {linkedAppointments.map((appt) => (
                                                 <tr key={appt.id} className="border-b last:border-0 hover:bg-slate-50">
                                                     <td className="py-3 px-4 text-sm text-slate-600">
-                                                        {format(new Date(appt.appointment_date), 'MMM d')}
+                                                        {formatClinicTime(appt.appointment_date, 'MMM d')}
                                                     </td>
                                                     <td className="py-3 px-4 text-sm text-slate-800 font-medium">
                                                         {appt.reason || 'Appointment'}

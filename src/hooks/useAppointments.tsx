@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { utcToClinicTime } from '@/lib/timezone';
+import { utcToClinicTime, formatClinicTime } from '@/lib/timezone';
 import { useBusinessContext } from './useBusinessContext';
 import { logger } from '@/lib/logger';
 import { handleEmailError } from '@/hooks/useEmailLimit';
@@ -171,18 +171,8 @@ export async function createAppointmentWithNotification(appointmentData: {
 
 
     if (patient?.email && dentistProfile) {
-      const appointmentDate = new Date(appointment.appointment_date);
-      const formattedDate = appointmentDate.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      const formattedTime = appointmentDate.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
+      const formattedDate = formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d, yyyy');
+      const formattedTime = formatClinicTime(appointment.appointment_date, 'h:mm a');
 
       const emailSubject = `Dr. ${dentistProfile.first_name} ${dentistProfile.last_name} has booked your appointment`;
       const emailMessage = `

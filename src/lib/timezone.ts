@@ -50,15 +50,15 @@ export function formatClinicTime(date: Date | string, formatStr: string = 'PPpp'
 export function createAppointmentDateTime(date: Date, timeSlot: string): Date {
   // Extract date components
   const year = date.getFullYear();
-  const month = date.getMonth();
-  const day = date.getDate();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
 
   // Extract time components
   const [hours, minutes] = timeSlot.split(':').map(Number);
 
-  // Create a Date object with exact component values
-  // This will be stored as-is (no timezone conversion)
-  return new Date(year, month, day, hours, minutes, 0, 0);
+  // Create a string in ISO-like format and interpret as Brussels timezone
+  const dateTimeString = `${year}-${month}-${day}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+  return fromZonedTime(dateTimeString, CLINIC_TIMEZONE);
 }
 
 /**
