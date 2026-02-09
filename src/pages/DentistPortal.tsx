@@ -153,16 +153,36 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     }
 
     try {
-      const { data: profile, error: profileError } = await supabase
+      const { data: secureProfile, error: secureProfileError } = await supabase
         .from('secure_profiles_view')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (profileError) {
-        logger.error('❌ Profile error:', profileError);
-        throw profileError;
+      let profile = secureProfile;
+
+      // Fallback to profiles table in case the secure view is temporarily unavailable
+      // for this user context (for example right after role/business changes).
+      if (!profile || secureProfileError) {
+        logger.warn('⚠️ secure_profiles_view lookup failed, falling back to profiles table', {
+          userId: user.id,
+          error: secureProfileError,
+        });
+
+        const { data: directProfile, error: directProfileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (directProfileError) {
+          logger.error('❌ Profile fallback error:', directProfileError);
+          throw directProfileError;
+        }
+
+        profile = directProfile;
       }
+
       if (!profile) {
         logger.error('❌ No profile found for user:', user.id);
         throw new Error('Profile not found');
