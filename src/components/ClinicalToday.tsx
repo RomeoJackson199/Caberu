@@ -223,13 +223,15 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				<AnimatedBackground />
 				<div className="relative z-10 space-y-4">
 					<TimeGreeting showDate={true} />
-					<DashboardStats
-						todayCount={stats.todayCount}
-						pendingCount={stats.pendingCount}
-						weekCompleted={stats.weekCompleted}
-						totalPatients={stats.totalPatients}
-						onStatClick={handleStatClick}
-					/>
+					<div data-tour="stats-cards">
+						<DashboardStats
+							todayCount={stats.todayCount}
+							pendingCount={stats.pendingCount}
+							weekCompleted={stats.weekCompleted}
+							totalPatients={stats.totalPatients}
+							onStatClick={handleStatClick}
+						/>
+					</div>
 				</div>
 			</div>
 
@@ -243,12 +245,14 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 			<PendingApprovalCard dentistId={dentistId} />
 
 			{/* Today's Timeline */}
-			<TodayTimeline
-				appointments={todayAppointments}
-				loading={loading}
-				onNewAppointment={onOpenAppointmentsTab}
-				onViewAll={onOpenAppointmentsTab}
-			/>
+			<div data-tour="appointments-list">
+				<TodayTimeline
+					appointments={todayAppointments}
+					loading={loading}
+					onNewAppointment={onOpenAppointmentsTab}
+					onViewAll={onOpenAppointmentsTab}
+				/>
+			</div>
 
 			{/* Mobile Floating Action Button */}
 			<FloatingQuickAction

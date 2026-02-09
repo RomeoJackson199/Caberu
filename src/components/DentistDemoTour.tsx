@@ -11,6 +11,20 @@ interface DentistDemoTourProps {
   onChangeSection?: (section: DentistSection) => void;
 }
 
+// Map step indices to the section they should navigate to
+const STEP_SECTION_MAP: Record<number, DentistSection | null> = {
+  0: null,        // Welcome - stay on current
+  1: 'dashboard', // Dashboard nav
+  2: 'dashboard', // Stats cards
+  3: 'dashboard', // Appointments timeline
+  4: 'patients',  // Patients nav
+  5: 'appointments', // Appointments nav
+  6: 'messages',  // Messages nav
+  7: null,        // Notifications - stay on current
+  8: null,        // User menu - stay on current
+  9: null,        // Completion - stay on current
+};
+
 export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTourProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [runTour, setRunTour] = useState(false);
@@ -23,13 +37,13 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      
+
       await supabase.from('tour_completions').upsert({
         user_id: user.id,
         tour_type: TOUR_KEY,
         completed_at: new Date().toISOString()
       }, { onConflict: 'user_id,tour_type' });
-      
+
       localStorage.setItem('dentist-tour-completed', 'true');
     } catch (error) {
       console.error('Failed to save tour completion:', error);
@@ -38,135 +52,222 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
   };
 
   const steps: Step[] = [
+    // Step 0: Welcome
     {
       target: "body",
       content: (
-        <div className="p-4">
-          <h2 className="text-2xl font-bold mb-3">Welcome to Your Dentist Dashboard! 🦷</h2>
-          <p className="text-muted-foreground">
-            Let's take a quick tour of the key features that will help you manage your practice efficiently.
+        <div className="p-2">
+          <h2 className="text-xl font-bold mb-3">Welcome to Your Practice Dashboard!</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Let's walk through the key features that will help you run your practice smoothly. This tour takes about 1 minute.
           </p>
+          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 bg-muted/50 rounded-md p-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+              Dashboard &amp; Stats
+            </div>
+            <div className="flex items-center gap-2 bg-muted/50 rounded-md p-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              Patient Records
+            </div>
+            <div className="flex items-center gap-2 bg-muted/50 rounded-md p-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+              Scheduling
+            </div>
+            <div className="flex items-center gap-2 bg-muted/50 rounded-md p-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+              Messages &amp; Settings
+            </div>
+          </div>
         </div>
       ),
       placement: "center",
       disableBeacon: true,
     },
+    // Step 1: Dashboard nav
     {
       target: '[data-tour="nav-dashboard"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Dashboard Overview</h3>
-          <p className="text-sm text-muted-foreground">
-            Here you can see today's appointments, urgent cases, and key statistics at a glance.
-            This is your command center for daily operations.
+          <p className="text-sm text-muted-foreground mb-3">
+            Your command center for daily operations. See today's appointments, urgent cases, and key performance metrics at a glance.
           </p>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            The dashboard refreshes automatically so you always have the latest data.
+          </div>
         </div>
       ),
       placement: "bottom",
     },
+    // Step 2: Stats cards
     {
       target: '[data-tour="stats-cards"]',
       content: (
         <div>
-          <h3 className="font-semibold mb-2">Quick Stats</h3>
-          <p className="text-sm text-muted-foreground">
-            Monitor today's appointments, urgent cases, weekly completion rate, and total patient count.
-            These metrics help you stay on top of your practice's performance.
+          <h3 className="font-semibold mb-2">Practice Statistics</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            These live metrics track your day at a glance:
           </p>
+          <ul className="text-xs text-muted-foreground space-y-1.5 mb-3">
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1 shrink-0" />
+              <span><strong>Today</strong> &mdash; appointments scheduled for today</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1 shrink-0" />
+              <span><strong>Pending</strong> &mdash; appointments awaiting confirmation</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1 shrink-0" />
+              <span><strong>This Week</strong> &mdash; completed appointments this week</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1 shrink-0" />
+              <span><strong>Patients</strong> &mdash; total patients in your practice</span>
+            </li>
+          </ul>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            Click any stat to jump directly to the relevant section.
+          </div>
         </div>
       ),
       placement: "bottom",
     },
+    // Step 3: Today's timeline
     {
       target: '[data-tour="appointments-list"]',
       content: (
         <div>
-          <h3 className="font-semibold mb-2">Today's Appointments</h3>
-          <p className="text-sm text-muted-foreground">
-            View all appointments scheduled for today. You can quickly see patient names, appointment times,
-            reasons, and urgency levels. Click on any appointment to view more details.
+          <h3 className="font-semibold mb-2">Today's Appointment Timeline</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            A chronological view of your day, split into morning and afternoon blocks. You can see patient names, appointment times, reasons, and urgency levels.
           </p>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            Your next upcoming appointment is highlighted so you always know what's coming up.
+          </div>
         </div>
       ),
       placement: "top",
     },
+    // Step 4: Patients nav
     {
       target: '[data-tour="nav-patients"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Patient Management</h3>
-          <p className="text-sm text-muted-foreground">
-            Access your complete patient database here. You can add new patients, view patient histories,
-            update records, and manage patient information all in one place.
+          <p className="text-sm text-muted-foreground mb-3">
+            Your complete patient database. Add new patients, search records, view treatment histories, and manage all patient information in one place.
           </p>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            Use the search bar to quickly find any patient by name, email, or phone number.
+          </div>
         </div>
       ),
       placement: "bottom",
     },
+    // Step 5: Appointments nav
     {
       target: '[data-tour="nav-appointments"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Appointment Scheduling</h3>
-          <p className="text-sm text-muted-foreground">
-            Schedule new appointments, view your calendar, reschedule existing appointments,
-            and manage your availability. The calendar view helps you visualize your schedule.
+          <p className="text-sm text-muted-foreground mb-3">
+            Schedule, reschedule, and manage all your appointments. The calendar view helps you visualize your availability and avoid double-booking.
           </p>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            Patients can also book appointments online, and you can require approval before they are confirmed.
+          </div>
         </div>
       ),
       placement: "bottom",
     },
-    {
-      target: '[data-tour="nav-employees"]',
-      content: (
-        <div>
-          <h3 className="font-semibold mb-2">Staff Management</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your team members, assign roles, track staff schedules, and coordinate
-            with your hygienists, receptionists, and other dental professionals.
-          </p>
-        </div>
-      ),
-      placement: "bottom",
-    },
+    // Step 6: Messages nav
     {
       target: '[data-tour="nav-messages"]',
       content: (
         <div>
           <h3 className="font-semibold mb-2">Patient Messages</h3>
-          <p className="text-sm text-muted-foreground">
-            Communicate with your patients securely. Send appointment reminders,
-            follow-up messages, and respond to patient inquiries all from one place.
+          <p className="text-sm text-muted-foreground mb-3">
+            Communicate with your patients securely. Send appointment reminders, follow-up care instructions, and respond to inquiries &mdash; all from one inbox.
           </p>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            You'll see a badge on this tab when you have unread messages waiting.
+          </div>
         </div>
       ),
       placement: "bottom",
     },
+    // Step 7: Notification bell
+    {
+      target: '[data-tour="notification-bell"]',
+      content: (
+        <div>
+          <h3 className="font-semibold mb-2">Notifications</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Stay on top of everything happening in your practice. You'll be notified about new bookings, cancellations, patient messages, and more.
+          </p>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            A red dot appears when you have unread notifications so you never miss anything important.
+          </div>
+        </div>
+      ),
+      placement: "bottom",
+    },
+    // Step 8: User menu
     {
       target: '[data-tour="user-menu"]',
       content: (
         <div>
-          <h3 className="font-semibold mb-2">Settings & Profile</h3>
-          <p className="text-sm text-muted-foreground">
-            Access your account settings, practice branding, security settings, and more.
-            Customize your dashboard to match your practice's unique needs.
+          <h3 className="font-semibold mb-2">Account &amp; Settings</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Manage your profile, practice branding, security settings, and preferences. You can also configure your availability schedule and notification preferences here.
           </p>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            <span className="font-medium text-primary">Tip:</span>{" "}
+            Set up your practice branding early &mdash; your logo and colors will appear on patient-facing pages.
+          </div>
         </div>
       ),
       placement: "bottom",
     },
+    // Step 9: Completion
     {
       target: "body",
       content: (
-        <div className="p-4">
-          <h2 className="text-2xl font-bold mb-3">You're All Set! 🎉</h2>
-          <p className="text-muted-foreground mb-3">
-            You now know the key features of your dentist dashboard. You can restart this tour
-            anytime by clicking the "Start Tour" button.
+        <div className="p-2">
+          <h2 className="text-xl font-bold mb-3">You're All Set!</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            You now know the essentials. Here are some great next steps to get your practice up and running:
           </p>
-          <p className="text-sm text-muted-foreground">
-            Ready to transform your dental practice? Let's get started!
-          </p>
+          <ol className="text-xs text-muted-foreground space-y-2 mb-4 list-none">
+            <li className="flex items-start gap-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center shrink-0 text-[10px] font-bold">1</span>
+              <span>Complete your profile and add your practice details</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center shrink-0 text-[10px] font-bold">2</span>
+              <span>Set your availability so patients can book online</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center shrink-0 text-[10px] font-bold">3</span>
+              <span>Add your first patient or import existing records</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center shrink-0 text-[10px] font-bold">4</span>
+              <span>Schedule your first appointment</span>
+            </li>
+          </ol>
+          <div className="text-xs bg-primary/5 border border-primary/10 rounded-md p-2">
+            You can restart this tour anytime from the onboarding checklist.
+          </div>
         </div>
       ),
       placement: "center",
@@ -179,14 +280,22 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
     if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
       setRunTour(false);
       setStepIndex(0);
-      // Mark tour as completed in database
+      // Navigate back to dashboard on tour end
+      onChangeSection?.('dashboard');
       markTourComplete();
       onClose();
     } else if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
       const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
+
+      // Navigate to the appropriate section for the next step
+      const targetSection = STEP_SECTION_MAP[nextStepIndex];
+      if (targetSection && onChangeSection) {
+        onChangeSection(targetSection);
+      }
+
       setStepIndex(nextStepIndex);
     }
-  }, [onClose]);
+  }, [onClose, onChangeSection]);
 
   return (
     <Joyride
@@ -205,12 +314,14 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
           textColor: "hsl(var(--foreground))",
           backgroundColor: "hsl(var(--background))",
           arrowColor: "hsl(var(--background))",
-          overlayColor: "rgba(0, 0, 0, 0.5)",
+          overlayColor: "rgba(0, 0, 0, 0.45)",
           zIndex: 10000,
+          width: 380,
         },
         tooltip: {
-          borderRadius: "0.5rem",
-          padding: "1rem",
+          borderRadius: "0.75rem",
+          padding: "1.25rem",
+          boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
         },
         tooltipContainer: {
           textAlign: "left",
@@ -218,23 +329,28 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
         buttonNext: {
           backgroundColor: "hsl(var(--primary))",
           color: "hsl(var(--primary-foreground))",
-          borderRadius: "0.375rem",
-          padding: "0.5rem 1rem",
+          borderRadius: "0.5rem",
+          padding: "0.5rem 1.25rem",
           fontSize: "0.875rem",
-          fontWeight: 500,
+          fontWeight: 600,
         },
         buttonBack: {
           color: "hsl(var(--muted-foreground))",
           marginRight: "0.5rem",
+          fontSize: "0.875rem",
         },
         buttonSkip: {
           color: "hsl(var(--muted-foreground))",
+          fontSize: "0.8125rem",
+        },
+        spotlight: {
+          borderRadius: "0.5rem",
         },
       }}
       locale={{
         back: "Back",
         close: "Close",
-        last: "Finish",
+        last: "Get Started",
         next: "Next",
         skip: "Skip Tour",
       }}
