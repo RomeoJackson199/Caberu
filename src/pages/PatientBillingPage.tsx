@@ -72,7 +72,7 @@ export default function PatientBillingPage() {
               description={t.billingNotAvailableDesc}
               action={{
                 label: t.goToCareHome,
-                onClick: () => navigate('/care')
+                onClick: () => navigate('/dashboard')
               }}
             />
           </CardContent>

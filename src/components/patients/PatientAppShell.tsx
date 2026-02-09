@@ -106,7 +106,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
   } = useMobileOptimizations();
   const {
     branding
-  } = useClinicBranding({ disableBrandingFetch: true });
+  } = useClinicBranding();
   const {
     showTour,
     closeTour
@@ -255,7 +255,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
         </button>
         {!collapsed && <div className="min-w-0">
           <h1 className="font-semibold text-base leading-tight truncate">{branding.clinicName || "Patient Portal"}</h1>
-          <p className="text-xs text-muted-foreground">Healthcare Dashboard</p>
+          <p className="text-xs text-muted-foreground">{branding.tagline || "Healthcare Dashboard"}</p>
         </div>}
       </div>
 
