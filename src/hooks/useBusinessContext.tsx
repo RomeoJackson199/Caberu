@@ -157,10 +157,10 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
               setMembershipRole('guest');
             }
           }
-        } else if (formattedMemberships.length === 1) {
-          // Auto-select if only one business membership
-          await switchBusiness(formattedMemberships[0].business_id);
         }
+        // REMOVED: Auto-selection logic for single business membership
+        // Users should always explicitly select their business via /select-business page
+        // This ensures they always see the business selection screen after login
       }
     } catch (error) {
       logger.error('Error loading memberships:', error);
