@@ -93,7 +93,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
   // Groups and items per IA - all features enabled (no template restrictions)
   const groups: NavGroup[] = useMemo(() => {
     const careItems = [
-      { id: 'care-home', label: t.pnav.care.home, icon: <Home className="h-4 w-4" />, to: '/care' },
+      { id: 'care-home', label: t.pnav.care.home, icon: <Home className="h-4 w-4" />, to: '/dashboard' },
       {
         id: 'care-booking',
         label: t.classicBooking,
@@ -160,7 +160,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
   // Auto-expand correct group based on current route
   useEffect(() => {
     const path = location.pathname;
-    if (path.startsWith('/care')) setOpenGroupId('care');
+    if (path.startsWith('/care') || path.startsWith('/dashboard')) setOpenGroupId('care');
     else if (path.startsWith('/billing')) setOpenGroupId('billing');
     else if (path.startsWith('/docs')) setOpenGroupId('documents');
     else if (path.startsWith('/account')) setOpenGroupId('account');
@@ -285,7 +285,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
                               ) : (
                                 <NavLink
                                   to={item.to}
-                                  end={item.to === '/care'}
+                                  end={item.to === '/dashboard'}
                                   onClick={(e) => handleNav(group.id, item, e)}
                                   aria-label={item.label}
                                   className={({ isActive }) => cn(
@@ -361,7 +361,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
 
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-t">
           <div className="grid grid-cols-4">
-            <NavLink to="/care" end onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label={t.pnav.care.home}>
+            <NavLink to="/dashboard" end onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label={t.pnav.care.home}>
               <Home className="h-5 w-5" />
               <span className="text-xs">{t.pnav.care.home}</span>
             </NavLink>

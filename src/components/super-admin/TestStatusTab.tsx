@@ -104,7 +104,6 @@ const TEST_COVERAGE_DATA = {
       'ForgotPassword.test.tsx',
       'NotFound.test.tsx',
       'PatientAppointmentsPage.test.tsx',
-      'PatientCareHome.test.tsx',
       'PaymentCancelled.test.tsx',
       'PaymentSuccess.test.tsx',
     ],
