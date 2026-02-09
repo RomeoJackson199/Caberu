@@ -51,21 +51,37 @@ export function useCurrentDentist(businessId?: string | null): CurrentDentistSta
 
       if (businessId) {
         // Find dentist for the specific business via business_members
-        const { data: memberData } = await supabase
+        const { data: memberData, error: memberError } = await supabase
           .from('business_members')
           .select('profile_id')
           .eq('business_id', businessId)
           .eq('profile_id', profileId)
           .maybeSingle();
 
+        if (memberError) throw memberError;
+
         if (memberData) {
           // User is a member of this business, get their dentist record
-          const { data: dentistRow } = await supabase
+          const { data: dentistRow, error: dentistErr } = await supabase
             .from('dentists')
             .select('id')
             .eq('profile_id', profileId)
             .eq('is_active', true)
             .maybeSingle();
+          if (dentistErr) throw dentistErr;
+          dentistId = dentistRow?.id ?? null;
+        }
+
+        // Fallback: if membership record isn't available yet, still resolve the dentist
+        // by profile so dentists don't get incorrectly blocked from security/settings pages.
+        if (!dentistId) {
+          const { data: dentistRow, error: dentistErr } = await supabase
+            .from('dentists')
+            .select('id')
+            .eq('profile_id', profileId)
+            .eq('is_active', true)
+            .maybeSingle();
+          if (dentistErr) throw dentistErr;
           dentistId = dentistRow?.id ?? null;
         }
       } else {
