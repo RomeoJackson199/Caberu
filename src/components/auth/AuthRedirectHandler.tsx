@@ -205,7 +205,7 @@ export function AuthRedirectHandler() {
           return;
         }
 
-        // Priority 2: Provider/Dentist -> check if business selection needed
+        // Priority 2: Provider/Dentist -> always show business selection
         if (isDentist) {
           // Try to save pending consent if exists
           if (hasPendingPracticeConsent()) {
@@ -225,16 +225,8 @@ export function AuthRedirectHandler() {
             }
           }
 
-          if (memberships.length === 0) {
-            // No memberships, go to dashboard (might show create business option)
-            logger.info('AuthRedirectHandler: Dentist with no memberships, redirecting to /dentist/dashboard');
-            sessionStorage.removeItem(REDIRECT_KEY);
-            navigate('/dentist/dashboard', { replace: true });
-            return;
-          }
-
-          // Always show business selection for dentists with memberships
-          logger.info('AuthRedirectHandler: Dentist with memberships, showing business selection', {
+          // Always show business selection for dentists after login
+          logger.info('AuthRedirectHandler: Dentist signing in, redirecting to /select-business', {
             membershipsCount: memberships.length,
             currentBusinessId: businessId
           });
