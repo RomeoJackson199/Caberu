@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -94,26 +94,6 @@ const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
 const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
 
-// Business gate component - DISABLED: Now using dedicated /select-business page
-const BusinessGate = ({ shouldRedirect, onRedirected }: { shouldRedirect: boolean; onRedirected: () => void }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    if (!shouldRedirect) return;
-
-    // Avoid redirect loops on auth/selection setup routes
-    if (location.pathname === '/select-business' || location.pathname === '/login' || location.pathname === '/onboarding') {
-      onRedirected();
-      return;
-    }
-
-    navigate('/select-business', { replace: true });
-    onRedirected();
-  }, [shouldRedirect, navigate, location.pathname, onRedirected]);
-
-  return null;
-};
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -206,7 +186,6 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  const [showBusinessPicker, setShowBusinessPicker] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
 
@@ -229,113 +208,19 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    // Check auth and show business picker if multi-business user or no business selected
+    // Track auth state for user-dependent features (notifications, cookies, etc.)
+    // Business selection is handled exclusively by AuthRedirectHandler after login
     let isMounted = true;
 
-    const checkAuth = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-
-        if (!isMounted) return;
-        setUser(user);
-
-        if (user) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
-
-          if (profileError && profileError.code !== 'PGRST116') {
-            // Ignore "no rows found" error, log others
-            logger.error('Error fetching profile:', profileError);
-          }
-
-          if (!profile && isMounted) {
-            // If profile is still provisioning but no active business is selected, force selection flow.
-            const { data: sessionBusiness } = await supabase
-              .from('session_business')
-              .select('business_id')
-              .eq('user_id', user.id)
-              .order('updated_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (!sessionBusiness?.business_id) {
-              setTimeout(() => {
-                if (isMounted) setShowBusinessPicker(true);
-              }, 500);
-            }
-          }
-
-          if (profile && isMounted) {
-            const { data: memberships, error: memberError } = await supabase
-              .from('business_members')
-              .select('business_id')
-              .eq('profile_id', profile.id);
-
-            if (memberError) logger.error('Error fetching memberships:', memberError);
-
-            // Check if they have a current business selection
-            const { data: sessionBusiness, error: sessionError } = await supabase
-              .from('session_business')
-              .select('business_id')
-              .eq('user_id', user.id)
-              .order('updated_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (sessionError) logger.error('Error fetching session business:', sessionError);
-
-            if (!isMounted) return;
-
-            // Show business picker on login
-            if (memberships && memberships.length > 0) {
-              if (memberships.length >= 1 && !sessionBusiness?.business_id) {
-                // Providers with ANY clinics need to choose (to allow seeing public list)
-                setTimeout(() => {
-                  if (isMounted) setShowBusinessPicker(true);
-                }, 500);
-              }
-            } else if (!sessionBusiness?.business_id) {
-              // Patient/guest: no clinic selected yet, show patient picker
-              setTimeout(() => {
-                if (isMounted) setShowBusinessPicker(true);
-              }, 500);
-            }
-          }
-        }
-      } catch (error) {
-        // Handle expected auth errors gracefully (user not logged in)
-        if (error && typeof error === 'object') {
-          const authError = error as { name?: string; status?: number };
-          
-          // AuthSessionMissingError is expected when user isn't logged in
-          if (authError.name === 'AuthSessionMissingError') {
-            logger.debug('User not authenticated (expected)');
-            return;
-          }
-          
-          // 401/403 are also expected for unauthenticated users
-          if (authError.status === 401 || authError.status === 403) {
-            logger.debug('Auth check returned expected status:', authError.status);
-            return;
-          }
-        }
-        
-        // Log unexpected errors at error level
-        logger.error('Auth check failed:', error);
-      }
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (isMounted) setUser(session?.user ?? null);
-      if (event === 'SIGNED_IN') {
-        checkAuth();
-      }
+    });
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (isMounted) setUser(session?.user ?? null);
+    }).catch(error => {
+      logger.error('Error getting session:', error);
     });
 
     return () => {
@@ -562,11 +447,6 @@ const App = () => {
                       </Routes>
                     </Suspense>
 
-                    {/* Business Picker Dialog */}
-                    <BusinessGate
-                      shouldRedirect={showBusinessPicker}
-                      onRedirected={() => setShowBusinessPicker(false)}
-                    />
                   </EmailLimitProvider>
                 </BrowserRouter>
                 </ConfirmationProvider>
