@@ -95,53 +95,62 @@ serve(async (req) => {
             .limit(1)
             .maybeSingle();
 
-        if (existingBusiness?.business_id) {
-            // User already has a business - return existing one instead of creating duplicate
-            const existingSlug = (existingBusiness as any).businesses?.slug || 'existing';
-            return new Response(
-                JSON.stringify({ success: true, slug: existingSlug, business_id: existingBusiness.business_id, existing: true }),
-                {
-                    headers: { ...corsHeaders, "Content-Type": "application/json" },
-                    status: 200,
-                }
-            );
-        }
-
         // 4. Generate Slug
         const baseSlug = business_data.name
             ?.toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '') || 'business';
 
-        // Ensure unique slug logic would go here, simplified for now:
-        // Ideally use a loop or random suffix if collision.
         const slugSuffix = Math.random().toString(36).substring(2, 6);
         const finalSlug = `${baseSlug}-${slugSuffix}`;
 
-        // 5. Create Business
-        const { data: business, error: businessError } = await supabaseClient
-            .from('businesses')
-            .insert({
-                name: business_data.name,
-                slug: finalSlug,
-                tagline: business_data.tagline,
-                bio: business_data.bio,
-                template_type: business_data.template || 'generic',
-                owner_profile_id: profile.id,
-            })
-            .select()
-            .single();
+        let business: any;
 
-        if (businessError) throw businessError;
+        if (existingBusiness?.business_id) {
+            // User already has a business (e.g. placeholder from OAuth flow) - update it with real data
+            const { data: updatedBusiness, error: updateError } = await supabaseClient
+                .from('businesses')
+                .update({
+                    name: business_data.name,
+                    slug: finalSlug,
+                    tagline: business_data.tagline || null,
+                    bio: business_data.bio || null,
+                    template_type: business_data.template || 'generic',
+                    owner_profile_id: profile.id,
+                })
+                .eq('id', existingBusiness.business_id)
+                .select()
+                .single();
 
-        // 6. Create Owner Member
-        await supabaseClient
-            .from('business_members')
-            .insert({
-                business_id: business.id,
-                profile_id: profile.id,
-                role: 'owner',
-            });
+            if (updateError) throw updateError;
+            business = updatedBusiness;
+        } else {
+            // 5. Create Business
+            const { data: newBusiness, error: businessError } = await supabaseClient
+                .from('businesses')
+                .insert({
+                    name: business_data.name,
+                    slug: finalSlug,
+                    tagline: business_data.tagline,
+                    bio: business_data.bio,
+                    template_type: business_data.template || 'generic',
+                    owner_profile_id: profile.id,
+                })
+                .select()
+                .single();
+
+            if (businessError) throw businessError;
+            business = newBusiness;
+
+            // 6. Create Owner Member (only for new businesses)
+            await supabaseClient
+                .from('business_members')
+                .insert({
+                    business_id: business.id,
+                    profile_id: profile.id,
+                    role: 'owner',
+                });
+        }
 
         // 7. Assign Provider Role (RPC)
         await supabaseClient.rpc('assign_provider_role', { target_user_id: user.id });

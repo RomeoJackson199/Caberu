@@ -106,48 +106,80 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
         if (!profile) throw new Error('Profile not found');
 
         // Generate unique slug
-        let uniqueSlug = businessData.slug;
+        const baseSlug = businessData.slug || businessData.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'business';
+        let uniqueSlug = baseSlug;
         let slugCounter = 1;
 
         while (true) {
-          const { data: existingBusiness } = await supabase
+          const { data: slugConflict } = await supabase
             .from('businesses')
             .select('id')
             .eq('slug', uniqueSlug)
             .maybeSingle();
 
-          if (!existingBusiness) break;
+          if (!slugConflict) break;
 
-          uniqueSlug = `${businessData.slug}-${slugCounter}`;
+          uniqueSlug = `${baseSlug}-${slugCounter}`;
           slugCounter++;
         }
 
-        // Create business
-        const { data: business, error: businessError } = await supabase
-          .from('businesses')
-          .insert({
-            name: businessData.name,
-            slug: uniqueSlug,
-            tagline: businessData.tagline || null,
-            bio: businessData.bio || null,
-            owner_profile_id: profile.id,
-            template_type: businessData.template || 'dentist',
-          })
-          .select()
-          .single();
-
-        if (businessError) throw businessError;
-
-        // Add owner as business member
-        const { error: memberError } = await supabase
+        // Check if user already owns a business (e.g. placeholder from OAuth flow)
+        const { data: existingMembership } = await supabase
           .from('business_members')
-          .insert({
-            business_id: business.id,
-            profile_id: profile.id,
-            role: 'owner',
-          });
+          .select('business_id')
+          .eq('profile_id', profile.id)
+          .eq('role', 'owner')
+          .maybeSingle();
 
-        if (memberError) throw memberError;
+        let business: any;
+
+        if (existingMembership?.business_id) {
+          // Update existing placeholder business with real data
+          const { data: updatedBusiness, error: updateError } = await supabase
+            .from('businesses')
+            .update({
+              name: businessData.name,
+              slug: uniqueSlug,
+              tagline: businessData.tagline || null,
+              bio: businessData.bio || null,
+              template_type: businessData.template || 'dentist',
+              owner_profile_id: profile.id,
+            })
+            .eq('id', existingMembership.business_id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          business = updatedBusiness;
+        } else {
+          // Create new business
+          const { data: newBusiness, error: businessError } = await supabase
+            .from('businesses')
+            .insert({
+              name: businessData.name,
+              slug: uniqueSlug,
+              tagline: businessData.tagline || null,
+              bio: businessData.bio || null,
+              owner_profile_id: profile.id,
+              template_type: businessData.template || 'dentist',
+            })
+            .select()
+            .single();
+
+          if (businessError) throw businessError;
+          business = newBusiness;
+
+          // Add owner as business member (only for new businesses)
+          const { error: memberError } = await supabase
+            .from('business_members')
+            .insert({
+              business_id: business.id,
+              profile_id: profile.id,
+              role: 'owner',
+            });
+
+          if (memberError) throw memberError;
+        }
 
         // Get the selected plan slug for consistent storage
         const selectedPlanData = plans?.find(p => p.id === selectedPlan);
