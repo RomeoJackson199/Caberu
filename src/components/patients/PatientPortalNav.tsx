@@ -61,7 +61,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
   const { state, toggleSidebar, open, setOpen } = useSidebar();
   const { counts } = usePatientBadgeCounts();
   const { branding } = useClinicBranding();
-  const { businessName } = useBusinessContext();
+  const { businessName, loading: businessLoading } = useBusinessContext();
   const [openGroupId, setOpenGroupId] = useState<string | null>(() => localStorage.getItem(STORAGE_KEYS.lastGroup));
   const [moreOpen, setMoreOpen] = useState(false);
   const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
@@ -231,7 +231,11 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
             </span>
           )}
           <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-            <span className="font-semibold text-sm truncate">{businessName || branding.clinicName || t.patientPortal}</span>
+            {businessLoading ? (
+              <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+            ) : (
+              <span className="font-semibold text-sm truncate">{businessName || branding.clinicName || t.patientPortal}</span>
+            )}
             <BusinessSelector />
           </div>
         </div>
@@ -336,7 +340,11 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
                 {(businessName || branding.clinicName)?.[0]?.toUpperCase() || 'P'}
               </span>
             )}
-            <span className="text-sm font-medium truncate">{businessName || branding.clinicName || t.patientPortal}</span>
+            {businessLoading ? (
+              <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+            ) : (
+              <span className="text-sm font-medium truncate">{businessName || branding.clinicName || t.patientPortal}</span>
+            )}
           </div>
         </header>
 
