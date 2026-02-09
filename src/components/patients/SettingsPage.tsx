@@ -15,8 +15,6 @@ import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySe
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { supabase } from "@/integrations/supabase/client";
-import { NativeFeatures } from "@/components/native";
-import { useDespiaNative } from "@/hooks/useDespia";
 
 export interface SettingsPageProps {
   user: User;
@@ -26,7 +24,6 @@ const SECTIONS = [
   'Profile & Personal Info',
   'Preferences',
   'Security',
-  'Native Features',
   'Legal & Support',
 ] as const;
 
@@ -35,7 +32,6 @@ type Section = typeof SECTIONS[number];
 export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
-  const isNative = useDespiaNative();
   const [active, setActive] = useState<Section>('Profile & Personal Info');
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
@@ -92,12 +88,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
           <Security />
         </AccordionContent>
       </AccordionItem>
-      <AccordionItem value="native">
-        <AccordionTrigger>Native Features</AccordionTrigger>
-        <AccordionContent>
-          <NativeFeatures />
-        </AccordionContent>
-      </AccordionItem>
       <AccordionItem value="legal">
         <AccordionTrigger>Legal & Support</AccordionTrigger>
         <AccordionContent>
@@ -124,7 +114,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
           <Preferences theme={theme} setTheme={setTheme} />
         )}
         {active === 'Security' && <Security />}
-        {active === 'Native Features' && <NativeFeatures />}
         {active === 'Legal & Support' && <LegalSupport />}
       </div>
     </div>
