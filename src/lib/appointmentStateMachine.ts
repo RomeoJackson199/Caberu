@@ -56,8 +56,8 @@ export function deriveAppointmentState(input: AppointmentStateInput): Appointmen
   const isCompletedStatus = status === 'completed';
 
   if (isCompletedStatus || (isPast && status !== 'cancelled')) {
-    // Check if finalized (has consultation notes, completed_at, or explicit flag)
-    const hasBeenFinalized = is_finalized === true || completed_at !== null;
+    // Check if finalized (explicit completed status, consultation notes, completed_at, or flag)
+    const hasBeenFinalized = isCompletedStatus || is_finalized === true || completed_at !== null;
 
     if (!hasBeenFinalized) {
       // Dentist hasn't finalized yet
