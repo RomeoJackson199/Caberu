@@ -51,11 +51,47 @@ const dateOfBirthSchema = z
   .optional()
   .or(z.literal(''));
 
-// Address - free text with length limit
+// Address - free text with length limit (legacy single field)
 const addressSchema = z
   .string()
   .trim()
   .max(500, { message: 'Address must be less than 500 characters' })
+  .optional()
+  .or(z.literal(''));
+
+// Structured address fields
+const streetAddressSchema = z
+  .string()
+  .trim()
+  .max(200, { message: 'Street address must be less than 200 characters' })
+  .optional()
+  .or(z.literal(''));
+
+const houseNumberSchema = z
+  .string()
+  .trim()
+  .max(20, { message: 'House number must be less than 20 characters' })
+  .optional()
+  .or(z.literal(''));
+
+const citySchema = z
+  .string()
+  .trim()
+  .max(100, { message: 'City must be less than 100 characters' })
+  .optional()
+  .or(z.literal(''));
+
+const postalCodeSchema = z
+  .string()
+  .trim()
+  .max(20, { message: 'Postal code must be less than 20 characters' })
+  .optional()
+  .or(z.literal(''));
+
+const countrySchema = z
+  .string()
+  .trim()
+  .max(100, { message: 'Country must be less than 100 characters' })
   .optional()
   .or(z.literal(''));
 
@@ -77,6 +113,11 @@ export const patientProfileSchema = z.object({
   phone: phoneSchema,
   date_of_birth: dateOfBirthSchema,
   address: addressSchema,
+  street_address: streetAddressSchema,
+  house_number: houseNumberSchema,
+  city: citySchema,
+  postal_code: postalCodeSchema,
+  country: countrySchema,
   medical_history: medicalHistorySchema,
   emergency_contact: z
     .string()

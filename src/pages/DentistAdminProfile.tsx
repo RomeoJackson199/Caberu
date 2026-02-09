@@ -34,8 +34,10 @@ export default function DentistAdminProfile() {
     phone: "",
     specialization: "",
     clinic_street: "",
+    clinic_house_number: "",
     clinic_postal_code: "",
     clinic_city: "",
+    clinic_country: "Belgium",
     bio: "",
     profile_picture_url: "",
   });
@@ -58,32 +60,17 @@ export default function DentistAdminProfile() {
       ]);
 
       if (dentistData && profileData) {
-        // Parse address into separate fields: "Street, PostalCode City" format
-        const rawAddress = dentistData.clinic_address || "";
-        let clinicStreet = "";
-        let clinicPostalCode = "";
-        let clinicCity = "";
-        if (rawAddress) {
-          const parts = rawAddress.split(", ");
-          if (parts.length >= 2) {
-            clinicStreet = parts[0];
-            const cityParts = parts.slice(1).join(", ").split(" ");
-            clinicPostalCode = cityParts[0] || "";
-            clinicCity = cityParts.slice(1).join(" ") || "";
-          } else {
-            clinicStreet = rawAddress;
-          }
-        }
-
         const data = {
           first_name: dentistData.first_name || profileData.first_name || "",
           last_name: dentistData.last_name || profileData.last_name || "",
           email: dentistData.email || profileData.email || "",
           phone: profileData.phone || "",
           specialization: dentistData.specialization || "",
-          clinic_street: clinicStreet,
-          clinic_postal_code: clinicPostalCode,
-          clinic_city: clinicCity,
+          clinic_street: dentistData.clinic_street_address || "",
+          clinic_house_number: dentistData.clinic_house_number || "",
+          clinic_postal_code: dentistData.clinic_postal_code || "",
+          clinic_city: dentistData.clinic_city || "",
+          clinic_country: dentistData.clinic_country || "Belgium",
           bio: profileData.bio || "",
           profile_picture_url: dentistData.profile_picture_url || profileData.profile_picture_url || "",
         };
@@ -108,9 +95,9 @@ export default function DentistAdminProfile() {
 
     setSaving(true);
     try {
-      // Combine address fields back into single string: "Street, PostalCode City"
+      // Build legacy clinic_address for backwards compatibility
       const clinicAddress = [
-        formData.clinic_street,
+        [formData.clinic_street, formData.clinic_house_number].filter(Boolean).join(" "),
         [formData.clinic_postal_code, formData.clinic_city].filter(Boolean).join(" "),
       ].filter(Boolean).join(", ");
 
@@ -123,6 +110,11 @@ export default function DentistAdminProfile() {
             email: formData.email,
             specialization: formData.specialization,
             clinic_address: clinicAddress,
+            clinic_street_address: formData.clinic_street,
+            clinic_house_number: formData.clinic_house_number,
+            clinic_postal_code: formData.clinic_postal_code,
+            clinic_city: formData.clinic_city,
+            clinic_country: formData.clinic_country,
             profile_picture_url: formData.profile_picture_url,
           })
           .eq('id', dentistId),
@@ -262,28 +254,41 @@ export default function DentistAdminProfile() {
             <div className="space-y-4">
               <Label>{t.clinicAddress || "Clinic Address"}</Label>
               <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="clinic_street" className="text-sm text-muted-foreground">{t.streetAddress || "Street Address"}</Label>
-                  <AddressAutocomplete
-                    value={formData.clinic_street}
-                    onChange={(val) => {
-                      // If a full address was selected from autocomplete, parse it into parts
-                      const parts = val.split(", ");
-                      if (parts.length >= 2) {
-                        setFormData(prev => ({
-                          ...prev,
-                          clinic_street: parts[0],
-                          clinic_postal_code: parts.length >= 2 ? parts[1].split(" ")[0] || "" : "",
-                          clinic_city: parts.length >= 2 ? parts[1].split(" ").slice(1).join(" ") || (parts[2] || "") : "",
-                        }));
-                      } else {
-                        handleInputChange('clinic_street', val);
-                      }
-                    }}
-                    placeholder={t.streetPlaceholder || "123 Main Street"}
-                  />
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="clinic_street" className="text-sm text-muted-foreground">{t.streetAddress || "Street Address"}</Label>
+                    <AddressAutocomplete
+                      value={formData.clinic_street}
+                      onChange={(val) => {
+                        // If a full address was selected from autocomplete, parse it into parts
+                        const parts = val.split(", ");
+                        if (parts.length >= 2) {
+                          const streetParts = parts[0].match(/^(.+?)\s+(\d+.*)$/);
+                          setFormData(prev => ({
+                            ...prev,
+                            clinic_street: streetParts ? streetParts[1] : parts[0],
+                            clinic_house_number: streetParts ? streetParts[2] : '',
+                            clinic_postal_code: parts.length >= 2 ? parts[1].split(" ")[0] || "" : "",
+                            clinic_city: parts.length >= 2 ? parts[1].split(" ").slice(1).join(" ") || (parts[2] || "") : "",
+                          }));
+                        } else {
+                          handleInputChange('clinic_street', val);
+                        }
+                      }}
+                      placeholder={t.streetPlaceholder || "Main Street"}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="clinic_house_number" className="text-sm text-muted-foreground">{"Number"}</Label>
+                    <Input
+                      id="clinic_house_number"
+                      value={formData.clinic_house_number}
+                      onChange={(e) => handleInputChange('clinic_house_number', e.target.value)}
+                      placeholder="123"
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="clinic_postal_code" className="text-sm text-muted-foreground">{t.postalCode || "Postal Code"}</Label>
                     <Input
@@ -300,6 +305,15 @@ export default function DentistAdminProfile() {
                       value={formData.clinic_city}
                       onChange={(e) => handleInputChange('clinic_city', e.target.value)}
                       placeholder={t.cityPlaceholder || "Brussels"}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="clinic_country" className="text-sm text-muted-foreground">{"Country"}</Label>
+                    <Input
+                      id="clinic_country"
+                      value={formData.clinic_country}
+                      onChange={(e) => handleInputChange('clinic_country', e.target.value)}
+                      placeholder="Belgium"
                     />
                   </div>
                 </div>

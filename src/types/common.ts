@@ -74,6 +74,11 @@ export interface Dentist {
   phone?: string;
   specialization?: string;
   clinic_address?: string;
+  clinic_street_address?: string;
+  clinic_house_number?: string;
+  clinic_city?: string;
+  clinic_postal_code?: string;
+  clinic_country?: string;
   languages?: string[];
   bio?: string;
   experience_years?: number;

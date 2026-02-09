@@ -35,7 +35,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const [active, setActive] = useState<Section>('Profile & Personal Info');
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', emergency_contact: '', ai_opt_out: false,
+    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', street_address: '', house_number: '', city: '', postal_code: '', country: 'Belgium', emergency_contact: '', ai_opt_out: false,
   });
 
   useEffect(() => {
@@ -170,13 +170,44 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
               placeholder="Enter phone number"
             />
           </div>
-          <div>
-            <Label>Address</Label>
+          <div className="sm:col-span-2">
+            <Label>Street Address</Label>
             <AddressAutocomplete
-              value={profile.address}
-              onChange={(val) => setProfile({ ...profile, address: val })}
+              value={profile.street_address}
+              onChange={(val) => {
+                // If a full address was selected from autocomplete, parse it
+                const parts = val.split(", ");
+                if (parts.length >= 2) {
+                  const streetParts = parts[0].match(/^(.+?)\s+(\d+.*)$/);
+                  setProfile({
+                    ...profile,
+                    street_address: streetParts ? streetParts[1] : parts[0],
+                    house_number: streetParts ? streetParts[2] : '',
+                    postal_code: parts.length >= 2 ? parts[1].split(" ")[0] || "" : "",
+                    city: parts.length >= 2 ? parts[1].split(" ").slice(1).join(" ") || (parts[2] || "") : "",
+                  });
+                } else {
+                  setProfile({ ...profile, street_address: val });
+                }
+              }}
               placeholder="Search address..."
             />
+          </div>
+          <div>
+            <Label>House Number</Label>
+            <Input value={profile.house_number} onChange={(e) => setProfile({ ...profile, house_number: e.target.value })} placeholder="12A" />
+          </div>
+          <div>
+            <Label>Postal Code</Label>
+            <Input value={profile.postal_code} onChange={(e) => setProfile({ ...profile, postal_code: e.target.value })} placeholder="1000" />
+          </div>
+          <div>
+            <Label>City</Label>
+            <Input value={profile.city} onChange={(e) => setProfile({ ...profile, city: e.target.value })} placeholder="Brussels" />
+          </div>
+          <div>
+            <Label>Country</Label>
+            <Input value={profile.country} onChange={(e) => setProfile({ ...profile, country: e.target.value })} placeholder="Belgium" />
           </div>
           <div>
             <Label>Date of Birth</Label>

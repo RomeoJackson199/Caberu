@@ -1384,6 +1384,11 @@ export type Database = {
         Row: {
           average_rating: number
           clinic_address: string | null
+          clinic_city: string | null
+          clinic_country: string | null
+          clinic_house_number: string | null
+          clinic_postal_code: string | null
+          clinic_street_address: string | null
           communication_score: number
           created_at: string
           email: string | null
@@ -1407,6 +1412,11 @@ export type Database = {
         Insert: {
           average_rating?: number
           clinic_address?: string | null
+          clinic_city?: string | null
+          clinic_country?: string | null
+          clinic_house_number?: string | null
+          clinic_postal_code?: string | null
+          clinic_street_address?: string | null
           communication_score?: number
           created_at?: string
           email?: string | null
@@ -1430,6 +1440,11 @@ export type Database = {
         Update: {
           average_rating?: number
           clinic_address?: string | null
+          clinic_city?: string | null
+          clinic_country?: string | null
+          clinic_house_number?: string | null
+          clinic_postal_code?: string | null
+          clinic_street_address?: string | null
           communication_score?: number
           created_at?: string
           email?: string | null
@@ -2970,6 +2985,8 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           business_id: string | null
+          city: string | null
+          country: string | null
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -2977,6 +2994,7 @@ export type Database = {
           first_name: string | null
           google_calendar_connected: boolean | null
           google_calendar_refresh_token: string | null
+          house_number: string | null
           id: string
           import_session_id: string | null
           is_vip: boolean | null
@@ -2989,9 +3007,11 @@ export type Database = {
           phone: string | null
           phone_verified: boolean | null
           phone_verified_at: string | null
+          postal_code: string | null
           profile_completion_status: string
           profile_picture_url: string | null
           role: string | null
+          street_address: string | null
           updated_at: string
           user_id: string | null
         }
@@ -3001,6 +3021,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           business_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -3008,6 +3030,7 @@ export type Database = {
           first_name?: string | null
           google_calendar_connected?: boolean | null
           google_calendar_refresh_token?: string | null
+          house_number?: string | null
           id?: string
           import_session_id?: string | null
           is_vip?: boolean | null
@@ -3020,9 +3043,11 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean | null
           phone_verified_at?: string | null
+          postal_code?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
           role?: string | null
+          street_address?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -3032,6 +3057,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           business_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -3039,6 +3066,7 @@ export type Database = {
           first_name?: string | null
           google_calendar_connected?: boolean | null
           google_calendar_refresh_token?: string | null
+          house_number?: string | null
           id?: string
           import_session_id?: string | null
           is_vip?: boolean | null
@@ -3051,9 +3079,11 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean | null
           phone_verified_at?: string | null
+          postal_code?: string | null
           profile_completion_status?: string
           profile_picture_url?: string | null
           role?: string | null
+          street_address?: string | null
           updated_at?: string
           user_id?: string | null
         }

@@ -18,6 +18,11 @@ export interface Patient {
     phone?: string;
     date_of_birth?: string;
     address?: string;
+    street_address?: string;
+    house_number?: string;
+    city?: string;
+    postal_code?: string;
+    country?: string;
     medical_history?: string;
     emergency_contact?: string;
     profile_picture_url?: string | null;
@@ -242,6 +247,11 @@ export interface NewPatientForm {
     phone?: string;
     date_of_birth?: string;
     address?: string;
+    street_address?: string;
+    house_number?: string;
+    city?: string;
+    postal_code?: string;
+    country?: string;
     medical_history?: string;
     emergency_contact?: string;
 }

@@ -128,6 +128,11 @@ export interface Patient {
   date_of_birth?: string;
   medical_history?: string;
   address?: string;
+  street_address?: string;
+  house_number?: string;
+  city?: string;
+  postal_code?: string;
+  country?: string;
   last_appointment?: string;
   total_appointments: number;
   upcoming_appointments: number;

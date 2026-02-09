@@ -9,6 +9,11 @@ export interface ProfileData {
   date_of_birth: string;
   medical_history: string;
   address: string;
+  street_address: string;
+  house_number: string;
+  city: string;
+  postal_code: string;
+  country: string;
   emergency_contact: string;
   ai_opt_out?: boolean;
   profile_picture_url?: string;
@@ -191,9 +196,31 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
       medical_history: profileData.medical_history?.trim() || null,
     };
 
-    // Only add address and emergency_contact if they exist in the database
-    // These fields were added in a later migration
-    if (profileData.address !== undefined) {
+    // Structured address fields
+    if (profileData.street_address !== undefined) {
+      cleanData.street_address = profileData.street_address.trim() || null;
+    }
+    if (profileData.house_number !== undefined) {
+      cleanData.house_number = profileData.house_number.trim() || null;
+    }
+    if (profileData.city !== undefined) {
+      cleanData.city = profileData.city.trim() || null;
+    }
+    if (profileData.postal_code !== undefined) {
+      cleanData.postal_code = profileData.postal_code.trim() || null;
+    }
+    if (profileData.country !== undefined) {
+      cleanData.country = profileData.country.trim() || null;
+    }
+
+    // Build the legacy address field from structured fields for backwards compatibility
+    const addressParts = [
+      [profileData.street_address, profileData.house_number].filter(Boolean).join(' '),
+      [profileData.postal_code, profileData.city].filter(Boolean).join(' '),
+    ].filter(Boolean);
+    if (addressParts.length > 0) {
+      cleanData.address = addressParts.join(', ');
+    } else if (profileData.address !== undefined) {
       cleanData.address = profileData.address.trim() || null;
     }
     if (profileData.emergency_contact !== undefined) {
@@ -232,7 +259,7 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
     // Verify the save by reading back
     const { data: verifyData, error: verifyError } = await supabase
       .from(PROFILE_READ_SOURCE)
-      .select('first_name, last_name, phone, date_of_birth, medical_history, address, emergency_contact, ai_opt_out')
+      .select('first_name, last_name, phone, date_of_birth, medical_history, address, street_address, house_number, city, postal_code, country, emergency_contact, ai_opt_out')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -255,7 +282,7 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
     // Try to load from database first
     const { data, error } = await supabase
       .from(PROFILE_READ_SOURCE)
-      .select('first_name, last_name, phone, date_of_birth, medical_history, address, emergency_contact, ai_opt_out, profile_picture_url')
+      .select('first_name, last_name, phone, date_of_birth, medical_history, address, street_address, house_number, city, postal_code, country, emergency_contact, ai_opt_out, profile_picture_url')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -271,6 +298,11 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
       date_of_birth: data?.date_of_birth || '',
       medical_history: data?.medical_history || '',
       address: data?.address || '',
+      street_address: data?.street_address || '',
+      house_number: data?.house_number || '',
+      city: data?.city || '',
+      postal_code: data?.postal_code || '',
+      country: data?.country || 'Belgium',
       emergency_contact: data?.emergency_contact || '',
       ai_opt_out: data?.ai_opt_out || false,
       profile_picture_url: data?.profile_picture_url || ''

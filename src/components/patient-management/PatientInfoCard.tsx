@@ -81,10 +81,17 @@ export function PatientInfoCard({
                 <span>{patient.phone}</span>
               </div>
             )}
-            {patient.address && (
+            {(patient.street_address || patient.city || patient.address) && (
               <div className="flex items-center space-x-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{patient.address}</span>
+                <span>
+                  {patient.street_address
+                    ? [
+                        [patient.street_address, patient.house_number].filter(Boolean).join(' '),
+                        [patient.postal_code, patient.city].filter(Boolean).join(' '),
+                      ].filter(Boolean).join(', ')
+                    : patient.address}
+                </span>
               </div>
             )}
           </div>

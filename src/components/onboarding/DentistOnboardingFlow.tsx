@@ -59,8 +59,10 @@ interface OnboardingData {
 
   // Step 3: Contact & Location (Belgium-friendly)
   practiceAddress: string;
+  practiceHouseNumber: string;
   practiceCity: string;
   practicePostalCode: string;
+  practiceCountry: string;
   practicePhone: string;
   practiceEmail: string;
 
@@ -111,8 +113,10 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     practiceType: "solo",
     specialty: "General Dentistry",
     practiceAddress: "",
+    practiceHouseNumber: "",
     practiceCity: "",
     practicePostalCode: "",
+    practiceCountry: "Belgium",
     practicePhone: "",
     practiceEmail: "",
     mondayOpen: "09:00",
@@ -149,7 +153,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         // First get profile with business_id
         const { data: profile, error } = await supabase
           .from("profiles")
-          .select("id, first_name, last_name, date_of_birth, phone, email, address, business_id")
+          .select("id, first_name, last_name, date_of_birth, phone, email, address, street_address, house_number, city, postal_code, country, business_id")
           .eq("user_id", userId)
           .single();
 
@@ -216,21 +220,25 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           businessData = business;
         }
 
-        // Parse business address if it exists
-        let streetAddress = "";
-        let postalCode = "";
-        let city = "";
-        const addressToParse = businessData?.address || profile.address;
+        // Use structured address fields if available, fall back to parsing legacy field
+        let streetAddress = profile.street_address || "";
+        let houseNumber = profile.house_number || "";
+        let postalCode = profile.postal_code || "";
+        let city = profile.city || "";
+        let country = profile.country || "Belgium";
 
-        if (addressToParse) {
-          const parts = addressToParse.split(", ");
-          if (parts.length >= 2) {
-            streetAddress = parts[0];
-            const cityParts = parts[1].split(" ");
-            postalCode = cityParts[0] || "";
-            city = cityParts.slice(1).join(" ") || "";
-          } else {
-            streetAddress = addressToParse;
+        if (!streetAddress) {
+          const addressToParse = businessData?.address || profile.address;
+          if (addressToParse) {
+            const parts = addressToParse.split(", ");
+            if (parts.length >= 2) {
+              streetAddress = parts[0];
+              const cityParts = parts[1].split(" ");
+              postalCode = cityParts[0] || "";
+              city = cityParts.slice(1).join(" ") || "";
+            } else {
+              streetAddress = addressToParse;
+            }
           }
         }
 
@@ -249,8 +257,10 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           practicePhone: businessData?.phone || profile.phone || "",
           practiceEmail: profile.email || "",
           practiceAddress: streetAddress,
+          practiceHouseNumber: houseNumber,
           practicePostalCode: postalCode,
           practiceCity: city,
+          practiceCountry: country,
           
           // Business hours from business record
           ...(businessHours ? {
@@ -344,7 +354,10 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         sunday: { open: data.sundayOpen, close: data.sundayClose, isOpen: data.sundayEnabled },
       };
 
-      const fullAddress = `${data.practiceAddress}, ${data.practicePostalCode} ${data.practiceCity}`;
+      const fullAddress = [
+        [data.practiceAddress, data.practiceHouseNumber].filter(Boolean).join(' '),
+        [data.practicePostalCode, data.practiceCity].filter(Boolean).join(' '),
+      ].filter(Boolean).join(', ');
 
       // Update profile with onboarding data
       // Only include date_of_birth if it has a value (empty string would fail date validation)
@@ -355,6 +368,11 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         last_name: data.lastName,
         phone: data.practicePhone,
         address: fullAddress,
+        street_address: data.practiceAddress,
+        house_number: data.practiceHouseNumber,
+        city: data.practiceCity,
+        postal_code: data.practicePostalCode,
+        country: data.practiceCountry,
       };
       
       // Only set date_of_birth if a valid date was provided
@@ -464,6 +482,11 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         email: data.practiceEmail,
         specialization: data.specialty,
         clinic_address: fullAddress,
+        clinic_street_address: data.practiceAddress,
+        clinic_house_number: data.practiceHouseNumber,
+        clinic_city: data.practiceCity,
+        clinic_postal_code: data.practicePostalCode,
+        clinic_country: data.practiceCountry,
         is_active: true,
         require_appointment_approval: data.requireApproval,
       };
@@ -695,28 +718,30 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       icon: MapPin,
       content: (
         <div className="space-y-4 py-4">
-          <div>
-            <Label htmlFor="practiceAddress">Street Address *</Label>
-            <Input
-              id="practiceAddress"
-              placeholder="123 Main Street"
-              value={data.practiceAddress}
-              onChange={(e) => updateData("practiceAddress", e.target.value)}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="practiceCity">City *</Label>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-2">
+              <Label htmlFor="practiceAddress">Street Address *</Label>
               <Input
-                id="practiceCity"
-                placeholder="City"
-                value={data.practiceCity}
-                onChange={(e) => updateData("practiceCity", e.target.value)}
+                id="practiceAddress"
+                placeholder="Main Street"
+                value={data.practiceAddress}
+                onChange={(e) => updateData("practiceAddress", e.target.value)}
                 className="mt-1"
               />
             </div>
+            <div>
+              <Label htmlFor="practiceHouseNumber">Number</Label>
+              <Input
+                id="practiceHouseNumber"
+                placeholder="123"
+                value={data.practiceHouseNumber}
+                onChange={(e) => updateData("practiceHouseNumber", e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="practicePostalCode">Postal Code *</Label>
               <Input
@@ -727,8 +752,27 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
                 className="mt-1"
               />
             </div>
+            <div>
+              <Label htmlFor="practiceCity">City *</Label>
+              <Input
+                id="practiceCity"
+                placeholder="Brussels"
+                value={data.practiceCity}
+                onChange={(e) => updateData("practiceCity", e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="practiceCountry">Country</Label>
+              <Input
+                id="practiceCountry"
+                placeholder="Belgium"
+                value={data.practiceCountry}
+                onChange={(e) => updateData("practiceCountry", e.target.value)}
+                className="mt-1"
+              />
+            </div>
           </div>
-
 
           <div className="grid grid-cols-2 gap-4">
             <div>
