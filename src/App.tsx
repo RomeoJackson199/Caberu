@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -95,8 +95,23 @@ const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
 const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
 
 // Business gate component - DISABLED: Now using dedicated /select-business page
-const BusinessGate = () => {
-  // Popup disabled - business selection is now handled by /select-business page
+const BusinessGate = ({ shouldRedirect, onRedirected }: { shouldRedirect: boolean; onRedirected: () => void }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!shouldRedirect) return;
+
+    // Avoid redirect loops on auth/selection setup routes
+    if (location.pathname === '/select-business' || location.pathname === '/login' || location.pathname === '/onboarding') {
+      onRedirected();
+      return;
+    }
+
+    navigate('/select-business', { replace: true });
+    onRedirected();
+  }, [shouldRedirect, navigate, location.pathname, onRedirected]);
+
   return null;
 };
 
@@ -235,6 +250,23 @@ const App = () => {
           if (profileError && profileError.code !== 'PGRST116') {
             // Ignore "no rows found" error, log others
             logger.error('Error fetching profile:', profileError);
+          }
+
+          if (!profile && isMounted) {
+            // If profile is still provisioning but no active business is selected, force selection flow.
+            const { data: sessionBusiness } = await supabase
+              .from('session_business')
+              .select('business_id')
+              .eq('user_id', user.id)
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (!sessionBusiness?.business_id) {
+              setTimeout(() => {
+                if (isMounted) setShowBusinessPicker(true);
+              }, 500);
+            }
           }
 
           if (profile && isMounted) {
@@ -531,7 +563,10 @@ const App = () => {
                     </Suspense>
 
                     {/* Business Picker Dialog */}
-                    <BusinessGate />
+                    <BusinessGate
+                      shouldRedirect={showBusinessPicker}
+                      onRedirected={() => setShowBusinessPicker(false)}
+                    />
                   </EmailLimitProvider>
                 </BrowserRouter>
                 </ConfirmationProvider>
