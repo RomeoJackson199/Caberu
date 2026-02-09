@@ -277,25 +277,50 @@ export function DentistDemoTour({ run, onClose, onChangeSection }: DentistDemoTo
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
     const { status, type, index, action } = data;
 
-    if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
+    try {
+      if (([STATUS.FINISHED, STATUS.SKIPPED] as string[]).includes(status)) {
+        setRunTour(false);
+        setStepIndex(0);
+        // Navigate back to dashboard on tour end
+        onChangeSection?.('dashboard');
+        markTourComplete();
+        onClose();
+        return;
+      }
+      
+      if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+        const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
+
+        // Guard against out-of-bounds
+        if (nextStepIndex < 0 || nextStepIndex >= steps.length) {
+          setRunTour(false);
+          setStepIndex(0);
+          onClose();
+          return;
+        }
+
+        // Navigate to the appropriate section for the next step
+        const targetSection = STEP_SECTION_MAP[nextStepIndex];
+        if (targetSection && onChangeSection) {
+          // Pause tour while section changes, then resume
+          setRunTour(false);
+          onChangeSection(targetSection);
+          // Small delay to let the new section render its DOM targets
+          setTimeout(() => {
+            setStepIndex(nextStepIndex);
+            setRunTour(true);
+          }, 400);
+        } else {
+          setStepIndex(nextStepIndex);
+        }
+      }
+    } catch (error) {
+      console.error('Tour callback error:', error);
       setRunTour(false);
       setStepIndex(0);
-      // Navigate back to dashboard on tour end
-      onChangeSection?.('dashboard');
-      markTourComplete();
       onClose();
-    } else if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
-      const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
-
-      // Navigate to the appropriate section for the next step
-      const targetSection = STEP_SECTION_MAP[nextStepIndex];
-      if (targetSection && onChangeSection) {
-        onChangeSection(targetSection);
-      }
-
-      setStepIndex(nextStepIndex);
     }
-  }, [onClose, onChangeSection]);
+  }, [onClose, onChangeSection, steps.length]);
 
   return (
     <Joyride

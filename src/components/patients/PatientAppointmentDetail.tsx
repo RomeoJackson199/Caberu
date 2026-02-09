@@ -88,6 +88,7 @@ interface AppointmentData {
     first_name: string;
     last_name: string;
     specialization: string | null;
+    profile_picture_url: string | null;
   } | null;
   service: {
     name: string;
@@ -378,7 +379,8 @@ export function PatientAppointmentDetail({
           dentists!inner (
             first_name,
             last_name,
-            specialization
+            specialization,
+            profile_picture_url
           ),
           business_services (
             name,
@@ -419,6 +421,7 @@ export function PatientAppointmentDetail({
           first_name: dentistData.first_name || '',
           last_name: dentistData.last_name || '',
           specialization: dentistData.specialization,
+          profile_picture_url: dentistData.profile_picture_url || null,
         } : null,
         service: serviceData ? {
           name: serviceData.name,
