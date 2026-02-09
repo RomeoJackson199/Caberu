@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { format as formatTz } from "https://esm.sh/date-fns-tz@3.2.0";
+import { toZonedTime } from "https://esm.sh/date-fns-tz@3.2.0";
+
+const CLINIC_TIMEZONE = 'Europe/Brussels';
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -23,30 +27,7 @@ serve(async (req) => {
         id,
         appointment_id,
         reminder_type,
-        notification_method,
-        appointments (
-          id,
-          appointment_date,
-          reason,
-          patient_id,
-          dentist_id,
-          profiles!appointments_patient_id_fkey (
-            id,
-            user_id,
-            email,
-            first_name,
-            last_name,
-            phone
-          ),
-          dentists (
-            id,
-            clinic_address,
-            profiles (
-              first_name,
-              last_name
-            )
-          )
-        )
+        notification_method
       `)
       .eq("status", "pending")
       .lte("scheduled_for", now)
@@ -56,6 +37,44 @@ serve(async (req) => {
       console.error("Error fetching reminders:", remindersError);
       throw remindersError;
     }
+
+    // Fetch decrypted appointment details separately for each reminder
+    const appointmentIds = [...new Set((reminders || []).map(r => r.appointment_id))];
+    
+    const { data: decryptedAppointments, error: aptError } = await supabase
+      .from("appointments_decrypted")
+      .select(`
+        id,
+        appointment_date,
+        reason,
+        patient_id,
+        dentist_id,
+        profiles!appointments_patient_id_fkey (
+          id,
+          user_id,
+          email,
+          first_name,
+          last_name,
+          phone
+        ),
+        dentists (
+          id,
+          clinic_address,
+          profiles (
+            first_name,
+            last_name
+          )
+        )
+      `)
+      .in('id', appointmentIds);
+
+    if (aptError) {
+      console.error("Error fetching decrypted appointments:", aptError);
+      throw aptError;
+    }
+
+    // Index appointments by id for quick lookup
+    const appointmentMap = new Map((decryptedAppointments || []).map(a => [a.id, a]));
 
     console.log(`Found ${reminders?.length || 0} reminders to send`);
 
@@ -67,7 +86,17 @@ serve(async (req) => {
 
     for (const reminder of reminders || []) {
       try {
-        const appointment = reminder.appointments as any;
+        const appointment = appointmentMap.get(reminder.appointment_id) as any;
+        if (!appointment) {
+          console.log(`Skipping reminder ${reminder.id}: Appointment not found`);
+          await supabase
+            .from("appointment_reminders")
+            .update({ status: "failed", error_message: "Appointment not found" })
+            .eq("id", reminder.id);
+          results.failed++;
+          continue;
+        }
+
         const patient = appointment.profiles;
         const dentist = appointment.dentists.profiles;
 
@@ -84,18 +113,11 @@ serve(async (req) => {
           continue;
         }
 
-        // Format the appointment date
+        // Format the appointment date in Brussels timezone
         const appointmentDate = new Date(appointment.appointment_date);
-        const formattedDate = appointmentDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        const formattedTime = appointmentDate.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-        });
+        const brusselsDate = toZonedTime(appointmentDate, CLINIC_TIMEZONE);
+        const formattedDate = formatTz(brusselsDate, 'EEEE, MMMM d, yyyy', { timeZone: CLINIC_TIMEZONE });
+        const formattedTime = formatTz(brusselsDate, 'h:mm a', { timeZone: CLINIC_TIMEZONE });
 
         // Determine reminder timing text
         const reminderText = reminder.reminder_type === "24h" 

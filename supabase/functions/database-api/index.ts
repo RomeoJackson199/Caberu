@@ -627,7 +627,7 @@ serve(async (req) => {
       // Create appointment
       case 'create_appointment': {
         const { patient_id, dentist_id, business_id, appointment_date, reason, status, urgency, duration_minutes, notes } = params;
-        const { data, error } = await supabase
+        const { data: insertedData, error: insertError } = await supabase
           .from('appointments')
           .insert({
             patient_id,
@@ -640,7 +640,16 @@ serve(async (req) => {
             duration_minutes: duration_minutes || 60,
             notes,
           })
-          .select()
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+
+        // Re-fetch from decrypted view to return readable data
+        const { data, error } = await supabase
+          .from('appointments_decrypted')
+          .select('*')
+          .eq('id', insertedData.id)
           .single();
 
         if (error) throw error;
@@ -651,11 +660,18 @@ serve(async (req) => {
       // Update appointment
       case 'update_appointment': {
         const { appointment_id, updates } = params;
-        const { data, error } = await supabase
+        const { error: updateError } = await supabase
           .from('appointments')
           .update(updates)
+          .eq('id', appointment_id);
+
+        if (updateError) throw updateError;
+
+        // Re-fetch from decrypted view to return readable data
+        const { data, error } = await supabase
+          .from('appointments_decrypted')
+          .select('*')
           .eq('id', appointment_id)
-          .select()
           .single();
 
         if (error) throw error;

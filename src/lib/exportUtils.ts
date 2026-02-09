@@ -2,6 +2,7 @@
  * CSV/Excel Export Utilities
  * Provides functions to export data to CSV and Excel formats
  */
+import { formatClinicTime } from '@/lib/timezone';
 
 interface ExportOptions {
   filename?: string;
@@ -133,9 +134,8 @@ export function exportAppointmentsToCSV(appointments: any[]): void {
 
   const formattedData = appointments.map(apt => {
     // appointment_date is a timestamp - extract date and time separately
-    const appointmentDateTime = apt.appointment_date ? new Date(apt.appointment_date) : null;
-    const dateStr = appointmentDateTime ? appointmentDateTime.toLocaleDateString() : '';
-    const timeStr = appointmentDateTime ? appointmentDateTime.toLocaleTimeString() : '';
+    const dateStr = apt.appointment_date ? formatClinicTime(apt.appointment_date, 'dd/MM/yyyy') : '';
+    const timeStr = apt.appointment_date ? formatClinicTime(apt.appointment_date, 'HH:mm') : '';
 
     return {
       id: apt.id,

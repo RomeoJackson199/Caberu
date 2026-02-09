@@ -269,7 +269,7 @@ export function AIConversationDialog({
                       <div className="flex-1">
                         <p className="text-sm">{message.content}</p>
                         <p className="text-xs opacity-70 mt-1">
-                          {message.timestamp.toLocaleTimeString()}
+                          {message.timestamp.toLocaleTimeString('en-GB', { timeZone: 'Europe/Brussels' })}
                         </p>
                       </div>
                     </div>

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { TreatmentPlan, NewTreatmentPlanForm } from "@/types/dental";
 import { logger } from '@/lib/logger';
+import { formatClinicTime } from '@/lib/timezone';
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { TreatmentPlanDetailView } from "@/components/treatment/TreatmentPlanDetailView";
 import { TreatmentPlanListItem } from "@/components/treatment/TreatmentPlanListItem";
@@ -101,7 +102,7 @@ export function TreatmentPlanManager({ patientId, dentistId }: TreatmentPlanMana
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString();
+      return formatClinicTime(dateStr, 'dd/MM/yyyy');
     } catch {
       return dateStr;
     }
