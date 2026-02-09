@@ -42,34 +42,30 @@ export default function SelectBusiness() {
         checkAuth();
     }, [navigate]);
 
-    // Filter and sort businesses: memberships first, then owned, then alphabetical
+    // Filter and sort businesses - owners first, then search
     const sortedFilteredBusinesses = useMemo(() => {
-        const membershipIds = new Set((memberships || []).map(m => m.business_id));
-        const term = searchTerm.trim().toLowerCase();
-
-        const filtered = allBusinessesList.filter((b) => {
-            if (!term) return true;
-            return (
-                b.name?.toLowerCase().includes(term) ||
+        let filtered = allBusinessesList;
+        
+        // Apply search filter
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase();
+            filtered = allBusinessesList.filter(b => 
+                b.name?.toLowerCase().includes(term) || 
                 b.tagline?.toLowerCase().includes(term) ||
                 b.slug?.toLowerCase().includes(term)
             );
-        });
-
-        return [...filtered].sort((a, b) => {
-            const aIsMember = membershipIds.has(a.id);
-            const bIsMember = membershipIds.has(b.id);
-            if (aIsMember && !bIsMember) return -1;
-            if (!aIsMember && bIsMember) return 1;
-
+        }
+        
+        // Sort: owned businesses first, then alphabetically
+        return filtered.sort((a, b) => {
             const aIsOwned = a.owner_profile_id === currentUserProfileId;
             const bIsOwned = b.owner_profile_id === currentUserProfileId;
+            
             if (aIsOwned && !bIsOwned) return -1;
             if (!aIsOwned && bIsOwned) return 1;
-
             return (a.name || '').localeCompare(b.name || '');
         });
-    }, [allBusinessesList, searchTerm, currentUserProfileId, memberships]);
+    }, [allBusinessesList, searchTerm, currentUserProfileId]);
 
     // Fetch all available businesses
     useEffect(() => {

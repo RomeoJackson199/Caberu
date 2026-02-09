@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,6 @@ export default function CreateBusiness() {
   const [currentStep, setCurrentStep] = useState(1);
   const [businessData, setBusinessData] = useState<BusinessData>({});
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const hasProcessedSubscriptionRef = useRef(false);
 
   // Handle successful subscription return
   useEffect(() => {
@@ -41,9 +40,6 @@ export default function CreateBusiness() {
       const subscriptionSuccess = searchParams.get('subscription');
 
       if (subscriptionSuccess === 'success' && sessionId) {
-        if (hasProcessedSubscriptionRef.current) return;
-        hasProcessedSubscriptionRef.current = true;
-
         toast.loading('Creating your business...');
 
         // Restore business data from sessionStorage (persisted before Stripe redirect)

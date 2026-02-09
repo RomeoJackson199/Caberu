@@ -129,7 +129,6 @@ export function AddressAutocomplete({
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value
         setInputValue(newValue)
-        onChange(newValue)
         setHighlightedIndex(-1)
         if (newValue.length < 3) {
             setShowSuggestions(false)

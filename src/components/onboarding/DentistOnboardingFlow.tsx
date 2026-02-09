@@ -160,9 +160,9 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
 
         if (!profile) return;
 
-        // Find the business for this user (owner first, then any membership, then active session)
+        // Find the business - either from profile.business_id or from business_members where user is owner
         let businessId = profile.business_id;
-
+        
         if (!businessId) {
           const { data: ownedBusiness } = await supabase
             .from('business_members')
@@ -171,36 +171,9 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             .eq('role', 'owner')
             .limit(1)
             .maybeSingle();
-
+          
           if (ownedBusiness?.business_id) {
             businessId = ownedBusiness.business_id;
-          }
-        }
-
-        if (!businessId) {
-          const { data: memberBusiness } = await supabase
-            .from('business_members')
-            .select('business_id')
-            .eq('profile_id', profile.id)
-            .limit(1)
-            .maybeSingle();
-
-          if (memberBusiness?.business_id) {
-            businessId = memberBusiness.business_id;
-          }
-        }
-
-        if (!businessId) {
-          const { data: sessionBusiness } = await supabase
-            .from('session_business')
-            .select('business_id')
-            .eq('user_id', userId)
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (sessionBusiness?.business_id) {
-            businessId = sessionBusiness.business_id;
           }
         }
 
@@ -376,10 +349,11 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       }
 
       // Update existing business record (business should already exist from /create-business)
-      // Resolve current business reliably: profile -> owner membership -> any membership -> active session
+      // First check profile.business_id, then check if they OWN a business
       let businessId = profile.business_id;
-
+      
       if (!businessId) {
+        // Check if user is already an OWNER of a business
         const { data: ownedBusiness } = await supabase
           .from('business_members')
           .select('business_id')
@@ -387,44 +361,15 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
           .eq('role', 'owner')
           .limit(1)
           .maybeSingle();
-
+        
         if (ownedBusiness?.business_id) {
           businessId = ownedBusiness.business_id;
+          // Also update the profile to have this business_id
+          await supabase
+            .from('profiles')
+            .update({ business_id: businessId })
+            .eq('id', profile.id);
         }
-      }
-
-      if (!businessId) {
-        const { data: memberBusiness } = await supabase
-          .from('business_members')
-          .select('business_id')
-          .eq('profile_id', profile.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (memberBusiness?.business_id) {
-          businessId = memberBusiness.business_id;
-        }
-      }
-
-      if (!businessId) {
-        const { data: sessionBusiness } = await supabase
-          .from('session_business')
-          .select('business_id')
-          .eq('user_id', userId)
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (sessionBusiness?.business_id) {
-          businessId = sessionBusiness.business_id;
-        }
-      }
-
-      if (businessId && businessId !== profile.business_id) {
-        await supabase
-          .from('profiles')
-          .update({ business_id: businessId })
-          .eq('id', profile.id);
       }
 
       // Only update if business exists - we don't create businesses in onboarding

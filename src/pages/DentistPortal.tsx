@@ -60,7 +60,6 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   const { showTour, closeTour } = useUserTour("dentist");
   const [showDemoTour, setShowDemoTour] = useState(false);
   const [tourCompleted, setTourCompleted] = useState(false);
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
 
   const isTourMarkedCompleted = () => {
     return (
@@ -73,9 +72,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   useEffect(() => {
     setTourCompleted(isTourMarkedCompleted());
 
-    // Wait until onboarding has finished before auto-starting product tour
-    if (onboardingCompleted !== true) return;
-
+    // Check if we should auto-start the tour (after demo data generation)
     const shouldStartTour = localStorage.getItem('should-start-tour') === 'true';
     if (shouldStartTour && !isTourMarkedCompleted()) {
       // Small delay to ensure the page is fully loaded
@@ -84,7 +81,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         localStorage.removeItem('should-start-tour'); // Clear the flag
       }, 1000);
     }
-  }, [onboardingCompleted]);
+  }, []);
 
   // Handle URL-based section navigation
   useEffect(() => {
@@ -158,7 +155,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     try {
       const { data: profile, error: profileError } = await supabase
         .from('secure_profiles_view')
-        .select('id, onboarding_completed')
+        .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -166,8 +163,6 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         logger.error('❌ Profile error:', profileError);
         throw profileError;
       }
-      setOnboardingCompleted(profile?.onboarding_completed === true);
-
       if (!profile) {
         logger.error('❌ No profile found for user:', user.id);
         throw new Error('Profile not found');
