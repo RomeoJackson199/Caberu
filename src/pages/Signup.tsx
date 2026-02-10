@@ -449,8 +449,8 @@ const Signup = () => {
       </div>
 
       {/* Right Side - Hero */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/90 via-purple-500/90 to-pink-500/90" />
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 via-blue-700/90 to-indigo-800/90" />
 
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <div className="space-y-6">

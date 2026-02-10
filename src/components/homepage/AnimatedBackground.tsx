@@ -20,8 +20,8 @@ const particles: Particle[] = Array.from({ length: 15 }, (_, i) => ({
   delay: Math.random() * 5,
   gradient: [
     "from-blue-500/10 to-cyan-500/10",
-    "from-purple-500/10 to-pink-500/10",
     "from-indigo-500/10 to-blue-500/10",
+    "from-cyan-500/10 to-blue-500/10",
     "from-emerald-500/10 to-teal-500/10"
   ][Math.floor(Math.random() * 4)]
 }));
