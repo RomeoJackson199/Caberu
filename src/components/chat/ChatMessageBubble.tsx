@@ -53,7 +53,7 @@ export const ChatMessageBubble = ({ message }: ChatMessageBubbleProps) => {
             {message.message_type === 'success' && (
               <Badge
                 variant="secondary"
-                className={`bg-green-100 text-green-800 border-green-200 ${
+                className={`bg-success/10 text-success border-success/20 ${
                   message.is_bot ? "self-start" : "self-end"
                 }`}
               >

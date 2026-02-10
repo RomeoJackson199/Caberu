@@ -83,7 +83,7 @@ export default function Messages() {
       <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-8 text-center">
           <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold mb-2">{t.signInToMessage || "Sign in to Message"}</h2>
+          <h2 className="text-2xl font-heading font-bold mb-2">{t.signInToMessage || "Sign in to Message"}</h2>
           <p className="text-muted-foreground mb-6">
             {t.needSignedInToMessage || "You need to be signed in to send and receive messages"}
           </p>
@@ -137,10 +137,10 @@ export default function Messages() {
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground">
                 <div className="text-center max-w-md px-6">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 mb-4 shadow-md">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4 shadow-md">
                     <MessageSquare className="h-10 w-10 text-primary" />
                   </div>
-                  <p className="font-semibold text-foreground mb-1">{t.selectConversation || "Select a conversation"}</p>
+                  <p className="font-heading font-semibold text-foreground mb-1">{t.selectConversation || "Select a conversation"}</p>
                 </div>
               </div>
             )}

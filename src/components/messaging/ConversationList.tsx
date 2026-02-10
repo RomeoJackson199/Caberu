@@ -345,7 +345,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
       {/* Header - Fixed */}
       <div className="flex-shrink-0 p-4 border-b bg-gradient-to-br from-background/95 via-background/95 to-muted/20 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-md">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Messages</h2>
+          <h2 className="text-xl font-heading font-bold text-foreground">Messages</h2>
           <div className="flex gap-1">
             <Button
               variant="ghost"
@@ -426,8 +426,8 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                     className="w-full p-3 rounded-xl hover:bg-primary/5 hover:shadow-md transition-all duration-300 text-left group"
                   >
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 ring-2 ring-white dark:ring-gray-800 shadow-md border-2 border-primary/10">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white font-bold">
+                      <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
+                        <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                           {contact.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -470,16 +470,16 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                 >
                   <div className="flex items-start gap-3">
                     <div className="relative">
-                      <Avatar className="h-12 w-12 ring-2 ring-white dark:ring-gray-800 shadow-md border-2 border-primary/10">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white font-bold">
+                      <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
+                        <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                           {conv.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       {conv.unreadCount > 0 && (
                         <div className="absolute -top-1 -right-1">
                           <Badge
-                            variant="default"
-                            className="h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-bold animate-pulse shadow-lg bg-gradient-to-br from-red-500 to-pink-500"
+                            variant="destructive"
+                            className="h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-bold animate-pulse-soft shadow-lg"
                           >
                             {conv.unreadCount}
                           </Badge>
@@ -518,7 +518,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
           </div>
         ) : (
           <div className="p-8 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 mb-4 shadow-md">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4 shadow-md">
               <MessageSquare className="h-10 w-10 text-primary" />
             </div>
             <p className="text-sm font-bold mb-2">No conversations yet</p>

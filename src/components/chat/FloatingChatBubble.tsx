@@ -164,22 +164,22 @@ export function FloatingChatBubble({ context = 'general' }: FloatingChatBubblePr
           >
             <Card className="shadow-2xl border-2 border-primary/20">
               {/* Header */}
-              <CardHeader className="p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
+              <CardHeader className="p-4 bg-primary text-primary-foreground rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
                       <Bot className="w-5 h-5" />
                     </div>
                     <div>
-                      <CardTitle className="text-base font-semibold">{CHAT_TITLES[context]}</CardTitle>
-                      <p className="text-xs text-white/80">{context === 'onboarding' ? 'Need help setting up?' : 'Ask me anything!'}</p>
+                      <CardTitle className="text-base font-heading font-semibold">{CHAT_TITLES[context]}</CardTitle>
+                      <p className="text-xs text-primary-foreground/80">{context === 'onboarding' ? 'Need help setting up?' : 'Ask me anything!'}</p>
                     </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsOpen(false)}
-                    className="text-white hover:bg-white/20 h-8 w-8"
+                    className="text-primary-foreground hover:bg-primary-foreground/20 h-8 w-8"
                   >
                     <X className="h-4 w-4" />
                   </Button>

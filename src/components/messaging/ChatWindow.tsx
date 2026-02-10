@@ -241,17 +241,17 @@ export function ChatWindow({
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
-          <Avatar className="h-12 w-12 ring-2 ring-white dark:ring-gray-800 shadow-md border-2 border-primary/10">
-            <AvatarFallback className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white font-bold">
+          <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
+            <AvatarFallback className="bg-primary text-primary-foreground font-bold">
               {recipient.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold truncate">{recipient.name}</h3>
+            <h3 className="font-heading font-bold truncate">{recipient.name}</h3>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
               <span className={cn(
                 "inline-block w-2 h-2 rounded-full shadow-sm",
-                isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"
+                isOnline ? "bg-success animate-pulse-soft" : "bg-muted-foreground/40"
               )} />
               {isOnline ? 'Online' : 'Offline'}
             </p>
@@ -307,8 +307,8 @@ export function ChatWindow({
                       {!isOwnMessage && (
                         <div className="w-8 shrink-0">
                           {showAvatar && (
-                            <Avatar className="h-8 w-8 ring-2 ring-white dark:ring-gray-800 shadow-sm border border-primary/10">
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white text-xs font-bold">
+                            <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm border border-primary/10">
+                              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                                 {recipient.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
@@ -396,7 +396,7 @@ export function ChatWindow({
                 onClick={sendMessage}
                 disabled={!newMessage.trim() || sending}
                 size="icon"
-                className="shrink-0 h-11 w-11 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-primary via-primary to-primary/90"
+                className="shrink-0 h-11 w-11 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-primary text-primary-foreground"
               >
                 {sending ? (
                   <Clock className="h-5 w-5 animate-spin" />

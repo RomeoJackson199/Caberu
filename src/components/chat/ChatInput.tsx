@@ -35,7 +35,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="p-4 border-t bg-white">
+    <div className="p-4 border-t bg-background">
       <div className="flex items-center gap-2">
         <div className="flex-1 relative">
           <Input
@@ -43,26 +43,26 @@ export function ChatInput({
             onChange={(e) => onChange(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
-            className="pr-12 rounded-full border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+            className="pr-12 rounded-full border-border focus:border-primary focus:ring-primary"
             disabled={isLoading}
           />
           {isRecording && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <div className="w-3 h-3 bg-destructive rounded-full animate-pulse-soft"></div>
             </div>
           )}
         </div>
         <Button
           onClick={handleButtonClick}
           disabled={isLoading || (!value.trim() && !isRecording)}
-          className="rounded-full w-10 h-10 p-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+          className="rounded-full w-10 h-10 p-0 bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           {isRecording ? (
-            <Square className="w-4 h-4 text-white" />
+            <Square className="w-4 h-4" />
           ) : value.trim() ? (
-            <Send className="w-4 h-4 text-white" />
+            <Send className="w-4 h-4" />
           ) : (
-            <Mic className="w-4 h-4 text-white" />
+            <Mic className="w-4 h-4" />
           )}
         </Button>
       </div>

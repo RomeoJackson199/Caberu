@@ -49,14 +49,14 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
             >
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.is_bot
-                  ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100'
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                  ? 'bg-card border border-border'
+                  : 'bg-primary text-primary-foreground'
                   }`}
               >
                 <div className="flex items-start gap-2">
                   {message.is_bot && (
-                    <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="w-3 h-3 text-white" />
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <Bot className="w-3 h-3 text-primary-foreground" />
                     </div>
                   )}
                   <div className="flex-1">
@@ -74,8 +74,8 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
                     )}
                   </div>
                   {!message.is_bot && (
-                    <div className="w-6 h-6 bg-gradient-to-r from-gray-500 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <UserIcon className="w-3 h-3 text-white" />
+                    <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <UserIcon className="w-3 h-3 text-muted-foreground" />
                     </div>
                   )}
                 </div>
@@ -86,15 +86,15 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl px-4 py-3">
+            <div className="bg-card border border-border rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                  <Bot className="w-3 h-3 text-white" />
+                <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                  <Bot className="w-3 h-3 text-primary-foreground" />
                 </div>
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
