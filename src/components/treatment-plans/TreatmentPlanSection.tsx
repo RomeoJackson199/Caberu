@@ -58,6 +58,22 @@ export function TreatmentPlanSection({
     setEffectivePlanId(existingPlanId);
   }, [existingPlanId]);
 
+  // When a plan is created from the editor, update local state immediately
+  // so the summary card reflects the link without waiting for parent re-fetch
+  const handlePlanCreated = (planId: string) => {
+    setEffectivePlanId(planId);
+    queryClient.invalidateQueries({ queryKey: ["treatment-plan-summary"] });
+    queryClient.invalidateQueries({ queryKey: ["appointment"] });
+    queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    onPlanCreated?.(planId);
+  };
+
+  const handlePlanUpdated = () => {
+    queryClient.invalidateQueries({ queryKey: ["treatment-plan-summary"] });
+    queryClient.invalidateQueries({ queryKey: ["appointment"] });
+    onPlanUpdated?.();
+  };
+
   // Fetch plan summary for the card
   const { data: planSummary, isLoading } = useQuery({
     queryKey: ["treatment-plan-summary", effectivePlanId],
@@ -157,8 +173,8 @@ export function TreatmentPlanSection({
         businessId={businessId}
         existingPlanId={effectivePlanId}
         isEditable={isEditable}
-        onPlanCreated={onPlanCreated}
-        onPlanUpdated={onPlanUpdated}
+        onPlanCreated={handlePlanCreated}
+        onPlanUpdated={handlePlanUpdated}
       />
 
       {/* Link Existing Plan Sheet */}
