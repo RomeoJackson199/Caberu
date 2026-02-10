@@ -36,9 +36,9 @@ interface OnboardingStep {
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     icon: Bot,
-    title: 'Meet your AI dental guide',
-    description: 'Available 24/7 to help you book appointments, answer questions, and keep your care on track.',
-    highlight: 'I can book visits for you or family members and share how long each appointment will take.',
+    title: 'Your scheduling assistant',
+    description: 'I help you manage appointments, summarize symptoms for your dentist, and handle payments — not medical advice.',
+    highlight: 'I collect what you tell me and pass a summary to your dentist. Any clinical decisions are made by them.',
     examples: [
       'Show my appointments',
       'Book an appointment',
@@ -47,9 +47,9 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     icon: Calendar,
-    title: 'Smart appointment booking',
-    description: 'Book, reschedule, or cancel with clear duration and end-time guidance.',
-    highlight: 'Tell me what you need—emergency or routine—and I will find the best slot for you.',
+    title: 'Manage your appointments',
+    description: 'Book, reschedule, or cancel visits for yourself or family members.',
+    highlight: 'Tell me what you need — emergency or routine — and I will find the best available slot.',
     examples: [
       'Find earliest available slot',
       'Reschedule my appointment',
@@ -58,20 +58,20 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   },
   {
     icon: Settings,
-    title: 'Personalized preferences',
-    description: 'Change language, theme, and reminders so the experience fits you.',
-    highlight: "Just say 'switch to dark mode' or 'remind me about cleanings' and I will adjust.",
+    title: 'Payments & prescriptions',
+    description: 'View balances, handle payments, and request prescription refills from your dentist.',
+    highlight: 'Say "show my balance" or "refill my prescription" and I will walk you through it.',
     examples: [
-      'Change language to French',
-      'Switch to dark mode',
-      'Update my information'
+      'Show my balance',
+      'Refill my prescription',
+      'Make a payment'
     ]
   },
   {
     icon: Image,
-    title: 'Share photos when needed',
-    description: 'Upload dental photos or X-rays for faster triage and guidance.',
-    highlight: "I will never share them without permission and I will use them only to assist you.",
+    title: 'Share photos for triage',
+    description: 'Upload dental photos so your dentist can review them. I do not analyze or diagnose.',
+    highlight: "Photos are shared securely with your dental practice to help them prepare for your visit.",
     examples: [
       'Upload a photo',
       'Share my X-ray',
@@ -141,7 +141,7 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
             </Button>
           </div>
           <DialogDescription className="text-sm sm:text-base">
-            Learn how the assistant can book appointments, answer questions, and keep you updated.
+            See how the assistant helps with scheduling, symptom summaries, and payments.
           </DialogDescription>
           <div className="flex items-center gap-2 mt-1 sm:mt-2">
             <Badge variant="secondary" className="text-xs">Step {currentStep + 1} of {ONBOARDING_STEPS.length}</Badge>
@@ -192,7 +192,7 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
               <div className="flex items-start gap-2 p-2 sm:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                 <div className="text-xs sm:text-sm text-green-900 dark:text-green-100">
-                  You're all set! I can book, reschedule, and keep you informed without long forms.
+                  You're all set! I handle scheduling and summaries — your dentist handles the rest.
                 </div>
               </div>
               <div className="flex items-start gap-2 p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">

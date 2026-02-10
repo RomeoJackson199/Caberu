@@ -285,9 +285,9 @@ export const InteractiveDentalChat = ({
     // Only initialize if AI config is loaded and no messages yet
     if (messages.length === 0 && isAIConfigLoaded) {
       // Use custom greeting if available, otherwise use default
-      const defaultGreeting = user && userProfile ? 
-        `Hello ${userProfile.first_name}! 👋 I'm your dental assistant. How can I help you today?` : 
-        `Hello! 👋 Welcome to First Smile AI. I'm your dental assistant. How can I help you today?`;
+      const defaultGreeting = user && userProfile ?
+        `Hello ${userProfile.first_name}! 👋 I'm your scheduling assistant. I can help with appointments, symptom summaries for your dentist, payments, and prescription refills. What do you need?` :
+        `Hello! 👋 Welcome to First Smile AI. I'm your scheduling assistant — I help with appointments, symptom summaries, payments, and prescription refills. I don't provide medical advice. How can I help?`;
       
       const welcomeMessage: ChatMessage = {
         id: crypto.randomUUID(),
