@@ -8,13 +8,13 @@ const cardVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-card border border-border shadow-sm hover:shadow-md",
+        default: "bg-card border border-border/60 shadow-md hover:shadow-lg",
         glass: "glass-card border-white/20 shadow-soft",
         "glass-strong": "glass-card-strong border-white/30 shadow-medium",
         floating: "floating-card shadow-large",
         elevated: "card-elevated shadow-elegant",
         interactive: "card-interactive shadow-medium hover:shadow-large",
-        outline: "border-l-4 border-l-primary border border-border bg-card hover:border-primary/40 shadow-soft hover:shadow-md",
+        outline: "border-2 border-primary/20 bg-card/50 hover:border-primary/40 shadow-soft hover:shadow-md",
         gradient: "bg-gradient-card border-0 text-white shadow-elegant hover:shadow-glow",
       },
       padding: {
