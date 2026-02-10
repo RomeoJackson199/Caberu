@@ -36,80 +36,95 @@
   }
 
   /* ============================================================================
-     DentiBot Design System - Dark Theme (Default)
-     All colors in HSL format for proper theming
+     Caberu Healthcare Color System (Default)
      ============================================================================ */
   :root {
-    /* Core UI Colors - Dark Mode - Enhanced Contrast */
-    --background: 222 14% 5%;
-    --foreground: 210 40% 98%;
+    /* Brand palette (hex tokens for direct usage) */
+    --color-sky-blue: #E0F2FE;
+    --color-brilliant-blue: #2563EB;
+    --color-brilliant-blue-hover: #1D4ED8;
+    --color-navy-depth: #0A1F44;
+    --color-success: #10B981;
+    --color-success-light: #D1FAE5;
+    --color-warning: #F59E0B;
+    --color-warning-light: #FEF3C7;
+    --color-error: #EF4444;
+    --color-error-light: #FEE2E2;
+    --color-background: #F8FAFB;
+    --color-text-secondary: #64748B;
+    --color-border: #E2E8F0;
+    --color-white: #FFFFFF;
 
-    --card: 222 14% 8%;
-    --card-foreground: 210 40% 98%;
+    /* Core UI Colors */
+    --background: 200 27% 98%;
+    --foreground: 218 74% 15%;
 
-    --popover: 222 14% 8%;
-    --popover-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 218 74% 15%;
 
-    /* Primary Brand Color - Deep Blue - Enhanced */
-    --primary: 213 84% 38%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 218 74% 15%;
+
+    /* Primary Brand Color */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 213 84% 48%;
-    --primary-dark: 213 84% 28%;
+    --primary-light: 204 94% 94%;
+    --primary-dark: 224 76% 48%;
 
-    /* Secondary Color - Aqua - Enhanced */
-    --secondary: 185 74% 58%;
-    --secondary-foreground: 222 14% 5%;
-    --secondary-light: 185 74% 68%;
-    --secondary-dark: 185 74% 48%;
+    /* Secondary Color */
+    --secondary: 204 94% 94%;
+    --secondary-foreground: 221 83% 53%;
+    --secondary-light: 201 94% 86%;
+    --secondary-dark: 204 94% 90%;
 
-    /* Accent Color - Soft Lilac - Enhanced */
-    --accent: 268 52% 74%;
-    --accent-foreground: 222 14% 5%;
-    --accent-light: 268 52% 84%;
-    --accent-dark: 268 52% 64%;
+    --accent: 204 94% 94%;
+    --accent-foreground: 221 83% 53%;
+    --accent-light: 201 94% 86%;
+    --accent-dark: 201 94% 86%;
 
-    /* Neutral Colors - Enhanced Contrast (WCAG AA Compliant) */
-    --muted: 220 14% 20%;
-    --muted-foreground: 220 12% 78%;
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 47%;
 
-    /* Destructive/Error - Enhanced */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Form Elements - Enhanced Visibility (WCAG AA Compliant) */
-    --border: 220 14% 32%;
-    --input: 220 14% 32%;
-    --ring: 213 84% 58%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
     /* Semantic Status Colors - Full Scale */
-    --success: 142 71% 45%;
-    --success-bg: 140 84% 92%;
+    --success: 160 84% 39%;
+    --success-bg: 149 80% 90%;
     --success-foreground: 0 0% 100%;
     --success-100: 142 76% 92%;
-    --success-300: 142 72% 60%;
-    --success-600: 142 71% 45%;
+    --success-300: 160 78% 52%;
+    --success-600: 160 84% 39%;
     --success-800: 142 72% 29%;
 
     --warning: 38 92% 50%;
     --warning-bg: 48 96% 89%;
     --warning-foreground: 0 0% 100%;
     --warning-100: 48 96% 89%;
-    --warning-300: 43 96% 56%;
+    --warning-300: 38 92% 58%;
     --warning-600: 38 92% 50%;
     --warning-800: 32 81% 35%;
 
-    --error: 0 72% 51%;
+    --error: 0 84% 60%;
     --error-bg: 0 93% 94%;
     --error-foreground: 0 0% 100%;
 
-    --info: 217 91% 60%;
-    --info-bg: 214 95% 93%;
+    --info: 221 83% 53%;
+    --info-bg: 204 94% 94%;
     --info-foreground: 0 0% 100%;
+    --info-100: 204 94% 94%;
+    --info-300: 221 83% 66%;
+    --info-600: 221 83% 53%;
+    --info-800: 224 76% 38%;
 
     /* Danger (alias for error, used in components) */
     --danger-100: 0 86% 94%;
-    --danger-300: 0 78% 68%;
-    --danger-600: 0 72% 51%;
+    --danger-300: 0 84% 72%;
+    --danger-600: 0 84% 60%;
     --danger-800: 0 70% 35%;
 
     /* Enhanced Border Radius System */
@@ -122,35 +137,35 @@
     --radius-card: 1rem;
 
     /* Enhanced Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(213 84% 48%) 0%, hsl(213 84% 38%) 50%, hsl(213 84% 28%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(185 74% 68%) 0%, hsl(185 74% 58%) 50%, hsl(185 74% 48%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(268 52% 84%) 0%, hsl(268 52% 74%) 50%, hsl(268 52% 64%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(213 84% 42%) 0%, hsl(213 84% 38%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(213 84% 48%) 0%, hsl(185 74% 58%) 50%, hsl(268 52% 74%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(224 76% 48%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(204 94% 94%) 0%, hsl(201 94% 86%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(204 94% 94%) 0%, hsl(201 94% 86%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(200 27% 98%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(204 94% 94%) 0%, hsl(200 27% 98%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.75) 100%);
     --gradient-mesh:
-      radial-gradient(ellipse at top left, hsl(213 84% 48% / 0.12) 0%, transparent 50%),
-      radial-gradient(ellipse at top right, hsl(268 52% 74% / 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom left, hsl(185 74% 58% / 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom right, hsl(213 84% 38% / 0.06) 0%, transparent 50%);
+      radial-gradient(ellipse at top left, hsl(204 94% 94% / 0.6) 0%, transparent 50%),
+      radial-gradient(ellipse at top right, hsl(201 94% 86% / 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom left, hsl(221 83% 53% / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, hsl(200 27% 98% / 0.8) 0%, transparent 50%);
 
     /* Enhanced Shadow System */
-    --shadow-sm: 0 1px 3px 0 hsl(220 14% 0% / 0.08), 0 1px 2px -1px hsl(220 14% 0% / 0.08);
-    --shadow-md: 0 4px 6px -1px hsl(220 14% 0% / 0.12), 0 2px 4px -2px hsl(220 14% 0% / 0.08);
-    --shadow-lg: 0 10px 15px -3px hsl(220 14% 0% / 0.14), 0 4px 6px -4px hsl(220 14% 0% / 0.08);
-    --shadow-xl: 0 20px 25px -5px hsl(220 14% 0% / 0.16), 0 8px 10px -6px hsl(220 14% 0% / 0.08);
-    --shadow-glow: 0 0 24px hsl(213 84% 58% / 0.35), 0 0 12px hsl(213 84% 58% / 0.2);
-    --shadow-soft: 0 2px 8px hsl(220 14% 0% / 0.06);
-    --shadow-medium: 0 4px 12px hsl(220 14% 0% / 0.1);
-    --shadow-large: 0 8px 24px hsl(220 14% 0% / 0.14);
-    --shadow-elegant: 0 12px 40px hsl(220 14% 0% / 0.18), 0 4px 12px hsl(220 14% 0% / 0.1);
+    --shadow-sm: 0 1px 3px 0 hsl(218 74% 15% / 0.06), 0 1px 2px -1px hsl(218 74% 15% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(218 74% 15% / 0.08), 0 2px 4px -2px hsl(218 74% 15% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(218 74% 15% / 0.1), 0 4px 6px -4px hsl(218 74% 15% / 0.06);
+    --shadow-xl: 0 20px 25px -5px hsl(218 74% 15% / 0.12), 0 8px 10px -6px hsl(218 74% 15% / 0.06);
+    --shadow-glow: 0 0 24px hsl(221 83% 53% / 0.25), 0 0 12px hsl(221 83% 53% / 0.15);
+    --shadow-soft: 0 2px 8px hsl(218 74% 15% / 0.04);
+    --shadow-medium: 0 4px 12px hsl(218 74% 15% / 0.06);
+    --shadow-large: 0 8px 24px hsl(218 74% 15% / 0.08);
+    --shadow-elegant: 0 12px 40px hsl(218 74% 15% / 0.12), 0 4px 12px hsl(218 74% 15% / 0.06);
 
     /* Sidebar - Enhanced */
-    --sidebar-background: 222 14% 6%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 213 84% 58%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 218 74% 15%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 18%;
+    --sidebar-accent: 204 94% 94%;
 
     /* Dental-Specific Colors */
     --dental-primary: var(--primary);
@@ -177,86 +192,86 @@
     --z-modal: 10000;
     --z-notification: 10001;
     --z-tooltip: 10002;
-    --sidebar-accent-foreground: 210 40% 96%;
-    --sidebar-border: 220 14% 28%;
-    --sidebar-ring: 213 84% 58%;
+    --sidebar-accent-foreground: 218 74% 15%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
   }
 
-  /* ============================================================================
-     DentiBot Design System - Light Theme
-     All colors in HSL format for proper theming
-     ============================================================================ */
+  /* Keep `.light` equivalent to root tokens for compatibility. */
   .light {
-    /* Core UI Colors - Light Mode - Enhanced Contrast */
-    --background: 210 20% 98%;
-    --foreground: 222 20% 12%;
+    --background: 200 27% 98%;
+    --foreground: 218 74% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 20% 12%;
+    --card-foreground: 218 74% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 20% 12%;
+    --popover-foreground: 218 74% 15%;
 
     /* Primary Brand Color - Deep Blue - Enhanced */
-    --primary: 213 84% 38%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 213 84% 48%;
-    --primary-dark: 213 84% 28%;
+    --primary-light: 204 94% 94%;
+    --primary-dark: 224 76% 48%;
 
     /* Secondary Color - Aqua - Enhanced */
-    --secondary: 185 74% 52%;
-    --secondary-foreground: 0 0% 100%;
-    --secondary-light: 185 74% 62%;
-    --secondary-dark: 185 74% 42%;
+    --secondary: 204 94% 94%;
+    --secondary-foreground: 221 83% 53%;
+    --secondary-light: 201 94% 86%;
+    --secondary-dark: 204 94% 90%;
 
     /* Accent Color - Soft Lilac - Enhanced */
-    --accent: 268 52% 68%;
-    --accent-foreground: 0 0% 100%;
-    --accent-light: 268 52% 78%;
-    --accent-dark: 268 52% 58%;
+    --accent: 204 94% 94%;
+    --accent-foreground: 221 83% 53%;
+    --accent-light: 201 94% 86%;
+    --accent-dark: 201 94% 86%;
 
     /* Neutral Colors - Enhanced Contrast (WCAG AA Compliant) */
-    --muted: 210 20% 94%;
-    --muted-foreground: 220 10% 38%;
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 47%;
 
     /* Destructive/Error - Enhanced */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     /* Form Elements - Enhanced Visibility */
-    --border: 220 14% 88%;
-    --input: 220 14% 88%;
-    --ring: 213 84% 58%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
     /* Semantic Status Colors - Full Scale */
-    --success: 142 71% 45%;
-    --success-bg: 140 84% 92%;
+    --success: 160 84% 39%;
+    --success-bg: 149 80% 90%;
     --success-foreground: 0 0% 100%;
     --success-100: 142 76% 92%;
-    --success-300: 142 72% 60%;
-    --success-600: 142 71% 45%;
+    --success-300: 160 78% 52%;
+    --success-600: 160 84% 39%;
     --success-800: 142 72% 29%;
 
     --warning: 38 92% 50%;
     --warning-bg: 48 96% 89%;
     --warning-foreground: 0 0% 100%;
     --warning-100: 48 96% 89%;
-    --warning-300: 43 96% 56%;
+    --warning-300: 38 92% 58%;
     --warning-600: 38 92% 50%;
     --warning-800: 32 81% 35%;
 
-    --error: 0 72% 51%;
+    --error: 0 84% 60%;
     --error-bg: 0 93% 94%;
     --error-foreground: 0 0% 100%;
 
-    --info: 217 91% 60%;
-    --info-bg: 214 95% 93%;
+    --info: 221 83% 53%;
+    --info-bg: 204 94% 94%;
     --info-foreground: 0 0% 100%;
+    --info-100: 204 94% 94%;
+    --info-300: 221 83% 66%;
+    --info-600: 221 83% 53%;
+    --info-800: 224 76% 38%;
 
     /* Danger (alias for error, used in components) */
     --danger-100: 0 86% 94%;
-    --danger-300: 0 78% 68%;
-    --danger-600: 0 72% 51%;
+    --danger-300: 0 84% 72%;
+    --danger-600: 0 84% 60%;
     --danger-800: 0 70% 35%;
 
     /* Enhanced Border Radius System */
@@ -269,38 +284,38 @@
     --radius-card: 1rem;
 
     /* Enhanced Gradients - Light Mode */
-    --gradient-primary: linear-gradient(135deg, hsl(213 84% 48%) 0%, hsl(213 84% 38%) 50%, hsl(213 84% 28%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(185 74% 62%) 0%, hsl(185 74% 52%) 50%, hsl(185 74% 42%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(268 52% 78%) 0%, hsl(268 52% 68%) 50%, hsl(268 52% 58%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(213 84% 42%) 0%, hsl(213 84% 38%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(213 84% 48%) 0%, hsl(185 74% 52%) 50%, hsl(268 52% 68%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(224 76% 48%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(204 94% 94%) 0%, hsl(201 94% 86%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(204 94% 94%) 0%, hsl(201 94% 86%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(200 27% 98%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(204 94% 94%) 0%, hsl(200 27% 98%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.75) 100%);
     --gradient-mesh:
-      radial-gradient(ellipse at top left, hsl(213 84% 48% / 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at top right, hsl(268 52% 68% / 0.04) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom left, hsl(185 74% 52% / 0.04) 0%, transparent 50%),
-      radial-gradient(ellipse at bottom right, hsl(213 84% 38% / 0.03) 0%, transparent 50%);
+      radial-gradient(ellipse at top left, hsl(204 94% 94% / 0.6) 0%, transparent 50%),
+      radial-gradient(ellipse at top right, hsl(201 94% 86% / 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom left, hsl(221 83% 53% / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, hsl(200 27% 98% / 0.8) 0%, transparent 50%);
 
     /* Enhanced Shadow System - Light Mode */
-    --shadow-sm: 0 1px 3px 0 hsl(220 14% 20% / 0.06), 0 1px 2px -1px hsl(220 14% 20% / 0.06);
-    --shadow-md: 0 4px 6px -1px hsl(220 14% 20% / 0.08), 0 2px 4px -2px hsl(220 14% 20% / 0.06);
-    --shadow-lg: 0 10px 15px -3px hsl(220 14% 20% / 0.1), 0 4px 6px -4px hsl(220 14% 20% / 0.06);
-    --shadow-xl: 0 20px 25px -5px hsl(220 14% 20% / 0.12), 0 8px 10px -6px hsl(220 14% 20% / 0.06);
-    --shadow-glow: 0 0 24px hsl(213 84% 58% / 0.25), 0 0 12px hsl(213 84% 58% / 0.15);
-    --shadow-soft: 0 2px 8px hsl(220 14% 20% / 0.04);
-    --shadow-medium: 0 4px 12px hsl(220 14% 20% / 0.06);
-    --shadow-large: 0 8px 24px hsl(220 14% 20% / 0.08);
-    --shadow-elegant: 0 12px 40px hsl(220 14% 20% / 0.12), 0 4px 12px hsl(220 14% 20% / 0.06);
+    --shadow-sm: 0 1px 3px 0 hsl(218 74% 15% / 0.06), 0 1px 2px -1px hsl(218 74% 15% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(218 74% 15% / 0.08), 0 2px 4px -2px hsl(218 74% 15% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(218 74% 15% / 0.1), 0 4px 6px -4px hsl(218 74% 15% / 0.06);
+    --shadow-xl: 0 20px 25px -5px hsl(218 74% 15% / 0.12), 0 8px 10px -6px hsl(218 74% 15% / 0.06);
+    --shadow-glow: 0 0 24px hsl(221 83% 53% / 0.25), 0 0 12px hsl(221 83% 53% / 0.15);
+    --shadow-soft: 0 2px 8px hsl(218 74% 15% / 0.04);
+    --shadow-medium: 0 4px 12px hsl(218 74% 15% / 0.06);
+    --shadow-large: 0 8px 24px hsl(218 74% 15% / 0.08);
+    --shadow-elegant: 0 12px 40px hsl(218 74% 15% / 0.12), 0 4px 12px hsl(218 74% 15% / 0.06);
 
     /* Sidebar - Enhanced */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 20% 18%;
-    --sidebar-primary: 213 84% 58%;
+    --sidebar-foreground: 218 74% 15%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 96%;
-    --sidebar-accent-foreground: 222 20% 12%;
-    --sidebar-border: 220 14% 88%;
-    --sidebar-ring: 213 84% 58%;
+    --sidebar-accent: 204 94% 94%;
+    --sidebar-accent-foreground: 218 74% 15%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
 
     /* Dental-Specific Colors */
     --dental-primary: var(--primary);

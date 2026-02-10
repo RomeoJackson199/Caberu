@@ -9,10 +9,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:bg-primary/90 active:scale-[0.98]",
-        destructive: "bg-destructive text-destructive-foreground shadow-md hover:shadow-lg hover:bg-destructive/90 active:scale-[0.98]",
+        default: "bg-primary text-primary-foreground shadow-md hover:bg-[hsl(var(--primary-dark))] hover:shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
+        destructive: "bg-destructive text-destructive-foreground shadow-md hover:shadow-lg hover:bg-destructive/90 hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
         outline: "border-2 border-border bg-background shadow-sm hover:bg-muted hover:border-primary/50 hover:shadow-md active:scale-[0.98]",
-        secondary: "bg-secondary text-secondary-foreground shadow-md hover:shadow-lg hover:bg-secondary/90 active:scale-[0.98]",
+        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-[hsl(var(--secondary-light))] hover:shadow-md active:scale-[0.98]",
         ghost: "hover:bg-muted hover:text-foreground active:bg-muted/80",
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
         // Modern DentiBot variants

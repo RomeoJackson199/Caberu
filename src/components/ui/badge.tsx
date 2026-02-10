@@ -10,12 +10,12 @@ const badgeVariants = cva(
       variant: {
         default: "border-transparent bg-dental-primary text-dental-primary-foreground hover:bg-dental-primary/80 shadow-soft hover:shadow-md",
         secondary: "border-transparent bg-dental-secondary text-dental-secondary-foreground hover:bg-dental-secondary/80 shadow-soft hover:shadow-md",
-        destructive: "border-transparent bg-dental-error text-white hover:bg-dental-error/80 shadow-soft hover:shadow-md",
+        destructive: "border-transparent bg-dental-error text-white hover:bg-dental-error/90 shadow-soft hover:shadow-md",
         outline: "text-foreground border-border hover:bg-accent hover:border-primary",
         gradient: "border-transparent bg-gradient-primary text-white shadow-glow hover:shadow-elegant",
-        success: "border-transparent bg-dental-success text-white hover:bg-dental-success/80 shadow-soft hover:shadow-md",
-        warning: "border-transparent bg-dental-warning text-white hover:bg-dental-warning/80 shadow-soft hover:shadow-md",
-        info: "border-transparent bg-dental-info text-white hover:bg-dental-info/80 shadow-soft hover:shadow-md",
+        success: "border-transparent bg-success-100 text-[hsl(var(--success-800))] hover:bg-success-100/80 shadow-soft hover:shadow-md",
+        warning: "border-transparent bg-warning-100 text-[hsl(var(--warning-800))] hover:bg-warning-100/80 shadow-soft hover:shadow-md",
+        info: "border-transparent bg-info-100 text-primary hover:bg-info-100/80 shadow-soft hover:shadow-md",
         glass: "border-white/20 bg-white/10 backdrop-blur-lg text-white hover:bg-white/20 hover:border-white/40",
       },
       size: {
