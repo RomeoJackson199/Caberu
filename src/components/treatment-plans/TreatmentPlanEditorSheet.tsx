@@ -327,6 +327,7 @@ export function TreatmentPlanEditorSheet({
           tooth: item.tooth || null,
           qty: item.qty,
           unit_price_cents: item.unit_price_cents,
+          line_total_cents: item.unit_price_cents * item.qty,
           description: item.description || null,
           sort_order: index,
         }));
@@ -347,6 +348,8 @@ export function TreatmentPlanEditorSheet({
       queryClient.invalidateQueries({ queryKey: ["treatment-plan-editor"] });
       queryClient.invalidateQueries({ queryKey: ["treatment-plan-summary"] });
       queryClient.invalidateQueries({ queryKey: ["patient-treatment-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["appointment"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
 
       if (!currentPlanId || createNewVersion) {
         onPlanCreated?.(planId!);

@@ -367,6 +367,13 @@ export function DentistAppointmentDetail({
                 businessId={businessId}
                 existingPlanId={appointment.treatment_plan_id}
                 isEditable={true}
+                onPlanCreated={(planId) => {
+                  onOptimisticUpdate?.(appointment.id, { treatment_plan_id: planId });
+                  queryClient.invalidateQueries({ queryKey: ['appointments'] });
+                }}
+                onPlanUpdated={() => {
+                  queryClient.invalidateQueries({ queryKey: ['appointments'] });
+                }}
               />
             </>
           )}
