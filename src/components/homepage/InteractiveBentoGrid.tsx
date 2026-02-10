@@ -193,7 +193,7 @@ export const InteractiveBentoGrid = () => {
                         title="Patient Portal"
                         description="Self-service portal for patients to book, view records, pay bills, and message providers."
                         icon={LayoutDashboard}
-                        gradient="bg-pink-600"
+                        gradient="bg-blue-600"
                         delay={0.8}
                     />
 
