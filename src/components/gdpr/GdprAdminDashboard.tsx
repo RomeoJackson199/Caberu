@@ -39,13 +39,16 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getNotificationDeadlineHours, type BreachIncident } from '@/lib/gdpr/breachDetection';
+import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 
 interface GdprAdminDashboardProps {
-  userId: string;
+  userId?: string;
 }
 
-export function GdprAdminDashboard({ userId }: GdprAdminDashboardProps) {
+export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardProps) {
+  const { user } = useAuth();
+  const userId = userIdProp ?? user?.id ?? '';
   const [auditFilter, setAuditFilter] = useState('');
   const [auditActionFilter, setAuditActionFilter] = useState<string>('all');
 
