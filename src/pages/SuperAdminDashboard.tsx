@@ -18,6 +18,7 @@ import { AuditLogsTab } from '@/components/super-admin/AuditLogsTab';
 import { EmailTestTab } from '@/components/super-admin/EmailTestTab';
 import { TestStatusTab } from '@/components/super-admin/TestStatusTab';
 import { GdprAdminDashboard } from '@/components/gdpr/GdprAdminDashboard';
+import { DocumentationTab } from '@/components/super-admin/DocumentationTab';
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ export default function SuperAdminDashboard() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-9 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="businesses">Businesses</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
@@ -118,6 +119,7 @@ export default function SuperAdminDashboard() {
           <TabsTrigger value="email">Email Test</TabsTrigger>
           <TabsTrigger value="audit">Audit Logs</TabsTrigger>
           <TabsTrigger value="gdpr">GDPR</TabsTrigger>
+          <TabsTrigger value="docs">Docs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -150,6 +152,10 @@ export default function SuperAdminDashboard() {
 
         <TabsContent value="gdpr" className="space-y-4">
           <GdprAdminDashboard />
+        </TabsContent>
+
+        <TabsContent value="docs" className="space-y-4">
+          <DocumentationTab />
         </TabsContent>
       </Tabs>
     </div>
