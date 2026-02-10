@@ -9,6 +9,14 @@ export interface OfflineQueueItem {
   operationName: string;
   timestamp: number;
   retries: number;
+  // Serializable data for persistence
+  serializedData?: {
+    type: 'supabase_insert' | 'supabase_update' | 'supabase_delete' | 'custom';
+    table?: string;
+    data?: any;
+    filter?: { column: string; value: any };
+    customKey?: string; // For custom operations
+  };
 }
 
 /**
@@ -23,6 +31,7 @@ export class OfflineManager {
   private checkInterval: NodeJS.Timeout | null = null;
 
   private constructor() {
+    this.loadQueueFromStorage();
     this.initialize();
   }
 
@@ -36,6 +45,47 @@ export class OfflineManager {
   // Bound methods for event listeners
   private boundHandleOnline = () => this.handleOnline();
   private boundHandleOffline = () => this.handleOffline();
+
+  /**
+   * Load persisted queue from localStorage
+   */
+  private loadQueueFromStorage() {
+    try {
+      const stored = localStorage.getItem('caberu_offline_queue');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Don't restore the operation functions yet - they'll be reconstructed when needed
+        this.queue = parsed.map((item: any) => ({
+          ...item,
+          operation: () => Promise.resolve() // Placeholder, will be reconstructed
+        }));
+        logger.info(`Loaded ${this.queue.length} operations from offline storage`);
+      }
+    } catch (error) {
+      logger.error('Failed to load offline queue from storage:', error);
+      // Clear corrupted data
+      localStorage.removeItem('caberu_offline_queue');
+    }
+  }
+
+  /**
+   * Save queue to localStorage for persistence
+   */
+  private saveQueueToStorage() {
+    try {
+      // Only save serializable parts
+      const serializable = this.queue.map(({ id, operationName, timestamp, retries, serializedData }) => ({
+        id,
+        operationName,
+        timestamp,
+        retries,
+        serializedData
+      }));
+      localStorage.setItem('caberu_offline_queue', JSON.stringify(serializable));
+    } catch (error) {
+      logger.error('Failed to save offline queue to storage:', error);
+    }
+  }
 
   private initialize() {
     // Listen to browser online/offline events
@@ -93,7 +143,7 @@ export class OfflineManager {
     }
   }
 
-  private handleOnline() {
+  private async handleOnline() {
     logger.info('Network connection restored');
     this.updateStatus('online');
 
@@ -105,6 +155,14 @@ export class OfflineManager {
 
     // Process queued operations
     this.processQueue();
+
+    // Trigger offline data sync (lazy import to avoid circular dependencies)
+    try {
+      const { syncManager } = await import('./syncManager');
+      setTimeout(() => syncManager.syncAll(), 3000); // Delay to let queue process first
+    } catch (error) {
+      logger.error('Failed to import syncManager:', error);
+    }
   }
 
   private handleOffline() {
@@ -158,7 +216,11 @@ export class OfflineManager {
   /**
    * Add an operation to the offline queue
    */
-  queueOperation(operationName: string, operation: () => Promise<any>): string {
+  queueOperation(
+    operationName: string,
+    operation: () => Promise<any>,
+    serializedData?: OfflineQueueItem['serializedData']
+  ): string {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const item: OfflineQueueItem = {
@@ -167,9 +229,11 @@ export class OfflineManager {
       operationName,
       timestamp: Date.now(),
       retries: 0,
+      serializedData,
     };
 
     this.queue.push(item);
+    this.saveQueueToStorage(); // Persist to localStorage
     logger.info(`Queued operation: ${operationName} (ID: ${id})`);
 
     // Try to process immediately if online
@@ -192,10 +256,13 @@ export class OfflineManager {
 
     const toProcess = [...this.queue];
     this.queue = [];
+    this.saveQueueToStorage(); // Clear storage as we're processing
 
     for (const item of toProcess) {
       try {
-        await item.operation();
+        // Reconstruct operation from serialized data if function is placeholder
+        const operation = await this.reconstructOperation(item);
+        await operation();
         logger.info(`Successfully processed queued operation: ${item.operationName}`);
       } catch (error) {
         logger.error(`Failed to process queued operation: ${item.operationName}`, error);
@@ -218,6 +285,8 @@ export class OfflineManager {
       }
     }
 
+    this.saveQueueToStorage(); // Save any re-queued items
+
     if (this.queue.length > 0) {
       logger.info(`${this.queue.length} operations remain in queue`);
     } else {
@@ -226,6 +295,57 @@ export class OfflineManager {
         description: 'All pending changes have been synced.',
         duration: 2000,
       });
+    }
+  }
+
+  /**
+   * Reconstruct operation function from serialized data
+   */
+  private async reconstructOperation(item: OfflineQueueItem): Promise<() => Promise<any>> {
+    // If operation is already valid, use it
+    if (item.operation && item.operation.toString() !== '() => Promise.resolve()') {
+      return item.operation;
+    }
+
+    // Reconstruct from serialized data
+    if (!item.serializedData) {
+      throw new Error('Cannot reconstruct operation: no serialized data');
+    }
+
+    const { type, table, data, filter } = item.serializedData;
+
+    // Lazy load supabase to avoid circular dependencies
+    const { supabase } = await import('@/integrations/supabase/client');
+
+    switch (type) {
+      case 'supabase_insert':
+        return async () => {
+          const { error } = await supabase.from(table!).insert(data);
+          if (error) throw error;
+        };
+
+      case 'supabase_update':
+        return async () => {
+          let query = supabase.from(table!).update(data);
+          if (filter) {
+            query = query.eq(filter.column, filter.value);
+          }
+          const { error } = await query;
+          if (error) throw error;
+        };
+
+      case 'supabase_delete':
+        return async () => {
+          let query = supabase.from(table!).delete();
+          if (filter) {
+            query = query.eq(filter.column, filter.value);
+          }
+          const { error } = await query;
+          if (error) throw error;
+        };
+
+      default:
+        throw new Error(`Unknown operation type: ${type}`);
     }
   }
 
@@ -241,6 +361,7 @@ export class OfflineManager {
    */
   clearQueue() {
     this.queue = [];
+    this.saveQueueToStorage();
     logger.info('Offline queue cleared');
   }
 

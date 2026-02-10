@@ -1,13 +1,13 @@
-const CACHE_NAME = 'denti-scheduler-v4';
+const CACHE_NAME = 'denti-scheduler-v5';
 
 // Core assets to pre-cache immediately
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.png',
-  '/badge.png',
-  '/favicon.ico'
+  '/caberu-icon.png',
+  '/icon-192x192.png',
+  '/favicon.png'
 ];
 
 // Critical asset patterns to cache on first load
@@ -51,8 +51,8 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'TEST_NOTIFICATION') {
     self.registration.showNotification('Test Notification', {
       body: 'This is a test notification from Caberu',
-      icon: '/logo.png',
-      badge: '/badge.png',
+      icon: '/caberu-icon.png',
+      badge: '/icon-192x192.png',
       tag: 'test-notification',
       data: {
         url: '/'
@@ -68,8 +68,8 @@ self.addEventListener('push', (event) => {
   let notificationData = {
     title: 'Caberu Notification',
     body: 'You have a new notification',
-    icon: '/logo.png',
-    badge: '/badge.png',
+    icon: '/caberu-icon.png',
+    badge: '/icon-192x192.png',
     data: {}
   };
 

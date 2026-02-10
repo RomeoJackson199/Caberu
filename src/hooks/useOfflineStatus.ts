@@ -31,6 +31,10 @@ export function useOfflineStatus() {
     isOffline: status === 'offline',
     isSlow: status === 'slow',
     queueSize,
-    queueOperation: offlineManager.queueOperation.bind(offlineManager),
+    queueOperation: (
+      operationName: string,
+      operation: () => Promise<any>,
+      serializedData?: Parameters<typeof offlineManager.queueOperation>[2]
+    ) => offlineManager.queueOperation(operationName, operation, serializedData),
   };
 }
