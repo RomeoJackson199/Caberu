@@ -1203,13 +1203,13 @@ export const translations: Record<Language, TranslationEntry> = {
         typeMessage: "Type your message...",
         send: "Send",
         welcomeMessage: "Hello! I'm Caberu. How can I help you today? 🦷",
-        detailedWelcomeMessage: "Welcome to First Smile AI! 🦷✨\n\nI'm your AI dental assistant, available 24/7 to help you with:\n\n🤖 **AI Chat** - Get instant answers to your dental questions\n📅 **Smart Booking** - Book appointments intelligently with duration info\n📸 **Photo Analysis** - Upload photos for AI-powered dental analysis  \n👨‍👩‍👧‍👦 **Family Care** - Book appointments for yourself or family members\n\n💡 **Pro Tip**: Just tell me what's bothering you, and I'll guide you through everything!\n\nHow can I help you today?",
+        detailedWelcomeMessage: "Welcome to First Smile AI! 🦷\n\nI'm your dental scheduling assistant. I can help you with:\n\n📅 **Appointments** - Book, reschedule, or cancel visits for you or family members\n💬 **Symptom Summary** - Describe what's going on and I'll pass a summary to your dentist\n💳 **Payments** - View balances and handle payments\n💊 **Prescription Refills** - Request refills from your dentist\n\n⚠️ **Note**: I don't provide medical advice or diagnoses. Your dentist will review any symptoms you share with me.\n\nWhat can I help you with?",
         detailedWelcomeMessageWithName: (
             name: string,
-        ) => `Welcome to First Smile AI! 🦷✨\n\nHello ${name}! I'm your AI dental assistant, available 24/7 to help you with:\n\n🤖 **AI Chat** - Get instant answers to your dental questions\n📅 **Smart Booking** - Book appointments intelligently with duration info\n📸 **Photo Analysis** - Upload photos for AI-powered dental analysis  \n👨‍👩‍👧‍👦 **Family Care** - Book appointments for yourself or family members\n\n💡 **Pro Tip**: Just tell me what's bothering you, and I'll guide you through everything!\n\nHow can I help you today?`,
+        ) => `Welcome back, ${name}! 🦷\n\nI'm your dental scheduling assistant. Here's what I can do:\n\n📅 **Appointments** - Book, reschedule, or cancel visits for you or family members\n💬 **Symptom Summary** - Describe what's going on and I'll pass a summary to your dentist\n💳 **Payments** - View balances and handle payments\n💊 **Prescription Refills** - Request refills from your dentist\n\n⚠️ **Note**: I don't provide medical advice or diagnoses. Your dentist will review any symptoms you share with me.\n\nWhat can I help you with?`,
 
         // Landing page
-        aiDiagnosisDesc: "Get instant AI-powered assessments",
+        aiDiagnosisDesc: "Get instant AI-powered scheduling help",
         smartBooking: "Smart Booking",
         smartBookingDesc: "Book appointments intelligently",
         support24_7: "24/7 Support",
@@ -1365,7 +1365,7 @@ export const translations: Record<Language, TranslationEntry> = {
         back: "Back",
         previewNotice:
             "This is a working preview of First Smile AI ready for real-world use.",
-        aiDisclaimer: "This assistant uses AI. Double check any medical advice.",
+        aiDisclaimer: "This assistant helps with scheduling and summaries. It does not provide medical advice.",
         acceptTerms: "I accept the Terms and Conditions",
         viewTerms: "View Terms",
         termsTitle: "Terms and Conditions",
@@ -2226,13 +2226,13 @@ export const translations: Record<Language, TranslationEntry> = {
         send: "Envoyer",
         welcomeMessage:
             "Bonjour ! Je suis Caberu. Comment puis-je vous aider aujourd'hui ? 🦷",
-        detailedWelcomeMessage: "Bienvenue sur First Smile AI ! 🦷✨\n\nJe suis votre assistant dentaire IA, disponible 24h/24 pour vous aider avec :\n\n🤖 **Chat IA** - Obtenez des réponses instantanées à vos questions dentaires\n📅 **Réservation Intelligente** - Réservez des rendez-vous intelligemment avec les informations de durée\n📸 **Analyse Photo** - Téléchargez des photos pour une analyse dentaire alimentée par l'IA\n👨‍👩‍👧‍👦 **Soins Familiaux** - Réservez des rendez-vous pour vous ou les membres de votre famille\n\n💡 **Astuce Pro** : Dites-moi simplement ce qui vous dérange, et je vous guiderai à travers tout !\n\nComment puis-je vous aider aujourd'hui ?",
+        detailedWelcomeMessage: "Bienvenue sur First Smile AI ! 🦷\n\nJe suis votre assistant de planification dentaire. Je peux vous aider avec :\n\n📅 **Rendez-vous** - Réserver, reporter ou annuler des visites pour vous ou votre famille\n💬 **Résumé des symptômes** - Décrivez ce qui se passe et je transmettrai un résumé à votre dentiste\n💳 **Paiements** - Consulter les soldes et effectuer des paiements\n💊 **Renouvellement d'ordonnances** - Demander des renouvellements auprès de votre dentiste\n\n⚠️ **Remarque** : Je ne fournis pas de conseils médicaux ni de diagnostics. Votre dentiste examinera les symptômes que vous partagez avec moi.\n\nComment puis-je vous aider ?",
         detailedWelcomeMessageWithName: (
             name: string,
-        ) => `Bienvenue sur First Smile AI ! 🦷✨\n\nBonjour ${name} ! Je suis votre assistant dentaire IA, disponible 24h/24 pour vous aider avec :\n\n🤖 **Chat IA** - Obtenez des réponses instantanées à vos questions dentaires\n📅 **Réservation Intelligente** - Réservez des rendez-vous intelligemment avec les informations de durée\n📸 **Analyse Photo** - Téléchargez des photos pour une analyse dentaire alimentée par l'IA\n👨‍👩‍👧‍👦 **Soins Familiaux** - Réservez des rendez-vous pour vous ou les membres de votre famille\n\n💡 **Astuce Pro** : Dites-moi simplement ce qui vous dérange, et je vous guiderai à travers tout !\n\nComment puis-je vous aider aujourd'hui ?`,
+        ) => `Bon retour, ${name} ! 🦷\n\nJe suis votre assistant de planification dentaire. Voici ce que je peux faire :\n\n📅 **Rendez-vous** - Réserver, reporter ou annuler des visites pour vous ou votre famille\n💬 **Résumé des symptômes** - Décrivez ce qui se passe et je transmettrai un résumé à votre dentiste\n💳 **Paiements** - Consulter les soldes et effectuer des paiements\n💊 **Renouvellement d'ordonnances** - Demander des renouvellements auprès de votre dentiste\n\n⚠️ **Remarque** : Je ne fournis pas de conseils médicaux ni de diagnostics. Votre dentiste examinera les symptômes que vous partagez avec moi.\n\nComment puis-je vous aider ?`,
 
         // Landing page
-        aiDiagnosisDesc: "Obtenez des évaluations instantanées alimentées par l'IA",
+        aiDiagnosisDesc: "Obtenez une aide instantanée pour la planification par l'IA",
         smartBooking: "Réservation Intelligente",
         smartBookingDesc: "Réservez des rendez-vous intelligemment",
         support24_7: "Support 24h/24",
@@ -2392,7 +2392,7 @@ export const translations: Record<Language, TranslationEntry> = {
         previewNotice:
             "Ceci est une préversion fonctionnelle de First Smile AI prête pour le monde réel.",
         aiDisclaimer:
-            "Cet assistant utilise l'IA. Vérifiez toujours les conseils médicaux.",
+            "Cet assistant aide pour la planification et les résumés. Il ne fournit pas de conseils médicaux.",
         acceptTerms: "J'accepte les Conditions Générales",
         viewTerms: "Voir les Conditions",
         termsTitle: "Conditions Générales",
@@ -3182,14 +3182,14 @@ export const translations: Record<Language, TranslationEntry> = {
         send: "Verzenden",
         welcomeMessage: "Hallo! Ik ben Caberu. Hoe kan ik je vandaag helpen? 🦷",
         detailedWelcomeMessage:
-            "Welkom bij First Smile AI! 🦷✨\n\nIk ben je AI-tandartsassistent, 24/7 beschikbaar om je te helpen met:\n\n🤖 **AI-chat** - Krijg direct antwoord op je tandheelkundige vragen\n📅 **Slim boeken** - Boek afspraken intelligent met duurinformatie\n📸 **Foto-analyse** - Upload foto's voor AI-gestuurde tandheelkundige analyse  \n👨‍👩‍👧‍👦 **Gezinszorg** - Maak afspraken voor jezelf of gezinsleden\n\n💡 **Pro tip**: Vertel gewoon wat er aan de hand is, dan begeleid ik je door alles!\n\nWaarmee kan ik je helpen?",
+            "Welkom bij First Smile AI! 🦷\n\nIk ben je assistent voor het plannen van tandartsafspraken. Ik kan je helpen met:\n\n📅 **Afspraken** - Boek, verzet of annuleer bezoeken voor jezelf of familieleden\n💬 **Symptoomoverzicht** - Beschrijf wat er aan de hand is en ik geef een samenvatting door aan je tandarts\n💳 **Betalingen** - Bekijk saldi en regel betalingen\n💊 **Receptverlenging** - Vraag verlengingen aan bij je tandarts\n\n⚠️ **Let op**: Ik geef geen medisch advies of diagnoses. Je tandarts bekijkt de symptomen die je met mij deelt.\n\nWaarmee kan ik je helpen?",
         detailedWelcomeMessageWithName: (
             name: string,
         ) =>
-            `Welkom bij First Smile AI! 🦷✨\n\nHallo ${name}! Ik ben je AI-tandartsassistent, 24/7 beschikbaar om je te helpen met:\n\n🤖 **AI-chat** - Krijg direct antwoord op je tandheelkundige vragen\n📅 **Slim boeken** - Boek afspraken intelligent met duurinformatie\n📸 **Foto-analyse** - Upload foto's voor AI-gestuurde tandheelkundige analyse  \n👨‍👩‍👧‍👦 **Gezinszorg** - Maak afspraken voor jezelf of gezinsleden\n\n💡 **Pro tip**: Vertel gewoon wat er aan de hand is, dan begeleid ik je door alles!\n\nWaarmee kan ik je helpen?`,
+            `Welkom terug, ${name}! 🦷\n\nIk ben je assistent voor het plannen van tandartsafspraken. Dit kan ik voor je doen:\n\n📅 **Afspraken** - Boek, verzet of annuleer bezoeken voor jezelf of familieleden\n💬 **Symptoomoverzicht** - Beschrijf wat er aan de hand is en ik geef een samenvatting door aan je tandarts\n💳 **Betalingen** - Bekijk saldi en regel betalingen\n💊 **Receptverlenging** - Vraag verlengingen aan bij je tandarts\n\n⚠️ **Let op**: Ik geef geen medisch advies of diagnoses. Je tandarts bekijkt de symptomen die je met mij deelt.\n\nWaarmee kan ik je helpen?`,
 
         // Landing page
-        aiDiagnosisDesc: "Ontvang direct AI-gestuurde beoordelingen",
+        aiDiagnosisDesc: "Ontvang direct AI-hulp bij het plannen",
         smartBooking: "Slim boeken",
         smartBookingDesc: "Plan afspraken intelligent",
         support24_7: "24/7 ondersteuning",
@@ -3365,7 +3365,7 @@ export const translations: Record<Language, TranslationEntry> = {
         next: "Volgende",
         back: "Terug",
         previewNotice: "Dit is een werkende preview van First Smile AI klaar voor gebruik in de praktijk.",
-        aiDisclaimer: "Deze assistent gebruikt AI. Controleer altijd medisch advies.",
+        aiDisclaimer: "Deze assistent helpt bij het plannen en samenvatten. Het geeft geen medisch advies.",
         acceptTerms: "Ik accepteer de Algemene Voorwaarden",
         viewTerms: "Voorwaarden Bekijken",
         termsTitle: "Algemene Voorwaarden",
