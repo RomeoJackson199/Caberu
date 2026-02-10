@@ -86,20 +86,45 @@ serve(async (req) => {
 
         if (!profile) throw new Error("Profile not found");
 
-        // 3b. Check if user already owns a business (prevent duplicate creation on page refresh)
-        const { data: existingBusiness } = await supabaseClient
+        // 3b. Check if user already owns a business (from handle_new_user trigger auto-creation)
+        const { data: existingMember } = await supabaseClient
             .from('business_members')
-            .select('business_id, businesses:business_id(id, name, slug)')
+            .select('business_id')
             .eq('profile_id', profile.id)
             .eq('role', 'owner')
             .limit(1)
             .maybeSingle();
 
-        if (existingBusiness?.business_id) {
-            // User already has a business - return existing one instead of creating duplicate
-            const existingSlug = (existingBusiness as any).businesses?.slug || 'existing';
+        if (existingMember?.business_id) {
+            // Update the auto-created business with the user's actual details
+            const baseSlug = business_data.name
+                ?.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '') || 'business';
+            const slugSuffix = Math.random().toString(36).substring(2, 6);
+            const updateSlug = `${baseSlug}-${slugSuffix}`;
+
+            const { error: updateError } = await supabaseClient
+                .from('businesses')
+                .update({
+                    name: business_data.name,
+                    slug: updateSlug,
+                    tagline: business_data.tagline || null,
+                    bio: business_data.bio || null,
+                    template_type: business_data.template || 'healthcare',
+                    subscription_status: 'active',
+                    subscription_plan: promo_code_id ? 'promo' : 'paid',
+                    subscription_started_at: new Date().toISOString(),
+                    subscription_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                })
+                .eq('id', existingMember.business_id);
+
+            if (updateError) {
+                console.error('Error updating existing business:', updateError);
+            }
+
             return new Response(
-                JSON.stringify({ success: true, slug: existingSlug, business_id: existingBusiness.business_id, existing: true }),
+                JSON.stringify({ success: true, slug: updateSlug, business_id: existingMember.business_id, existing: true }),
                 {
                     headers: { ...corsHeaders, "Content-Type": "application/json" },
                     status: 200,

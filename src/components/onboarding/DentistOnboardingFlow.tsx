@@ -443,6 +443,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
 
         if (businessError) {
           console.error('Business update error:', businessError);
+          throw new Error(`Failed to save business settings: ${businessError.message}`);
         }
       } else {
         // No business found - this shouldn't happen as user should have created one via /create-business
@@ -468,15 +469,53 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         require_appointment_approval: data.requireApproval,
       };
 
+      let dentistId: string | null = null;
       if (existingDentist) {
         await supabase
           .from('dentists')
           .update(dentistPayload)
           .eq('id', existingDentist.id);
+        dentistId = existingDentist.id;
       } else {
-        await supabase
+        const { data: newDentist } = await supabase
           .from('dentists')
-          .insert(dentistPayload);
+          .insert(dentistPayload)
+          .select('id')
+          .single();
+        dentistId = newDentist?.id || null;
+      }
+
+      // Create dentist_availability records from working hours
+      if (dentistId && businessId) {
+        const dayMap: Record<string, number> = {
+          monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
+          friday: 5, saturday: 6, sunday: 0,
+        };
+
+        // Delete existing availability for this dentist
+        await supabase
+          .from('dentist_availability')
+          .delete()
+          .eq('dentist_id', dentistId)
+          .eq('business_id', businessId);
+
+        // Insert new availability records
+        const availabilityRecords = Object.entries(businessHours).map(([day, hours]) => ({
+          dentist_id: dentistId!,
+          business_id: businessId!,
+          day_of_week: dayMap[day],
+          start_time: hours.open,
+          end_time: hours.close,
+          is_available: hours.isOpen,
+        }));
+
+        const { error: availError } = await supabase
+          .from('dentist_availability')
+          .insert(availabilityRecords);
+
+        if (availError) {
+          console.error('Availability save error:', availError);
+        }
       }
 
       // Wait a moment to ensure database transaction is fully committed

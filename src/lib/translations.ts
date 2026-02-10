@@ -718,6 +718,11 @@ export interface Translations {
     professionalBio: string;
     bioPlaceholder: string;
     profileUpdated: string;
+    streetAddress: string;
+    streetPlaceholder: string;
+    postalCode: string;
+    city: string;
+    cityPlaceholder: string;
 
     // Dentist: Clinical appointment UI
     completeAppointment: string;
@@ -1860,6 +1865,11 @@ export const translations: Record<Language, TranslationEntry> = {
         professionalBio: "Professional Bio",
         bioPlaceholder: "Tell patients about yourself, your experience, and specializations...",
         profileUpdated: "Profile updated successfully",
+        streetAddress: "Street Address",
+        streetPlaceholder: "123 Main Street",
+        postalCode: "Postal Code",
+        city: "City",
+        cityPlaceholder: "Brussels",
 
         // Payment page
         paymentCancelled: "Payment Cancelled",
@@ -2710,6 +2720,11 @@ export const translations: Record<Language, TranslationEntry> = {
         clinicAddress: "Adresse du Cabinet",
         professionalBio: "Biographie Professionnelle",
         profileUpdated: "Profil mis à jour avec succès",
+        streetAddress: "Adresse",
+        streetPlaceholder: "123 Rue Principale",
+        postalCode: "Code Postal",
+        city: "Ville",
+        cityPlaceholder: "Bruxelles",
         specializationPlaceholder: "Dentisterie Générale, Orthodontie, etc.",
         clinicAddressPlaceholder: "123 Rue Principale, Ville, Code Postal",
         bioPlaceholder: "Parlez aux patients de vous, de votre expérience et de vos spécialisations...",
