@@ -3,6 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useMemo, useState } from "react";
+import {
   ArrowLeft,
   Package,
   CheckCircle,
@@ -10,6 +16,8 @@ import {
   Stethoscope,
   Edit2,
   Check,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { DentistInfoHeader } from "./DentistInfoHeader";
 import type { Dentist, Service, AIBookingData } from "./types";
@@ -43,6 +51,95 @@ export function ServiceSelectionStep({
   onToggleEditSymptoms,
   onBack,
 }: ServiceSelectionStepProps) {
+  const [showMoreOpen, setShowMoreOpen] = useState(false);
+
+  const sortedServices = useMemo(
+    () =>
+      [...services].sort((a, b) => {
+        if (selectedService?.id === a.id) return -1;
+        if (selectedService?.id === b.id) return 1;
+        return 0;
+      }),
+    [services, selectedService]
+  );
+
+  const aiRecommendedService = useMemo(() => {
+    if (!aiBookingData?.recommendedService) return null;
+
+    const recommendation = aiBookingData.recommendedService.toLowerCase();
+    return sortedServices.find(
+      (service) =>
+        service.name.toLowerCase().includes(recommendation) ||
+        recommendation.includes(service.name.toLowerCase())
+    );
+  }, [aiBookingData?.recommendedService, sortedServices]);
+
+  const featuredService = selectedService || aiRecommendedService;
+  const additionalServices = featuredService
+    ? sortedServices.filter((service) => service.id !== featuredService.id)
+    : sortedServices;
+
+  const renderServiceCard = (service: Service) => {
+    const isSelected = selectedService?.id === service.id;
+    const isRecommended =
+      aiBookingData?.recommendedService &&
+      (service.name
+        .toLowerCase()
+        .includes(aiBookingData.recommendedService.toLowerCase()) ||
+        aiBookingData.recommendedService
+          .toLowerCase()
+          .includes(service.name.toLowerCase()));
+
+    return (
+      <Card
+        key={service.id}
+        className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
+          isSelected
+            ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+            : "border-border hover:border-indigo-300 dark:hover:border-indigo-700"
+        }`}
+        onClick={() => {
+          onServiceClick(service);
+          setShowMoreOpen(false);
+        }}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-semibold">{service.name}</h4>
+                {isSelected && <CheckCircle className="h-4 w-4 text-indigo-600" />}
+                {isRecommended && (
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Stethoscope className="h-3 w-3" />
+                    AI Recommended
+                  </span>
+                )}
+              </div>
+              {service.description && (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  {service.description}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-3 pt-3 border-t">
+            <div className="text-lg font-bold text-indigo-600">
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: service.currency,
+              }).format(service.price_cents / 100)}
+            </div>
+            <span className="flex items-center gap-1 text-sm text-muted-foreground bg-secondary px-2 py-1 rounded">
+              <Timer className="h-3 w-3" />
+              {service.duration_minutes || 30} min
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 py-8">
       <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 mb-6">
@@ -77,72 +174,40 @@ export function ServiceSelectionStep({
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[...services]
-                  .sort((a, b) => {
-                    if (selectedService?.id === a.id) return -1;
-                    if (selectedService?.id === b.id) return 1;
-                    return 0;
-                  })
-                  .map((service) => {
-                    const isSelected = selectedService?.id === service.id;
-                    const isRecommended =
-                      aiBookingData?.recommendedService &&
-                      (service.name
-                        .toLowerCase()
-                        .includes(aiBookingData.recommendedService.toLowerCase()) ||
-                        aiBookingData.recommendedService
-                          .toLowerCase()
-                          .includes(service.name.toLowerCase()));
+              <div className="space-y-4">
+                {featuredService && renderServiceCard(featuredService)}
 
-                    return (
-                      <Card
-                        key={service.id}
-                        className={`cursor-pointer transition-all hover:shadow-lg border-2 ${
-                          isSelected
-                            ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
-                            : "border-border hover:border-indigo-300 dark:hover:border-indigo-700"
-                        }`}
-                        onClick={() => onServiceClick(service)}
+                {additionalServices.length > 0 && (
+                  <Collapsible
+                    open={showMoreOpen}
+                    onOpenChange={setShowMoreOpen}
+                    className="rounded-lg border bg-background"
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between rounded-lg p-4 h-auto"
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-semibold">{service.name}</h4>
-                                {isSelected && (
-                                  <CheckCircle className="h-4 w-4 text-indigo-600" />
-                                )}
-                                {isRecommended && (
-                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full flex items-center gap-1">
-                                    <Stethoscope className="h-3 w-3" />
-                                    AI Recommended
-                                  </span>
-                                )}
-                              </div>
-                              {service.description && (
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {service.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                            <div className="text-lg font-bold text-indigo-600">
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: service.currency,
-                              }).format(service.price_cents / 100)}
-                            </div>
-                            <span className="flex items-center gap-1 text-sm text-muted-foreground bg-secondary px-2 py-1 rounded">
-                              <Timer className="h-3 w-3" />
-                              {service.duration_minutes || 30} min
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                        <span className="font-medium">
+                          Show {additionalServices.length} more service
+                          {additionalServices.length > 1 ? "s" : ""}
+                        </span>
+                        {showMoreOpen ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="px-4 pb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {additionalServices.map((service) =>
+                          renderServiceCard(service)
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
               </div>
             )}
           </div>
