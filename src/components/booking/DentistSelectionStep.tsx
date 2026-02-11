@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Star, CalendarDays, Users } from "lucide-react";
+import { format } from "date-fns";
 import { AnimatedBackground, EmptyState } from "@/components/ui/polished-components";
 import type { Dentist } from "./types";
 
@@ -74,6 +75,10 @@ export function DentistSelectionStep({ dentists, onSelect, onBack }: DentistSele
             const email = dentist.email || dentist.profiles?.email;
             const phone = dentist.profiles?.phone;
 
+            const nextAvailableLabel = dentist.next_available_slot
+              ? format(new Date(dentist.next_available_slot), "EEE d MMM, HH:mm")
+              : null;
+
             return (
               <Card
                 key={dentist.id}
@@ -126,6 +131,12 @@ export function DentistSelectionStep({ dentists, onSelect, onBack }: DentistSele
                       </span>
                     )}
                   </div>
+
+                  {nextAvailableLabel && (
+                    <p className="text-xs text-emerald-600 font-medium">
+                      Next available: {nextAvailableLabel}
+                    </p>
+                  )}
 
                   <Button size="sm" className="w-full mt-2 group-hover:bg-blue-600">
                     Select Dr. {dentist.first_name || dentist.profiles?.first_name}

@@ -17,6 +17,7 @@ export interface Dentist {
     profile_picture_url?: string | null;
   } | null;
   require_appointment_approval?: boolean;
+  next_available_slot?: string | null;
 }
 
 export interface TimeSlot {
