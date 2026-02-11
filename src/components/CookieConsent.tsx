@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { handleAnalyticsConsent } from "@/lib/googleAnalytics";
 
 interface CookiePreferences {
   necessary: boolean;
@@ -68,15 +69,9 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
       // Analytics module not available
     });
 
-    // Update Google Analytics consent mode (if gtag is available)
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
-        'analytics_storage': prefs.analytics ? 'granted' : 'denied',
-        'ad_storage': prefs.marketing ? 'granted' : 'denied',
-        'ad_user_data': prefs.marketing ? 'granted' : 'denied',
-        'ad_personalization': prefs.marketing ? 'granted' : 'denied',
-      });
-    }
+    // Handle Google Analytics/GTM loading based on consent
+    // This will load scripts if accepted, or remove cookies if rejected
+    handleAnalyticsConsent(prefs.analytics, prefs.marketing);
 
     // Also update localStorage key that analytics.ts checks
     localStorage.setItem('analytics_consent', prefs.analytics.toString());
