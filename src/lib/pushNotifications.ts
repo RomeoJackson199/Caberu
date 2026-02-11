@@ -27,7 +27,8 @@ export interface PushSubscriptionData {
 
 export class PushNotificationService {
   private static instance: PushNotificationService;
-  private registration: ServiceWorkerRegistration | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private registration: any = null;
   private vapidPublicKey: string | null = null;
 
   private constructor() {}
@@ -224,7 +225,7 @@ export class PushNotificationService {
         return false;
       }
 
-      const subscription = await registration.pushManager.getSubscription();
+      const subscription = await (registration as any).pushManager.getSubscription();
       return subscription !== null;
     } catch (error) {
       logger.error('Failed to check subscription status:', error);
