@@ -107,6 +107,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
+  const [paymentRefreshTrigger, setPaymentRefreshTrigger] = useState(0);
 
   // Form states
   const [treatmentForm, setTreatmentForm] = useState({
@@ -914,6 +915,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                 patientId={selectedPatient.id}
                 patientFlags={patientFlags[selectedPatient.id]}
                 onCreatePaymentRequest={() => setShowPaymentDialog(true)}
+                refreshTrigger={paymentRefreshTrigger}
               />
 
               <NotesSection
@@ -957,12 +959,24 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
             )}
 
             {/* Payment Request Side Sheet */}
-            <Sheet open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+            <Sheet open={showPaymentDialog} onOpenChange={(open) => {
+              setShowPaymentDialog(open);
+              if (!open && selectedPatient) {
+                setPaymentRefreshTrigger(prev => prev + 1);
+                fetchPatientData(selectedPatient.id);
+              }
+            }}>
               <SheetContent side="right" className="sm:max-w-md">
                 <SheetHeader>
                   <SheetTitle>Create Payment Request</SheetTitle>
                 </SheetHeader>
-                <PaymentRequestForm dentistId={dentistId} onClose={() => setShowPaymentDialog(false)} />
+                <PaymentRequestForm dentistId={dentistId} onClose={() => {
+                  setShowPaymentDialog(false);
+                  if (selectedPatient) {
+                    setPaymentRefreshTrigger(prev => prev + 1);
+                    fetchPatientData(selectedPatient.id);
+                  }
+                }} />
               </SheetContent>
             </Sheet>
 
@@ -973,7 +987,10 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
               patientId={selectedPatient.id}
               patientName={`${selectedPatient.first_name} ${selectedPatient.last_name}`}
               dentistId={dentistId}
-              onBalanceUpdated={() => fetchPatientData(selectedPatient.id)}
+              onBalanceUpdated={() => {
+                fetchPatientData(selectedPatient.id);
+                setPaymentRefreshTrigger(prev => prev + 1);
+              }}
             />
 
             {/* Removed floating FAB; consolidated into + menu above */}
