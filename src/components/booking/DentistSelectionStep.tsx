@@ -15,9 +15,10 @@ function getDentistInitials(dentist: Dentist): string {
 interface DentistSelectionStepProps {
   dentists: Dentist[];
   onSelect: (dentist: Dentist) => void;
+  onBack?: () => void;
 }
 
-export function DentistSelectionStep({ dentists, onSelect }: DentistSelectionStepProps) {
+export function DentistSelectionStep({ dentists, onSelect, onBack }: DentistSelectionStepProps) {
   const navigate = useNavigate();
 
   return (
@@ -30,7 +31,7 @@ export function DentistSelectionStep({ dentists, onSelect }: DentistSelectionSte
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={onBack || (() => navigate(-1))}
               className="gap-2 hover:bg-white/50"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -44,11 +45,11 @@ export function DentistSelectionStep({ dentists, onSelect }: DentistSelectionSte
                 <CalendarDays className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Book an Appointment
+                Select Your Dentist
               </h1>
             </div>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Choose your preferred dentist and schedule a convenient time
+              Choose your preferred dentist for your appointment
             </p>
           </div>
         </div>

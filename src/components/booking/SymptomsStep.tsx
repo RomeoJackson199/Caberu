@@ -6,11 +6,11 @@ import { DentistInfoHeader } from "./DentistInfoHeader";
 import type { Dentist } from "./types";
 
 interface SymptomsStepProps {
-  dentist: Dentist;
+  dentist: Dentist | null;
   symptomSummary: string;
   onSymptomChange: (value: string) => void;
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function SymptomsStep({
@@ -22,23 +22,24 @@ export function SymptomsStep({
 }: SymptomsStepProps) {
   return (
     <div className="max-w-4xl mx-auto p-4 py-8">
-      <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 mb-6">
-        <ArrowLeft className="h-4 w-4" />
-        Back to dentists
-      </Button>
+      {onBack && (
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 mb-6">
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      )}
 
       <Card>
         <CardContent className="p-6 space-y-6">
-          <DentistInfoHeader dentist={dentist} />
+          {dentist && <DentistInfoHeader dentist={dentist} />}
 
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Stethoscope className="h-5 w-5 text-orange-600" />
-              <h3 className="font-semibold text-lg">Describe Your Symptoms</h3>
+              <h3 className="font-semibold text-lg">Tell Us Your Reason for Visit</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              Please describe your symptoms or reason for visit. This helps your
-              dentist prepare for your appointment.
+              Please describe your symptoms or reason for visiting the dentist. This helps us recommend the right service and prepare for your appointment.
             </p>
             <Textarea
               value={symptomSummary}

@@ -60,26 +60,19 @@ function BookAppointmentContent() {
         appointmentDetails={booking.successDetails}
       />
 
-      {booking.bookingStep === "dentist" && (
-        <DentistSelectionStep
-          dentists={booking.dentists}
-          onSelect={booking.handleDentistSelect}
-        />
-      )}
-
-      {booking.bookingStep === "symptoms" && booking.selectedDentist && (
+      {booking.bookingStep === "symptoms" && (
         <SymptomsStep
-          dentist={booking.selectedDentist}
+          dentist={null}
           symptomSummary={booking.symptomSummary}
           onSymptomChange={booking.setSymptomSummary}
           onNext={booking.handleSymptomsNext}
-          onBack={() => booking.setBookingStep("dentist")}
+          onBack={undefined}
         />
       )}
 
-      {booking.bookingStep === "service" && booking.selectedDentist && (
+      {booking.bookingStep === "service" && (
         <ServiceSelectionStep
-          dentist={booking.selectedDentist}
+          dentist={null}
           services={booking.services}
           selectedService={booking.selectedService}
           onServiceClick={(service) => booking.setSelectedService(service)}
@@ -96,6 +89,14 @@ function BookAppointmentContent() {
         />
       )}
 
+      {booking.bookingStep === "dentist" && (
+        <DentistSelectionStep
+          dentists={booking.dentists}
+          onSelect={booking.handleDentistSelect}
+          onBack={() => booking.setBookingStep("service")}
+        />
+      )}
+
       {booking.bookingStep === "datetime" && booking.selectedDentist && (
         <DateTimeSelectionStep
           dentist={booking.selectedDentist}
@@ -108,7 +109,7 @@ function BookAppointmentContent() {
           onDateSelect={booking.handleDateSelect}
           onTimeSelect={booking.handleTimeSelect}
           onNavigateWeek={booking.navigateWeek}
-          onBack={() => booking.setBookingStep("service")}
+          onBack={() => booking.setBookingStep("dentist")}
         />
       )}
 

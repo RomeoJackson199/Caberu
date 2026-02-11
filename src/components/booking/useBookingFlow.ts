@@ -17,7 +17,7 @@ export function useBookingFlow() {
   const { businessId, loading: businessLoading, switchBusiness } = useBusinessContext();
 
   // Core booking state
-  const [bookingStep, setBookingStep] = useState<BookingStep>('dentist');
+  const [bookingStep, setBookingStep] = useState<BookingStep>('symptoms');
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [selectedDentist, setSelectedDentist] = useState<Dentist | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -58,12 +58,13 @@ export function useBookingFlow() {
     }
   }, []);
 
-  // Fetch dentists when business is ready
+  // Fetch dentists and services when business is ready
   useEffect(() => {
     if (!businessLoading && businessId) {
       fetchDentists();
+      fetchServices();
     }
-  }, [businessId, businessLoading]);
+  }, [businessId, businessLoading, fetchDentists, fetchServices]);
 
   const fetchDentists = useCallback(async () => {
     if (!businessId) return;
@@ -283,11 +284,7 @@ export function useBookingFlow() {
 
   const handleDentistSelect = useCallback(async (dentist: Dentist) => {
     setSelectedDentist(dentist);
-    setSelectedService(null);
-    setBookingStep('symptoms');
-
-    // Pre-fetch services in background
-    fetchServices();
+    setBookingStep('datetime');
 
     if (businessId) {
       const { data: availabilityData } = await supabase
@@ -303,7 +300,7 @@ export function useBookingFlow() {
         setDentistAvailableDays([1, 2, 3, 4, 5]);
       }
     }
-  }, [businessId, fetchServices]);
+  }, [businessId]);
 
   const handleSymptomsNext = useCallback(() => {
     setBookingStep('service');
@@ -311,7 +308,7 @@ export function useBookingFlow() {
 
   const handleServiceSelect = useCallback((service: Service | null) => {
     setSelectedService(service);
-    setBookingStep('datetime');
+    setBookingStep('dentist');
   }, []);
 
   const handleDateSelect = useCallback((date: Date | undefined) => {

@@ -34,7 +34,7 @@ export interface Service {
   category: string | null;
 }
 
-export type BookingStep = 'dentist' | 'symptoms' | 'service' | 'datetime' | 'confirm';
+export type BookingStep = 'symptoms' | 'service' | 'dentist' | 'datetime' | 'confirm';
 
 export interface AIBookingData {
   symptoms?: string;

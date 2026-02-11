@@ -56,6 +56,7 @@ interface DetailAppointment {
   consultation_notes?: string | null;
   completed_at?: string | null;
   treatment_plan_id?: string | null;
+  service_id?: string | null;
   created_at?: string;
   updated_at?: string;
   patient?: { first_name?: string; last_name?: string; email?: string; phone?: string };
@@ -343,38 +344,42 @@ export function DentistAppointmentDetail({
           {/* Section 2: Patient Safety Snapshot (read-only, always visible) */}
           <PatientSafetySnapshot patientId={appointment.patient_id} />
 
-          {/* Section 3a: Consultation Workspace (COMPLETED_DRAFT - editable) */}
-          {state === 'COMPLETED_DRAFT' && (
+          {/* Section 3a: Consultation Workspace (UPCOMING & COMPLETED_DRAFT - editable) */}
+          {(state === 'UPCOMING' || state === 'COMPLETED_DRAFT') && (
             <>
               <ConsultationWorkspace
                 appointmentId={appointment.id}
                 patientId={appointment.patient_id}
                 dentistId={dentistId}
                 businessId={businessId}
-                isEditable={true}
+                isEditable={permissions.canEditNotes}
                 existingNotes={notes}
                 existingCharges={charges}
+                existingServiceId={appointment.service_id}
+                patientSymptoms={appointment.notes}
                 onNotesChange={setNotes}
                 onChargesChange={setCharges}
                 onSaveStatusChange={setSaveStatus}
               />
 
               {/* Treatment Plan Section */}
-              <TreatmentPlanSection
-                appointmentId={appointment.id}
-                patientId={appointment.patient_id}
-                dentistId={dentistId}
-                businessId={businessId}
-                existingPlanId={appointment.treatment_plan_id}
-                isEditable={true}
-                onPlanCreated={(planId) => {
-                  onOptimisticUpdate?.(appointment.id, { treatment_plan_id: planId });
-                  queryClient.invalidateQueries({ queryKey: ['appointments'] });
-                }}
-                onPlanUpdated={() => {
-                  queryClient.invalidateQueries({ queryKey: ['appointments'] });
-                }}
-              />
+              {state === 'COMPLETED_DRAFT' && (
+                <TreatmentPlanSection
+                  appointmentId={appointment.id}
+                  patientId={appointment.patient_id}
+                  dentistId={dentistId}
+                  businessId={businessId}
+                  existingPlanId={appointment.treatment_plan_id}
+                  isEditable={true}
+                  onPlanCreated={(planId) => {
+                    onOptimisticUpdate?.(appointment.id, { treatment_plan_id: planId });
+                    queryClient.invalidateQueries({ queryKey: ['appointments'] });
+                  }}
+                  onPlanUpdated={() => {
+                    queryClient.invalidateQueries({ queryKey: ['appointments'] });
+                  }}
+                />
+              )}
             </>
           )}
 

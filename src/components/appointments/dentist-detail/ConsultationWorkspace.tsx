@@ -5,17 +5,34 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   FileText, Upload, DollarSign, Calendar,
-  Plus, Trash2, Loader2, Check
+  Plus, Trash2, Loader2, Check, Package, Stethoscope
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AppointmentImagingTab } from "@/components/imaging";
 import { ExpandableNotesEditor } from "./ExpandableNotesEditor";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ChargeItem {
   id: string;
   description: string;
   amount_cents: number;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  currency: string;
+  duration_minutes: number | null;
+  category: string | null;
 }
 
 interface ConsultationWorkspaceProps {
@@ -26,8 +43,11 @@ interface ConsultationWorkspaceProps {
   isEditable: boolean;
   existingNotes?: string;
   existingCharges?: ChargeItem[];
+  existingServiceId?: string | null;
+  patientSymptoms?: string | null;
   onNotesChange?: (notes: string) => void;
   onChargesChange?: (charges: ChargeItem[]) => void;
+  onServiceChange?: (serviceId: string | null) => void;
   /** Callback to report save status to parent */
   onSaveStatusChange?: (status: 'saved' | 'saving' | 'unsaved') => void;
 }
@@ -45,8 +65,11 @@ export function ConsultationWorkspace({
   isEditable,
   existingNotes = "",
   existingCharges = [],
+  existingServiceId = null,
+  patientSymptoms = null,
   onNotesChange,
   onChargesChange,
+  onServiceChange,
   onSaveStatusChange,
 }: ConsultationWorkspaceProps) {
   const { toast } = useToast();
@@ -62,6 +85,12 @@ export function ConsultationWorkspace({
   const [newChargeAmount, setNewChargeAmount] = useState("");
   const [chargesSaving, setChargesSaving] = useState(false);
   const [chargesSaved, setChargesSaved] = useState(false);
+
+  // Services
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(existingServiceId);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [serviceSaving, setServiceSaving] = useState(false);
 
   // Track the last saved values to detect changes
   const lastSavedNotesRef = useRef(existingNotes);
@@ -96,6 +125,35 @@ export function ConsultationWorkspace({
     setCharges(existingCharges);
     lastSavedChargesRef.current = JSON.stringify(existingCharges);
   }, [existingCharges]);
+
+  // Sync service when external prop changes
+  useEffect(() => {
+    setSelectedServiceId(existingServiceId);
+  }, [existingServiceId]);
+
+  // Fetch available services
+  useEffect(() => {
+    const fetchServices = async () => {
+      setLoadingServices(true);
+      try {
+        const { data, error } = await supabase
+          .from('business_services')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+        setServices(data || []);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      } finally {
+        setLoadingServices(false);
+      }
+    };
+
+    fetchServices();
+  }, [businessId]);
 
   // Auto-save notes with debounce
   useEffect(() => {
@@ -204,8 +262,111 @@ export function ConsultationWorkspace({
     onChargesChange?.(updatedCharges);
   }, [charges, onChargesChange]);
 
+  const handleServiceChange = useCallback(async (serviceId: string) => {
+    if (!isEditable) return;
+
+    const parsedServiceId = serviceId === "none" ? null : serviceId;
+    setSelectedServiceId(parsedServiceId);
+    setServiceSaving(true);
+
+    try {
+      const service = services.find(s => s.id === parsedServiceId);
+
+      const { error } = await supabase
+        .from('appointments')
+        .update({
+          service_id: parsedServiceId,
+          duration_minutes: service?.duration_minutes || 30,
+          reason: service?.name || null,
+        })
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+
+      onServiceChange?.(parsedServiceId);
+
+      toast({
+        title: "Service Updated",
+        description: `Service changed to ${service?.name || "None"}`,
+      });
+    } catch (error) {
+      console.error("Error updating service:", error);
+      toast({
+        title: "Failed to update service",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+      // Revert on error
+      setSelectedServiceId(existingServiceId);
+    } finally {
+      setServiceSaving(false);
+    }
+  }, [isEditable, services, appointmentId, existingServiceId, onServiceChange, toast]);
+
   return (
     <div className="space-y-4">
+      {/* Service Selection */}
+      <Card className="border-muted/60">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Package className="h-4 w-4 text-primary/70" />
+            Service
+            {serviceSaving && (
+              <span className="ml-auto text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Updating...
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingServices ? (
+            <div className="text-sm text-muted-foreground">Loading services...</div>
+          ) : isEditable ? (
+            <Select
+              value={selectedServiceId || "none"}
+              onValueChange={handleServiceChange}
+              disabled={serviceSaving}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a service" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No service</SelectItem>
+                {services.map((service) => (
+                  <SelectItem key={service.id} value={service.id}>
+                    {service.name} - ${(service.price_cents / 100).toFixed(2)} ({service.duration_minutes || 30} min)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-sm">
+              {selectedServiceId
+                ? services.find(s => s.id === selectedServiceId)?.name || "Unknown service"
+                : "No service selected"}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Patient Symptoms */}
+      {patientSymptoms && (
+        <Card className="border-muted/60 bg-orange-50/50 dark:bg-orange-950/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Stethoscope className="h-4 w-4 text-orange-600" />
+              Patient Symptoms / Reason for Visit
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-3 text-sm border border-orange-200 dark:border-orange-800">
+              {patientSymptoms}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Clinical Notes */}
       <Card className="border-muted/60">
         <CardHeader className="pb-3">

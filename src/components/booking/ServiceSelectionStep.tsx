@@ -15,7 +15,7 @@ import { DentistInfoHeader } from "./DentistInfoHeader";
 import type { Dentist, Service, AIBookingData } from "./types";
 
 interface ServiceSelectionStepProps {
-  dentist: Dentist;
+  dentist: Dentist | null;
   services: Service[];
   selectedService: Service | null;
   onServiceClick: (service: Service) => void;
@@ -47,12 +47,12 @@ export function ServiceSelectionStep({
     <div className="max-w-4xl mx-auto p-4 py-8">
       <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 mb-6">
         <ArrowLeft className="h-4 w-4" />
-        Back to symptoms
+        Back to reason
       </Button>
 
       <Card>
         <CardContent className="p-6 space-y-6">
-          <DentistInfoHeader dentist={dentist} />
+          {dentist && <DentistInfoHeader dentist={dentist} />}
 
           {/* Service Selection */}
           <div className="space-y-4">
@@ -197,7 +197,7 @@ export function ServiceSelectionStep({
               className="w-full"
               size="lg"
             >
-              Continue with {selectedService.name}
+              Continue to Select Dentist
             </Button>
           )}
         </CardContent>
