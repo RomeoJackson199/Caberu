@@ -51,8 +51,7 @@ const CreateBusiness = lazy(() => import("./pages/CreateBusiness"));
 // Lazy load pages for better performance
 const Index = lazy(() => import("./pages/Index"));
 const DentistProfiles = lazy(() => import("./pages/DentistProfiles"));
-const Terms = lazy(() => import("./pages/Terms"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const LegalPage = lazy(() => import("./pages/LegalPage"));
 const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
@@ -359,7 +358,7 @@ const App = () => {
                     <DentistInvitationDialog />
                     <CommandPalette />
                     <KeyboardShortcutsGuide />
-                    <CookieConsent isAuthenticated={!!user} />
+                    <CookieConsent />
                     <OnboardingOrchestrator user={user} />
                     <PhoneVerificationGate user={user} />
                     <SeoManager />
@@ -415,8 +414,15 @@ const App = () => {
                         </Route>
                         {/* Public routes */}
                         <Route path="/dentists" element={<DentistProfiles />} />
-                        <Route path="/terms" element={<Terms />} />
-                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/terms" element={<LegalPage locale="en" document="terms" />} />
+                        <Route path="/privacy" element={<LegalPage locale="en" document="privacy" />} />
+                        <Route path="/cookies" element={<LegalPage locale="en" document="cookies" />} />
+                        <Route path="/fr/terms" element={<LegalPage locale="fr" document="terms" />} />
+                        <Route path="/fr/privacy" element={<LegalPage locale="fr" document="privacy" />} />
+                        <Route path="/fr/cookies" element={<LegalPage locale="fr" document="cookies" />} />
+                        <Route path="/nl/terms" element={<LegalPage locale="nl" document="terms" />} />
+                        <Route path="/nl/privacy" element={<LegalPage locale="nl" document="privacy" />} />
+                        <Route path="/nl/cookies" element={<LegalPage locale="nl" document="cookies" />} />
                         <Route path="/dpa" element={<DataProcessingAgreement />} />
                         <Route path="/about" element={<About />} />
                         <Route path="/watch-demo" element={<WatchDemo />} />

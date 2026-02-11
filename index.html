@@ -12,7 +12,6 @@
   <link rel="preconnect" href="https://gjvxcisbaxhhblhsytar.supabase.co">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
 
   <!-- Preload LCP image for faster Largest Contentful Paint -->
   <link rel="preload" as="image" fetchpriority="high"
@@ -156,39 +155,9 @@
     }
   </script>
 
-  <!-- Analytics - loaded after page render -->
-  <script>
-    // Defer analytics loading until after interactive
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        // GTM
-        (function (w, d, s, l, i) {
-          w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-          var f = d.getElementsByTagName(s)[0], j = d.createElement(s);
-          j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i;
-          f.parentNode.insertBefore(j, f);
-        })(window, document, 'script', 'dataLayer', 'GTM-523X3ZCD');
-
-        // GA4
-        var ga = document.createElement('script');
-        ga.async = true;
-        ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-9LGVN77ZBR';
-        document.head.appendChild(ga);
-        ga.onload = function () {
-          window.dataLayer = window.dataLayer || [];
-          function gtag() { dataLayer.push(arguments); }
-          gtag('js', new Date());
-          gtag('config', 'G-9LGVN77ZBR');
-        };
-      }, 100);
-    });
-  </script>
 </head>
 
 <body>
-  <!-- GTM noscript fallback -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-523X3ZCD" height="0" width="0"
-      style="display:none;visibility:hidden"></iframe></noscript>
 
   <div id="root"></div>
 
