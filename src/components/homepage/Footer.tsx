@@ -9,7 +9,6 @@ export const Footer = () => {
     <footer className="bg-gray-50 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Brand */}
           <div className="space-y-4">
             <Logo variant="full" size="sm" className="h-8" />
             <p className="text-sm text-gray-600">
@@ -28,54 +27,30 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* Product */}
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Product</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/about" className="text-gray-600 hover:text-gray-900">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="text-gray-600 hover:text-gray-900">
-                  Pricing
-                </Link>
-              </li>
+              <li><Link to="/about" className="text-gray-600 hover:text-gray-900">About</Link></li>
+              <li><Link to="/pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link></li>
             </ul>
           </div>
 
-          {/* Support */}
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Support</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/support" className="text-gray-600 hover:text-gray-900">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <a href="mailto:Romeo@caberu.be" className="text-gray-600 hover:text-gray-900">
-                  Contact Us
-                </a>
-              </li>
+              <li><Link to="/support" className="text-gray-600 hover:text-gray-900">Help Center</Link></li>
+              <li><a href="mailto:Romeo@caberu.be" className="text-gray-600 hover:text-gray-900">Contact Us</a></li>
             </ul>
           </div>
 
-          {/* Legal */}
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Legal</h3>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/privacy" className="text-gray-600 hover:text-gray-900">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="text-gray-600 hover:text-gray-900">
-                  Terms of Service
-                </Link>
-              </li>
+              <li><Link to="/privacy" className="text-gray-600 hover:text-gray-900">Privacy (EN)</Link></li>
+              <li><Link to="/fr/privacy" className="text-gray-600 hover:text-gray-900">Confidentialité (FR)</Link></li>
+              <li><Link to="/nl/privacy" className="text-gray-600 hover:text-gray-900">Privacy (NL)</Link></li>
+              <li><Link to="/cookies" className="text-gray-600 hover:text-gray-900">Cookie Policy</Link></li>
+              <li><Link to="/terms" className="text-gray-600 hover:text-gray-900">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
