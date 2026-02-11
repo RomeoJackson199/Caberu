@@ -49,6 +49,7 @@ import {
   OutcomesSection,
   PaymentsSection,
   FilesSection,
+  PatientBalanceDetails,
 } from "@/components/patient-management";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -105,6 +106,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
   const [showPrescriptionDialog, setShowPrescriptionDialog] = useState(false);
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showBalanceDetails, setShowBalanceDetails] = useState(false);
 
   // Form states
   const [treatmentForm, setTreatmentForm] = useState({
@@ -832,10 +834,19 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                   </div>
                   <div className="space-y-2">
                     {patientFlags[selectedPatient.id]?.hasUnpaidBalance && (
-                      <div className="text-sm">
-                        <span className="font-medium">Outstanding:</span>
-                        <p>€{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}</p>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowBalanceDetails(true)}
+                        className="text-sm text-left group/balance cursor-pointer rounded-lg border border-red-200/60 bg-red-50/40 px-3 py-2 transition-all hover:bg-red-50 hover:border-red-300 hover:shadow-sm"
+                      >
+                        <span className="font-medium text-muted-foreground">Outstanding</span>
+                        <p className="text-base font-bold text-red-600 mt-0.5">
+                          €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)}
+                        </p>
+                        <span className="text-[11px] text-muted-foreground group-hover/balance:text-red-600 transition-colors">
+                          Click to view details
+                        </span>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -954,6 +965,16 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                 <PaymentRequestForm dentistId={dentistId} onClose={() => setShowPaymentDialog(false)} />
               </SheetContent>
             </Sheet>
+
+            {/* Balance Details Sheet */}
+            <PatientBalanceDetails
+              open={showBalanceDetails}
+              onOpenChange={setShowBalanceDetails}
+              patientId={selectedPatient.id}
+              patientName={`${selectedPatient.first_name} ${selectedPatient.last_name}`}
+              dentistId={dentistId}
+              onBalanceUpdated={() => fetchPatientData(selectedPatient.id)}
+            />
 
             {/* Removed floating FAB; consolidated into + menu above */}
           </>
