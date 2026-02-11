@@ -10,12 +10,14 @@ interface PaymentsSectionProps {
   patientId: string;
   patientFlags?: PatientFlags;
   onCreatePaymentRequest: () => void;
+  onViewBalanceDetails?: () => void;
 }
 
 export function PaymentsSection({
   patientId,
   patientFlags,
-  onCreatePaymentRequest
+  onCreatePaymentRequest,
+  onViewBalanceDetails
 }: PaymentsSectionProps) {
   return (
     <AccordionItem value="payments">
@@ -26,7 +28,16 @@ export function PaymentsSection({
               <CreditCard className="h-5 w-5 text-dental-primary" />
               <span>Payments</span>
               {patientFlags?.hasUnpaidBalance && (
-                <Badge variant="destructive">
+                <Badge
+                  variant="destructive"
+                  className={onViewBalanceDetails ? "cursor-pointer hover:bg-red-600 transition-colors" : ""}
+                  onClick={(e) => {
+                    if (onViewBalanceDetails) {
+                      e.stopPropagation();
+                      onViewBalanceDetails();
+                    }
+                  }}
+                >
                   Due €{((patientFlags.outstandingCents || 0) / 100).toFixed(2)}
                 </Badge>
               )}

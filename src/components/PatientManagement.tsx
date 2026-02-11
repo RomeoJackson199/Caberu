@@ -713,7 +713,14 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{selectedPatient.first_name} {selectedPatient.last_name}</span>
                         {patientFlags[selectedPatient.id]?.hasUnpaidBalance && (
-                          <CreditCard className="h-4 w-4 text-red-500" />
+                          <button
+                            type="button"
+                            onClick={() => setShowBalanceDetails(true)}
+                            className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-[11px] font-semibold cursor-pointer hover:bg-red-200 transition-colors"
+                          >
+                            <CreditCard className="h-3 w-3" />
+                            €{((patientFlags[selectedPatient.id]?.outstandingCents || 0) / 100).toFixed(2)} due
+                          </button>
                         )}
                         {selectedPatient.medical_history && selectedPatient.medical_history.toLowerCase().includes('allerg') && (
                           <Badge variant="destructive" className="text-[10px]">Allergies</Badge>
@@ -914,6 +921,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
                 patientId={selectedPatient.id}
                 patientFlags={patientFlags[selectedPatient.id]}
                 onCreatePaymentRequest={() => setShowPaymentDialog(true)}
+                onViewBalanceDetails={() => setShowBalanceDetails(true)}
               />
 
               <NotesSection
