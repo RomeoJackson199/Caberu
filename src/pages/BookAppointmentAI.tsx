@@ -121,6 +121,7 @@ function BookAppointmentContent() {
             dentist={booking.selectedDentist}
             selectedDate={booking.selectedDate}
             selectedTime={booking.selectedTime}
+            serviceName={booking.selectedService?.name}
             isBooking={booking.isBooking}
             onConfirm={booking.confirmBooking}
             onBack={() => {

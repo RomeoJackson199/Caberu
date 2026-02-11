@@ -345,7 +345,7 @@ export function useBookingFlow() {
   }, [dentistAvailableDays]);
 
   const confirmBooking = useCallback(async () => {
-    if (!selectedDate || !selectedTime || !selectedDentist || !businessId || !selectedService) return;
+    if (!selectedDate || !selectedTime || !selectedDentist || !businessId) return;
 
     setIsBooking(true);
     try {
@@ -397,13 +397,13 @@ export function useBookingFlow() {
 
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const appointmentDateTime = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
-      const serviceDuration = selectedService.duration_minutes || 30;
+      const serviceDuration = selectedService?.duration_minutes || 30;
 
       const { data: latestSlots, error: slotCheckError } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: SlotRpcRow[] | null; error: unknown }> }).rpc('get_available_slots', {
         p_dentist_id: selectedDentist.id,
         p_date: dateStr,
         p_business_id: businessId,
-        p_service_id: selectedService.id,
+        p_service_id: selectedService?.id ?? null,
       });
 
       if (slotCheckError) throw slotCheckError;
@@ -439,6 +439,7 @@ export function useBookingFlow() {
 
       const needsApproval = selectedDentist.require_appointment_approval === true;
       const appointmentStatus = needsApproval ? "pending" : "confirmed";
+      const appointmentReason = selectedService?.name || "General Consultation";
 
       const appointmentData = await retryAppointmentOperation(async () => {
         const { data, error } = await supabase
@@ -448,11 +449,11 @@ export function useBookingFlow() {
             dentist_id: selectedDentist.id,
             business_id: businessId,
             appointment_date: appointmentDateTime.toISOString(),
-            reason: selectedService.name,
+            reason: appointmentReason,
             status: appointmentStatus,
             booking_source: aiBookingData ? "ai" : "manual",
             urgency: "low",
-            service_id: selectedService.id,
+            service_id: selectedService?.id ?? null,
             duration_minutes: serviceDuration,
             notes: symptomSummary || null
           })
@@ -469,7 +470,7 @@ export function useBookingFlow() {
         time: selectedTime,
         appointmentId: appointmentData.id,
         status: appointmentStatus,
-        serviceId: selectedService.id,
+        serviceId: selectedService?.id ?? null,
         serviceDuration,
       });
 
@@ -477,7 +478,7 @@ export function useBookingFlow() {
         date: format(selectedDate, 'yyyy-MM-dd'),
         time: selectedTime,
         dentist: `Dr. ${selectedDentist.first_name} ${selectedDentist.last_name}`,
-        reason: selectedService.name,
+        reason: appointmentReason,
         pendingApproval: needsApproval
       });
       setShowSuccessDialog(true);
