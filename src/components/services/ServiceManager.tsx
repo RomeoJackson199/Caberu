@@ -97,7 +97,7 @@ export function ServiceManager() {
         .select('service_id')
         .eq('dentist_id', dentist.id)
         .eq('business_id', businessId)
-        .eq('is_enabled', true);
+        .eq('is_active', true);
 
       if (linksError) throw linksError;
       setDentistServiceIds(new Set((links || []).map((link: { service_id: string }) => link.service_id)));
@@ -132,7 +132,7 @@ export function ServiceManager() {
         dentist_id: dentistId,
         service_id: serviceId,
         business_id: businessId,
-        is_enabled: enabled,
+        is_active: enabled,
       };
 
       const { error } = await supabase
