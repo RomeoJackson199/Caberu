@@ -263,6 +263,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             patientFlags={patientFlags[selectedPatient.id]}
             appointments={patientAppointments}
             businessId={businessId || ''}
+            dentistId={dentistId}
             loadingAppointments={loadingAppointments}
             hasMoreAppointments={hasMoreAppointments}
             onLoadMoreAppointments={handleLoadMoreAppointments}
@@ -272,6 +273,7 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
             onTreatmentPlanClick={handleTreatmentPlanClick}
             onBack={() => setSelectedPatient(null)}
             onAppointmentUpdated={handleAppointmentUpdated}
+            onBalanceUpdated={fetchPatients}
             updateAppointmentOptimistically={(appointmentId: string, updates: Partial<PatientAppointment>) =>
               updateAppointmentOptimistically(selectedPatient.id, appointmentId, updates)
             }

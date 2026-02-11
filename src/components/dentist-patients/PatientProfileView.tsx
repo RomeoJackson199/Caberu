@@ -27,6 +27,7 @@ import {
 import { DentistPatient, PatientFlags, PatientAppointment, getAppointmentGroup } from './types';
 import { MedicalAlertsBanner } from '@/components/patients/MedicalAlertsBanner';
 import { AppointmentGroup } from './components';
+import { PatientBalanceDetails } from '@/components/patient-management/PatientBalanceDetails';
 import { getAge } from '@/lib/patient-utils';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,7 @@ interface PatientProfileViewProps {
   patientFlags?: PatientFlags;
   appointments: PatientAppointment[];
   businessId: string;
+  dentistId: string;
   loadingAppointments?: boolean;
   hasMoreAppointments?: boolean;
   onLoadMoreAppointments?: () => void;
@@ -44,6 +46,7 @@ interface PatientProfileViewProps {
   onTreatmentPlanClick?: (planId: string) => void;
   onBack?: () => void;
   onAppointmentUpdated?: () => void;
+  onBalanceUpdated?: () => void;
   updateAppointmentOptimistically?: (appointmentId: string, updates: Partial<PatientAppointment>) => void;
   rollbackAppointmentUpdate?: (appointmentId: string, original: PatientAppointment) => void;
 }
@@ -55,6 +58,7 @@ export function PatientProfileView({
   patientFlags,
   appointments,
   businessId,
+  dentistId,
   loadingAppointments = false,
   hasMoreAppointments = false,
   onLoadMoreAppointments,
@@ -63,10 +67,12 @@ export function PatientProfileView({
   onEnterConsultation,
   onTreatmentPlanClick,
   onBack,
-  onAppointmentUpdated
+  onAppointmentUpdated,
+  onBalanceUpdated
 }: PatientProfileViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [showBalanceDetails, setShowBalanceDetails] = useState(false);
   
   const age = getAge(patient.date_of_birth);
 
@@ -370,15 +376,22 @@ export function PatientProfileView({
             </CardHeader>
             <CardContent>
               {patientFlags?.hasUnpaidBalance ? (
-                <div className="flex items-center justify-between p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                <button
+                  type="button"
+                  onClick={() => setShowBalanceDetails(true)}
+                  className="w-full flex items-center justify-between p-3 bg-destructive/5 rounded-lg border border-destructive/20 cursor-pointer transition-all hover:bg-destructive/10 hover:border-destructive/40 hover:shadow-sm group"
+                >
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-destructive" />
-                    <span className="text-sm font-medium">Outstanding</span>
+                    <div className="text-left">
+                      <span className="text-sm font-medium">Outstanding</span>
+                      <p className="text-[11px] text-muted-foreground group-hover:text-destructive transition-colors">Click to view details</p>
+                    </div>
                   </div>
                   <span className="font-bold text-destructive">
                     €{((patientFlags.outstandingCents || 0) / 100).toFixed(2)}
                   </span>
-                </div>
+                </button>
               ) : (
                 <div className="flex items-center gap-2 p-3 bg-emerald-50/50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -389,6 +402,15 @@ export function PatientProfileView({
           </Card>
         </div>
       </ScrollArea>
+
+      <PatientBalanceDetails
+        open={showBalanceDetails}
+        onOpenChange={setShowBalanceDetails}
+        patientId={patient.id}
+        patientName={`${patient.first_name} ${patient.last_name}`}
+        dentistId={dentistId}
+        onBalanceUpdated={onBalanceUpdated}
+      />
     </div>
   );
 }
