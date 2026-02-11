@@ -1312,6 +1312,78 @@ export type Database = {
           },
         ]
       }
+      dentist_services: {
+        Row: {
+          business_id: string
+          created_at: string
+          custom_duration_minutes: number | null
+          custom_price_cents: number | null
+          dentist_id: string
+          id: string
+          is_active: boolean
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          custom_duration_minutes?: number | null
+          custom_price_cents?: number | null
+          dentist_id: string
+          id?: string
+          is_active?: boolean
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          custom_duration_minutes?: number | null
+          custom_price_cents?: number | null
+          dentist_id?: string
+          id?: string
+          is_active?: boolean
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dentist_services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_services_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "dentists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_services_dentist_id_fkey"
+            columns: ["dentist_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentist_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "business_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dentist_vacation_days: {
         Row: {
           business_id: string
@@ -5422,6 +5494,20 @@ export type Database = {
         Args: { p_appointment_id: string }
         Returns: Json
       }
+      get_available_slots: {
+        Args: {
+          p_business_id: string
+          p_date: string
+          p_dentist_id: string
+          p_service_id: string
+          p_slot_interval_minutes?: number
+        }
+        Returns: {
+          duration_minutes: number
+          slot_end: string
+          slot_start: string
+        }[]
+      }
       get_current_business_id: { Args: never; Returns: string }
       get_daily_phone_usage: {
         Args: { p_business_id: string; p_date?: string }
@@ -5470,6 +5556,25 @@ export type Database = {
           last_name: string
           medical_history: string
           phone: string
+        }[]
+      }
+      get_dentists_for_service: {
+        Args: {
+          p_business_id: string
+          p_days_ahead?: number
+          p_from_date?: string
+          p_service_id: string
+        }
+        Returns: {
+          dentist_first_name: string
+          dentist_id: string
+          dentist_last_name: string
+          next_available_date: string
+          next_available_time: string
+          profile_picture_url: string
+          service_duration_minutes: number
+          service_price_cents: number
+          specialization: string
         }[]
       }
       get_my_profile_id: { Args: never; Returns: string }
