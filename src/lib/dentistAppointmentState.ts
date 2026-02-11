@@ -110,14 +110,14 @@ export function getDentistPermissions(state: DentistAppointmentState): DentistSt
   switch (state) {
     case 'UPCOMING':
       return {
-        canEditNotes: false,
-        canManageDocuments: false,
+        canEditNotes: true,
+        canManageDocuments: true,
         canEditCharges: false,
         canScheduleFollowUp: false,
         canFinalize: false,
         canCancel: true,
         canReschedule: true,
-        showWorkspace: false,
+        showWorkspace: true,
       };
     
     case 'COMPLETED_DRAFT':
