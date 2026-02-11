@@ -11,6 +11,30 @@ import { retryAppointmentOperation } from "@/lib/retryStrategies";
 import { getFriendlyErrorMessage } from "@/lib/userFriendlyErrors";
 import type { Dentist, TimeSlot, Service, BookingStep, AIBookingData, SuccessDetails } from "./types";
 
+
+type DentistForServiceRpcRow = {
+  dentist_id?: string;
+  id?: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  specialization: string;
+  license_number?: string;
+  profile_id: string;
+  require_appointment_approval?: boolean;
+  next_available_slot?: string | null;
+  phone?: string;
+  bio?: string;
+  profile_picture_url?: string | null;
+};
+
+type SlotRpcRow = string | { slot_time?: string; start_time?: string };
+
+const extractSlotTime = (slot: SlotRpcRow): string => {
+  if (typeof slot === 'string') return slot.substring(0, 5);
+  return (slot.slot_time || slot.start_time || '').toString().substring(0, 5);
+};
+
 export function useBookingFlow() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -43,7 +67,6 @@ export function useBookingFlow() {
   const [symptomSummary, setSymptomSummary] = useState<string>("");
   const [isEditingSymptoms, setIsEditingSymptoms] = useState(false);
 
-  // Load AI booking data from sessionStorage
   useEffect(() => {
     const storedData = sessionStorage.getItem('aiBookingData');
     if (storedData) {
@@ -57,14 +80,6 @@ export function useBookingFlow() {
       }
     }
   }, []);
-
-  // Fetch dentists and services when business is ready
-  useEffect(() => {
-    if (!businessLoading && businessId) {
-      fetchDentists();
-      fetchServices();
-    }
-  }, [businessId, businessLoading, fetchDentists, fetchServices]);
 
   const fetchDentists = useCallback(async () => {
     if (!businessId) return;
@@ -127,7 +142,7 @@ export function useBookingFlow() {
 
       if (dentistResult.error) throw dentistResult.error;
 
-      const transformedData = (dentistResult.data || []).map((d: any) => ({
+      const transformedData = (dentistResult.data || []).map((d) => ({
         ...d,
         profiles: Array.isArray(d.profiles) ? d.profiles[0] : (d.profiles || null),
       }));
@@ -162,7 +177,6 @@ export function useBookingFlow() {
       const fetchedServices = data || [];
       setServices(fetchedServices);
 
-      // Pre-select AI-recommended service if available
       if (aiBookingData?.recommendedService && fetchedServices.length > 0) {
         const recommendedServiceName = aiBookingData.recommendedService.toLowerCase();
         const matchingService = fetchedServices.find(s =>
@@ -180,93 +194,86 @@ export function useBookingFlow() {
     }
   }, [businessId, aiBookingData]);
 
-  const fetchAvailableSlots = useCallback(async (date: Date, dentistId: string) => {
+  const fetchDentistsForService = useCallback(async (serviceId: string) => {
+    if (!businessId) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: DentistForServiceRpcRow[] | null; error: unknown }> }).rpc('get_dentists_for_service', {
+        p_business_id: businessId,
+        p_service_id: serviceId,
+      });
+
+      if (error) throw error;
+
+      const typedDentists = (data || []).map((dentist) => ({
+        id: dentist.dentist_id ?? dentist.id,
+        first_name: dentist.first_name,
+        last_name: dentist.last_name,
+        email: dentist.email,
+        specialization: dentist.specialization,
+        license_number: dentist.license_number,
+        profile_id: dentist.profile_id,
+        require_appointment_approval: dentist.require_appointment_approval,
+        next_available_slot: dentist.next_available_slot ?? null,
+        profiles: {
+          first_name: dentist.first_name,
+          last_name: dentist.last_name,
+          email: dentist.email,
+          phone: dentist.phone,
+          bio: dentist.bio,
+          profile_picture_url: dentist.profile_picture_url,
+        },
+      }));
+
+      setDentists(typedDentists);
+    } catch (error) {
+      logger.error('Error fetching dentists for service:', error);
+      toast({
+        title: "Unable to filter dentists",
+        description: "Showing all available dentists instead.",
+      });
+      await fetchDentists();
+    } finally {
+      setLoading(false);
+    }
+  }, [businessId, fetchDentists, toast]);
+
+  useEffect(() => {
+    if (!businessLoading && businessId) {
+      fetchDentists();
+      fetchServices();
+    }
+  }, [businessId, businessLoading, fetchDentists, fetchServices]);
+
+  const fetchAvailableSlots = useCallback(async (date: Date, dentistId: string, serviceId?: string) => {
     if (!businessId) return;
 
     setLoadingSlots(true);
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
+      const activeServiceId = serviceId || selectedService?.id;
 
-      // Ensure slots exist for this day
-      await supabase.rpc('generate_daily_slots', {
-        p_dentist_id: dentistId,
-        p_date: dateStr,
-        p_business_id: businessId
-      });
-
-      // Get ALL slots
-      const { data, error } = await supabase
-        .from('appointment_slots')
-        .select('slot_time, is_available')
-        .eq('dentist_id', dentistId)
-        .eq('slot_date', dateStr)
-        .eq('business_id', businessId)
-        .order('slot_time');
-
-      if (error) throw error;
-
-      // Get existing appointments for this day (pending, confirmed, scheduled)
-      const { data: existingAppts } = await supabase
-        .from("appointments_decrypted")
-        .select("appointment_date, duration_minutes")
-        .eq("dentist_id", dentistId)
-        .eq("business_id", businessId)
-        .gte("appointment_date", `${dateStr}T00:00:00`)
-        .lt("appointment_date", `${dateStr}T23:59:59`)
-        .in("status", ["pending", "confirmed", "scheduled"]);
-
-      // Build set of blocked time slots from existing appointments
-      const blockedSlots = new Set<string>();
-      existingAppts?.forEach(appt => {
-        const apptDate = new Date(appt.appointment_date);
-        const apptDuration = appt.duration_minutes || 30;
-        const slotsBlocked = Math.ceil(apptDuration / 30);
-
-        for (let i = 0; i < slotsBlocked; i++) {
-          const slotTime = new Date(apptDate.getTime() + i * 30 * 60000);
-          const timeStr = slotTime.toTimeString().substring(0, 5);
-          blockedSlots.add(timeStr);
-        }
-      });
-
-      if (!data || data.length === 0) {
-        toast({
-          title: "No Available Slots",
-          description: "No available slots found for this dentist on the selected date",
-          variant: "destructive",
-        });
+      if (!activeServiceId) {
         setAvailableSlots([]);
-        setLoadingSlots(false);
         return;
       }
 
-      // Map slots and mark as unavailable if blocked by existing appointments
-      const allSlots = data.map((slot: { slot_time: string; is_available: boolean }) => {
-        const timeStr = slot.slot_time.substring(0, 5);
-        return {
-          time: timeStr,
-          available: slot.is_available && !blockedSlots.has(timeStr),
-        };
+      const { data, error } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: SlotRpcRow[] | null; error: unknown }> }).rpc('get_available_slots', {
+        p_dentist_id: dentistId,
+        p_date: dateStr,
+        p_business_id: businessId,
+        p_service_id: activeServiceId,
       });
 
-      // Filter available slots based on service duration
-      const duration = selectedService?.duration_minutes || 30;
-      const slotsNeeded = Math.ceil(duration / 30);
+      if (error) throw error;
 
-      // For each slot, check if enough consecutive slots are available
-      const filteredSlots = allSlots.filter((slot: TimeSlot, index: number) => {
-        if (!slot.available) return false;
+      const slots: TimeSlot[] = (data || []).map((slot) => ({
+        time: extractSlotTime(slot),
+        available: true,
+      })).filter((slot: TimeSlot) => slot.time);
 
-        if (slotsNeeded <= 1) return true;
-
-        for (let i = 1; i < slotsNeeded; i++) {
-          const nextSlot = allSlots[index + i];
-          if (!nextSlot || !nextSlot.available) return false;
-        }
-        return true;
-      });
-
-      setAvailableSlots(filteredSlots);
+      setAvailableSlots(slots);
     } catch (error) {
       logger.error("Error fetching slots:", error);
       toast({
@@ -279,8 +286,6 @@ export function useBookingFlow() {
       setLoadingSlots(false);
     }
   }, [businessId, selectedService, toast]);
-
-  // --- Step handlers ---
 
   const handleDentistSelect = useCallback(async (dentist: Dentist) => {
     setSelectedDentist(dentist);
@@ -306,17 +311,27 @@ export function useBookingFlow() {
     setBookingStep('service');
   }, []);
 
-  const handleServiceSelect = useCallback((service: Service | null) => {
+  const handleServiceSelect = useCallback(async (service: Service | null) => {
     setSelectedService(service);
+    setSelectedDentist(null);
+    setSelectedDate(undefined);
+    setSelectedTime(undefined);
+    setAvailableSlots([]);
     setBookingStep('dentist');
-  }, []);
+
+    if (service?.id) {
+      await fetchDentistsForService(service.id);
+    } else {
+      await fetchDentists();
+    }
+  }, [fetchDentistsForService, fetchDentists]);
 
   const handleDateSelect = useCallback((date: Date | undefined) => {
     if (!date || !selectedDentist) return;
     setSelectedDate(date);
     setSelectedTime(undefined);
-    fetchAvailableSlots(date, selectedDentist.id);
-  }, [selectedDentist, fetchAvailableSlots]);
+    fetchAvailableSlots(date, selectedDentist.id, selectedService?.id);
+  }, [selectedDentist, selectedService, fetchAvailableSlots]);
 
   const handleTimeSelect = useCallback((time: string) => {
     setSelectedTime(time);
@@ -336,7 +351,7 @@ export function useBookingFlow() {
   }, [dentistAvailableDays]);
 
   const confirmBooking = useCallback(async () => {
-    if (!selectedDate || !selectedTime || !selectedDentist || !businessId) return;
+    if (!selectedDate || !selectedTime || !selectedDentist || !businessId || !selectedService) return;
 
     setIsBooking(true);
     try {
@@ -351,13 +366,15 @@ export function useBookingFlow() {
         return;
       }
 
-      let { data: profile, error: profErr } = await supabase
+      const { data: existingProfile, error: profErr } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, phone, email, user_id")
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (profErr) throw profErr;
+
+      let profile = existingProfile;
 
       if (!profile) {
         const { data: inserted, error: insertErr } = await supabase
@@ -386,9 +403,25 @@ export function useBookingFlow() {
 
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const appointmentDateTime = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
+      const serviceDuration = selectedService.duration_minutes || 30;
 
-      // Check if slot is already taken
-      const serviceDuration = selectedService?.duration_minutes || 30;
+      const { data: latestSlots, error: slotCheckError } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: SlotRpcRow[] | null; error: unknown }> }).rpc('get_available_slots', {
+        p_dentist_id: selectedDentist.id,
+        p_date: dateStr,
+        p_business_id: businessId,
+        p_service_id: selectedService.id,
+      });
+
+      if (slotCheckError) throw slotCheckError;
+
+      const stillAvailable = (latestSlots || []).some((slot) => extractSlotTime(slot) === selectedTime);
+
+      if (!stillAvailable) {
+        throw new Error("This time slot is no longer available. Please select another time.");
+      }
+
+      const requestedStart = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
+      const requestedEnd = addMinutes(requestedStart, serviceDuration);
 
       const { data: existingAppts } = await supabase
         .from("appointments_decrypted")
@@ -398,9 +431,6 @@ export function useBookingFlow() {
         .gte("appointment_date", `${dateStr}T00:00:00`)
         .lt("appointment_date", `${dateStr}T23:59:59`)
         .in("status", ["pending", "confirmed", "scheduled"]);
-
-      const requestedStart = createAppointmentDateTimeFromStrings(dateStr, selectedTime);
-      const requestedEnd = addMinutes(requestedStart, serviceDuration);
 
       const hasConflict = existingAppts?.some(appt => {
         const apptStart = new Date(appt.appointment_date);
@@ -424,12 +454,12 @@ export function useBookingFlow() {
             dentist_id: selectedDentist.id,
             business_id: businessId,
             appointment_date: appointmentDateTime.toISOString(),
-            reason: selectedService ? selectedService.name : "General consultation",
+            reason: selectedService.name,
             status: appointmentStatus,
             booking_source: aiBookingData ? "ai" : "manual",
             urgency: "low",
-            service_id: selectedService?.id || null,
-            duration_minutes: selectedService?.duration_minutes || 30,
+            service_id: selectedService.id,
+            duration_minutes: serviceDuration,
             notes: symptomSummary || null
           })
           .select()
@@ -439,34 +469,21 @@ export function useBookingFlow() {
         return data;
       }, 'create appointment');
 
-      // Book all required slots for the appointment duration
-      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
-        p_dentist_id: selectedDentist.id,
-        p_slot_date: dateStr,
-        p_start_time: selectedTime + ':00',
-        p_duration_minutes: serviceDuration,
-        p_appointment_id: appointmentData.id
-      });
-
-      if (slotError) {
-        await supabase.from("appointments").delete().eq("id", appointmentData.id);
-        throw new Error("This time slot is no longer available. Please select another time.");
-      }
-
       logger.info("Appointment created:", {
         dentistId: selectedDentist.id,
         date: dateStr,
         time: selectedTime,
         appointmentId: appointmentData.id,
         status: appointmentStatus,
-        slotsBooked: Math.ceil(serviceDuration / 30)
+        serviceId: selectedService.id,
+        serviceDuration,
       });
 
       setSuccessDetails({
         date: format(selectedDate, 'yyyy-MM-dd'),
         time: selectedTime,
         dentist: `Dr. ${selectedDentist.first_name} ${selectedDentist.last_name}`,
-        reason: selectedService ? selectedService.name : "General consultation",
+        reason: selectedService.name,
         pendingApproval: needsApproval
       });
       setShowSuccessDialog(true);
@@ -494,7 +511,7 @@ export function useBookingFlow() {
       }
 
       if (selectedDate && selectedDentist && friendlyError.canRetry) {
-        fetchAvailableSlots(selectedDate, selectedDentist.id);
+        fetchAvailableSlots(selectedDate, selectedDentist.id, selectedService?.id);
       }
       setBookingStep('datetime');
     } finally {
@@ -505,14 +522,13 @@ export function useBookingFlow() {
   const handleSuccessDialogChange = useCallback((open: boolean) => {
     setShowSuccessDialog(open);
     if (!open && selectedDate && selectedDentist) {
-      fetchAvailableSlots(selectedDate, selectedDentist.id);
+      fetchAvailableSlots(selectedDate, selectedDentist.id, selectedService?.id);
       setSelectedTime(undefined);
       setBookingStep('datetime');
     }
-  }, [selectedDate, selectedDentist, fetchAvailableSlots]);
+  }, [selectedDate, selectedDentist, selectedService, fetchAvailableSlots]);
 
   return {
-    // State
     bookingStep,
     setBookingStep,
     dentists,
@@ -536,13 +552,9 @@ export function useBookingFlow() {
     setSymptomSummary,
     isEditingSymptoms,
     setIsEditingSymptoms,
-
-    // Business context
     businessId,
     businessLoading,
     switchBusiness,
-
-    // Actions
     handleDentistSelect,
     handleSymptomsNext,
     handleServiceSelect,

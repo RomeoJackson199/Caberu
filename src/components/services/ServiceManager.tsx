@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
+import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,6 @@ import { toast } from 'sonner';
 import { ServiceDialog } from './ServiceDialog';
 import { Badge } from '@/components/ui/badge';
 import { logger } from '@/lib/logger';
-import { getErrorMessage } from '@/lib/error-utils';
 import { useServiceActionsWithUndo } from '@/hooks/useServiceActionsWithUndo';
 
 interface Service {
@@ -27,7 +27,7 @@ interface Service {
 }
 
 export function ServiceManager() {
-  const { businessId, businessName } = useBusinessContext();
+  const { businessId, businessName, membershipRole } = useBusinessContext();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -36,16 +36,15 @@ export function ServiceManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
+  const [dentistId, setDentistId] = useState<string | null>(null);
+  const [dentistServiceIds, setDentistServiceIds] = useState<Set<string>>(new Set());
+  const isDentistUser = membershipRole === 'dentist';
+  const canManageCatalog = membershipRole === 'owner' || membershipRole === 'admin' || membershipRole === 'assistant';
+
   // Undo functionality
   const { deleteServiceWithUndo, toggleServiceStatusWithUndo } = useServiceActionsWithUndo();
 
-  useEffect(() => {
-    if (businessId) {
-      loadServices();
-    }
-  }, [businessId]);
-
-  const loadServices = async () => {
+  const loadServices = useCallback(async () => {
     if (!businessId) return;
 
     try {
@@ -63,6 +62,88 @@ export function ServiceManager() {
       toast.error('Failed to load services');
     } finally {
       setLoading(false);
+    }
+  }, [businessId]);
+
+  const loadDentistServices = useCallback(async () => {
+    if (!businessId || !isDentistUser) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.id) return;
+
+      const { data: dentist, error: dentistError } = await supabase
+        .from('dentists')
+        .select('id')
+        .eq('profile_id', profile.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (dentistError) throw dentistError;
+      if (!dentist?.id) return;
+
+      setDentistId(dentist.id);
+
+      const { data: links, error: linksError } = await supabase
+        .from('dentist_services' as never)
+        .select('service_id')
+        .eq('dentist_id', dentist.id)
+        .eq('business_id', businessId)
+        .eq('is_enabled', true);
+
+      if (linksError) throw linksError;
+      setDentistServiceIds(new Set((links || []).map((link: { service_id: string }) => link.service_id)));
+    } catch (error) {
+      logger.error('Error loading dentist services:', error);
+      toast.error('Failed to load your service assignments');
+    }
+  }, [businessId, isDentistUser]);
+
+  useEffect(() => {
+    if (businessId) {
+      loadServices();
+      if (isDentistUser) {
+        loadDentistServices();
+      }
+    }
+  }, [businessId, isDentistUser, loadDentistServices, loadServices]);
+
+  const handleDentistServiceToggle = async (serviceId: string, enabled: boolean) => {
+    if (!dentistId || !businessId) return;
+
+    const next = new Set(dentistServiceIds);
+    if (enabled) {
+      next.add(serviceId);
+    } else {
+      next.delete(serviceId);
+    }
+    setDentistServiceIds(next);
+
+    try {
+      const payload = {
+        dentist_id: dentistId,
+        service_id: serviceId,
+        business_id: businessId,
+        is_enabled: enabled,
+      };
+
+      const { error } = await supabase
+        .from('dentist_services' as never)
+        .upsert(payload, { onConflict: 'dentist_id,service_id' });
+
+      if (error) throw error;
+    } catch (error) {
+      logger.error('Error updating dentist service toggle:', error);
+      toast.error('Failed to update service availability');
+      await loadDentistServices();
     }
   };
 
@@ -167,14 +248,16 @@ export function ServiceManager() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            onClick={() => handleAddNew('Service')}
-            className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg h-11 px-6"
-            size="lg"
-          >
-            <Plus className="h-5 w-5" />
-            Add Service
-          </Button>
+          {canManageCatalog && (
+            <Button
+              onClick={() => handleAddNew('Service')}
+              className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg h-11 px-6"
+              size="lg"
+            >
+              <Plus className="h-5 w-5" />
+              Add Service
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={loadServices} disabled={loading} className="h-11 w-11">
             <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -261,16 +344,20 @@ export function ServiceManager() {
             <p className="mb-4 text-muted-foreground">
               Add your first service or product to make booking effortless for your patients.
             </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button onClick={() => handleAddNew('Service')}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add a service
-              </Button>
-              <Button variant="outline" onClick={() => handleAddNew('Product')}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add a product
-              </Button>
-            </div>
+            {canManageCatalog ? (
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button onClick={() => handleAddNew('Service')}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add a service
+                </Button>
+                <Button variant="outline" onClick={() => handleAddNew('Product')}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add a product
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">The clinic owner can add services. Once available, you can enable the ones you provide.</p>
+            )}
           </CardContent>
         </Card>
       ) : filteredServices.length === 0 ? (
@@ -338,46 +425,63 @@ export function ServiceManager() {
                 </div>
               </CardHeader>
               <CardContent className="mt-auto pt-4 border-t">
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 border-2 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                    onClick={() => handleEdit(service)}
-                  >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={service.is_active ? 'border-2 border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30' : 'border-2 border-green-400 hover:bg-green-50 dark:hover:bg-green-950/30'}
-                    onClick={() => handleToggleActive(service.id, service.is_active)}
-                  >
-                    {service.is_active ? 'Deactivate' : 'Activate'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-2 border-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                    onClick={() => handleDelete(service.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                {isDentistUser ? (
+                  <div className="flex items-center justify-between rounded-lg border px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium">I provide this service</p>
+                      <p className="text-xs text-muted-foreground">Enable this so patients can book this service with you.</p>
+                    </div>
+                    <Switch
+                      checked={dentistServiceIds.has(service.id)}
+                      onCheckedChange={(checked) => handleDentistServiceToggle(service.id, checked)}
+                    />
+                  </div>
+                ) : canManageCatalog ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-2 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                      onClick={() => handleEdit(service)}
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={service.is_active ? 'border-2 border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30' : 'border-2 border-green-400 hover:bg-green-50 dark:hover:bg-green-950/30'}
+                      onClick={() => handleToggleActive(service.id, service.is_active)}
+                    >
+                      {service.is_active ? 'Deactivate' : 'Activate'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-2 border-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      onClick={() => handleDelete(service.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Only clinic owners can edit the service catalog.</p>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
 
-      <ServiceDialog
-        open={dialogOpen}
-        onClose={handleDialogClose}
-        service={editingService}
-        businessId={businessId}
-        defaultCategory={dialogCategory}
-      />
+      {canManageCatalog && (
+        <ServiceDialog
+          open={dialogOpen}
+          onClose={handleDialogClose}
+          service={editingService}
+          businessId={businessId}
+          defaultCategory={dialogCategory}
+        />
+      )}
     </div>
   );
 }
