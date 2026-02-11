@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { applyAnalyticsConsent, getStoredAnalyticsConsent } from "@/lib/analyticsConsent";
 
 interface CookiePreferences {
   necessary: boolean;
@@ -21,7 +20,11 @@ interface CookiePreferences {
   marketing: boolean;
 }
 
-export function CookieConsent() {
+interface CookieConsentProps {
+  isAuthenticated?: boolean;
+}
+
+export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
   const [showBanner, setShowBanner] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>({
@@ -31,8 +34,10 @@ export function CookieConsent() {
   });
 
   useEffect(() => {
-    // Always apply stored analytics preference on first load.
-    applyAnalyticsConsent(getStoredAnalyticsConsent());
+    // Only show banner if user is authenticated
+    if (!isAuthenticated) {
+      return;
+    }
 
     // Check if user has already consented
     const consent = localStorage.getItem("cookie-consent");
@@ -40,16 +45,16 @@ export function CookieConsent() {
       // Show banner after a short delay
       const timer = setTimeout(() => setShowBanner(true), 1000);
       return () => clearTimeout(timer);
+    } else {
+      // Load saved preferences
+      try {
+        const savedPreferences = JSON.parse(consent);
+        setPreferences(savedPreferences);
+      } catch (error) {
+        logger.error("Failed to parse cookie preferences:", error);
+      }
     }
-
-    // Load saved preferences
-    try {
-      const savedPreferences = JSON.parse(consent);
-      setPreferences(savedPreferences);
-    } catch (error) {
-      logger.error("Failed to parse cookie preferences:", error);
-    }
-  }, []);
+  }, [isAuthenticated]);
 
   const savePreferences = (prefs: CookiePreferences) => {
     localStorage.setItem("cookie-consent", JSON.stringify(prefs));
@@ -63,7 +68,15 @@ export function CookieConsent() {
       // Analytics module not available
     });
 
-    applyAnalyticsConsent(prefs.analytics);
+    // Update Google Analytics consent mode (if gtag is available)
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
+        'analytics_storage': prefs.analytics ? 'granted' : 'denied',
+        'ad_storage': prefs.marketing ? 'granted' : 'denied',
+        'ad_user_data': prefs.marketing ? 'granted' : 'denied',
+        'ad_personalization': prefs.marketing ? 'granted' : 'denied',
+      });
+    }
 
     // Also update localStorage key that analytics.ts checks
     localStorage.setItem('analytics_consent', prefs.analytics.toString());
@@ -127,7 +140,7 @@ export function CookieConsent() {
                 and analyze our traffic. We also share information about your use of our site with
                 our analytics partners. By clicking "Accept All", you consent to our use of cookies.{" "}
                 <a
-                  href="/cookies"
+                  href="/privacy"
                   className="text-blue-600 hover:text-blue-700 underline"
                   target="_blank"
                   rel="noopener noreferrer"
