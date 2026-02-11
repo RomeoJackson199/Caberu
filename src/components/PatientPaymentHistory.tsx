@@ -21,9 +21,10 @@ interface PatientPaymentHistoryProps {
   patientId: string;
   viewMode?: 'patient' | 'dentist';
   dentistId?: string;
+  refreshTrigger?: number;
 }
 
-export const PatientPaymentHistory: React.FC<PatientPaymentHistoryProps> = ({ patientId, viewMode = 'patient', dentistId }) => {
+export const PatientPaymentHistory: React.FC<PatientPaymentHistoryProps> = ({ patientId, viewMode = 'patient', dentistId, refreshTrigger }) => {
   const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
@@ -33,7 +34,7 @@ export const PatientPaymentHistory: React.FC<PatientPaymentHistoryProps> = ({ pa
 
   useEffect(() => {
     fetchPaymentHistory();
-  }, [patientId, businessId]);
+  }, [patientId, businessId, refreshTrigger]);
 
   const fetchPaymentHistory = async () => {
     try {

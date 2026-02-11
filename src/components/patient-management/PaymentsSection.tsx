@@ -10,12 +10,14 @@ interface PaymentsSectionProps {
   patientId: string;
   patientFlags?: PatientFlags;
   onCreatePaymentRequest: () => void;
+  refreshTrigger?: number;
 }
 
 export function PaymentsSection({
   patientId,
   patientFlags,
-  onCreatePaymentRequest
+  onCreatePaymentRequest,
+  refreshTrigger
 }: PaymentsSectionProps) {
   return (
     <AccordionItem value="payments">
@@ -41,7 +43,7 @@ export function PaymentsSection({
                 <CreditCard className="h-4 w-4 mr-1" /> Create Payment Request
               </Button>
             </div>
-            <PatientPaymentHistory patientId={patientId} />
+            <PatientPaymentHistory patientId={patientId} refreshTrigger={refreshTrigger} />
           </CardContent>
         </AccordionContent>
       </Card>
