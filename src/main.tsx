@@ -5,6 +5,7 @@ import { performanceTracker } from './utils/performance'
 import { notify } from './lib/notify'
 import { logger } from '@/lib/logger';
 import { initPerformanceMonitoring } from '@/lib/performance';
+import { initializeAnalyticsFromConsent } from '@/lib/googleAnalytics';
 
 // Suppress ResizeObserver loop errors (benign browser warning)
 const resizeObserverErr = (e: ErrorEvent) => {
@@ -23,6 +24,10 @@ if (process.env.NODE_ENV === 'development') {
   // Enable in production if explicitly enabled
   initPerformanceMonitoring();
 }
+
+// Initialize Google Analytics/GTM based on saved consent (GDPR compliant)
+// This will only load analytics if user has previously given consent
+initializeAnalyticsFromConsent();
 
 // Register service worker with better error handling
 if ('serviceWorker' in navigator) {

@@ -53,6 +53,11 @@ const Index = lazy(() => import("./pages/Index"));
 const DentistProfiles = lazy(() => import("./pages/DentistProfiles"));
 const Terms = lazy(() => import("./pages/Terms"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const PrivacyPolicyFr = lazy(() => import("./pages/PrivacyPolicyFr"));
+const PrivacyPolicyNl = lazy(() => import("./pages/PrivacyPolicyNl"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const CookiePolicyFr = lazy(() => import("./pages/CookiePolicyFr"));
+const CookiePolicyNl = lazy(() => import("./pages/CookiePolicyNl"));
 const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
@@ -417,6 +422,11 @@ const App = () => {
                         <Route path="/dentists" element={<DentistProfiles />} />
                         <Route path="/terms" element={<Terms />} />
                         <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/fr/privacy" element={<PrivacyPolicyFr />} />
+                        <Route path="/nl/privacy" element={<PrivacyPolicyNl />} />
+                        <Route path="/cookies" element={<CookiePolicy />} />
+                        <Route path="/fr/cookies" element={<CookiePolicyFr />} />
+                        <Route path="/nl/cookies" element={<CookiePolicyNl />} />
                         <Route path="/dpa" element={<DataProcessingAgreement />} />
                         <Route path="/about" element={<About />} />
                         <Route path="/watch-demo" element={<WatchDemo />} />

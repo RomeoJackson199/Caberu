@@ -156,40 +156,26 @@
     }
   </script>
 
-  <!-- Analytics - loaded after page render -->
+  <!-- Google Analytics Consent Mode - Default to DENIED -->
   <script>
-    // Defer analytics loading until after interactive
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        // GTM
-        (function (w, d, s, l, i) {
-          w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-          var f = d.getElementsByTagName(s)[0], j = d.createElement(s);
-          j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i;
-          f.parentNode.insertBefore(j, f);
-        })(window, document, 'script', 'dataLayer', 'GTM-523X3ZCD');
-
-        // GA4
-        var ga = document.createElement('script');
-        ga.async = true;
-        ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-9LGVN77ZBR';
-        document.head.appendChild(ga);
-        ga.onload = function () {
-          window.dataLayer = window.dataLayer || [];
-          function gtag() { dataLayer.push(arguments); }
-          gtag('js', new Date());
-          gtag('config', 'G-9LGVN77ZBR');
-        };
-      }, 100);
+    // Set default consent state to DENIED before any analytics loads
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'analytics_storage': 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'wait_for_update': 500
     });
+    // Initialize dataLayer with timestamp
+    gtag('js', new Date());
   </script>
+
+  <!-- Analytics scripts will be loaded dynamically by src/lib/googleAnalytics.ts ONLY after user consent -->
 </head>
 
 <body>
-  <!-- GTM noscript fallback -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-523X3ZCD" height="0" width="0"
-      style="display:none;visibility:hidden"></iframe></noscript>
-
   <div id="root"></div>
 
   <script type="module" src="/src/main.tsx"></script>
