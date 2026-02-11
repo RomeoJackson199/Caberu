@@ -13,26 +13,22 @@ import type { Dentist, TimeSlot, Service, BookingStep, AIBookingData, SuccessDet
 
 
 type DentistForServiceRpcRow = {
-  dentist_id?: string;
-  id?: string;
-  first_name: string;
-  last_name: string;
-  email: string;
+  dentist_id: string;
+  dentist_first_name: string;
+  dentist_last_name: string;
   specialization: string;
-  license_number?: string;
-  profile_id: string;
-  require_appointment_approval?: boolean;
-  next_available_slot?: string | null;
-  phone?: string;
-  bio?: string;
-  profile_picture_url?: string | null;
+  profile_picture_url: string | null;
+  service_duration_minutes: number;
+  service_price_cents: number;
+  next_available_date: string | null;
+  next_available_time: string | null;
 };
 
-type SlotRpcRow = string | { slot_time?: string; start_time?: string };
+type SlotRpcRow = string | { slot_time?: string; start_time?: string; slot_start?: string };
 
 const extractSlotTime = (slot: SlotRpcRow): string => {
   if (typeof slot === 'string') return slot.substring(0, 5);
-  return (slot.slot_time || slot.start_time || '').toString().substring(0, 5);
+  return (slot.slot_start || slot.slot_time || slot.start_time || '').toString().substring(0, 5);
 };
 
 export function useBookingFlow() {
@@ -206,22 +202,20 @@ export function useBookingFlow() {
 
       if (error) throw error;
 
-      const typedDentists = (data || []).map((dentist) => ({
-        id: dentist.dentist_id ?? dentist.id,
-        first_name: dentist.first_name,
-        last_name: dentist.last_name,
-        email: dentist.email,
-        specialization: dentist.specialization,
-        license_number: dentist.license_number,
-        profile_id: dentist.profile_id,
-        require_appointment_approval: dentist.require_appointment_approval,
-        next_available_slot: dentist.next_available_slot ?? null,
+      const typedDentists: Dentist[] = (data || []).map((dentist) => ({
+        id: dentist.dentist_id,
+        first_name: dentist.dentist_first_name,
+        last_name: dentist.dentist_last_name,
+        email: '',
+        specialization: dentist.specialization || '',
+        profile_id: '',
+        next_available_slot: dentist.next_available_date && dentist.next_available_time
+          ? `${dentist.next_available_date}T${dentist.next_available_time}`
+          : null,
         profiles: {
-          first_name: dentist.first_name,
-          last_name: dentist.last_name,
-          email: dentist.email,
-          phone: dentist.phone,
-          bio: dentist.bio,
+          first_name: dentist.dentist_first_name,
+          last_name: dentist.dentist_last_name,
+          email: '',
           profile_picture_url: dentist.profile_picture_url,
         },
       }));
