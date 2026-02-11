@@ -93,7 +93,7 @@ export function ServiceManager() {
       setDentistId(dentist.id);
 
       const { data: links, error: linksError } = await supabase
-        .from('dentist_services' as never)
+        .from('dentist_services')
         .select('service_id')
         .eq('dentist_id', dentist.id)
         .eq('business_id', businessId)
@@ -128,16 +128,33 @@ export function ServiceManager() {
     setDentistServiceIds(next);
 
     try {
-      const payload = {
-        dentist_id: dentistId,
-        service_id: serviceId,
-        business_id: businessId,
-        is_active: enabled,
-      };
+      // Check if a record already exists
+      const { data: existing } = await supabase
+        .from('dentist_services')
+        .select('id')
+        .eq('dentist_id', dentistId)
+        .eq('service_id', serviceId)
+        .maybeSingle();
 
-      const { error } = await supabase
-        .from('dentist_services' as never)
-        .upsert(payload, { onConflict: 'dentist_id,service_id' });
+      let error;
+      if (existing) {
+        // Update existing record
+        ({ error } = await supabase
+          .from('dentist_services')
+          .update({ is_active: enabled, updated_at: new Date().toISOString() })
+          .eq('dentist_id', dentistId)
+          .eq('service_id', serviceId));
+      } else {
+        // Insert new record
+        ({ error } = await supabase
+          .from('dentist_services')
+          .insert({
+            dentist_id: dentistId,
+            service_id: serviceId,
+            business_id: businessId,
+            is_active: enabled,
+          }));
+      }
 
       if (error) throw error;
     } catch (error) {
