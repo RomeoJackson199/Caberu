@@ -12,3 +12,4 @@ export { NotesSection } from './NotesSection';
 export { OutcomesSection } from './OutcomesSection';
 export { PaymentsSection } from './PaymentsSection';
 export { FilesSection } from './FilesSection';
+export { PatientBalanceDetails } from './PatientBalanceDetails';
