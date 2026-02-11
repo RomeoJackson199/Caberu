@@ -102,7 +102,7 @@ export async function withdrawConsent(
 }
 
 /**
- * Check if consent is currently granted for a specific scope.
+ * Check if consent is currently granted and not expired for a specific scope.
  */
 export async function hasConsent(
   patientId: string,
@@ -110,13 +110,28 @@ export async function hasConsent(
 ): Promise<boolean> {
   const { data } = await supabase
     .from('consent_records')
-    .select('id')
+    .select('id, expires_at')
     .eq('patient_id', patientId)
     .eq('scope', scope)
     .eq('status', 'granted')
     .maybeSingle();
 
-  return !!data;
+  if (!data) return false;
+
+  // Check if consent has expired
+  if (data.expires_at) {
+    const expiryDate = new Date(data.expires_at);
+    if (expiryDate < new Date()) {
+      // Auto-expire the consent record
+      await supabase
+        .from('consent_records')
+        .update({ status: 'expired' })
+        .eq('id', data.id);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**

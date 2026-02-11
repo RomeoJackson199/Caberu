@@ -33,6 +33,8 @@ export {
   updateGdprRequestStatus,
   exportPatientData,
   anonymizePatientData,
+  rectifyPatientData,
+  objectToProcessing,
   restrictPatientProcessing,
   type GdprRequestType,
   type GdprRequestStatus,

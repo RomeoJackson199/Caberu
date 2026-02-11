@@ -289,6 +289,123 @@ export async function anonymizePatientData(
 }
 
 /**
+ * Right to Rectification: Update specific patient data fields.
+ * Records what was changed and why for compliance.
+ */
+export async function rectifyPatientData(
+  patientId: string,
+  actorId: string,
+  fieldsToCorrect: Record<string, unknown>,
+  requestId?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Get current data for audit trail
+    const { data: currentData } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('id', patientId)
+      .single();
+
+    // Apply corrections
+    const { error } = await supabase
+      .from('patients')
+      .update(fieldsToCorrect)
+      .eq('id', patientId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await logAuditEvent({
+      actor_id: actorId,
+      action: 'update',
+      entity_type: 'patients',
+      entity_id: patientId,
+      patient_id: patientId,
+      purpose_code: 'gdpr_request',
+      before_data: currentData ?? {},
+      after_data: { corrected_fields: fieldsToCorrect },
+    });
+
+    // Auto-complete the GDPR request if provided
+    if (requestId) {
+      await updateGdprRequestStatus(requestId, 'completed', actorId, 'Data corrected as requested');
+    }
+
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Right to Objection: Record patient's objection to specific processing.
+ * Stops marketing, analytics, or AI processing for the patient.
+ */
+export async function objectToProcessing(
+  patientId: string,
+  actorId: string,
+  processingTypes: string[],
+  reason?: string,
+  requestId?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Withdraw consent for processing types the patient objects to
+    const scopeMap: Record<string, string> = {
+      marketing: 'marketing',
+      analytics: 'analytics',
+      ai_processing: 'ai_intake',
+      notifications: 'notifications',
+    };
+
+    for (const processingType of processingTypes) {
+      const scope = scopeMap[processingType];
+      if (scope) {
+        await supabase
+          .from('consent_records')
+          .update({
+            status: 'withdrawn',
+            withdrawn_at: new Date().toISOString(),
+          })
+          .eq('patient_id', patientId)
+          .eq('scope', scope)
+          .eq('status', 'granted');
+      }
+    }
+
+    // Set data minimization flags
+    await supabase
+      .from('data_minimization_settings')
+      .upsert({
+        patient_id: patientId,
+        auto_delete_old_messages: true,
+        auto_delete_old_images: true,
+        minimal_logging: true,
+      }, { onConflict: 'patient_id' });
+
+    await logAuditEvent({
+      actor_id: actorId,
+      action: 'update',
+      entity_type: 'data_minimization_settings',
+      patient_id: patientId,
+      purpose_code: 'gdpr_request',
+      after_data: { action: 'objection_to_processing', processing_types: processingTypes, reason },
+    });
+
+    // Auto-complete the GDPR request if provided
+    if (requestId) {
+      await updateGdprRequestStatus(requestId, 'completed', actorId, `Objection processed for: ${processingTypes.join(', ')}`);
+    }
+
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, error: message };
+  }
+}
+
+/**
  * Right to Restriction: Flag a patient's data as restricted.
  * Restricted data should not be processed by AI or automated systems.
  */

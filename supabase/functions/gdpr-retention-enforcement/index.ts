@@ -3,12 +3,21 @@
  * Scheduled edge function that runs daily to enforce data retention policies.
  * Deletes or anonymizes data that has exceeded its retention period.
  *
- * Invoke via cron job or manual trigger.
+ * Schedule: Daily at 02:00 CET via pg_cron or external scheduler
  * POST /functions/v1/gdpr-retention-enforcement
  */
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+
+interface RetentionRule {
+  entity_type: string;
+  table_name: string;
+  retention_days: number;
+  action: 'delete' | 'anonymize';
+  date_field: string;
+  filter?: Record<string, string>;
+}
 
 interface RetentionResult {
   entity_type: string;
@@ -16,6 +25,63 @@ interface RetentionResult {
   records_affected: number;
   error?: string;
 }
+
+/**
+ * Retention rules aligned with retentionPolicy.ts configuration.
+ * These must match the frontend config for consistency.
+ */
+const RETENTION_RULES: RetentionRule[] = [
+  {
+    entity_type: 'call_recordings',
+    table_name: 'phone_usage',
+    retention_days: 30,
+    action: 'delete',
+    date_field: 'created_at',
+  },
+  {
+    entity_type: 'ai_transcripts',
+    table_name: 'communication_logs',
+    retention_days: 90,
+    action: 'delete',
+    date_field: 'created_at',
+  },
+  {
+    entity_type: 'chat_messages',
+    table_name: 'messages',
+    retention_days: 90,
+    action: 'delete',
+    date_field: 'created_at',
+  },
+  {
+    entity_type: 'sms_notifications',
+    table_name: 'sms_notifications',
+    retention_days: 90,
+    action: 'delete',
+    date_field: 'created_at',
+  },
+  {
+    entity_type: 'email_logs',
+    table_name: 'email_event_logs',
+    retention_days: 90,
+    action: 'delete',
+    date_field: 'created_at',
+  },
+  {
+    entity_type: 'cancelled_appointments',
+    table_name: 'appointments',
+    retention_days: 30,
+    action: 'delete',
+    date_field: 'updated_at',
+    filter: { status: 'cancelled' },
+  },
+  {
+    entity_type: 'expired_export_bundles',
+    table_name: 'gdpr_export_bundles',
+    retention_days: 7,
+    action: 'delete',
+    date_field: 'created_at',
+  },
+];
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -48,97 +114,77 @@ serve(async (req) => {
     const results: RetentionResult[] = [];
     const now = new Date();
 
-    // 1. Delete old SMS notifications (90 days)
-    const smsDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: smsCount, error: smsError } = await supabase
-      .from('sms_notifications')
-      .delete({ count: 'exact' })
-      .lt('created_at', smsDate);
-    results.push({
-      entity_type: 'sms_notifications',
-      action: 'delete',
-      records_affected: smsCount ?? 0,
-      error: smsError?.message,
-    });
+    // Process each retention rule
+    for (const rule of RETENTION_RULES) {
+      try {
+        const cutoffDate = new Date(now.getTime() - rule.retention_days * 24 * 60 * 60 * 1000).toISOString();
 
-    // 2. Delete old email logs (90 days)
-    const emailDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: emailCount, error: emailError } = await supabase
-      .from('email_event_logs')
-      .delete({ count: 'exact' })
-      .lt('created_at', emailDate);
-    results.push({
-      entity_type: 'email_event_logs',
-      action: 'delete',
-      records_affected: emailCount ?? 0,
-      error: emailError?.message,
-    });
+        let query = supabase
+          .from(rule.table_name)
+          .delete({ count: 'exact' })
+          .lt(rule.date_field, cutoffDate);
 
-    // 3. Delete old messages (90 days)
-    const msgDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: msgCount, error: msgError } = await supabase
-      .from('messages')
-      .delete({ count: 'exact' })
-      .lt('created_at', msgDate);
-    results.push({
-      entity_type: 'messages',
-      action: 'delete',
-      records_affected: msgCount ?? 0,
-      error: msgError?.message,
-    });
+        // Apply additional filters if specified
+        if (rule.filter) {
+          for (const [key, value] of Object.entries(rule.filter)) {
+            query = query.eq(key, value);
+          }
+        }
 
-    // 4. Delete old communication logs (90 days)
-    const commDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: commCount, error: commError } = await supabase
-      .from('communication_logs')
-      .delete({ count: 'exact' })
-      .lt('created_at', commDate);
-    results.push({
-      entity_type: 'communication_logs',
-      action: 'delete',
-      records_affected: commCount ?? 0,
-      error: commError?.message,
-    });
+        const { count, error } = await query;
 
-    // 5. Delete cancelled appointments older than 30 days
-    const cancelDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: cancelCount, error: cancelError } = await supabase
-      .from('appointments')
-      .delete({ count: 'exact' })
-      .eq('status', 'cancelled')
-      .lt('updated_at', cancelDate);
-    results.push({
-      entity_type: 'cancelled_appointments',
-      action: 'delete',
-      records_affected: cancelCount ?? 0,
-      error: cancelError?.message,
-    });
+        results.push({
+          entity_type: rule.entity_type,
+          action: rule.action,
+          records_affected: count ?? 0,
+          error: error?.message,
+        });
+      } catch (ruleError) {
+        const message = ruleError instanceof Error ? ruleError.message : 'Unknown error';
+        results.push({
+          entity_type: rule.entity_type,
+          action: rule.action,
+          records_affected: 0,
+          error: message,
+        });
+      }
+    }
 
-    // 6. Clean up expired GDPR export bundles
-    const { count: exportCount, error: exportError } = await supabase
-      .from('gdpr_export_bundles')
-      .delete({ count: 'exact' })
-      .eq('status', 'expired');
-    results.push({
-      entity_type: 'gdpr_export_bundles',
-      action: 'delete',
-      records_affected: exportCount ?? 0,
-      error: exportError?.message,
-    });
+    // Expire old export bundles (mark as expired, don't delete yet)
+    try {
+      const exportExpireDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: expireCount, error: expireError } = await supabase
+        .from('gdpr_export_bundles')
+        .update({ status: 'expired' })
+        .eq('status', 'completed')
+        .lt('completed_at', exportExpireDate);
+      results.push({
+        entity_type: 'gdpr_export_bundles_expire',
+        action: 'expire',
+        records_affected: expireCount ?? 0,
+        error: expireError?.message,
+      });
+    } catch {
+      // Non-critical: export bundle expiry is best-effort
+    }
 
-    // 7. Expire old export bundles (older than 7 days)
-    const exportExpireDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: expireCount, error: expireError } = await supabase
-      .from('gdpr_export_bundles')
-      .update({ status: 'expired' })
-      .eq('status', 'completed')
-      .lt('completed_at', exportExpireDate);
-    results.push({
-      entity_type: 'gdpr_export_bundles_expire',
-      action: 'expire',
-      records_affected: expireCount ?? 0,
-      error: expireError?.message,
-    });
+    // Expire consent records past their expiry date
+    try {
+      const { count: consentExpireCount, error: consentExpireError } = await supabase
+        .from('consent_records')
+        .update({ status: 'expired' })
+        .eq('status', 'granted')
+        .lt('expires_at', now.toISOString())
+        .not('expires_at', 'is', null);
+      results.push({
+        entity_type: 'expired_consents',
+        action: 'expire',
+        records_affected: consentExpireCount ?? 0,
+        error: consentExpireError?.message,
+      });
+    } catch {
+      // Non-critical: consent expiry is best-effort
+    }
 
     // Log the retention enforcement run
     await supabase.from('gdpr_audit_log').insert({

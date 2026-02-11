@@ -50,32 +50,33 @@ export const MedicalDataConsentDialog = ({
             const expiresAt = new Date();
             expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-            // Insert consent record
-            const { error } = await supabase.from('gdpr_consents').insert({
-                user_id: userId,
-                consent_type: 'medical_data_access',
+            // Insert consent record into the correct table
+            const { error } = await supabase.from('consent_records').insert({
+                patient_id: userId,
+                scope: 'health_data_processing',
                 status: 'granted',
                 granted_at: new Date().toISOString(),
                 expires_at: expiresAt.toISOString(),
-                version: '1.0',
-                consent_text: 'I consent to the processing of my medical and health data for the purpose of dental treatment and care under GDPR Article 9(2)(a).',
+                legal_basis: 'GDPR Article 9(2)(a) - Explicit consent for health data',
+                version: 1,
                 user_agent: navigator.userAgent
             });
 
             if (error) throw error;
 
             // Log consent in audit trail (fire and forget - don't fail if audit log fails)
-            supabase.from('audit_logs').insert({
-                user_id: userId,
-                action: 'GDPR_CONSENT_GRANTED',
-                target_table: 'gdpr_consents',
-                metadata: {
-                    consent_type: 'medical_data_access',
+            supabase.from('gdpr_audit_log').insert({
+                actor_id: userId,
+                action: 'consent_change',
+                entity_type: 'consent_records',
+                patient_id: userId,
+                purpose_code: 'gdpr_request',
+                after_data: {
+                    scope: 'health_data_processing',
                     expires_at: expiresAt.toISOString(),
                     gdpr_article: '9(2)(a)'
                 },
-                created_at: new Date().toISOString()
-            });
+            }).then(() => {/* fire and forget */}).catch(console.error);
 
             toast({
                 title: "Consent Granted",
@@ -216,14 +217,14 @@ export const MedicalDataConsentDialog = ({
 export const checkMedicalDataConsent = async (userId: string): Promise<boolean> => {
     try {
         const { data: consent, error } = await supabase
-            .from('gdpr_consents')
+            .from('consent_records')
             .select('*')
-            .eq('user_id', userId)
-            .eq('consent_type', 'medical_data_access')
+            .eq('patient_id', userId)
+            .eq('scope', 'health_data_processing')
             .eq('status', 'granted')
             .order('granted_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
         if (error || !consent) {
             return false;

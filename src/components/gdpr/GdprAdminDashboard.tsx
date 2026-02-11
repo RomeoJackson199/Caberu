@@ -22,6 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import {
   Shield,
@@ -33,29 +43,47 @@ import {
   AlertCircle,
   Search,
   Eye,
+  Bell,
+  Users,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { usePendingGdprRequests, useUpdateGdprRequestStatus, useExportPatientData } from '@/hooks/useGdprRequests';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getNotificationDeadlineHours, type BreachIncident } from '@/lib/gdpr/breachDetection';
+import { getNotificationDeadlineHours, markAuthorityNotified, markPatientsNotified, updateBreachStatus, type BreachIncident, type BreachStatus } from '@/lib/gdpr/breachDetection';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 interface GdprAdminDashboardProps {
   userId?: string;
 }
 
+const AUDIT_PAGE_SIZE = 20;
+
 export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const userId = userIdProp ?? user?.id ?? '';
   const [auditFilter, setAuditFilter] = useState('');
   const [auditActionFilter, setAuditActionFilter] = useState<string>('all');
+  const [auditPage, setAuditPage] = useState(0);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'export' | 'complete' | 'reject' | 'notify_authority' | 'notify_patients' | 'breach_status';
+    requestId?: string;
+    patientId?: string;
+    incidentId?: string;
+    breachStatus?: BreachStatus;
+    label: string;
+  } | null>(null);
 
   const { data: pendingRequests, isLoading: requestsLoading } = usePendingGdprRequests();
   const { data: auditLogs, isLoading: auditLoading } = useAuditLog({
     action: auditActionFilter !== 'all' ? auditActionFilter : undefined,
-    limit: 50,
+    limit: 100,
   });
   const updateStatusMutation = useUpdateGdprRequestStatus();
   const exportDataMutation = useExportPatientData();
@@ -67,7 +95,7 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
         .from('breach_incidents')
         .select('*')
         .order('discovered_at', { ascending: false })
-        .limit(20);
+        .limit(50);
       return (data ?? []) as BreachIncident[];
     },
   });
@@ -77,16 +105,81 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
     queryFn: async () => {
       const { data: granted } = await supabase
         .from('consent_records')
-        .select('id', { count: 'exact' })
+        .select('id, scope', { count: 'exact' })
         .eq('status', 'granted');
       const { data: withdrawn } = await supabase
         .from('consent_records')
-        .select('id', { count: 'exact' })
+        .select('id, scope', { count: 'exact' })
         .eq('status', 'withdrawn');
+      const { data: expired } = await supabase
+        .from('consent_records')
+        .select('id, scope', { count: 'exact' })
+        .eq('status', 'expired');
+
+      // Group by scope
+      const scopeCounts: Record<string, { granted: number; withdrawn: number; expired: number }> = {};
+      for (const record of granted ?? []) {
+        const scope = (record as { scope: string }).scope;
+        if (!scopeCounts[scope]) scopeCounts[scope] = { granted: 0, withdrawn: 0, expired: 0 };
+        scopeCounts[scope].granted++;
+      }
+      for (const record of withdrawn ?? []) {
+        const scope = (record as { scope: string }).scope;
+        if (!scopeCounts[scope]) scopeCounts[scope] = { granted: 0, withdrawn: 0, expired: 0 };
+        scopeCounts[scope].withdrawn++;
+      }
+      for (const record of expired ?? []) {
+        const scope = (record as { scope: string }).scope;
+        if (!scopeCounts[scope]) scopeCounts[scope] = { granted: 0, withdrawn: 0, expired: 0 };
+        scopeCounts[scope].expired++;
+      }
+
       return {
         granted: granted?.length ?? 0,
         withdrawn: withdrawn?.length ?? 0,
+        expired: expired?.length ?? 0,
+        byScope: scopeCounts,
       };
+    },
+  });
+
+  // Breach management mutations
+  const notifyAuthorityMutation = useMutation({
+    mutationFn: (params: { incidentId: string; actorId: string }) =>
+      markAuthorityNotified(params.incidentId, params.actorId),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast({ title: 'Authority notified', description: 'DPA notification recorded.' });
+        queryClient.invalidateQueries({ queryKey: ['breach-incidents'] });
+      } else {
+        toast({ title: 'Failed', description: result.error, variant: 'destructive' });
+      }
+    },
+  });
+
+  const notifyPatientsMutation = useMutation({
+    mutationFn: (params: { incidentId: string; actorId: string }) =>
+      markPatientsNotified(params.incidentId, params.actorId),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast({ title: 'Patients notified', description: 'Patient notification recorded.' });
+        queryClient.invalidateQueries({ queryKey: ['breach-incidents'] });
+      } else {
+        toast({ title: 'Failed', description: result.error, variant: 'destructive' });
+      }
+    },
+  });
+
+  const updateBreachMutation = useMutation({
+    mutationFn: (params: { incidentId: string; status: BreachStatus; actorId: string }) =>
+      updateBreachStatus(params.incidentId, params.status, params.actorId),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast({ title: 'Breach status updated' });
+        queryClient.invalidateQueries({ queryKey: ['breach-incidents'] });
+      } else {
+        toast({ title: 'Failed', description: result.error, variant: 'destructive' });
+      }
     },
   });
 
@@ -101,14 +194,71 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
     }
   ) ?? [];
 
+  const handleConfirmAction = () => {
+    if (!confirmAction) return;
+    switch (confirmAction.type) {
+      case 'export':
+        if (confirmAction.patientId && confirmAction.requestId) {
+          exportDataMutation.mutate({ patientId: confirmAction.patientId, requestedBy: userId });
+          updateStatusMutation.mutate({
+            requestId: confirmAction.requestId,
+            status: 'completed',
+            actorId: userId,
+            resolutionNotes: 'Data exported and provided to patient',
+          });
+        }
+        break;
+      case 'complete':
+        if (confirmAction.requestId) {
+          updateStatusMutation.mutate({
+            requestId: confirmAction.requestId,
+            status: 'completed',
+            actorId: userId,
+            resolutionNotes: 'Completed',
+          });
+        }
+        break;
+      case 'reject':
+        if (confirmAction.requestId) {
+          updateStatusMutation.mutate({
+            requestId: confirmAction.requestId,
+            status: 'rejected',
+            actorId: userId,
+            resolutionNotes: 'Rejected by admin',
+          });
+        }
+        break;
+      case 'notify_authority':
+        if (confirmAction.incidentId) {
+          notifyAuthorityMutation.mutate({ incidentId: confirmAction.incidentId, actorId: userId });
+        }
+        break;
+      case 'notify_patients':
+        if (confirmAction.incidentId) {
+          notifyPatientsMutation.mutate({ incidentId: confirmAction.incidentId, actorId: userId });
+        }
+        break;
+      case 'breach_status':
+        if (confirmAction.incidentId && confirmAction.breachStatus) {
+          updateBreachMutation.mutate({
+            incidentId: confirmAction.incidentId,
+            status: confirmAction.breachStatus,
+            actorId: userId,
+          });
+        }
+        break;
+    }
+    setConfirmAction(null);
+  };
+
   const getRequestTypeBadge = (type: string) => {
     const colors: Record<string, string> = {
-      access: 'bg-blue-50 text-blue-700',
-      erasure: 'bg-red-50 text-red-700',
-      rectification: 'bg-orange-50 text-orange-700',
-      restriction: 'bg-yellow-50 text-yellow-700',
-      portability: 'bg-green-50 text-green-700',
-      objection: 'bg-purple-50 text-purple-700',
+      access: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+      erasure: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+      rectification: 'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+      restriction: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+      portability: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+      objection: 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
     };
     return <Badge variant="outline" className={colors[type] ?? ''}>{type}</Badge>;
   };
@@ -123,8 +273,41 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
     return <Badge className={colors[severity] ?? ''}>{severity}</Badge>;
   };
 
+  // Paginated audit logs
+  const filteredLogs = (auditLogs ?? []).filter((log) =>
+    !auditFilter ||
+    log.entity_type?.toLowerCase().includes(auditFilter.toLowerCase()) ||
+    log.patient_id?.includes(auditFilter)
+  );
+  const paginatedLogs = filteredLogs.slice(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE);
+  const totalAuditPages = Math.ceil(filteredLogs.length / AUDIT_PAGE_SIZE);
+
+  const SCOPE_LABELS: Record<string, string> = {
+    health_data_processing: 'Health Data',
+    ai_intake: 'AI Intake',
+    notifications: 'Notifications',
+    marketing: 'Marketing',
+    analytics: 'Analytics',
+  };
+
   return (
     <div className="space-y-6">
+      {/* Confirmation Dialog */}
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.label}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAction}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Shield className="h-6 w-6 text-blue-600" />
@@ -177,17 +360,17 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
 
       {/* Urgent Alerts */}
       {(overdue.length > 0 || urgentRequests.length > 0) && (
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-5 w-5 text-orange-600" />
-              <span className="font-semibold text-orange-800">Attention Required</span>
+              <span className="font-semibold text-orange-800 dark:text-orange-200">Attention Required</span>
             </div>
             {overdue.length > 0 && (
-              <p className="text-sm text-orange-700">{overdue.length} request(s) are past the 30-day GDPR deadline</p>
+              <p className="text-sm text-orange-700 dark:text-orange-300">{overdue.length} request(s) are past the 30-day GDPR deadline</p>
             )}
             {urgentRequests.length > 0 && (
-              <p className="text-sm text-orange-700">{urgentRequests.length} request(s) due within 7 days</p>
+              <p className="text-sm text-orange-700 dark:text-orange-300">{urgentRequests.length} request(s) due within 7 days</p>
             )}
           </CardContent>
         </Card>
@@ -226,6 +409,7 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type</TableHead>
+                      <TableHead>Description</TableHead>
                       <TableHead>Submitted</TableHead>
                       <TableHead>Due</TableHead>
                       <TableHead>Status</TableHead>
@@ -236,8 +420,11 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
                     {pendingRequests.map((request) => {
                       const isOverdue = new Date(request.due_at) < new Date();
                       return (
-                        <TableRow key={request.id} className={isOverdue ? 'bg-red-50' : ''}>
+                        <TableRow key={request.id} className={isOverdue ? 'bg-red-50 dark:bg-red-950/30' : ''}>
                           <TableCell>{getRequestTypeBadge(request.type)}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-48 truncate">
+                            {request.description || '-'}
+                          </TableCell>
                           <TableCell className="text-sm">
                             {formatDistanceToNow(new Date(request.submitted_at), { addSuffix: true })}
                           </TableCell>
@@ -248,45 +435,54 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
                           <TableCell>
                             <Badge variant="outline">{request.status}</Badge>
                           </TableCell>
-                          <TableCell className="space-x-2">
-                            {request.type === 'access' || request.type === 'portability' ? (
+                          <TableCell className="space-x-1">
+                            {(request.type === 'access' || request.type === 'portability') && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  exportDataMutation.mutate({ patientId: request.patient_id, requestedBy: userId });
-                                  updateStatusMutation.mutate({
-                                    requestId: request.id,
-                                    status: 'completed',
-                                    actorId: userId,
-                                    resolutionNotes: 'Data exported and provided to patient',
-                                  });
-                                }}
+                                onClick={() => setConfirmAction({
+                                  type: 'export',
+                                  requestId: request.id,
+                                  patientId: request.patient_id,
+                                  label: `Export and deliver patient data for ${request.type} request? This will mark the request as completed.`,
+                                })}
                               >
                                 <Download className="h-3 w-3 mr-1" />Export
                               </Button>
-                            ) : null}
+                            )}
+                            {request.status === 'submitted' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateStatusMutation.mutate({
+                                  requestId: request.id,
+                                  status: 'in_progress',
+                                  actorId: userId,
+                                })}
+                              >
+                                Start
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => updateStatusMutation.mutate({
+                              onClick={() => setConfirmAction({
+                                type: 'complete',
                                 requestId: request.id,
-                                status: 'in_progress',
-                                actorId: userId,
-                              })}
-                            >
-                              Start
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => updateStatusMutation.mutate({
-                                requestId: request.id,
-                                status: 'completed',
-                                actorId: userId,
-                                resolutionNotes: 'Completed',
+                                label: `Mark this ${request.type} request as completed?`,
                               })}
                             >
                               Complete
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setConfirmAction({
+                                type: 'reject',
+                                requestId: request.id,
+                                label: `Reject this ${request.type} request? You must provide justification per GDPR Article 12(4).`,
+                              })}
+                            >
+                              Reject
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -314,10 +510,10 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
                     placeholder="Filter by entity or patient..."
                     className="pl-9"
                     value={auditFilter}
-                    onChange={(e) => setAuditFilter(e.target.value)}
+                    onChange={(e) => { setAuditFilter(e.target.value); setAuditPage(0); }}
                   />
                 </div>
-                <Select value={auditActionFilter} onValueChange={setAuditActionFilter}>
+                <Select value={auditActionFilter} onValueChange={(v) => { setAuditActionFilter(v); setAuditPage(0); }}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Action" />
                   </SelectTrigger>
@@ -330,13 +526,14 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
                     <SelectItem value="export">Export</SelectItem>
                     <SelectItem value="login">Login</SelectItem>
                     <SelectItem value="consent_change">Consent Change</SelectItem>
+                    <SelectItem value="gdpr_request">GDPR Request</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {auditLoading ? (
                 <p className="text-sm text-muted-foreground py-4">Loading...</p>
               ) : (
-                <div className="max-h-96 overflow-y-auto">
+                <>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -344,30 +541,53 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
                         <TableHead>Action</TableHead>
                         <TableHead>Entity</TableHead>
                         <TableHead>Purpose</TableHead>
+                        <TableHead>Actor</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(auditLogs ?? [])
-                        .filter((log) =>
-                          !auditFilter ||
-                          log.entity_type?.toLowerCase().includes(auditFilter.toLowerCase()) ||
-                          log.patient_id?.includes(auditFilter)
-                        )
-                        .map((log) => (
-                          <TableRow key={log.id}>
-                            <TableCell className="text-xs">
-                              {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-xs">{log.action}</Badge>
-                            </TableCell>
-                            <TableCell className="text-sm">{log.entity_type ?? '-'}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">{log.purpose_code ?? '-'}</TableCell>
-                          </TableRow>
-                        ))}
+                      {paginatedLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-xs">
+                            {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{log.action}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{log.entity_type ?? '-'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{log.purpose_code ?? '-'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground font-mono">
+                            {log.actor_id ? log.actor_id.substring(0, 8) + '...' : 'system'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
-                </div>
+                  {totalAuditPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                      <span className="text-xs text-muted-foreground">
+                        Page {auditPage + 1} of {totalAuditPages} ({filteredLogs.length} entries)
+                      </span>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAuditPage(p => Math.max(0, p - 1))}
+                          disabled={auditPage === 0}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAuditPage(p => Math.min(totalAuditPages - 1, p + 1))}
+                          disabled={auditPage >= totalAuditPages - 1}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -387,43 +607,125 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
                   <p className="text-sm text-muted-foreground">No breach incidents recorded</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Incident</TableHead>
-                      <TableHead>Severity</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Discovered</TableHead>
-                      <TableHead>72h Deadline</TableHead>
-                      <TableHead>DPA Notified</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {breachIncidents.map((incident) => {
-                      const hoursLeft = getNotificationDeadlineHours(incident.discovered_at);
-                      return (
-                        <TableRow key={incident.id}>
-                          <TableCell className="font-medium text-sm">{incident.title}</TableCell>
-                          <TableCell>{getSeverityBadge(incident.severity)}</TableCell>
-                          <TableCell><Badge variant="outline">{incident.status}</Badge></TableCell>
-                          <TableCell className="text-xs">
-                            {formatDistanceToNow(new Date(incident.discovered_at), { addSuffix: true })}
-                          </TableCell>
-                          <TableCell className={`text-xs ${hoursLeft < 12 ? 'text-red-600 font-bold' : ''}`}>
-                            {incident.authority_notified_at ? 'Done' : `${hoursLeft.toFixed(1)}h left`}
-                          </TableCell>
-                          <TableCell>
-                            {incident.authority_notified_at ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-orange-600" />
+                <div className="space-y-4">
+                  {breachIncidents.map((incident) => {
+                    const hoursLeft = getNotificationDeadlineHours(incident.discovered_at);
+                    const isUrgent = hoursLeft < 12 && !incident.authority_notified_at;
+                    return (
+                      <Card key={incident.id} className={`${isUrgent ? 'border-red-300 bg-red-50/50 dark:bg-red-950/20' : ''}`}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-sm">{incident.title}</h4>
+                                {getSeverityBadge(incident.severity)}
+                                <Badge variant="outline">{incident.status}</Badge>
+                              </div>
+                              {incident.description && (
+                                <p className="text-xs text-muted-foreground mb-2">{incident.description}</p>
+                              )}
+                              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                <span>Discovered {formatDistanceToNow(new Date(incident.discovered_at), { addSuffix: true })}</span>
+                                <span>Records affected: {incident.affected_records_count}</span>
+                                <span className={isUrgent ? 'text-red-600 font-bold' : ''}>
+                                  72h deadline: {incident.authority_notified_at ? 'Met' : `${hoursLeft.toFixed(1)}h left`}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+                            {/* Status progression */}
+                            {incident.status === 'reported' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConfirmAction({
+                                  type: 'breach_status',
+                                  incidentId: incident.id,
+                                  breachStatus: 'investigating',
+                                  label: 'Start investigating this breach incident?',
+                                })}
+                              >
+                                Start Investigation
+                              </Button>
                             )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                            {incident.status === 'investigating' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConfirmAction({
+                                  type: 'breach_status',
+                                  incidentId: incident.id,
+                                  breachStatus: 'contained',
+                                  label: 'Mark this breach as contained?',
+                                })}
+                              >
+                                Mark Contained
+                              </Button>
+                            )}
+                            {incident.status === 'contained' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConfirmAction({
+                                  type: 'breach_status',
+                                  incidentId: incident.id,
+                                  breachStatus: 'resolved',
+                                  label: 'Mark this breach as resolved?',
+                                })}
+                              >
+                                Mark Resolved
+                              </Button>
+                            )}
+
+                            {/* DPA Notification */}
+                            {!incident.authority_notified_at && (
+                              <Button
+                                size="sm"
+                                variant={isUrgent ? 'destructive' : 'outline'}
+                                onClick={() => setConfirmAction({
+                                  type: 'notify_authority',
+                                  incidentId: incident.id,
+                                  label: 'Record that the Belgian Data Protection Authority (APD/GBA) has been notified about this breach?',
+                                })}
+                              >
+                                <Bell className="h-3 w-3 mr-1" />
+                                {isUrgent ? 'URGENT: Notify DPA' : 'Record DPA Notification'}
+                              </Button>
+                            )}
+                            {incident.authority_notified_at && (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />DPA Notified
+                              </Badge>
+                            )}
+
+                            {/* Patient Notification */}
+                            {!incident.patients_notified_at && incident.severity !== 'low' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConfirmAction({
+                                  type: 'notify_patients',
+                                  incidentId: incident.id,
+                                  label: 'Record that affected patients have been notified about this breach?',
+                                })}
+                              >
+                                <Users className="h-3 w-3 mr-1" />Record Patient Notification
+                              </Button>
+                            )}
+                            {incident.patients_notified_at && (
+                              <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />Patients Notified
+                              </Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -434,25 +736,69 @@ export function GdprAdminDashboard({ userId: userIdProp }: GdprAdminDashboardPro
           <Card>
             <CardHeader>
               <CardTitle>Consent Overview</CardTitle>
-              <CardDescription>Summary of patient consent records</CardDescription>
+              <CardDescription>Summary of patient consent records across all scopes</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-3 gap-4 mb-6">
                 <Card>
                   <CardContent className="p-4 text-center">
                     <p className="text-3xl font-bold text-green-600">{consentStats?.granted ?? 0}</p>
-                    <p className="text-sm text-muted-foreground">Active Consents</p>
+                    <p className="text-sm text-muted-foreground">Active</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
                     <p className="text-3xl font-bold text-orange-600">{consentStats?.withdrawn ?? 0}</p>
-                    <p className="text-sm text-muted-foreground">Withdrawn Consents</p>
+                    <p className="text-sm text-muted-foreground">Withdrawn</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-3xl font-bold text-gray-400">{consentStats?.expired ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Expired</p>
                   </CardContent>
                 </Card>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Consent records are managed per-patient. View individual patient profiles to manage specific consent preferences.
+
+              {/* Per-scope breakdown */}
+              {consentStats?.byScope && Object.keys(consentStats.byScope).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-3">Breakdown by Scope</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Scope</TableHead>
+                        <TableHead className="text-center">Active</TableHead>
+                        <TableHead className="text-center">Withdrawn</TableHead>
+                        <TableHead className="text-center">Expired</TableHead>
+                        <TableHead className="text-center">Consent Rate</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(consentStats.byScope).map(([scope, counts]) => {
+                        const total = counts.granted + counts.withdrawn + counts.expired;
+                        const rate = total > 0 ? Math.round((counts.granted / total) * 100) : 0;
+                        return (
+                          <TableRow key={scope}>
+                            <TableCell className="font-medium text-sm">{SCOPE_LABELS[scope] ?? scope}</TableCell>
+                            <TableCell className="text-center text-green-600">{counts.granted}</TableCell>
+                            <TableCell className="text-center text-orange-600">{counts.withdrawn}</TableCell>
+                            <TableCell className="text-center text-gray-400">{counts.expired}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant={rate > 70 ? 'default' : rate > 40 ? 'secondary' : 'destructive'}>
+                                {rate}%
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground mt-4">
+                View individual patient profiles to manage specific consent preferences. Consent records are immutable for audit purposes.
               </p>
             </CardContent>
           </Card>
