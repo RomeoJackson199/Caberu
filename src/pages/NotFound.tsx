@@ -49,7 +49,7 @@ const NotFound = () => {
     {
       icon: Calendar,
       label: "Appointments",
-      path: userRole === "patient" ? "/care/appointments" : "/dentist/appointments",
+      path: userRole === "patient" ? "/dashboard" : "/dentist/appointments",
       description: "View or manage appointments",
       show: !!userRole
     },

@@ -108,9 +108,6 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
           }
         }
       },
-      { id: 'care-appointments', label: t.pnav.care.appointments, icon: <Calendar className="h-4 w-4" />, to: '/care/appointments', badge: counts.upcoming7d },
-      { id: 'care-prescriptions', label: t.pnav.care.prescriptions, icon: <Pill className="h-4 w-4" />, to: '/care/prescriptions' },
-      { id: 'care-history', label: t.pnav.care.history, icon: <FileText className="h-4 w-4" />, to: '/care/history' },
     ];
 
     const allGroups: NavGroup[] = [
@@ -146,7 +143,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
     ];
 
     return allGroups;
-  }, [t, counts.upcoming7d, counts.unpaid, location.pathname, navigate]);
+  }, [t, counts.unpaid, location.pathname, navigate]);
 
   // Deep link behavior: /billing?status=unpaid expands Billing
   useEffect(() => {
@@ -365,7 +362,7 @@ function PatientPortalNavContent({ children }: { children: React.ReactNode }) {
               <Home className="h-5 w-5" />
               <span className="text-xs">{t.pnav.care.home}</span>
             </NavLink>
-            <NavLink to="/care/appointments" onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center relative", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label={t.pnav.care.appointments}>
+            <NavLink to="/dashboard" onClick={haptic} className={({ isActive }) => cn("py-2 flex flex-col items-center relative", isActive ? 'text-primary' : 'text-muted-foreground')} aria-label={t.pnav.care.appointments}>
               <div className="relative">
                 <Calendar className="h-5 w-5" />
                 {counts.upcoming7d > 0 && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 rounded-full" />}

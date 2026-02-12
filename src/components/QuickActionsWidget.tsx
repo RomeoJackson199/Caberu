@@ -70,7 +70,7 @@ const defaultQuickActions: QuickAction[] = [
     id: 'prescriptions',
     label: 'Prescriptions',
     icon: Pill,
-    href: '/care/prescriptions',
+    href: '/dashboard',
     description: 'View your prescriptions',
   },
   {

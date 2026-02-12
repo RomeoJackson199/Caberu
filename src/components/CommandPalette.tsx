@@ -104,7 +104,7 @@ export function CommandPalette() {
       icon: Calendar,
       action: () =>
         navigate(
-          userRole === "patient" ? "/care/appointments" : "/dentist/appointments"
+          userRole === "patient" ? "/dashboard" : "/dentist/appointments"
         ),
       keywords: ["appointments", "calendar", "schedule", "bookings"],
       group: "Navigation",
@@ -133,7 +133,7 @@ export function CommandPalette() {
           id: "nav-prescriptions",
           label: "View Prescriptions",
           icon: Pill,
-          action: () => navigate("/care/prescriptions"),
+          action: () => navigate("/dashboard"),
           keywords: ["prescriptions", "medications", "drugs"],
           group: "Medical",
         },
@@ -141,7 +141,7 @@ export function CommandPalette() {
           id: "nav-history",
           label: "View Treatment History",
           icon: FileBarChart,
-          action: () => navigate("/care/history"),
+          action: () => navigate("/dashboard"),
           keywords: ["history", "treatments", "records"],
           group: "Medical",
         },
