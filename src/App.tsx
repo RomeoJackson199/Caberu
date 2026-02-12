@@ -108,6 +108,19 @@ const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
 const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
 
+// Admin Dashboard pages
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
+const AdminPractices = lazy(() => import("./pages/admin/AdminPractices"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminAppointments = lazy(() => import("./pages/admin/AdminAppointments"));
+const AdminCommunications = lazy(() => import("./pages/admin/AdminCommunications"));
+const AdminSystemHealth = lazy(() => import("./pages/admin/AdminSystemHealth"));
+const AdminCompliance = lazy(() => import("./pages/admin/AdminCompliance"));
+const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
+const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
+const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
+
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -452,7 +465,20 @@ const App = () => {
                         <Route path="/faq" element={<FAQ />} />
                         <Route path="/ai-info" element={<AIInfo />} />
                         <Route path="/google-calendar-callback" element={<GoogleCalendarCallback />} />
-                        {/* Super Admin Dashboard - Protected */}
+                        {/* Super Admin Dashboard (new routed version) */}
+                        <Route path="/admin" element={<RoleBasedRouter requiredRole='admin'><AdminLayout /></RoleBasedRouter>}>
+                          <Route index element={<AdminOverview />} />
+                          <Route path="practices" element={<AdminPractices />} />
+                          <Route path="users" element={<AdminUsers />} />
+                          <Route path="appointments" element={<AdminAppointments />} />
+                          <Route path="communications" element={<AdminCommunications />} />
+                          <Route path="system" element={<AdminSystemHealth />} />
+                          <Route path="compliance" element={<AdminCompliance />} />
+                          <Route path="features" element={<AdminFeatureFlags />} />
+                          <Route path="revenue" element={<AdminRevenue />} />
+                          <Route path="audit" element={<AdminAuditLog />} />
+                        </Route>
+                        {/* Super Admin Dashboard (legacy tab-based version) - Protected */}
                         <Route path="/super-admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
                         {/* Main booking route */}
                         <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
