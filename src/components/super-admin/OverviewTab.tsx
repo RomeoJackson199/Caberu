@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSystemStats } from '@/hooks/useSuperAdmin';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { DiagnosticsCard } from './DiagnosticsCard';
@@ -14,92 +14,87 @@ import {
   AlertTriangle,
   TrendingUp,
   Activity,
-  Shield,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function OverviewTab() {
   const { data: stats, isLoading } = useSystemStats();
 
   const statCards = [
     {
-      title: 'Total Businesses',
+      title: 'Businesses',
       value: stats?.total_businesses || 0,
-      description: `${stats?.active_businesses || 0} active`,
+      sub: `${stats?.active_businesses || 0} active`,
       icon: Building2,
       color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
+      bg: 'bg-blue-500/10',
     },
     {
-      title: 'Total Users',
+      title: 'Users',
       value: stats?.total_users || 0,
-      description: `+${stats?.users_joined_this_month || 0} this month`,
+      sub: `+${stats?.users_joined_this_month || 0} this month`,
       icon: Users,
       color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
+      bg: 'bg-green-500/10',
     },
     {
-      title: 'Total Appointments',
+      title: 'Appointments',
       value: stats?.total_appointments || 0,
-      description: `${stats?.appointments_today || 0} today`,
+      sub: `${stats?.appointments_today || 0} today`,
       icon: Calendar,
       color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
+      bg: 'bg-purple-500/10',
     },
     {
-      title: 'System Errors',
+      title: 'Errors',
       value: stats?.unresolved_errors || 0,
-      description: `${stats?.critical_errors || 0} critical`,
+      sub: `${stats?.critical_errors || 0} critical`,
       icon: AlertTriangle,
       color: 'text-red-500',
-      bgColor: 'bg-red-500/10',
+      bg: 'bg-red-500/10',
     },
     {
-      title: 'Monthly Growth',
+      title: 'Growth',
       value: stats?.businesses_created_this_month || 0,
-      description: 'New businesses',
+      sub: 'New businesses',
       icon: TrendingUp,
       color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
+      bg: 'bg-orange-500/10',
     },
     {
-      title: 'System Health',
+      title: 'Health',
       value: stats?.critical_errors === 0 ? 'Good' : 'Issues',
-      description: stats?.critical_errors === 0 ? 'All systems operational' : 'Attention needed',
+      sub: stats?.critical_errors === 0 ? 'All systems operational' : 'Attention needed',
       icon: Activity,
       color: stats?.critical_errors === 0 ? 'text-green-500' : 'text-yellow-500',
-      bgColor: stats?.critical_errors === 0 ? 'bg-green-500/10' : 'bg-yellow-500/10',
+      bg: stats?.critical_errors === 0 ? 'bg-green-500/10' : 'bg-yellow-500/10',
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">System Overview</h2>
-        <p className="text-muted-foreground">
-          Real-time statistics and platform health metrics
-        </p>
-      </div>
-
       {/* Stats Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <LoadingSpinner />
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Card key={index}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                    <Icon className={`h-4 w-4 ${stat.color}`} />
+              <Card key={index} className="overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                  <CardTitle className="text-xs font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <div className={cn('p-1.5 rounded-md', stat.bg)}>
+                    <Icon className={cn('h-3.5 w-3.5', stat.color)} />
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 pt-0">
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{stat.sub}</p>
                 </CardContent>
               </Card>
             );
@@ -107,98 +102,24 @@ export function OverviewTab() {
         </div>
       )}
 
-      {/* Diagnostics */}
-      <DiagnosticsCard />
+      {/* Quick Actions + Diagnostics */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <QuickActionsCard />
+        <div className="lg:col-span-2">
+          <DiagnosticsCard />
+        </div>
+      </div>
 
-      {/* Voice AI & Edge Functions */}
+      {/* Live Monitoring + Database */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <LiveMonitoringCard />
+        <DatabaseInsightsCard />
+      </div>
+
+      {/* Voice AI + Edge Functions */}
       <div className="grid gap-4 lg:grid-cols-2">
         <VoiceAIStatusCard />
         <EdgeFunctionTestPanel />
-      </div>
-
-      {/* Database Insights & Live Monitoring */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <DatabaseInsightsCard />
-        <LiveMonitoringCard />
-      </div>
-
-      {/* Admin Actions and Quick Navigation */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Quick Actions */}
-        <QuickActionsCard />
-
-        {/* Quick Navigation */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-purple-500" />
-              Quick Navigation
-            </CardTitle>
-            <CardDescription>
-              Jump to administrative sections
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 grid-cols-2">
-              <a
-                href="#businesses"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('[value="businesses"]')?.dispatchEvent(new Event('click', { bubbles: true }));
-                }}
-                className="p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer"
-              >
-                <Building2 className="h-5 w-5 mb-2 text-blue-500" />
-                <h3 className="font-semibold text-sm">Businesses</h3>
-                <p className="text-xs text-muted-foreground">
-                  View & create
-                </p>
-              </a>
-              <a
-                href="#users"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('[value="users"]')?.dispatchEvent(new Event('click', { bubbles: true }));
-                }}
-                className="p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer"
-              >
-                <Users className="h-5 w-5 mb-2 text-green-500" />
-                <h3 className="font-semibold text-sm">Users</h3>
-                <p className="text-xs text-muted-foreground">
-                  Search & view
-                </p>
-              </a>
-              <a
-                href="#errors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('[value="errors"]')?.dispatchEvent(new Event('click', { bubbles: true }));
-                }}
-                className="p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer"
-              >
-                <AlertTriangle className="h-5 w-5 mb-2 text-red-500" />
-                <h3 className="font-semibold text-sm">Errors</h3>
-                <p className="text-xs text-muted-foreground">
-                  Monitor issues
-                </p>
-              </a>
-              <a
-                href="#audit"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('[value="audit"]')?.dispatchEvent(new Event('click', { bubbles: true }));
-                }}
-                className="p-4 border rounded-lg hover:bg-accent transition-colors cursor-pointer"
-              >
-                <Shield className="h-5 w-5 mb-2 text-purple-500" />
-                <h3 className="font-semibold text-sm">Audit Logs</h3>
-                <p className="text-xs text-muted-foreground">
-                  Track actions
-                </p>
-              </a>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -36,7 +36,7 @@ export function ErrorsTab() {
   const handleCreateTestError = async () => {
     const severities: Array<'low' | 'medium' | 'high' | 'critical'> = ['low', 'medium', 'high', 'critical'];
     const randomSeverity = severities[Math.floor(Math.random() * severities.length)];
-    
+
     await reportError({
       error_type: 'TestError',
       error_message: `Test error created at ${new Date().toLocaleTimeString()}`,
@@ -50,7 +50,6 @@ export function ErrorsTab() {
       description: 'A sample error has been logged to the system',
     });
 
-    // Refetch errors after a short delay
     setTimeout(() => refetch(), 500);
   };
 
@@ -76,38 +75,37 @@ export function ErrorsTab() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Error Tracking</h2>
-        <p className="text-muted-foreground">
-          Monitor and resolve system errors and exceptions
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold">Error Tracking</h2>
+          <p className="text-sm text-muted-foreground">
+            Monitor and resolve system errors
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCreateTestError}
+            className="gap-2"
+          >
+            <TestTube className="h-4 w-4" />
+            <span className="hidden sm:inline">Create Test Error</span>
+            <span className="sm:hidden">Test</span>
+          </Button>
+          <Tabs value={showResolved ? 'all' : 'unresolved'} onValueChange={(v) => setShowResolved(v === 'all')}>
+            <TabsList>
+              <TabsTrigger value="unresolved">Unresolved</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>System Errors ({errors?.length || 0})</CardTitle>
-              <CardDescription>Track bugs and exceptions</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCreateTestError}
-                className="gap-2"
-              >
-                <TestTube className="h-4 w-4" />
-                Create Test Error
-              </Button>
-              <Tabs value={showResolved ? 'all' : 'unresolved'} onValueChange={(v) => setShowResolved(v === 'all')}>
-                <TabsList>
-                  <TabsTrigger value="unresolved">Unresolved</TabsTrigger>
-                  <TabsTrigger value="all">All</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">System Errors ({errors?.length || 0})</CardTitle>
+          <CardDescription>Track bugs and exceptions</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -115,94 +113,145 @@ export function ErrorsTab() {
               <LoadingSpinner />
             </div>
           ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Error</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Business</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Occurred</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {errors && errors.length > 0 ? (
-                    errors.map((error) => (
-                      <TableRow key={error.id} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell onClick={() => setSelectedError(error)}>
-                          <div className="max-w-md">
-                            <div className="font-medium truncate">{error.error_message}</div>
-                            {error.url && (
-                              <div className="text-xs text-muted-foreground truncate">
-                                {error.url}
-                              </div>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Error</TableHead>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Occurred</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {errors && errors.length > 0 ? (
+                      errors.map((error) => (
+                        <TableRow key={error.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell onClick={() => setSelectedError(error)}>
+                            <div className="max-w-md">
+                              <div className="font-medium truncate">{error.error_message}</div>
+                              {error.url && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {error.url}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getSeverityColor(error.severity)}>
+                              {error.severity}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs bg-muted px-2 py-1 rounded">
+                              {error.error_type}
+                            </code>
+                          </TableCell>
+                          <TableCell>
+                            {error.resolved ? (
+                              <Badge variant="outline" className="gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Resolved
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                Active
+                              </Badge>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              {formatDistanceToNow(new Date(error.created_at), {
+                                addSuffix: true,
+                              })}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedError(error)}
+                            >
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="text-muted-foreground">
+                            {showResolved ? 'No errors found' : 'No unresolved errors'}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge className={getSeverityColor(error.severity)}>
-                            {error.severity}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <code className="text-xs bg-muted px-2 py-1 rounded">
-                            {error.error_type}
-                          </code>
-                        </TableCell>
-                        <TableCell>
-                          {error.business_id ? (
-                            <span className="text-sm">{error.business_id.slice(0, 8)}...</span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {errors && errors.length > 0 ? (
+                  errors.map((error) => (
+                    <Card
+                      key={error.id}
+                      className="overflow-hidden cursor-pointer"
+                      onClick={() => setSelectedError(error)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm truncate">{error.error_message}</p>
+                            {error.url && (
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                {error.url}
+                              </p>
+                            )}
+                          </div>
                           {error.resolved ? (
-                            <Badge variant="outline" className="gap-1">
+                            <Badge variant="outline" className="gap-1 shrink-0 text-xs">
                               <CheckCircle2 className="h-3 w-3" />
                               Resolved
                             </Badge>
                           ) : (
-                            <Badge variant="destructive" className="gap-1">
+                            <Badge variant="destructive" className="gap-1 shrink-0 text-xs">
                               <AlertCircle className="h-3 w-3" />
                               Active
                             </Badge>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge className={`${getSeverityColor(error.severity)} text-xs`}>
+                              {error.severity}
+                            </Badge>
+                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                              {error.error_type}
+                            </code>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(error.created_at), {
                               addSuffix: true,
                             })}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedError(error)}
-                          >
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        <div className="text-muted-foreground">
-                          {showResolved ? 'No errors found' : 'No unresolved errors'}
+                          </span>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {showResolved ? 'No errors found' : 'No unresolved errors'}
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

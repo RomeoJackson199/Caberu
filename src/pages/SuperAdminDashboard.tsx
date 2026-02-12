@@ -1,13 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useIsSuperAdmin } from '@/hooks/useSuperAdmin';
-import { Shield, AlertCircle, LogOut, Bot } from 'lucide-react';
+import {
+  Shield,
+  AlertCircle,
+  LogOut,
+  LayoutDashboard,
+  Building2,
+  Users,
+  Bot,
+  AlertTriangle,
+  FlaskConical,
+  Mail,
+  ScrollText,
+  ShieldCheck,
+  FileText,
+  Menu,
+  X,
+} from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 // Import tab components
 import { OverviewTab } from '@/components/super-admin/OverviewTab';
@@ -21,10 +40,108 @@ import { GdprAdminDashboard } from '@/components/gdpr/GdprAdminDashboard';
 import { DocumentationTab } from '@/components/super-admin/DocumentationTab';
 import { AIPromptsTab } from '@/components/super-admin/AIPromptsTab';
 
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  section: 'main' | 'system' | 'tools';
+}
+
+const navItems: NavItem[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, section: 'main' },
+  { id: 'businesses', label: 'Businesses', icon: Building2, section: 'main' },
+  { id: 'users', label: 'Users', icon: Users, section: 'main' },
+  { id: 'errors', label: 'Errors', icon: AlertTriangle, section: 'system' },
+  { id: 'audit', label: 'Audit Logs', icon: ScrollText, section: 'system' },
+  { id: 'tests', label: 'Tests', icon: FlaskConical, section: 'system' },
+  { id: 'ai-prompts', label: 'AI Prompts', icon: Bot, section: 'tools' },
+  { id: 'email', label: 'Email Test', icon: Mail, section: 'tools' },
+  { id: 'gdpr', label: 'GDPR', icon: ShieldCheck, section: 'tools' },
+  { id: 'docs', label: 'Docs', icon: FileText, section: 'tools' },
+];
+
+const sectionLabels: Record<string, string> = {
+  main: 'Main',
+  system: 'System',
+  tools: 'Tools',
+};
+
+function NavContent({
+  activeTab,
+  onSelect,
+}: {
+  activeTab: string;
+  onSelect: (id: string) => void;
+}) {
+  const sections = ['main', 'system', 'tools'] as const;
+
+  return (
+    <div className="flex flex-col gap-1 p-2">
+      {sections.map((section, sIdx) => (
+        <div key={section}>
+          {sIdx > 0 && <Separator className="my-2" />}
+          <p className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {sectionLabels[section]}
+          </p>
+          {navItems
+            .filter((item) => item.section === section)
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSelect(item.id)}
+                  className={cn(
+                    'flex items-center gap-3 w-full rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </button>
+              );
+            })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TabContent({ activeTab }: { activeTab: string }) {
+  switch (activeTab) {
+    case 'overview':
+      return <OverviewTab />;
+    case 'businesses':
+      return <BusinessesTab />;
+    case 'users':
+      return <UsersTab />;
+    case 'ai-prompts':
+      return <AIPromptsTab />;
+    case 'errors':
+      return <ErrorsTab />;
+    case 'tests':
+      return <TestStatusTab />;
+    case 'email':
+      return <EmailTestTab />;
+    case 'audit':
+      return <AuditLogsTab />;
+    case 'gdpr':
+      return <GdprAdminDashboard />;
+    case 'docs':
+      return <DocumentationTab />;
+    default:
+      return <OverviewTab />;
+  }
+}
+
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
   const { data: isSuperAdmin, isLoading, error } = useIsSuperAdmin();
   const [activeTab, setActiveTab] = useState('overview');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -35,14 +152,19 @@ export default function SuperAdminDashboard() {
         description: 'You have been signed out successfully',
       });
       navigate('/');
-    } catch (error) {
-      console.error('Sign out error:', error);
+    } catch (err) {
+      console.error('Sign out error:', err);
       toast({
         title: 'Error',
         description: 'Failed to sign out. Please try again.',
         variant: 'destructive',
       });
     }
+  };
+
+  const handleNavSelect = (id: string) => {
+    setActiveTab(id);
+    setMobileNavOpen(false);
   };
 
   useEffect(() => {
@@ -61,8 +183,8 @@ export default function SuperAdminDashboard() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
+      <div className="flex items-center justify-center min-h-screen p-6">
+        <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Failed to verify super admin status. Please try again later.
@@ -76,94 +198,118 @@ export default function SuperAdminDashboard() {
     return null;
   }
 
+  const activeNavItem = navItems.find((item) => item.id === activeTab);
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-red-500 rounded-lg">
-            <Shield className="h-6 w-6 text-white" />
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex md:w-60 lg:w-64 flex-col border-r bg-card">
+        {/* Sidebar Header */}
+        <div className="flex items-center gap-2.5 px-4 py-4 border-b">
+          <div className="p-1.5 bg-red-500 rounded-md">
+            <Shield className="h-4 w-4 text-white" />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
-            <p className="text-muted-foreground">
-              System oversight and management
-            </p>
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold truncate">Super Admin</h1>
+            <p className="text-xs text-muted-foreground">System Management</p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleSignOut}
-          className="gap-2"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </Button>
+
+        {/* Navigation */}
+        <ScrollArea className="flex-1">
+          <NavContent activeTab={activeTab} onSelect={handleNavSelect} />
+        </ScrollArea>
+
+        {/* Sidebar Footer */}
+        <div className="border-t p-3">
+          <Button
+            variant="ghost"
+            onClick={handleSignOut}
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+            size="sm"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Bar */}
+        <header className="flex items-center justify-between border-b bg-card px-4 py-3 md:px-6">
+          <div className="flex items-center gap-3">
+            {/* Mobile Menu */}
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
+                  {mobileNavOpen ? (
+                    <X className="h-5 w-5" />
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <div className="flex items-center gap-2.5 px-4 py-4 border-b">
+                  <div className="p-1.5 bg-red-500 rounded-md">
+                    <Shield className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-sm font-bold">Super Admin</h1>
+                    <p className="text-xs text-muted-foreground">System Management</p>
+                  </div>
+                </div>
+                <ScrollArea className="h-[calc(100vh-8rem)]">
+                  <NavContent activeTab={activeTab} onSelect={handleNavSelect} />
+                </ScrollArea>
+                <div className="border-t p-3">
+                  <Button
+                    variant="ghost"
+                    onClick={handleSignOut}
+                    className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                    size="sm"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Page Title */}
+            <div className="flex items-center gap-2">
+              {activeNavItem && (
+                <activeNavItem.icon className="h-5 w-5 text-muted-foreground hidden sm:block" />
+              )}
+              <h2 className="text-lg font-semibold">{activeNavItem?.label || 'Overview'}</h2>
+            </div>
+          </div>
+
+          {/* Audit Badge */}
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+              <Shield className="h-3 w-3" />
+              Actions are audited
+            </span>
+            <Button
+              variant="ghost"
+              onClick={handleSignOut}
+              size="icon"
+              className="md:hidden h-8 w-8"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <ScrollArea className="flex-1">
+          <main className="p-4 md:p-6 max-w-7xl">
+            <TabContent activeTab={activeTab} />
+          </main>
+        </ScrollArea>
       </div>
-
-      {/* Warning Banner */}
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          You have super admin privileges. All actions are logged and audited. Use with caution.
-        </AlertDescription>
-      </Alert>
-
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-10 lg:w-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="businesses">Businesses</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="ai-prompts">AI Prompts</TabsTrigger>
-          <TabsTrigger value="errors">Errors</TabsTrigger>
-          <TabsTrigger value="tests">Tests</TabsTrigger>
-          <TabsTrigger value="email">Email Test</TabsTrigger>
-          <TabsTrigger value="audit">Audit Logs</TabsTrigger>
-          <TabsTrigger value="gdpr">GDPR</TabsTrigger>
-          <TabsTrigger value="docs">Docs</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <OverviewTab />
-        </TabsContent>
-
-        <TabsContent value="businesses" className="space-y-4">
-          <BusinessesTab />
-        </TabsContent>
-
-        <TabsContent value="users" className="space-y-4">
-          <UsersTab />
-        </TabsContent>
-
-        <TabsContent value="ai-prompts" className="space-y-4">
-          <AIPromptsTab />
-        </TabsContent>
-
-        <TabsContent value="errors" className="space-y-4">
-          <ErrorsTab />
-        </TabsContent>
-
-        <TabsContent value="tests" className="space-y-4">
-          <TestStatusTab />
-        </TabsContent>
-
-        <TabsContent value="email" className="space-y-4">
-          <EmailTestTab />
-        </TabsContent>
-
-        <TabsContent value="audit" className="space-y-4">
-          <AuditLogsTab />
-        </TabsContent>
-
-        <TabsContent value="gdpr" className="space-y-4">
-          <GdprAdminDashboard />
-        </TabsContent>
-
-        <TabsContent value="docs" className="space-y-4">
-          <DocumentationTab />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
