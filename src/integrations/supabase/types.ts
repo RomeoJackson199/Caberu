@@ -999,6 +999,81 @@ export type Database = {
           },
         ]
       }
+      communication_metrics: {
+        Row: {
+          ai_intake_completed: number | null
+          avg_call_quality_score: number | null
+          business_id: string
+          completed_calls: number | null
+          created_at: string
+          failed_calls: number | null
+          id: string
+          metric_date: string
+          sms_delivered: number | null
+          sms_sent: number | null
+          total_call_duration_seconds: number | null
+          total_calls: number | null
+          updated_at: string
+          whatsapp_delivered: number | null
+          whatsapp_failed: number | null
+          whatsapp_read: number | null
+          whatsapp_sent: number | null
+        }
+        Insert: {
+          ai_intake_completed?: number | null
+          avg_call_quality_score?: number | null
+          business_id: string
+          completed_calls?: number | null
+          created_at?: string
+          failed_calls?: number | null
+          id?: string
+          metric_date?: string
+          sms_delivered?: number | null
+          sms_sent?: number | null
+          total_call_duration_seconds?: number | null
+          total_calls?: number | null
+          updated_at?: string
+          whatsapp_delivered?: number | null
+          whatsapp_failed?: number | null
+          whatsapp_read?: number | null
+          whatsapp_sent?: number | null
+        }
+        Update: {
+          ai_intake_completed?: number | null
+          avg_call_quality_score?: number | null
+          business_id?: string
+          completed_calls?: number | null
+          created_at?: string
+          failed_calls?: number | null
+          id?: string
+          metric_date?: string
+          sms_delivered?: number | null
+          sms_sent?: number | null
+          total_call_duration_seconds?: number | null
+          total_calls?: number | null
+          updated_at?: string
+          whatsapp_delivered?: number | null
+          whatsapp_failed?: number | null
+          whatsapp_read?: number | null
+          whatsapp_sent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dentist_availability: {
         Row: {
           break_end_time: string | null
@@ -1640,6 +1715,158 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      feature_flag_changelog: {
+        Row: {
+          action: string
+          business_id: string | null
+          changed_by: string | null
+          created_at: string
+          flag_id: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+        }
+        Insert: {
+          action: string
+          business_id?: string | null
+          changed_by?: string | null
+          created_at?: string
+          flag_id: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Update: {
+          action?: string
+          business_id?: string | null
+          changed_by?: string | null
+          created_at?: string
+          flag_id?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_changelog_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flag_changelog_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flag_changelog_flag_id_fkey"
+            columns: ["flag_id"]
+            isOneToOne: false
+            referencedRelation: "feature_flags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flag_overrides: {
+        Row: {
+          business_id: string
+          created_at: string
+          created_by: string | null
+          flag_id: string
+          id: string
+          is_enabled: boolean
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          created_by?: string | null
+          flag_id: string
+          id?: string
+          is_enabled: boolean
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          created_by?: string | null
+          flag_id?: string
+          id?: string
+          is_enabled?: boolean
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_overrides_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flag_overrides_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flag_overrides_flag_id_fkey"
+            columns: ["flag_id"]
+            isOneToOne: false
+            referencedRelation: "feature_flags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          flag_key: string
+          id: string
+          is_enabled: boolean
+          metadata: Json | null
+          name: string
+          rollout_percentage: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          flag_key: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json | null
+          name: string
+          rollout_percentage?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          flag_key?: string
+          id?: string
+          is_enabled?: boolean
+          metadata?: Json | null
+          name?: string
+          rollout_percentage?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       gdpr_export_bundles: {
         Row: {
@@ -2996,6 +3223,66 @@ export type Database = {
           },
         ]
       }
+      platform_revenue: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          overage_revenue_cents: number | null
+          revenue_date: string
+          subscription_revenue_cents: number | null
+          total_cost_cents: number | null
+          total_revenue_cents: number | null
+          twilio_cost_cents: number | null
+          updated_at: string
+          voice_cost_cents: number | null
+          whatsapp_cost_cents: number | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          overage_revenue_cents?: number | null
+          revenue_date?: string
+          subscription_revenue_cents?: number | null
+          total_cost_cents?: number | null
+          total_revenue_cents?: number | null
+          twilio_cost_cents?: number | null
+          updated_at?: string
+          voice_cost_cents?: number | null
+          whatsapp_cost_cents?: number | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          overage_revenue_cents?: number | null
+          revenue_date?: string
+          subscription_revenue_cents?: number | null
+          total_cost_cents?: number | null
+          total_revenue_cents?: number | null
+          twilio_cost_cents?: number | null
+          updated_at?: string
+          voice_cost_cents?: number | null
+          whatsapp_cost_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_revenue_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_revenue_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_consents: {
         Row: {
           consent_date: string
@@ -3686,6 +3973,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_health_checks: {
+        Row: {
+          checked_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          response_time_ms: number | null
+          service_name: string
+          status: string
+        }
+        Insert: {
+          checked_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          service_name: string
+          status?: string
+        }
+        Update: {
+          checked_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          service_name?: string
+          status?: string
+        }
+        Relationships: []
+      }
       tour_completions: {
         Row: {
           completed_at: string
@@ -3983,6 +4300,51 @@ export type Database = {
             columns: ["created_by_dentist_id"]
             isOneToOne: false
             referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usage_metrics: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          metric_date: string
+          metric_type: string
+          metric_value: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_date?: string
+          metric_type: string
+          metric_value?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_date?: string
+          metric_type?: string
+          metric_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usage_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
@@ -5466,6 +5828,22 @@ export type Database = {
         Args: { p_business_id: string; p_date: string; p_dentist_id: string }
         Returns: undefined
       }
+      get_admin_dashboard_stats: {
+        Args: never
+        Returns: {
+          active_calls_today: number
+          active_practices: number
+          mrr_cents: number
+          new_signups_this_week: number
+          suspended_practices: number
+          total_patients: number
+          total_practices: number
+          trial_practices: number
+          unresolved_errors: number
+          voice_minutes_today: number
+          whatsapp_messages_today: number
+        }[]
+      }
       get_all_businesses_admin: {
         Args: never
         Returns: {
@@ -5578,6 +5956,26 @@ export type Database = {
         }[]
       }
       get_my_profile_id: { Args: never; Returns: string }
+      get_practice_detail: {
+        Args: { p_business_id: string }
+        Returns: {
+          appointments_this_month: number
+          business_name: string
+          created_at: string
+          encryption_key_active: boolean
+          last_activity: string
+          owner_email: string
+          owner_name: string
+          patient_count: number
+          slug: string
+          staff_count: number
+          subscription_plan: string
+          subscription_status: string
+          total_appointments: number
+          voice_minutes_this_month: number
+          whatsapp_this_month: number
+        }[]
+      }
       get_system_stats: {
         Args: never
         Returns: {
@@ -5649,6 +6047,10 @@ export type Database = {
       }
       is_dentist_patient_norec: {
         Args: { patient_profile_id: string }
+        Returns: boolean
+      }
+      is_feature_enabled: {
+        Args: { p_business_id?: string; p_flag_key: string }
         Returns: boolean
       }
       is_member_of_business: {

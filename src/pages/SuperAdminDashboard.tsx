@@ -18,6 +18,10 @@ import {
   FileText,
   Menu,
   X,
+  Flag,
+  BarChart3,
+  Server,
+  Phone,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -39,6 +43,11 @@ import { TestStatusTab } from '@/components/super-admin/TestStatusTab';
 import { GdprAdminDashboard } from '@/components/gdpr/GdprAdminDashboard';
 import { DocumentationTab } from '@/components/super-admin/DocumentationTab';
 import { AIPromptsTab } from '@/components/super-admin/AIPromptsTab';
+import { FeatureFlagsTab } from '@/components/super-admin/FeatureFlagsTab';
+import { AnalyticsTab } from '@/components/super-admin/AnalyticsTab';
+import { SystemHealthTab } from '@/components/super-admin/SystemHealthTab';
+import { CommsMonitorTab } from '@/components/super-admin/CommsMonitorTab';
+import { ComplianceTab } from '@/components/super-admin/ComplianceTab';
 
 interface NavItem {
   id: string;
@@ -49,14 +58,18 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, section: 'main' },
-  { id: 'businesses', label: 'Businesses', icon: Building2, section: 'main' },
+  { id: 'businesses', label: 'Practices', icon: Building2, section: 'main' },
   { id: 'users', label: 'Users', icon: Users, section: 'main' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, section: 'main' },
+  { id: 'system-health', label: 'System Health', icon: Server, section: 'system' },
   { id: 'errors', label: 'Errors', icon: AlertTriangle, section: 'system' },
   { id: 'audit', label: 'Audit Logs', icon: ScrollText, section: 'system' },
   { id: 'tests', label: 'Tests', icon: FlaskConical, section: 'system' },
+  { id: 'comms', label: 'Comms Monitor', icon: Phone, section: 'tools' },
+  { id: 'feature-flags', label: 'Feature Flags', icon: Flag, section: 'tools' },
   { id: 'ai-prompts', label: 'AI Prompts', icon: Bot, section: 'tools' },
+  { id: 'compliance', label: 'Compliance', icon: ShieldCheck, section: 'tools' },
   { id: 'email', label: 'Email Test', icon: Mail, section: 'tools' },
-  { id: 'gdpr', label: 'GDPR', icon: ShieldCheck, section: 'tools' },
   { id: 'docs', label: 'Docs', icon: FileText, section: 'tools' },
 ];
 
@@ -110,14 +123,18 @@ function NavContent({
   );
 }
 
-function TabContent({ activeTab }: { activeTab: string }) {
+function TabContent({ activeTab, onNavigate }: { activeTab: string; onNavigate: (tab: string) => void }) {
   switch (activeTab) {
     case 'overview':
-      return <OverviewTab />;
+      return <OverviewTab onNavigate={onNavigate} />;
     case 'businesses':
       return <BusinessesTab />;
     case 'users':
       return <UsersTab />;
+    case 'analytics':
+      return <AnalyticsTab />;
+    case 'system-health':
+      return <SystemHealthTab />;
     case 'ai-prompts':
       return <AIPromptsTab />;
     case 'errors':
@@ -128,12 +145,16 @@ function TabContent({ activeTab }: { activeTab: string }) {
       return <EmailTestTab />;
     case 'audit':
       return <AuditLogsTab />;
-    case 'gdpr':
-      return <GdprAdminDashboard />;
+    case 'compliance':
+      return <ComplianceTab />;
+    case 'comms':
+      return <CommsMonitorTab />;
+    case 'feature-flags':
+      return <FeatureFlagsTab />;
     case 'docs':
       return <DocumentationTab />;
     default:
-      return <OverviewTab />;
+      return <OverviewTab onNavigate={onNavigate} />;
   }
 }
 
@@ -147,18 +168,11 @@ export default function SuperAdminDashboard() {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      toast({
-        title: 'Signed out',
-        description: 'You have been signed out successfully',
-      });
+      toast({ title: 'Signed out', description: 'You have been signed out successfully' });
       navigate('/');
     } catch (err) {
       console.error('Sign out error:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to sign out. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to sign out.', variant: 'destructive' });
     }
   };
 
@@ -186,17 +200,13 @@ export default function SuperAdminDashboard() {
       <div className="flex items-center justify-center min-h-screen p-6">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to verify super admin status. Please try again later.
-          </AlertDescription>
+          <AlertDescription>Failed to verify super admin status.</AlertDescription>
         </Alert>
       </div>
     );
   }
 
-  if (!isSuperAdmin) {
-    return null;
-  }
+  if (!isSuperAdmin) return null;
 
   const activeNavItem = navItems.find((item) => item.id === activeTab);
 
@@ -204,30 +214,20 @@ export default function SuperAdminDashboard() {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-60 lg:w-64 flex-col border-r bg-card">
-        {/* Sidebar Header */}
         <div className="flex items-center gap-2.5 px-4 py-4 border-b">
-          <div className="p-1.5 bg-red-500 rounded-md">
-            <Shield className="h-4 w-4 text-white" />
+          <div className="p-1.5 bg-destructive rounded-md">
+            <Shield className="h-4 w-4 text-destructive-foreground" />
           </div>
           <div className="min-w-0">
             <h1 className="text-sm font-bold truncate">Super Admin</h1>
             <p className="text-xs text-muted-foreground">System Management</p>
           </div>
         </div>
-
-        {/* Navigation */}
         <ScrollArea className="flex-1">
           <NavContent activeTab={activeTab} onSelect={handleNavSelect} />
         </ScrollArea>
-
-        {/* Sidebar Footer */}
         <div className="border-t p-3">
-          <Button
-            variant="ghost"
-            onClick={handleSignOut}
-            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
-            size="sm"
-          >
+          <Button variant="ghost" onClick={handleSignOut} className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground" size="sm">
             <LogOut className="h-4 w-4" />
             Sign Out
           </Button>
@@ -236,24 +236,18 @@ export default function SuperAdminDashboard() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Bar */}
         <header className="flex items-center justify-between border-b bg-card px-4 py-3 md:px-6">
           <div className="flex items-center gap-3">
-            {/* Mobile Menu */}
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
-                  {mobileNavOpen ? (
-                    <X className="h-5 w-5" />
-                  ) : (
-                    <Menu className="h-5 w-5" />
-                  )}
+                  {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex items-center gap-2.5 px-4 py-4 border-b">
-                  <div className="p-1.5 bg-red-500 rounded-md">
-                    <Shield className="h-4 w-4 text-white" />
+                  <div className="p-1.5 bg-destructive rounded-md">
+                    <Shield className="h-4 w-4 text-destructive-foreground" />
                   </div>
                   <div>
                     <h1 className="text-sm font-bold">Super Admin</h1>
@@ -264,49 +258,32 @@ export default function SuperAdminDashboard() {
                   <NavContent activeTab={activeTab} onSelect={handleNavSelect} />
                 </ScrollArea>
                 <div className="border-t p-3">
-                  <Button
-                    variant="ghost"
-                    onClick={handleSignOut}
-                    className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
-                    size="sm"
-                  >
+                  <Button variant="ghost" onClick={handleSignOut} className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground" size="sm">
                     <LogOut className="h-4 w-4" />
                     Sign Out
                   </Button>
                 </div>
               </SheetContent>
             </Sheet>
-
-            {/* Page Title */}
             <div className="flex items-center gap-2">
-              {activeNavItem && (
-                <activeNavItem.icon className="h-5 w-5 text-muted-foreground hidden sm:block" />
-              )}
+              {activeNavItem && <activeNavItem.icon className="h-5 w-5 text-muted-foreground hidden sm:block" />}
               <h2 className="text-lg font-semibold">{activeNavItem?.label || 'Overview'}</h2>
             </div>
           </div>
-
-          {/* Audit Badge */}
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
               <Shield className="h-3 w-3" />
               Actions are audited
             </span>
-            <Button
-              variant="ghost"
-              onClick={handleSignOut}
-              size="icon"
-              className="md:hidden h-8 w-8"
-            >
+            <Button variant="ghost" onClick={handleSignOut} size="icon" className="md:hidden h-8 w-8">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </header>
 
-        {/* Page Content */}
         <ScrollArea className="flex-1">
           <main className="p-4 md:p-6 max-w-7xl">
-            <TabContent activeTab={activeTab} />
+            <TabContent activeTab={activeTab} onNavigate={handleNavSelect} />
           </main>
         </ScrollArea>
       </div>
