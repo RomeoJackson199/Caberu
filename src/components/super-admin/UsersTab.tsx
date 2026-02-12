@@ -10,22 +10,43 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useAllUsers } from '@/hooks/useSuperAdmin';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useAllUsers, useUpdateUserRole, useRemoveUserFromBusiness } from '@/hooks/useSuperAdmin';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Mail, Phone, Calendar, Building2 } from 'lucide-react';
+import { Search, Mail, Phone, Calendar, Building2, ChevronDown, Trash2, ShieldCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { ChevronDown } from 'lucide-react';
+
+const AVAILABLE_ROLES = ['owner', 'admin', 'dentist', 'staff', 'patient'];
 
 export function UsersTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: users, isLoading } = useAllUsers(searchQuery);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+  const updateRole = useUpdateUserRole();
+  const removeUser = useRemoveUserFromBusiness();
+  const [confirmRemove, setConfirmRemove] = useState<{
+    userId: string;
+    businessId: string;
+    userName: string;
+    businessName: string;
+  } | null>(null);
 
   const toggleUserExpansion = (userId: string) => {
     setExpandedUsers((prev) => {
@@ -39,12 +60,27 @@ export function UsersTab() {
     });
   };
 
+  function handleRoleChange(userId: string, businessId: string, newRole: string) {
+    updateRole.mutate({ userId, businessId, newRole });
+  }
+
+  function handleRemoveUser(userId: string, businessId: string, userName: string, businessName: string) {
+    setConfirmRemove({ userId, businessId, userName, businessName });
+  }
+
+  function confirmRemoveUser() {
+    if (confirmRemove) {
+      removeUser.mutate(confirmRemove);
+      setConfirmRemove(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-2">User Management</h2>
         <p className="text-muted-foreground">
-          View and manage all users across all businesses
+          View and manage all users across all businesses. Change roles or remove users from businesses.
         </p>
       </div>
 
@@ -148,12 +184,15 @@ export function UsersTab() {
                           <TableRow>
                             <TableCell colSpan={6} className="bg-muted/50">
                               <div className="p-4 space-y-2">
-                                <h4 className="font-semibold text-sm">Business Memberships</h4>
+                                <h4 className="font-semibold text-sm flex items-center gap-2">
+                                  <ShieldCheck className="h-4 w-4" />
+                                  Business Memberships
+                                </h4>
                                 <div className="grid gap-2">
                                   {user.businesses.map((business, idx) => (
                                     <div
                                       key={idx}
-                                      className="flex items-center justify-between p-2 bg-background rounded border"
+                                      className="flex items-center justify-between p-3 bg-background rounded border"
                                     >
                                       <div className="flex items-center gap-2">
                                         <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -161,7 +200,40 @@ export function UsersTab() {
                                           {business.business_name}
                                         </span>
                                       </div>
-                                      <Badge>{business.role}</Badge>
+                                      <div className="flex items-center gap-2">
+                                        <Select
+                                          value={business.role}
+                                          onValueChange={(newRole) =>
+                                            handleRoleChange(user.user_id, business.business_id, newRole)
+                                          }
+                                        >
+                                          <SelectTrigger className="w-[130px] h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {AVAILABLE_ROLES.map((role) => (
+                                              <SelectItem key={role} value={role}>
+                                                {role.charAt(0).toUpperCase() + role.slice(1)}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={() =>
+                                            handleRemoveUser(
+                                              user.user_id,
+                                              business.business_id,
+                                              `${user.first_name} ${user.last_name}`,
+                                              business.business_name
+                                            )
+                                          }
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -188,6 +260,28 @@ export function UsersTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirm Remove Dialog */}
+      <AlertDialog open={!!confirmRemove} onOpenChange={(open) => !open && setConfirmRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove User from Business</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove <strong>{confirmRemove?.userName}</strong> from{' '}
+              <strong>{confirmRemove?.businessName}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

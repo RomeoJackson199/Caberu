@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useIsSuperAdmin } from '@/hooks/useSuperAdmin';
-import { Shield, AlertCircle, LogOut } from 'lucide-react';
+import { Shield, AlertCircle, LogOut, Bot } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +19,7 @@ import { EmailTestTab } from '@/components/super-admin/EmailTestTab';
 import { TestStatusTab } from '@/components/super-admin/TestStatusTab';
 import { GdprAdminDashboard } from '@/components/gdpr/GdprAdminDashboard';
 import { DocumentationTab } from '@/components/super-admin/DocumentationTab';
+import { AIPromptsTab } from '@/components/super-admin/AIPromptsTab';
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
@@ -110,10 +111,11 @@ export default function SuperAdminDashboard() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-9 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-10 lg:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="businesses">Businesses</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="ai-prompts">AI Prompts</TabsTrigger>
           <TabsTrigger value="errors">Errors</TabsTrigger>
           <TabsTrigger value="tests">Tests</TabsTrigger>
           <TabsTrigger value="email">Email Test</TabsTrigger>
@@ -132,6 +134,10 @@ export default function SuperAdminDashboard() {
 
         <TabsContent value="users" className="space-y-4">
           <UsersTab />
+        </TabsContent>
+
+        <TabsContent value="ai-prompts" className="space-y-4">
+          <AIPromptsTab />
         </TabsContent>
 
         <TabsContent value="errors" className="space-y-4">
