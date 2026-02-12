@@ -202,6 +202,19 @@ export function useBookingFlow() {
 
       if (error) throw error;
 
+      // Fetch require_appointment_approval for each dentist from the dentists table
+      const dentistIds = (data || []).map(d => d.dentist_id);
+      const { data: dentistDetails } = dentistIds.length > 0
+        ? await supabase
+            .from('dentists')
+            .select('id, require_appointment_approval')
+            .in('id', dentistIds)
+        : { data: [] };
+
+      const approvalMap = new Map(
+        (dentistDetails || []).map(d => [d.id, d.require_appointment_approval])
+      );
+
       const typedDentists: Dentist[] = (data || []).map((dentist) => ({
         id: dentist.dentist_id,
         first_name: dentist.dentist_first_name,
@@ -209,6 +222,7 @@ export function useBookingFlow() {
         email: '',
         specialization: dentist.specialization || '',
         profile_id: '',
+        require_appointment_approval: approvalMap.get(dentist.dentist_id) ?? false,
         next_available_slot: dentist.next_available_date && dentist.next_available_time
           ? `${dentist.next_available_date}T${dentist.next_available_time}`
           : null,
@@ -462,6 +476,22 @@ export function useBookingFlow() {
         if (error) throw error;
         return data;
       }, 'create appointment');
+
+      // Reserve the appointment slots to prevent double booking
+      const { error: slotError } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }).rpc('book_appointment_slots_for_duration', {
+        p_dentist_id: selectedDentist.id,
+        p_slot_date: dateStr,
+        p_start_time: selectedTime,
+        p_duration_minutes: serviceDuration,
+        p_appointment_id: appointmentData.id,
+      });
+
+      if (slotError) {
+        logger.error("Failed to reserve slots, cleaning up appointment:", slotError);
+        // Clean up the appointment if slot reservation fails
+        await supabase.from("appointments").delete().eq("id", appointmentData.id);
+        throw new Error("This time slot was just booked by someone else. Please select another time.");
+      }
 
       logger.info("Appointment created:", {
         dentistId: selectedDentist.id,

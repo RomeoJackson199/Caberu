@@ -175,8 +175,9 @@ export function ServiceManager() {
     // Use undo functionality - will show toast with undo button
     await deleteServiceWithUndo(service);
 
-    // Reload services after undo window expires or action completes
-    setTimeout(() => loadServices(), 5500);
+    // Reload services after undo action completes
+    await deleteServiceWithUndo(service);
+    await loadServices();
   };
 
   const handleToggleActive = async (serviceId: string, currentStatus: boolean) => {
@@ -190,9 +191,7 @@ export function ServiceManager() {
 
     // Use undo functionality - will show toast with undo button
     await toggleServiceStatusWithUndo(service);
-
-    // Reload services after undo window expires or action completes
-    setTimeout(() => loadServices(), 5500);
+    await loadServices();
   };
 
   const handleEdit = (service: Service) => {

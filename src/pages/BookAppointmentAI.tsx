@@ -122,6 +122,7 @@ function BookAppointmentContent() {
             selectedDate={booking.selectedDate}
             selectedTime={booking.selectedTime}
             isBooking={booking.isBooking}
+            selectedService={booking.selectedService}
             onConfirm={booking.confirmBooking}
             onBack={() => {
               booking.setBookingStep("datetime");

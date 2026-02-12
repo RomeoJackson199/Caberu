@@ -37,7 +37,7 @@ export function DateTimeSelectionStep({
     <div className="max-w-4xl mx-auto p-4 py-8">
       <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 mb-6">
         <ArrowLeft className="h-4 w-4" />
-        Back to services
+        Back to dentists
       </Button>
 
       <Card>

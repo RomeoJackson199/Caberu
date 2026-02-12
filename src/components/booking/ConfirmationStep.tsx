@@ -2,13 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import type { Dentist } from "./types";
+import type { Dentist, Service } from "./types";
 
 interface ConfirmationStepProps {
   dentist: Dentist;
   selectedDate: Date;
   selectedTime: string;
   isBooking: boolean;
+  selectedService?: Service | null;
   onConfirm: () => void;
   onBack: () => void;
 }
@@ -18,9 +19,17 @@ export function ConfirmationStep({
   selectedDate,
   selectedTime,
   isBooking,
+  selectedService,
   onConfirm,
   onBack,
 }: ConfirmationStepProps) {
+  const formatPrice = (cents: number) =>
+    new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+    }).format(cents / 100);
+
   return (
     <div className="max-w-2xl mx-auto p-4 py-8">
       <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 mb-6">
@@ -36,6 +45,24 @@ export function ConfirmationStep({
           </div>
 
           <div className="space-y-4 py-4 border-y">
+            {selectedService && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Service</span>
+                  <span className="font-medium">{selectedService.name}</span>
+                </div>
+                {selectedService.duration_minutes && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Duration</span>
+                    <span className="font-medium">{selectedService.duration_minutes} min</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Price</span>
+                  <span className="font-medium">{formatPrice(selectedService.price_cents)}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Dentist</span>
               <span className="font-medium">
