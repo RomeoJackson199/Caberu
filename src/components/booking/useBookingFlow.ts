@@ -477,6 +477,12 @@ export function useBookingFlow() {
         return data;
       }, 'create appointment');
 
+      // Ensure appointment slot rows exist for this date before booking
+      await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }).rpc('ensure_daily_slots', {
+        p_dentist_id: selectedDentist.id,
+        p_date: dateStr,
+      });
+
       // Reserve the appointment slots to prevent double booking
       // Ensure time is in HH:MM:SS format for PostgreSQL time type
       const startTimeFormatted = selectedTime.length === 5 ? `${selectedTime}:00` : selectedTime;
