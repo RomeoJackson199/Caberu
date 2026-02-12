@@ -123,13 +123,7 @@ export function ServiceSelectionStep({
               )}
             </div>
           </div>
-          <div className="flex items-center justify-between mt-3 pt-3 border-t">
-            <div className="text-lg font-bold text-indigo-600">
-              {new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: service.currency,
-              }).format(service.price_cents / 100)}
-            </div>
+          <div className="flex items-center justify-end mt-3 pt-3 border-t">
             <span className="flex items-center gap-1 text-sm text-muted-foreground bg-secondary px-2 py-1 rounded">
               <Timer className="h-3 w-3" />
               {service.duration_minutes || 30} min

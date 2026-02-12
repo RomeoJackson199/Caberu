@@ -268,6 +268,171 @@ export function useResolveError() {
   });
 }
 
+// Update user role in a business
+export function useUpdateUserRole() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: {
+      userId: string;
+      businessId: string;
+      newRole: string;
+    }) => {
+      const { error } = await supabase
+        .from('business_members')
+        .update({ role: params.newRole })
+        .eq('user_id', params.userId)
+        .eq('business_id', params.businessId);
+
+      if (error) throw error;
+
+      // Also update user_roles if exists
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert(
+          {
+            user_id: params.userId,
+            business_id: params.businessId,
+            role: params.newRole,
+          },
+          { onConflict: 'user_id,business_id' }
+        );
+
+      // user_roles table might not have the constraint, ignore errors
+      if (roleError) {
+        console.warn('Could not update user_roles:', roleError.message);
+      }
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: 'Role Updated',
+        description: `User role changed to ${variables.newRole}`,
+      });
+
+      logAction.mutate({
+        action: 'UPDATE_USER_ROLE',
+        resource_type: 'user',
+        resource_id: variables.userId,
+        details: {
+          business_id: variables.businessId,
+          new_role: variables.newRole,
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update user role',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// Remove user from a business
+export function useRemoveUserFromBusiness() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: {
+      userId: string;
+      businessId: string;
+      userName: string;
+      businessName: string;
+    }) => {
+      // Remove from business_members
+      const { error } = await supabase
+        .from('business_members')
+        .delete()
+        .eq('user_id', params.userId)
+        .eq('business_id', params.businessId);
+
+      if (error) throw error;
+
+      // Also remove from user_roles if exists
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', params.userId)
+        .eq('business_id', params.businessId);
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: 'User Removed',
+        description: `${variables.userName} removed from ${variables.businessName}`,
+      });
+
+      logAction.mutate({
+        action: 'REMOVE_USER_FROM_BUSINESS',
+        resource_type: 'user',
+        resource_id: variables.userId,
+        details: {
+          business_id: variables.businessId,
+          business_name: variables.businessName,
+          user_name: variables.userName,
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['allBusinesses'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to remove user',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// Toggle business active status
+export function useToggleBusinessStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: { businessId: string; isActive: boolean; businessName: string }) => {
+      const { error } = await supabase
+        .from('businesses')
+        .update({ is_active: params.isActive })
+        .eq('id', params.businessId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: variables.isActive ? 'Business Activated' : 'Business Deactivated',
+        description: `${variables.businessName} is now ${variables.isActive ? 'active' : 'inactive'}`,
+      });
+
+      logAction.mutate({
+        action: variables.isActive ? 'ACTIVATE_BUSINESS' : 'DEACTIVATE_BUSINESS',
+        resource_type: 'business',
+        resource_id: variables.businessId,
+        details: { business_name: variables.businessName },
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['allBusinesses'] });
+      queryClient.invalidateQueries({ queryKey: ['systemStats'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update business status',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
 // Report system error (for use throughout the app)
 export function useReportError() {
   return useMutation({

@@ -11,9 +11,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useAllBusinesses } from '@/hooks/useSuperAdmin';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useAllBusinesses, useToggleBusinessStatus } from '@/hooks/useSuperAdmin';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Building2, Users, Calendar, Plus } from 'lucide-react';
+import { Search, Building2, Users, Calendar, Plus, Power } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { CreateBusinessDialog } from './CreateBusinessDialog';
 
@@ -21,6 +31,12 @@ export function BusinessesTab() {
   const { data: businesses, isLoading } = useAllBusinesses();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const toggleStatus = useToggleBusinessStatus();
+  const [confirmToggle, setConfirmToggle] = useState<{
+    businessId: string;
+    businessName: string;
+    currentlyActive: boolean;
+  } | null>(null);
 
   const filteredBusinesses = businesses?.filter(
     (business) =>
@@ -28,6 +44,21 @@ export function BusinessesTab() {
       business.owner_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       business.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  function handleToggleStatus(businessId: string, businessName: string, currentlyActive: boolean) {
+    setConfirmToggle({ businessId, businessName, currentlyActive });
+  }
+
+  function confirmToggleStatus() {
+    if (confirmToggle) {
+      toggleStatus.mutate({
+        businessId: confirmToggle.businessId,
+        isActive: !confirmToggle.currentlyActive,
+        businessName: confirmToggle.businessName,
+      });
+      setConfirmToggle(null);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -80,6 +111,7 @@ export function BusinessesTab() {
                     <TableHead>Appointments</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
+                    <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -137,11 +169,27 @@ export function BusinessesTab() {
                             })}
                           </div>
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={
+                              business.is_active
+                                ? 'text-destructive hover:text-destructive hover:bg-destructive/10'
+                                : 'text-green-600 hover:text-green-600 hover:bg-green-600/10'
+                            }
+                            onClick={() =>
+                              handleToggleStatus(business.id, business.name, business.is_active)
+                            }
+                          >
+                            <Power className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={8} className="text-center py-8">
                         <div className="text-muted-foreground">
                           {searchQuery
                             ? 'No businesses found matching your search'
@@ -161,6 +209,36 @@ export function BusinessesTab() {
         open={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
       />
+
+      {/* Confirm Toggle Status Dialog */}
+      <AlertDialog open={!!confirmToggle} onOpenChange={(open) => !open && setConfirmToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmToggle?.currentlyActive ? 'Deactivate' : 'Activate'} Business
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to {confirmToggle?.currentlyActive ? 'deactivate' : 'activate'}{' '}
+              <strong>{confirmToggle?.businessName}</strong>?
+              {confirmToggle?.currentlyActive &&
+                ' Users will no longer be able to access this business.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmToggleStatus}
+              className={
+                confirmToggle?.currentlyActive
+                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                  : ''
+              }
+            >
+              {confirmToggle?.currentlyActive ? 'Deactivate' : 'Activate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
