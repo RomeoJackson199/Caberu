@@ -478,10 +478,12 @@ export function useBookingFlow() {
       }, 'create appointment');
 
       // Reserve the appointment slots to prevent double booking
+      // Ensure time is in HH:MM:SS format for PostgreSQL time type
+      const startTimeFormatted = selectedTime.length === 5 ? `${selectedTime}:00` : selectedTime;
       const { error: slotError } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }).rpc('book_appointment_slots_for_duration', {
         p_dentist_id: selectedDentist.id,
         p_slot_date: dateStr,
-        p_start_time: selectedTime,
+        p_start_time: startTimeFormatted,
         p_duration_minutes: serviceDuration,
         p_appointment_id: appointmentData.id,
       });
