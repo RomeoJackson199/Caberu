@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "./hooks/useLanguage";
@@ -37,6 +37,18 @@ import { SmartNotificationBanner } from "@/components/notifications/SmartNotific
 import { NotificationPermissionPrompt } from "@/components/notifications/NotificationPermissionPrompt";
 import { initializePushNotifications } from "@/lib/pushNotifications";
 import { SkipNavigation } from "@/components/accessibility/SkipNavigation";
+import { offlineManager } from "@/lib/offlineManager";
+
+// Bridge React Query's onlineManager with our custom offlineManager.
+// This ensures React Query pauses mutations when offline and auto-resumes them on reconnect.
+onlineManager.setEventListener((setOnline) => {
+  const unsubscribe = offlineManager.subscribe((status) => {
+    setOnline(status !== 'offline');
+  });
+  // Set initial state
+  setOnline(offlineManager.isOnline());
+  return unsubscribe;
+});
 
 // Force resync: 2025-12-07T19:03
 
@@ -172,6 +184,10 @@ const queryClient = new QueryClient({
       networkMode: 'offlineFirst',
       retry: 1,
       onError: (error) => {
+        // Don't show generic error toast for network errors when offline —
+        // the useOptimisticMutation hook handles those with "Saved offline" toast
+        if (!onlineManager.isOnline()) return;
+
         const description = getUserFriendlyErrorMessage(
           error,
           "We couldn't save your dashboard changes. Please try again."
