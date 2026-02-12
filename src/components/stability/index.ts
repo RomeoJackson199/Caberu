@@ -9,6 +9,7 @@ export { FormErrorBoundary, withFormErrorBoundary } from "./FormErrorBoundary";
 // Network Status Components
 export { NetworkStatus, NetworkIndicator, SyncingIndicator } from "./NetworkStatus";
 export { OfflineIndicator, OfflineBanner } from "./OfflineIndicator";
+export { OfflineAwareContainer } from "./OfflineAwareContainer";
 
 // Confirmation Dialogs
 export {

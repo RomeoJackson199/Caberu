@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { offlineManager, ConnectionStatus } from '@/lib/offlineManager';
 
 /**
- * Hook to track online/offline status
+ * Hook to track online/offline status with queue details
  */
 export function useOfflineStatus() {
   const [status, setStatus] = useState<ConnectionStatus>(offlineManager.getStatus());
@@ -25,6 +25,14 @@ export function useOfflineStatus() {
     };
   }, []);
 
+  const getOfflineDuration = useCallback(() => {
+    return offlineManager.getOfflineDuration();
+  }, []);
+
+  const getQueueItems = useCallback(() => {
+    return offlineManager.getQueueItems();
+  }, []);
+
   return {
     status,
     isOnline: status !== 'offline',
@@ -32,5 +40,7 @@ export function useOfflineStatus() {
     isSlow: status === 'slow',
     queueSize,
     queueOperation: offlineManager.queueOperation.bind(offlineManager),
+    getOfflineDuration,
+    getQueueItems,
   };
 }
