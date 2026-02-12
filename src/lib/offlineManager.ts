@@ -5,22 +5,34 @@ export type ConnectionStatus = 'online' | 'offline' | 'slow';
 
 export interface OfflineQueueItem {
   id: string;
-  operation: () => Promise<any>;
+  operation: () => Promise<unknown>;
   operationName: string;
   timestamp: number;
   retries: number;
 }
 
+interface SerializedQueueItem {
+  id: string;
+  operationName: string;
+  timestamp: number;
+  retries: number;
+}
+
+const QUEUE_STORAGE_KEY = 'caberu-offline-queue';
+const LAST_ONLINE_KEY = 'caberu-last-online';
+
 /**
- * Manages offline detection and queued operations
- * Automatically retries failed operations when connection is restored
+ * Manages offline detection and queued operations.
+ * Persists queue metadata to localStorage so pending operation counts
+ * survive page refreshes. Actual operation callbacks are held in memory.
  */
 export class OfflineManager {
   private static instance: OfflineManager;
   private status: ConnectionStatus = 'online';
   private queue: OfflineQueueItem[] = [];
   private listeners: Set<(status: ConnectionStatus) => void> = new Set();
-  private checkInterval: NodeJS.Timeout | null = null;
+  private checkInterval: ReturnType<typeof setInterval> | null = null;
+  private lastOnlineTimestamp: number = Date.now();
 
   private constructor() {
     this.initialize();
@@ -38,9 +50,28 @@ export class OfflineManager {
   private boundHandleOffline = () => this.handleOffline();
 
   private initialize() {
+    // Restore last online timestamp
+    try {
+      const stored = localStorage.getItem(LAST_ONLINE_KEY);
+      if (stored) {
+        this.lastOnlineTimestamp = parseInt(stored, 10);
+      }
+    } catch {
+      // localStorage may be unavailable
+    }
+
     // Listen to browser online/offline events
     window.addEventListener('online', this.boundHandleOnline);
     window.addEventListener('offline', this.boundHandleOffline);
+
+    // Listen for service worker messages to process queue
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'PROCESS_OFFLINE_QUEUE') {
+          this.processQueue();
+        }
+      });
+    }
 
     // Check initial status
     this.updateStatus(navigator.onLine ? 'online' : 'offline');
@@ -50,6 +81,7 @@ export class OfflineManager {
 
     // Clean up on page unload to prevent memory leaks
     window.addEventListener('beforeunload', () => {
+      this.persistQueue();
       this.destroy();
     });
   }
@@ -67,13 +99,15 @@ export class OfflineManager {
     const start = Date.now();
 
     try {
-      // Try to fetch a small resource
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      await fetch('https://www.google.com/favicon.ico', {
+      // Ping our own origin instead of an external domain.
+      // This is more reliable in environments that block third-party requests
+      // and accurately reflects whether our own server is reachable.
+      await fetch('/favicon.ico', {
         method: 'HEAD',
-        mode: 'no-cors',
+        cache: 'no-store',
         signal: controller.signal,
       });
 
@@ -81,21 +115,30 @@ export class OfflineManager {
 
       const latency = Date.now() - start;
 
-      // Consider connection slow if latency > 2000ms
       if (latency > 2000) {
         this.updateStatus('slow');
       } else if (this.status === 'slow') {
         this.updateStatus('online');
       }
-    } catch (error) {
-      // Network is likely offline
-      this.updateStatus('offline');
+    } catch {
+      // If our own server is unreachable, check navigator.onLine as a fallback
+      // to distinguish between server-down and truly-offline scenarios
+      if (!navigator.onLine) {
+        this.updateStatus('offline');
+      }
     }
   }
 
   private handleOnline() {
     logger.info('Network connection restored');
     this.updateStatus('online');
+    this.lastOnlineTimestamp = Date.now();
+
+    try {
+      localStorage.setItem(LAST_ONLINE_KEY, this.lastOnlineTimestamp.toString());
+    } catch {
+      // ignore
+    }
 
     toast({
       title: 'Back Online',
@@ -105,6 +148,9 @@ export class OfflineManager {
 
     // Process queued operations
     this.processQueue();
+
+    // Request background sync if available
+    this.requestBackgroundSync();
   }
 
   private handleOffline() {
@@ -131,11 +177,33 @@ export class OfflineManager {
   }
 
   /**
+   * Request a background sync via the service worker
+   */
+  private async requestBackgroundSync() {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await (registration as ServiceWorkerRegistration & { sync: { register: (tag: string) => Promise<void> } }).sync.register('sync-offline-queue');
+      } catch {
+        // Background sync not available, will use regular queue processing
+      }
+    }
+  }
+
+  /**
+   * Tell the service worker to clear its API cache (e.g. on logout)
+   */
+  clearApiCache() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
+    }
+  }
+
+  /**
    * Subscribe to connection status changes
    */
   subscribe(listener: (status: ConnectionStatus) => void): () => void {
     this.listeners.add(listener);
-    // Return unsubscribe function
     return () => {
       this.listeners.delete(listener);
     };
@@ -156,9 +224,17 @@ export class OfflineManager {
   }
 
   /**
+   * Get duration since last known online state
+   */
+  getOfflineDuration(): number | null {
+    if (this.status !== 'offline') return null;
+    return Date.now() - this.lastOnlineTimestamp;
+  }
+
+  /**
    * Add an operation to the offline queue
    */
-  queueOperation(operationName: string, operation: () => Promise<any>): string {
+  queueOperation(operationName: string, operation: () => Promise<unknown>): string {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const item: OfflineQueueItem = {
@@ -170,6 +246,7 @@ export class OfflineManager {
     };
 
     this.queue.push(item);
+    this.persistQueue();
     logger.info(`Queued operation: ${operationName} (ID: ${id})`);
 
     // Try to process immediately if online
@@ -178,6 +255,14 @@ export class OfflineManager {
     }
 
     return id;
+  }
+
+  /**
+   * Remove a specific operation from the queue
+   */
+  removeOperation(id: string) {
+    this.queue = this.queue.filter(item => item.id !== id);
+    this.persistQueue();
   }
 
   /**
@@ -218,6 +303,8 @@ export class OfflineManager {
       }
     }
 
+    this.persistQueue();
+
     if (this.queue.length > 0) {
       logger.info(`${this.queue.length} operations remain in queue`);
     } else {
@@ -237,10 +324,70 @@ export class OfflineManager {
   }
 
   /**
+   * Get serialized queue items (without callbacks) for display
+   */
+  getQueueItems(): SerializedQueueItem[] {
+    return this.queue.map(({ id, operationName, timestamp, retries }) => ({
+      id,
+      operationName,
+      timestamp,
+      retries,
+    }));
+  }
+
+  /**
+   * Persist queue metadata to localStorage.
+   * Only names/timestamps are stored since function callbacks can't be serialized.
+   */
+  private persistQueue() {
+    try {
+      const serialized: SerializedQueueItem[] = this.queue.map(
+        ({ id, operationName, timestamp, retries }) => ({
+          id,
+          operationName,
+          timestamp,
+          retries,
+        })
+      );
+      localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(serialized));
+    } catch {
+      // localStorage may be full or unavailable
+    }
+  }
+
+  /**
+   * Get the persisted queue size (useful on fresh page load to show pending count)
+   */
+  static getPersistedQueueSize(): number {
+    try {
+      const stored = localStorage.getItem(QUEUE_STORAGE_KEY);
+      if (stored) {
+        const items = JSON.parse(stored) as SerializedQueueItem[];
+        return items.length;
+      }
+    } catch {
+      // ignore
+    }
+    return 0;
+  }
+
+  /**
+   * Clear persisted queue (e.g., after successful full sync)
+   */
+  static clearPersistedQueue() {
+    try {
+      localStorage.removeItem(QUEUE_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
    * Clear all queued operations
    */
   clearQueue() {
     this.queue = [];
+    this.persistQueue();
     logger.info('Offline queue cleared');
   }
 

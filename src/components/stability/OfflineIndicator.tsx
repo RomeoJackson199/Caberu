@@ -1,5 +1,5 @@
-import React from 'react';
-import { WifiOff, Wifi, CloudOff, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { WifiOff, Wifi, CloudOff, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { cn } from '@/lib/utils';
@@ -144,10 +144,36 @@ export function OfflineIndicator({
 }
 
 /**
- * Floating offline banner that appears at the top of the screen
+ * Floating offline banner that appears at the top of the screen.
+ * Shows offline duration and expandable queue details.
  */
 export function OfflineBanner() {
-  const { isOffline, queueSize } = useOfflineStatus();
+  const { isOffline, queueSize, getOfflineDuration, getQueueItems } = useOfflineStatus();
+  const [expanded, setExpanded] = useState(false);
+  const [durationText, setDurationText] = useState('');
+
+  useEffect(() => {
+    if (!isOffline) {
+      setExpanded(false);
+      return;
+    }
+
+    const updateDuration = () => {
+      const duration = getOfflineDuration();
+      if (duration === null) return;
+      if (duration < 60000) {
+        setDurationText('less than a minute');
+      } else if (duration < 3600000) {
+        setDurationText(`${Math.floor(duration / 60000)} min`);
+      } else {
+        setDurationText(`${Math.floor(duration / 3600000)}h ${Math.floor((duration % 3600000) / 60000)}m`);
+      }
+    };
+
+    updateDuration();
+    const interval = setInterval(updateDuration, 10000);
+    return () => clearInterval(interval);
+  }, [isOffline, getOfflineDuration]);
 
   return (
     <AnimatePresence>
@@ -165,19 +191,55 @@ export function OfflineBanner() {
                 <div>
                   <p className="font-semibold">No internet connection</p>
                   <p className="text-sm opacity-90">
-                    You're working offline. Changes will sync when reconnected.
+                    Offline for {durationText || 'a moment'}. Changes will sync when reconnected.
                   </p>
                 </div>
               </div>
-              {queueSize > 0 && (
-                <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    {queueSize} pending
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {queueSize > 0 && (
+                  <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      {queueSize} pending
+                    </span>
+                    {expanded ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
+
+            <AnimatePresence>
+              {expanded && queueSize > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3 pt-3 border-t border-white/20">
+                    <p className="text-xs font-medium opacity-75 mb-2">Pending operations:</p>
+                    <ul className="space-y-1">
+                      {getQueueItems().map((item) => (
+                        <li key={item.id} className="text-sm flex items-center gap-2">
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                          <span>{item.operationName}</span>
+                          {item.retries > 0 && (
+                            <span className="text-xs opacity-60">(retry {item.retries}/3)</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
       )}
