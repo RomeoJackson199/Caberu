@@ -11,24 +11,24 @@ import {
  * Tests for the patient dashboard, appointments, billing, and account
  */
 
-test.describe('Patient Portal - Care Home', () => {
+test.describe('Patient Portal - Dashboard', () => {
     test.beforeEach(async ({ page }) => {
         await loginAs(page, 'patient');
-        await page.goto('/care');
+        await page.goto('/dashboard');
         await waitForPageReady(page);
     });
 
-    test('PAT-001: Care home page loads', async ({ page }) => {
+    test('PAT-001: Dashboard page loads', async ({ page }) => {
         await page.waitForLoadState('networkidle');
 
-        const careIndicators = [
-            'text=/care|health|appointment|prescription/i',
+        const dashboardIndicators = [
+            'text=/dashboard|health|appointment|prescription/i',
             '[class*="dashboard"]',
-            '[class*="care"]',
+            '[class*="patient"]',
         ];
 
         let loaded = false;
-        for (const selector of careIndicators) {
+        for (const selector of dashboardIndicators) {
             if (await page.locator(selector).count() > 0) {
                 loaded = true;
                 break;
@@ -36,7 +36,7 @@ test.describe('Patient Portal - Care Home', () => {
         }
 
         expect(loaded).toBeTruthy();
-        await captureScreenshot(page, 'patient-care-home-loaded');
+        await captureScreenshot(page, 'patient-dashboard-loaded');
     });
 
     test('PAT-002: Upcoming appointments visible', async ({ page }) => {
@@ -54,60 +54,6 @@ test.describe('Patient Portal - Care Home', () => {
         }
     });
 
-    test('PAT-003: Navigation to appointments page', async ({ page }) => {
-        await page.goto('/care/appointments');
-        await waitForPageReady(page);
-
-        // Should show appointments list
-        const appointmentPage = page.locator('text=/appointment/i');
-        await expect(appointmentPage.first()).toBeVisible();
-
-        await captureScreenshot(page, 'patient-appointments-page');
-    });
-
-    test('PAT-004: Navigation to prescriptions page', async ({ page }) => {
-        await page.goto('/care/prescriptions');
-        await waitForPageReady(page);
-
-        // Should show prescriptions or empty state
-        const prescriptionIndicators = [
-            'text=/prescription|medication|no prescription/i',
-            '[class*="prescription"]',
-        ];
-
-        let found = false;
-        for (const selector of prescriptionIndicators) {
-            if (await page.locator(selector).count() > 0) {
-                found = true;
-                break;
-            }
-        }
-
-        expect(found).toBeTruthy();
-        await captureScreenshot(page, 'patient-prescriptions-page');
-    });
-
-    test('PAT-005: Navigation to treatment history', async ({ page }) => {
-        await page.goto('/care/history');
-        await waitForPageReady(page);
-
-        // Should show treatment history or empty state
-        const historyIndicators = [
-            'text=/history|treatment|past|no treatment/i',
-            '[class*="history"]',
-        ];
-
-        let found = false;
-        for (const selector of historyIndicators) {
-            if (await page.locator(selector).count() > 0) {
-                found = true;
-                break;
-            }
-        }
-
-        expect(found).toBeTruthy();
-        await captureScreenshot(page, 'patient-treatment-history');
-    });
 });
 
 test.describe('Patient Portal - Billing', () => {
@@ -326,7 +272,7 @@ test.describe('Patient Portal - Account Settings', () => {
 test.describe('Patient Portal - Appointment Actions', () => {
     test.beforeEach(async ({ page }) => {
         await loginAs(page, 'patient');
-        await page.goto('/care/appointments');
+        await page.goto('/dashboard');
         await waitForPageReady(page);
     });
 

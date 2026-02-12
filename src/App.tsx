@@ -80,9 +80,6 @@ const BookAppointmentAI = lazy(() => import("./pages/BookAppointmentAI"));
 const BusinessPortal = lazy(() => import("./pages/BusinessPortal"));
 import { BookingRouteHandler } from "./components/booking/BookingRouteHandler";
 import { logger } from '@/lib/logger';
-const PatientAppointmentsPage = lazy(() => import("./pages/PatientAppointmentsPage"));
-const PatientPrescriptionsPage = lazy(() => import("./pages/PatientPrescriptionsPage"));
-const PatientTreatmentHistoryPage = lazy(() => import("./pages/PatientTreatmentHistoryPage"));
 const PatientBillingPage = lazy(() => import("./pages/PatientBillingPage"));
 const PatientDocumentsPage = lazy(() => import("./pages/PatientDocumentsPage"));
 const PatientAccountProfilePage = lazy(() => import("./pages/PatientAccountProfilePage"));
@@ -407,9 +404,6 @@ const App = () => {
                         } />
                         {/* Patient portal routes with patient nav */}
                         <Route element={<PatientPortalNav><></></PatientPortalNav>}>
-                          <Route path="/care/appointments" element={<PatientAppointmentsPage />} />
-                          <Route path="/care/prescriptions" element={<PatientPrescriptionsPage />} />
-                          <Route path="/care/history" element={<PatientTreatmentHistoryPage />} />
                           <Route path="/billing" element={<PatientBillingPage />} />
                           <Route path="/docs" element={<PatientDocumentsPage />} />
                           <Route path="/account/profile" element={<PatientAccountProfilePage />} />

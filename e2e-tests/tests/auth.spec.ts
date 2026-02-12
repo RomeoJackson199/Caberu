@@ -49,7 +49,6 @@ test.describe('Authentication - Login Flow', () => {
         expect(
             currentUrl.includes('/dashboard') ||
             currentUrl.includes('/dentist') ||
-            currentUrl.includes('/care') ||
             currentUrl.includes('/select-business') ||
             currentUrl.includes('/onboarding')
         ).toBeTruthy();
