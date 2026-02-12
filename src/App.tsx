@@ -120,6 +120,8 @@ const AdminCompliance = lazy(() => import("./pages/admin/AdminCompliance"));
 const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
 const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
+const AdminBusinessDetail = lazy(() => import("./pages/admin/AdminBusinessDetail"));
+const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 
 
 const Dashboard = () => {
@@ -469,7 +471,9 @@ const App = () => {
                         <Route path="/admin" element={<RoleBasedRouter requiredRole='admin'><AdminLayout /></RoleBasedRouter>}>
                           <Route index element={<AdminOverview />} />
                           <Route path="practices" element={<AdminPractices />} />
+                          <Route path="practices/:businessId" element={<AdminBusinessDetail />} />
                           <Route path="users" element={<AdminUsers />} />
+                          <Route path="users/:profileId" element={<AdminUserDetail />} />
                           <Route path="appointments" element={<AdminAppointments />} />
                           <Route path="communications" element={<AdminCommunications />} />
                           <Route path="system" element={<AdminSystemHealth />} />

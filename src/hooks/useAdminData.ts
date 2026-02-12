@@ -38,8 +38,9 @@ export function useAdminOverviewStats() {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const [bizRes, profileRes, apptRes, errRes] = await Promise.all([
+      const [bizRes, profileRes, registeredRes, apptRes, errRes] = await Promise.all([
         supabase.from('businesses').select('id, subscription_plan, subscription_status'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).not('user_id', 'is', null),
         supabase.from('appointments').select('id', { count: 'exact', head: true }).gte('created_at', monthStart),
         supabase.from('system_errors').select('id', { count: 'exact', head: true }).eq('resolved', false),
@@ -64,6 +65,7 @@ export function useAdminOverviewStats() {
       return {
         total_businesses: businesses.length,
         total_users: profileRes.count || 0,
+        registered_users: registeredRes.count || 0,
         appointments_this_month: apptRes.count || 0,
         active_errors: errRes.count || 0,
         mrr_cents: mrr,
@@ -366,7 +368,7 @@ export function useAdminUsers(filters?: { role?: string; businessId?: string; se
         .from('profiles')
         .select(`
           id, user_id, first_name, last_name, email, phone, role,
-          business_id, created_at, updated_at
+          business_id, patient_status, onboarding_completed, created_at, updated_at
         `)
         .order('created_at', { ascending: false });
 
@@ -420,6 +422,8 @@ export function useAdminUsers(filters?: { role?: string; businessId?: string; se
         business_id: p.business_id,
         business_name: p.business_id ? bizMap[p.business_id] || null : null,
         roles: p.user_id ? rolesMap[p.user_id] || [] : [],
+        patient_status: p.patient_status ?? null,
+        onboarding_completed: p.onboarding_completed ?? null,
         created_at: p.created_at,
         updated_at: p.updated_at,
       }));
@@ -1331,6 +1335,303 @@ export function useAdminPlatformRevenue() {
 
       if (error) throw error;
       return data || [];
+    },
+  });
+}
+
+// ==================== Business Status Toggle ====================
+
+export function useToggleBusinessSubscriptionStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: {
+      businessId: string;
+      newStatus: string;
+      oldStatus: string;
+      businessName: string;
+    }) => {
+      const { error } = await supabase
+        .from('businesses')
+        .update({ subscription_status: params.newStatus })
+        .eq('id', params.businessId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast({
+        title: vars.newStatus === 'active' ? 'Business Activated' : 'Business Deactivated',
+        description: `${vars.businessName} status changed to ${vars.newStatus}`,
+      });
+      logAction.mutate({
+        action: 'update_business_status',
+        resource_type: 'business',
+        resource_id: vars.businessId,
+        details: { old_status: vars.oldStatus, new_status: vars.newStatus },
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-business-detail', vars.businessId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-overview-stats'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+// ==================== Business Settings Update ====================
+
+export function useUpdateBusinessSettings() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: {
+      businessId: string;
+      updates: Record<string, unknown>;
+    }) => {
+      const { error } = await supabase
+        .from('businesses')
+        .update(params.updates)
+        .eq('id', params.businessId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast({ title: 'Business updated' });
+      logAction.mutate({
+        action: 'update_business',
+        resource_type: 'business',
+        resource_id: vars.businessId,
+        details: vars.updates,
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-business-detail', vars.businessId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+// ==================== Business Members ====================
+
+export function useAdminBusinessMembers(businessId: string | null) {
+  return useQuery({
+    queryKey: ['admin-business-members', businessId],
+    queryFn: async () => {
+      if (!businessId) return [];
+      const { data, error } = await supabase
+        .from('business_members')
+        .select('id, business_id, profile_id, role, is_active, created_at')
+        .eq('business_id', businessId);
+
+      if (error) throw error;
+
+      const profileIds = (data || []).map((m) => m.profile_id).filter(Boolean) as string[];
+      const profileMap: Record<string, { first_name: string | null; last_name: string | null; email: string | null }> = {};
+      if (profileIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email')
+          .in('id', profileIds);
+        (profiles || []).forEach((p) => { profileMap[p.id] = p; });
+      }
+
+      return (data || []).map((m) => ({
+        ...m,
+        profile_name: m.profile_id ? [profileMap[m.profile_id]?.first_name, profileMap[m.profile_id]?.last_name].filter(Boolean).join(' ') || profileMap[m.profile_id]?.email || 'Unknown' : 'Unknown',
+        profile_email: m.profile_id ? profileMap[m.profile_id]?.email || null : null,
+      }));
+    },
+    enabled: !!businessId,
+  });
+}
+
+export function useRemoveBusinessMember() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: { memberId: string; businessId: string }) => {
+      const { error } = await supabase
+        .from('business_members')
+        .delete()
+        .eq('id', params.memberId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast({ title: 'Member removed' });
+      logAction.mutate({
+        action: 'remove_business_member',
+        resource_type: 'business_member',
+        resource_id: vars.memberId,
+        details: { business_id: vars.businessId },
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-business-members', vars.businessId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-businesses'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+// ==================== User Profile Update ====================
+
+export function useUpdateUserProfile() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: {
+      profileId: string;
+      updates: Record<string, unknown>;
+    }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update(params.updates)
+        .eq('id', params.profileId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast({ title: 'Profile updated' });
+      logAction.mutate({
+        action: 'update_profile',
+        resource_type: 'profile',
+        resource_id: vars.profileId,
+        details: vars.updates,
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail', vars.profileId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+// ==================== User Detail ====================
+
+export function useAdminUserDetail(profileId: string | null) {
+  return useQuery({
+    queryKey: ['admin-user-detail', profileId],
+    queryFn: async () => {
+      if (!profileId) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, user_id, first_name, last_name, email, phone, role, business_id, patient_status, onboarding_completed, created_at, updated_at')
+        .eq('id', profileId)
+        .single();
+
+      if (error) throw error;
+
+      // Get business name
+      let businessName: string | null = null;
+      if (data.business_id) {
+        const { data: biz } = await supabase.from('businesses').select('name').eq('id', data.business_id).single();
+        businessName = biz?.name || null;
+      }
+
+      // Get user_roles
+      let roles: string[] = [];
+      if (data.user_id) {
+        const { data: rolesData } = await supabase.from('user_roles').select('role').eq('user_id', data.user_id);
+        roles = (rolesData || []).map((r) => r.role);
+      }
+
+      // Get business memberships
+      const { data: memberships } = await supabase
+        .from('business_members')
+        .select('id, business_id, role, is_active, created_at')
+        .eq('profile_id', profileId);
+
+      const memBizIds = (memberships || []).map((m) => m.business_id).filter(Boolean) as string[];
+      const memBizMap: Record<string, string> = {};
+      if (memBizIds.length > 0) {
+        const { data: bizData } = await supabase.from('businesses').select('id, name').in('id', memBizIds);
+        (bizData || []).forEach((b) => { memBizMap[b.id] = b.name; });
+      }
+
+      return {
+        ...data,
+        business_name: businessName,
+        roles,
+        memberships: (memberships || []).map((m) => ({
+          ...m,
+          business_name: m.business_id ? memBizMap[m.business_id] || 'Unknown' : 'Unknown',
+        })),
+      };
+    },
+    enabled: !!profileId,
+  });
+}
+
+export function useAddUserRole() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: { userId: string; role: string; profileId: string }) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: params.userId, role: params.role as 'admin' | 'provider' | 'customer' | 'staff' | 'patient' | 'waiter' | 'cook' | 'host' | 'manager' | 'super_admin' });
+
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast({ title: 'Role added' });
+      logAction.mutate({
+        action: 'add_user_role',
+        resource_type: 'user_role',
+        resource_id: vars.userId,
+        details: { role: vars.role },
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail', vars.profileId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useRemoveUserRole() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const logAction = useLogAction();
+
+  return useMutation({
+    mutationFn: async (params: { userId: string; role: string; profileId: string }) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', params.userId)
+        .eq('role', params.role);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast({ title: 'Role removed' });
+      logAction.mutate({
+        action: 'remove_user_role',
+        resource_type: 'user_role',
+        resource_id: vars.userId,
+        details: { role: vars.role },
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail', vars.profileId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     },
   });
 }

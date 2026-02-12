@@ -62,6 +62,7 @@ export default function AdminOverview() {
       icon: Users,
       color: 'text-green-500',
       bg: 'bg-green-500/10',
+      subtitle: `${stats?.registered_users || 0} registered`,
     },
     {
       title: 'Appointments (Month)',
@@ -108,6 +109,9 @@ export default function AdminOverview() {
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="text-2xl font-bold">{card.value}</div>
+                {'subtitle' in card && card.subtitle && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{card.subtitle as string}</p>
+                )}
               </CardContent>
             </Card>
           );
