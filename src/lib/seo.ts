@@ -381,6 +381,72 @@ const seoMap: Record<string, { title: string; description: string; structuredDat
     title: "Team Invite — Join Your Dental Practice | Caberu",
     description: "Accept your invitation to join a dental practice team on Caberu. Collaborate with colleagues on patient care.",
   },
+  "/faq": {
+    title: "FAQ — Common Questions About Dental Practice Management | Caberu",
+    description: "Find answers to frequently asked questions about Caberu's dental practice management software, pricing, HIPAA compliance, data migration, and more.",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is Caberu?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Caberu is an AI-powered dental practice management platform that handles scheduling, patient records, billing, inventory, analytics, and communications — all in one HIPAA-compliant system."
+          }
+        },
+        {
+          "@type": "Question",
+          name: "Is Caberu HIPAA and GDPR compliant?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes. Caberu uses industry-standard encryption, row-level security, and follows all required healthcare data protection regulations for both HIPAA and GDPR compliance."
+          }
+        },
+        {
+          "@type": "Question",
+          name: "How much does Caberu cost?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Caberu offers a free plan for basic features. Paid plans start at $49/month for professionals and $99/month for enterprise, with no hidden fees."
+          }
+        }
+      ]
+    }
+  },
+  "/ai-info": {
+    title: "AI Features — Intelligent Dental Practice Automation | Caberu",
+    description: "Explore Caberu's AI-powered features: smart scheduling, dental AI chat assistant, voice call AI, automated reminders, and intelligent slot recommendations.",
+  },
+  "/watch-demo": {
+    title: "Watch Demo — See Caberu in Action | Caberu",
+    description: "Watch a live demo of Caberu's dental practice management platform. See AI scheduling, patient management, billing, and analytics features in action.",
+  },
+  "/cookies": {
+    title: "Cookie Policy — How We Use Cookies | Caberu",
+    description: "Learn about how Caberu uses cookies and similar technologies. Manage your cookie preferences for our dental practice management platform.",
+  },
+  "/fr/cookies": {
+    title: "Politique de Cookies — Utilisation des Cookies | Caberu",
+    description: "Découvrez comment Caberu utilise les cookies et technologies similaires. Gérez vos préférences de cookies pour notre plateforme de gestion de cabinet dentaire.",
+  },
+  "/nl/cookies": {
+    title: "Cookiebeleid — Hoe Wij Cookies Gebruiken | Caberu",
+    description: "Ontdek hoe Caberu cookies en vergelijkbare technologieën gebruikt. Beheer uw cookievoorkeuren voor ons tandartspraktijk managementplatform.",
+  },
+  "/fr/privacy": {
+    title: "Politique de Confidentialité — Protection des Données RGPD | Caberu",
+    description: "Découvrez comment Caberu protège vos données de santé avec une sécurité conforme au RGPD, le chiffrement et des politiques de confidentialité strictes.",
+  },
+  "/nl/privacy": {
+    title: "Privacybeleid — AVG-conforme Gegevensbescherming | Caberu",
+    description: "Ontdek hoe Caberu uw gezondheidsgegevens beschermt met AVG-conforme beveiliging, encryptie en strikte privacyrichtlijnen.",
+  },
+  "/dpa": {
+    title: "Data Processing Agreement — GDPR Compliance | Caberu",
+    description: "Review Caberu's Data Processing Agreement (DPA) for GDPR-compliant handling of healthcare data. Transparent data processing terms for dental practices.",
+  },
 };
 
 function upsertMetaTag(name: string, content: string) {

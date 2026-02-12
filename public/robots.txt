@@ -1,33 +1,103 @@
-# Robots.txt for Caberu
-# Optimized for AI crawlers and search engines
+# Robots.txt for Caberu - https://caberu.be
+# Dental practice management platform
 
 User-agent: *
 Allow: /
+Allow: /about
+Allow: /pricing
+Allow: /faq
+Allow: /support
+Allow: /dentists
+Allow: /book-appointment
+Allow: /watch-demo
+Allow: /chat
+Allow: /ai-info
+Allow: /login
+Allow: /signup
+Allow: /claim
+Allow: /terms
+Allow: /privacy
+Allow: /cookies
+Allow: /dpa
 
-# Explicitly allow AI crawlers
+# Block authenticated/private routes
+Disallow: /dashboard
+Disallow: /patient/
+Disallow: /dentist/
+Disallow: /dentist-services
+Disallow: /super-admin
+Disallow: /billing
+Disallow: /docs
+Disallow: /account/
+Disallow: /messages
+Disallow: /invite
+Disallow: /auth-redirect
+Disallow: /select-business
+Disallow: /create-business
+Disallow: /onboarding
+Disallow: /welcome
+Disallow: /mobile-auth
+Disallow: /google-calendar-callback
+Disallow: /payment-success
+Disallow: /payment-cancelled
+
+# Block test/demo routes from indexing
+Disallow: /test-phone
+Disallow: /demo/
+
+# Block legacy redirect routes
+Disallow: /book-appointment-legacy
+Disallow: /book-appointment-ai
+Disallow: /smart-book-appointment
+
+# AI crawlers - allow public content
 User-agent: GPTBot
 Allow: /
 Allow: /ai-info
+Disallow: /dashboard
+Disallow: /patient/
+Disallow: /dentist/
+Disallow: /account/
 
 User-agent: ChatGPT-User
 Allow: /
 Allow: /ai-info
+Disallow: /dashboard
+Disallow: /patient/
+Disallow: /dentist/
+Disallow: /account/
 
 User-agent: CCBot
 Allow: /
 Allow: /ai-info
+Disallow: /dashboard
+Disallow: /patient/
+Disallow: /dentist/
+Disallow: /account/
 
 User-agent: anthropic-ai
 Allow: /
 Allow: /ai-info
+Disallow: /dashboard
+Disallow: /patient/
+Disallow: /dentist/
+Disallow: /account/
 
 User-agent: Claude-Web
 Allow: /
 Allow: /ai-info
+Disallow: /dashboard
+Disallow: /patient/
+Disallow: /dentist/
+Disallow: /account/
 
 User-agent: PerplexityBot
 Allow: /
 Allow: /ai-info
+Disallow: /dashboard
+Disallow: /patient/
+Disallow: /dentist/
+Disallow: /account/
 
 User-agent: Googlebot
 Allow: /
@@ -35,10 +105,9 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
-# Sitemap location
+# Sitemap
 Sitemap: https://caberu.be/sitemap.xml
 
 # AI-optimized information page
-# This page contains structured pricing and feature data
-# Format: Static HTML with Schema.org JSON-LD markup
+# Contains structured pricing and feature data with Schema.org JSON-LD markup
 # URL: https://caberu.be/ai-info
