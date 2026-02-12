@@ -1,27 +1,156 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Homepage -->
   <url>
     <loc>https://caberu.be/</loc>
-    <lastmod>2024-11-28</lastmod>
+    <lastmod>2026-02-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://caberu.be/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://caberu.be/fr" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://caberu.be/nl" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://caberu.be/" />
   </url>
+
+  <!-- Core marketing pages -->
   <url>
-    <loc>https://caberu.be/ai-info</loc>
-    <lastmod>2024-11-28</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://caberu.be/about</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://caberu.be/pricing</loc>
-    <lastmod>2024-11-28</lastmod>
+    <lastmod>2026-02-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://caberu.be/faq</loc>
-    <lastmod>2024-11-28</lastmod>
+    <loc>https://caberu.be/ai-info</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Feature & product pages -->
+  <url>
+    <loc>https://caberu.be/dentists</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://caberu.be/book-appointment</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://caberu.be/watch-demo</loc>
+    <lastmod>2026-02-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://caberu.be/chat</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Support & information -->
+  <url>
+    <loc>https://caberu.be/faq</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://caberu.be/support</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Auth entry points (indexable for discoverability) -->
+  <url>
+    <loc>https://caberu.be/login</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://caberu.be/signup</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://caberu.be/claim</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Legal pages -->
+  <url>
+    <loc>https://caberu.be/terms</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://caberu.be/privacy</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://caberu.be/privacy" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://caberu.be/fr/privacy" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://caberu.be/nl/privacy" />
+  </url>
+  <url>
+    <loc>https://caberu.be/fr/privacy</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://caberu.be/privacy" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://caberu.be/fr/privacy" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://caberu.be/nl/privacy" />
+  </url>
+  <url>
+    <loc>https://caberu.be/nl/privacy</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://caberu.be/privacy" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://caberu.be/fr/privacy" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://caberu.be/nl/privacy" />
+  </url>
+  <url>
+    <loc>https://caberu.be/cookies</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://caberu.be/cookies" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://caberu.be/fr/cookies" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://caberu.be/nl/cookies" />
+  </url>
+  <url>
+    <loc>https://caberu.be/fr/cookies</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://caberu.be/cookies" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://caberu.be/fr/cookies" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://caberu.be/nl/cookies" />
+  </url>
+  <url>
+    <loc>https://caberu.be/dpa</loc>
+    <lastmod>2026-02-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>
