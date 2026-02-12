@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,22 +8,16 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Separator } from '@/components/ui/separator';
-import { Search, Building2, Users, Calendar, Phone, ArrowLeft, Settings } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { Search, Building2, ChevronLeft, ChevronRight, Power, PowerOff } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import {
   useAdminBusinesses,
-  useAdminBusinessDetail,
-  useUpdateBusinessSubscription,
-  useAdminEncryptionKeys,
+  useToggleBusinessSubscriptionStatus,
 } from '@/hooks/useAdminData';
-import type { AdminBusiness } from '@/types/admin-dashboard';
 
 const statusColors: Record<string, string> = {
   active: 'bg-green-500/10 text-green-700 dark:text-green-400',
@@ -31,14 +26,20 @@ const statusColors: Record<string, string> = {
   trial: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
 };
 
+const PAGE_SIZE = 20;
+
 export default function AdminPractices() {
-  const { data: businesses, isLoading } = useAdminBusinesses();
+  const navigate = useNavigate();
+  const { data: businesses, isLoading, error } = useAdminBusinesses();
+  const toggleStatus = useToggleBusinessSubscriptionStatus();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedBizId, setSelectedBizId] = useState<string | null>(null);
-  const { data: bizDetail } = useAdminBusinessDetail(selectedBizId);
-  const { data: encryptionKeys } = useAdminEncryptionKeys();
-  const updateSubscription = useUpdateBusinessSubscription();
-  const [editSub, setEditSub] = useState<{ businessId: string; status: string; plan: string } | null>(null);
+  const [page, setPage] = useState(0);
+  const [statusToggle, setStatusToggle] = useState<{
+    businessId: string;
+    businessName: string;
+    oldStatus: string;
+    newStatus: string;
+  } | null>(null);
 
   const filtered = businesses?.filter(
     (b) =>
@@ -47,164 +48,9 @@ export default function AdminPractices() {
       b.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const bizKeys = encryptionKeys?.filter((k) => k.business_id === selectedBizId) || [];
+  const totalPages = Math.ceil((filtered?.length || 0) / PAGE_SIZE);
+  const paginated = filtered?.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  function handleSaveSub() {
-    if (!editSub) return;
-    updateSubscription.mutate({
-      businessId: editSub.businessId,
-      subscription_status: editSub.status,
-      subscription_plan: editSub.plan,
-    });
-    setEditSub(null);
-  }
-
-  // Detail View
-  if (selectedBizId && bizDetail) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedBizId(null)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-          <h2 className="text-xl font-bold">{bizDetail.name}</h2>
-          <Badge className={statusColors[bizDetail.subscription_status || 'inactive']}>
-            {bizDetail.subscription_status || 'N/A'}
-          </Badge>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          {/* Business Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Business Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Slug</span><span>/{bizDetail.slug}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Address</span><span>{bizDetail.address || 'N/A'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Phone</span><span>{bizDetail.phone || 'N/A'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Specialty</span><span>{bizDetail.specialty_type || 'N/A'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Currency</span><span>{bizDetail.currency || 'EUR'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{format(new Date(bizDetail.created_at), 'PP')}</span></div>
-              {bizDetail.primary_color && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Brand Color</span>
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 rounded" style={{ backgroundColor: bizDetail.primary_color }} />
-                    <span>{bizDetail.primary_color}</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Subscription */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Subscription</CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditSub({
-                  businessId: selectedBizId,
-                  status: bizDetail.subscription_status || 'inactive',
-                  plan: bizDetail.subscription_plan || 'free',
-                })}
-              >
-                <Settings className="h-3.5 w-3.5 mr-1" /> Edit
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Plan</span><span className="capitalize">{bizDetail.subscription_plan || 'Free'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge className={statusColors[bizDetail.subscription_status || 'inactive']}>{bizDetail.subscription_status || 'N/A'}</Badge></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Started</span><span>{bizDetail.subscription_started_at ? format(new Date(bizDetail.subscription_started_at), 'PP') : 'N/A'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Ends</span><span>{bizDetail.subscription_ends_at ? format(new Date(bizDetail.subscription_ends_at), 'PP') : 'N/A'}</span></div>
-              <Separator />
-              <div className="flex justify-between"><span className="text-muted-foreground">Stripe Account</span><span className="text-xs font-mono">{bizDetail.stripe_account_id || 'Not connected'}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Charges Enabled</span><span>{bizDetail.stripe_charges_enabled ? 'Yes' : 'No'}</span></div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Encryption Keys */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Encryption Keys</CardTitle>
-            <CardDescription>From admin_encryption_key_status view</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {bizKeys.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Rotated</TableHead>
-                    <TableHead>Expires</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bizKeys.map((k) => (
-                    <TableRow key={k.id}>
-                      <TableCell>{k.key_version}</TableCell>
-                      <TableCell><Badge variant={k.is_active ? 'default' : 'secondary'}>{k.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
-                      <TableCell>{format(new Date(k.created_at), 'PP')}</TableCell>
-                      <TableCell>{k.rotated_at ? format(new Date(k.rotated_at), 'PP') : 'Never'}</TableCell>
-                      <TableCell>{k.expires_at ? format(new Date(k.expires_at), 'PP') : 'No expiry'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <p className="text-sm text-muted-foreground">No encryption keys found for this practice.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Edit Subscription Dialog */}
-        <Dialog open={!!editSub} onOpenChange={(open) => !open && setEditSub(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Subscription</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select value={editSub?.status || ''} onValueChange={(v) => editSub && setEditSub({ ...editSub, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="trial">Trial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Plan</label>
-                <Select value={editSub?.plan || ''} onValueChange={(v) => editSub && setEditSub({ ...editSub, plan: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                    <SelectItem value="promo">Promo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditSub(null)}>Cancel</Button>
-              <Button onClick={handleSaveSub} disabled={updateSubscription.isPending}>Save Changes</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
-
-  // List View
   return (
     <div className="space-y-6">
       <div>
@@ -222,74 +68,150 @@ export default function AdminPractices() {
             <Input
               placeholder="Search by name, email, or slug..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
               className="pl-10"
             />
           </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12"><LoadingSpinner /></div>
+          ) : error ? (
+            <div className="text-center py-8 text-destructive">Failed to load practices: {(error as Error).message}</div>
           ) : (
-            <div className="border rounded-lg overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Business</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead className="text-center">Members</TableHead>
-                    <TableHead className="text-center">Appts</TableHead>
-                    <TableHead className="text-center">Calls</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered && filtered.length > 0 ? (
-                    filtered.map((biz) => (
-                      <TableRow
-                        key={biz.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => setSelectedBizId(biz.id)}
-                      >
-                        <TableCell>
-                          <div className="font-medium flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            {biz.name}
-                          </div>
-                          <div className="text-xs text-muted-foreground ml-6">/{biz.slug}</div>
-                        </TableCell>
-                        <TableCell className="capitalize">{biz.subscription_plan || 'free'}</TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[biz.subscription_status || 'inactive'] + ' text-xs'}>
-                            {biz.subscription_status || 'N/A'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">{biz.owner_name || 'N/A'}</div>
-                          <div className="text-xs text-muted-foreground">{biz.owner_email}</div>
-                        </TableCell>
-                        <TableCell className="text-center">{biz.member_count}</TableCell>
-                        <TableCell className="text-center">{biz.appointment_count}</TableCell>
-                        <TableCell className="text-center">{biz.phone_call_count}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(biz.created_at), { addSuffix: true })}
+            <>
+              <div className="border rounded-lg overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Business</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead className="text-center">Members</TableHead>
+                      <TableHead className="text-center">Appts</TableHead>
+                      <TableHead className="text-center">Calls</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="w-[80px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginated && paginated.length > 0 ? (
+                      paginated.map((biz) => {
+                        const currentStatus = biz.subscription_status || 'inactive';
+                        return (
+                          <TableRow
+                            key={biz.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => navigate(`/admin/practices/${biz.id}`)}
+                          >
+                            <TableCell>
+                              <div className="font-medium flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                                {biz.name}
+                              </div>
+                              <div className="text-xs text-muted-foreground ml-6">/{biz.slug}</div>
+                            </TableCell>
+                            <TableCell className="capitalize">{biz.subscription_plan || 'free'}</TableCell>
+                            <TableCell>
+                              <Badge className={statusColors[currentStatus] + ' text-xs'}>
+                                {currentStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">{biz.owner_name || 'N/A'}</div>
+                              <div className="text-xs text-muted-foreground">{biz.owner_email}</div>
+                            </TableCell>
+                            <TableCell className="text-center">{biz.member_count}</TableCell>
+                            <TableCell className="text-center">{biz.appointment_count}</TableCell>
+                            <TableCell className="text-center">{biz.phone_call_count}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDistanceToNow(new Date(biz.created_at), { addSuffix: true })}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                title={currentStatus === 'active' ? 'Deactivate' : 'Activate'}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setStatusToggle({
+                                    businessId: biz.id,
+                                    businessName: biz.name,
+                                    oldStatus: currentStatus,
+                                    newStatus: currentStatus === 'active' ? 'inactive' : 'active',
+                                  });
+                                }}
+                              >
+                                {currentStatus === 'active' ? (
+                                  <PowerOff className="h-4 w-4 text-destructive" />
+                                ) : (
+                                  <Power className="h-4 w-4 text-green-600" />
+                                )}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                          {searchQuery ? 'No practices found matching your search' : 'No practices found'}
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        {searchQuery ? 'No practices found matching your search' : 'No practices found'}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Page {page + 1} of {totalPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 0}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page >= totalPages - 1}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
+
+      {/* Status Toggle Confirmation */}
+      <AlertDialog open={!!statusToggle} onOpenChange={(open) => !open && setStatusToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusToggle?.newStatus === 'active' ? 'Activate' : 'Deactivate'} Business
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to {statusToggle?.newStatus === 'active' ? 'activate' : 'deactivate'} &quot;{statusToggle?.businessName}&quot;?
+              {statusToggle?.newStatus === 'inactive' && ' This will prevent users from accessing the business.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={statusToggle?.newStatus === 'inactive' ? 'bg-destructive text-destructive-foreground' : ''}
+              onClick={() => {
+                if (statusToggle) {
+                  toggleStatus.mutate(statusToggle);
+                  setStatusToggle(null);
+                }
+              }}
+            >
+              {statusToggle?.newStatus === 'active' ? 'Activate' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

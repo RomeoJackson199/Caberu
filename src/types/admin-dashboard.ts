@@ -3,6 +3,7 @@
 export interface AdminOverviewStats {
   total_businesses: number;
   total_users: number;
+  registered_users: number;
   appointments_this_month: number;
   active_errors: number;
   mrr_cents: number;
@@ -57,6 +58,8 @@ export interface AdminUser {
   business_id: string | null;
   business_name: string | null;
   roles: string[];
+  patient_status: string | null;
+  onboarding_completed: boolean | null;
   created_at: string;
   updated_at: string | null;
 }
