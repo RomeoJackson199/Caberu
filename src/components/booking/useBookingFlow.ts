@@ -477,29 +477,10 @@ export function useBookingFlow() {
         return data;
       }, 'create appointment');
 
-      // Ensure appointment slot rows exist for this date before booking
-      await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }).rpc('ensure_daily_slots', {
-        p_dentist_id: selectedDentist.id,
-        p_date: dateStr,
-      });
-
-      // Reserve the appointment slots to prevent double booking
-      // Ensure time is in HH:MM:SS format for PostgreSQL time type
-      const startTimeFormatted = selectedTime.length === 5 ? `${selectedTime}:00` : selectedTime;
-      const { error: slotError } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }).rpc('book_appointment_slots_for_duration', {
-        p_dentist_id: selectedDentist.id,
-        p_slot_date: dateStr,
-        p_start_time: startTimeFormatted,
-        p_duration_minutes: serviceDuration,
-        p_appointment_id: appointmentData.id,
-      });
-
-      if (slotError) {
-        logger.error("Failed to reserve slots, cleaning up appointment:", slotError);
-        // Clean up the appointment if slot reservation fails
-        await supabase.from("appointments").delete().eq("id", appointmentData.id);
-        throw new Error("This time slot was just booked by someone else. Please select another time.");
-      }
+      // Note: Double-booking prevention is handled by get_available_slots RPC
+      // which checks directly against the appointments table for conflicts.
+      // No need for appointment_slots table reservation since the RPC dynamically
+      // computes availability based on existing appointments.
 
       logger.info("Appointment created:", {
         dentistId: selectedDentist.id,
