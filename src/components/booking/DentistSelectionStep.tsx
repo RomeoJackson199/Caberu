@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Star, CalendarDays, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Users } from "lucide-react";
 import { format } from "date-fns";
 import { AnimatedBackground, EmptyState } from "@/components/ui/polished-components";
 import type { Dentist } from "./types";
@@ -103,13 +103,6 @@ export function DentistSelectionStep({ dentists, onSelect, onBack }: DentistSele
                       <p className="text-sm text-muted-foreground capitalize">
                         {dentist.specialization || "General Dentistry"}
                       </p>
-                      <div className="flex items-center gap-1 mt-1">
-                        {[1, 2, 3, 4].map((i) => (
-                          <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        ))}
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 opacity-50" />
-                        <span className="text-xs text-muted-foreground ml-1">4.87</span>
-                      </div>
                     </div>
                   </div>
 
