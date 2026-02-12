@@ -1,119 +1,93 @@
 
 
-# Comprehensive Audit: Timezone Handling and Encryption Review
+# Bug Audit Report
 
-## Summary of Findings
+## BUG 1: Appointment Slots Not Reserved After Booking (CRITICAL - Double Booking Risk)
 
-After auditing 70+ files across the frontend and 57 edge functions, I found **14 distinct issues** across timezone handling, encryption correctness, and related concerns.
+**Location:** `src/components/booking/useBookingFlow.ts` -- `confirmBooking` function (lines 347-514)
 
----
+**Problem:** When a patient books an appointment through the main booking flow, the code inserts the appointment into the `appointments` table but **never calls `book_appointment_slots_for_duration`** to mark the corresponding time slots as unavailable. This means:
+- The slots remain marked as `is_available = true` in the `appointment_slots` table
+- Other patients can book the exact same time with the same dentist
+- Double bookings will occur
 
-## TIMEZONE ISSUES
+**Evidence:** Other booking flows (ChatBookingFlow.tsx, InteractiveDentalChat.tsx, AppointmentCalendar.tsx) all call `book_appointment_slots_for_duration` after inserting the appointment. The main booking flow does not.
 
-### Issue 1: `send-appointment-reminders` uses browser-locale formatting instead of Brussels timezone
-**File:** `supabase/functions/send-appointment-reminders/index.ts` (lines 88-98)
-**Problem:** Uses `toLocaleDateString()` and `toLocaleTimeString()` which use the Deno server's locale (likely UTC), not `Europe/Brussels`. Patient reminder emails will show the wrong time.
-**Fix:** Import `date-fns-tz` and use `toZonedTime` + `format` with `Europe/Brussels`, matching the pattern already used in `send-appointment-decision` and `cancel-vacation-appointments`.
-
-### Issue 2: `useAppointments.tsx` email formatting uses browser-locale time
-**File:** `src/hooks/useAppointments.tsx` (lines 174-184)
-**Problem:** Confirmation emails built in the frontend hook use `toLocaleDateString()` / `toLocaleTimeString()` on the raw UTC date. If the user's browser is not in Brussels timezone, the email will show incorrect times.
-**Fix:** Replace with `formatClinicTime()` from `@/lib/timezone` for both date and time.
-
-### Issue 3: `exportUtils.ts` exports appointment times in browser-local timezone
-**File:** `src/lib/exportUtils.ts` (lines 136-138)
-**Problem:** CSV/data exports use `toLocaleDateString()` and `toLocaleTimeString()` which vary by browser. Exported data will have inconsistent timestamps.
-**Fix:** Use `formatClinicTime()` to ensure all exported times are in Brussels timezone.
-
-### Issue 4: `AIConversationDialog.tsx` displays timestamps with `toLocaleTimeString()`
-**File:** `src/components/AIConversationDialog.tsx` (line 272)
-**Problem:** Chat message timestamps use `toLocaleTimeString()` without timezone specification. Minor, since these are ephemeral UI elements, but inconsistent with the rest of the app.
-**Fix:** Use `formatClinicTime()` or at minimum specify `Europe/Brussels` as the timezone option.
-
-### Issue 5: `createAppointmentDateTime()` does NOT use Brussels timezone
-**File:** `src/lib/timezone.ts` (lines 50-62), used in `InteractiveDentalChat.tsx`
-**Problem:** This function creates a Date using raw `new Date(year, month, day, hours, minutes)` which interprets time in the **browser's local timezone**, not Brussels. Unlike its sibling `createAppointmentDateTimeFromStrings()` which correctly uses `fromZonedTime()`, this function is timezone-unsafe. If a user books from a different timezone, the appointment time will be wrong.
-**Fix:** Rewrite to use `fromZonedTime()` with `Europe/Brussels`, matching `createAppointmentDateTimeFromStrings()`.
-
-### Issue 6: Multiple frontend components use `format(new Date(...), ...)` without timezone conversion
-**Files:** `availability-settings.tsx` (line 645), `TreatmentPlanDetailView.tsx` (lines 358, 498-503, 528, 557), `DentistAnalyticsDashboard.tsx`, `DemoClinicalTodayEnhanced.tsx`
-**Problem:** `format(new Date(appointment.appointment_date), 'h:mm a')` displays in the browser's local timezone rather than Brussels. For users outside Belgium (or for consistency), these should all use `formatClinicTime()`.
-**Fix:** Replace `format(new Date(...), ...)` with `formatClinicTime(...)` for all appointment-related date displays.
+**Fix:** After the successful appointment insert (around line 464), call `supabase.rpc('book_appointment_slots_for_duration', { p_dentist_id, p_slot_date, p_start_time, p_duration_minutes, p_appointment_id })`.
 
 ---
 
-## ENCRYPTION ISSUES
+## BUG 2: Hardcoded Fake Star Ratings on Dentist Cards (UX/Trust Issue)
 
-### Issue 7: 12 of 14 encryption triggers still use `encrypt_to_base64()` (master key) instead of `encrypt_with_business_key()`
-**File:** `supabase/migrations/20260207060609_...` created triggers for appointments, medical_records, treatment_plans, notes, messages, chat_messages, patient_allergies, communication_logs, email_logs, imaging_sets, patient_documents, and the phone-related tables -- ALL using `encrypt_to_base64()`.
-**File:** `supabase/migrations/20260208072729_...` only fixed 2 triggers (appointment_reminders and imaging_files).
-**Problem:** The plan called for updating all 14 triggers to use `encrypt_with_business_key()`, but only 2 were actually updated. The remaining 12 still encrypt with the shared master key, defeating per-business key isolation.
-**Fix:** Create a new migration that replaces all 12 remaining trigger functions to use `encrypt_with_business_key(NEW.field, NEW.business_id)`.
+**Location:** `src/components/booking/DentistSelectionStep.tsx` (lines 107-112)
 
-### Issue 8: `send-appointment-reminders` reads encrypted `reason` from base `appointments` table via join
-**File:** `supabase/functions/send-appointment-reminders/index.ts` (lines 20-50)
-**Problem:** The function queries `appointment_reminders` with a join to `appointments`, which returns the **encrypted** PHI fields (reason, notes). Line 140 then puts `appointment.reason` directly into the email HTML -- this means patients receive emails with base64-encoded encrypted gibberish instead of the actual reason.
-**Fix:** Either query from `appointments_decrypted` view separately, or restructure the join through the decrypted view.
+**Problem:** Every dentist card shows a hardcoded "4.87" star rating with 4.5 stars filled in. There is no rating system in the database. This is misleading to patients and could cause trust issues, especially in a healthcare context.
 
-### Issue 9: `google-calendar-create-event` reads from base `appointments` table
-**File:** `supabase/functions/google-calendar-create-event/index.ts`
-**Problem:** Selects from `appointments` directly (not `appointments_decrypted`), so the `notes` field it reads and pushes to Google Calendar will be encrypted ciphertext.
-**Fix:** Change the SELECT to use `appointments_decrypted`.
-
-### Issue 10: `database-api` returns encrypted data on `create_appointment` and `update_appointment`
-**File:** `supabase/functions/database-api/index.ts` (lines 630-663)
-**Problem:** After inserting/updating into the base `appointments` table, the `.select()` returns encrypted fields. The API response will contain ciphertext for `reason`, `notes`, etc. The `list_appointments` correctly uses `appointments_decrypted` (line 682), but the write operations do not.
-**Fix:** After insert/update, re-fetch from `appointments_decrypted` to return decrypted data.
+**Fix:** Remove the fake star rating or replace it with real data if a review system exists. For a healthcare app, showing fabricated ratings is particularly problematic.
 
 ---
 
-## DATA INTEGRITY / OTHER ISSUES
+## BUG 3: Cron Job for Appointment Reminders Fails Every 5 Minutes (Recurring DB Error)
 
-### Issue 11: Re-encryption of historical data was only done for 2 tables
-**Problem:** The migration in `20260208072729` re-encrypted data in `appointment_reminders` and `imaging_files` only. The previous migration `20260207060609` created the triggers but the plan said data would be re-encrypted from master key to business keys across all 14 tables. The main 12 tables (appointments, medical_records, treatment_plans, notes, messages, chat_messages, patient_allergies, communication_logs, email_logs, imaging_sets, patient_documents) still have data encrypted with the master app key.
-**Fix:** Run a re-encryption migration for the remaining 12 tables, decrypting with the master key and re-encrypting with each row's business key.
+**Location:** `pg_cron` job calling `send-appointment-reminders`
 
-### Issue 12: `secure_profiles_view` still referenced by edge functions but is a passthrough
-**Status:** This is not a bug -- `secure_profiles_view` is deliberately kept as a passthrough to `profiles` (which is unencrypted). No action needed but noting for completeness.
+**Problem:** The database logs show a recurring NOT NULL constraint violation on `http_request_queue.url` every 5 minutes. The cron job uses `current_setting('app.settings.supabase_url')` which returns NULL because these settings have never been configured.
 
-### Issue 13: `TreatmentPlanManager.tsx` uses raw `toLocaleDateString()` for dates
-**File:** `src/components/TreatmentPlanManager.tsx` (line 104)
-**Problem:** `new Date(dateStr).toLocaleDateString()` with no timezone or locale specification.
-**Fix:** Use `formatClinicTime()` for consistency.
+**Impact:** No appointment reminders are being sent to patients. Error logs are cluttered.
 
-### Issue 14: Decrypted views for the 12 main tables may still use `decrypt_from_base64()` instead of `decrypt_with_business_key()`
-**Problem:** The `*_decrypted` views for the main 12 tables need to be verified. If they still use `decrypt_from_base64()` (which only knows the master key), they won't be able to decrypt data encrypted with business keys once the triggers are fixed.
-**Fix:** Verify and update all 12 `*_decrypted` views to use `decrypt_with_business_key(field, business_id)`.
+**Fix:** Update the cron job SQL to use the hardcoded project URL instead of the unconfigured `app.settings` variables.
 
 ---
 
-## Implementation Plan
+## BUG 4: Confirmation Step Doesn't Show Service Name or Price
 
-### Phase 1: Fix Encryption Triggers (Critical -- data correctness)
-1. Create a database migration that:
-   - Replaces all 12 remaining `trg_encrypt_*` functions to use `encrypt_with_business_key()`
-   - Updates all 12 `*_decrypted` views to use `decrypt_with_business_key(field, business_id)`
-   - Re-encrypts historical data from master key to business keys across all tables
+**Location:** `src/components/booking/ConfirmationStep.tsx` (lines 38-55)
 
-### Phase 2: Fix Edge Function Encryption Reads (Critical -- emails show ciphertext)
-2. Update `send-appointment-reminders/index.ts` to read from `appointments_decrypted`
-3. Update `google-calendar-create-event/index.ts` to read from `appointments_decrypted`
-4. Update `database-api/index.ts` write responses to re-fetch from decrypted views
+**Problem:** The confirmation screen before booking shows dentist, date, and time -- but does **not** show which service was selected, its price, or its duration. Patients can't verify what they're actually booking.
 
-### Phase 3: Fix Timezone Handling (High -- incorrect times in emails)
-5. Update `send-appointment-reminders/index.ts` to use `toZonedTime` + `format` with `Europe/Brussels`
-6. Update `src/hooks/useAppointments.tsx` email formatting to use `formatClinicTime()`
-7. Update `src/lib/exportUtils.ts` to use `formatClinicTime()`
-8. Fix `createAppointmentDateTime()` in `timezone.ts` to use `fromZonedTime()`
+**Fix:** Pass the `selectedService` to the ConfirmationStep component and display the service name, price, and duration in the review section.
 
-### Phase 4: Frontend Timezone Consistency (Medium)
-9. Update `TreatmentPlanDetailView.tsx` appointment time displays to use `formatClinicTime()`
-10. Update `availability-settings.tsx` appointment display to use `formatClinicTime()`
-11. Update `TreatmentPlanManager.tsx`, `AIConversationDialog.tsx`, and other locale-dependent displays
+---
 
-### Files Modified
-- **Database**: 1 migration (triggers, views, re-encryption)
-- **Edge Functions**: 3 files (`send-appointment-reminders`, `google-calendar-create-event`, `database-api`)
-- **Frontend**: ~10 files (timezone fixes across components and hooks)
-- **Shared**: `src/lib/timezone.ts` (fix `createAppointmentDateTime`)
+## BUG 5: Back Button Text Says "Back to services" Instead of "Back to dentists"
+
+**Location:** `src/components/booking/DateTimeSelectionStep.tsx` (line 41)
+
+**Problem:** The back button on the date/time selection step says "Back to services" but the previous step in the flow is dentist selection, not service selection. The step order is: symptoms -> service -> dentist -> datetime -> confirm.
+
+**Fix:** Change the text to "Back to dentists" or make it dynamic based on the flow.
+
+---
+
+## BUG 6: `require_appointment_approval` Missing from RPC-Sourced Dentists
+
+**Location:** `src/components/booking/useBookingFlow.ts` (lines 205-221)
+
+**Problem:** When dentists are loaded via the `get_dentists_for_service` RPC (which returns filtered dentists), the mapped Dentist objects never set `require_appointment_approval`. This means the field is `undefined`, and the check on line 440 (`selectedDentist.require_appointment_approval === true`) always evaluates to `false`. All appointments booked through the service-filtered flow will be auto-confirmed, even for dentists who require approval.
+
+**Fix:** Either include `require_appointment_approval` in the RPC return value, or fetch it separately after the RPC returns the dentist IDs.
+
+---
+
+## BUG 7: Optimistic UI Race Condition in Service Toggle
+
+**Location:** `src/components/services/ServiceManager.tsx` (lines 120-166, 179, 195)
+
+**Problem:** When toggling a dentist's service assignment, the UI updates optimistically, then a `setTimeout(() => loadServices(), 5500)` reloads after 5.5 seconds. If the user makes multiple rapid toggles, the `loadServices()` call will overwrite their latest changes with stale data. Additionally, the 5.5-second delay means the UI state can be wrong for several seconds.
+
+**Fix:** Remove the arbitrary timeout. Instead, reload only after the async operation completes, or use a debounced approach.
+
+---
+
+## Technical Summary of Required Changes
+
+| File | Bug | Severity |
+|------|-----|----------|
+| `src/components/booking/useBookingFlow.ts` | Missing `book_appointment_slots_for_duration` call | Critical |
+| `src/components/booking/useBookingFlow.ts` | `require_appointment_approval` lost for RPC dentists | High |
+| `src/components/booking/DentistSelectionStep.tsx` | Fake star ratings | Medium |
+| `src/components/booking/ConfirmationStep.tsx` | Missing service details | Medium |
+| `src/components/booking/DateTimeSelectionStep.tsx` | Wrong back button label | Low |
+| `src/components/services/ServiceManager.tsx` | Optimistic UI race condition | Medium |
+| Database cron job | Null URL in http_request_queue | High |
 
