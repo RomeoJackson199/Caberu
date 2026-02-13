@@ -311,13 +311,40 @@ serve(async (req) => {
         console.log('Detected language:', detectedLanguage);
       }
 
-    // Fetch AI settings and knowledge documents if business_id is provided
+    // Fetch AI settings and knowledge documents
     let knowledgeBaseContent = '';
     let customGreeting = '';
     let customSystemBehavior = '';
     let customPersonalityTraits: string[] = [];
     let servicesContent = '';
-    
+    let adminSystemPrompt = ''; // System prompt from admin panel
+
+    // Always try to load the admin-configured system prompt
+    try {
+      const { createClient: createAdminClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const adminSupabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const adminSupabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+      const adminClient = createAdminClient(adminSupabaseUrl, adminSupabaseKey);
+
+      const { data: promptData, error: promptError } = await adminClient
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'ai_system_prompt')
+        .maybeSingle();
+
+      if (!promptError && promptData?.value) {
+        const parsed = promptData.value as { prompt?: string };
+        if (parsed.prompt) {
+          adminSystemPrompt = parsed.prompt;
+          if (Deno.env.get('ENVIRONMENT') === 'development') {
+            console.log('Loaded admin system prompt from database');
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Could not load admin system prompt, using hardcoded default:', error);
+    }
+
     if (business_id) {
       try {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
@@ -422,41 +449,35 @@ serve(async (req) => {
 BELANGRIJKE INSTRUCTIES:
 - Je kent de patiënt: ${user_profile?.first_name} ${user_profile?.last_name}
 - VOOR ALLE INTERACTIES: Laat de conversatie natuurlijk verlopen
-- VOOR NIEUWE AFSPRAKEN: Verzamel eerst voldoende informatie voordat je tandarts aanbevelingen doet
-  - Vraag eerst wie de afspraak is voor (patiënt zelf, kind, partner, etc.)
-  - Vraag dan naar specifieke symptomen of behoeften
-  - WACHT op hun antwoord voordat je tandarts aanbevelingen doet
+- VOOR NIEUWE AFSPRAKEN: Verzamel eerst voldoende informatie voordat je verdergaat met boeken
+  - Vraag eerst naar specifieke symptomen of behoeften
+  - WACHT op hun antwoord
   - STEL ALLEEN ÉÉN VRAAG tegelijk
 - NOOIT specifieke tandartsnamen noemen - laat het systeem aanbevelingen afhandelen
 - NOOIT praten over tijd of beschikbaarheid - focus op symptomen
+- Je kunt ALLEEN helpen met het boeken van afspraken. Je kunt NIET helpen met betalingen, recepten, herplannen, annuleren of afspraken bekijken. Verwijs daarvoor naar het dashboard.
 
-WIDGET CODE SYSTEEM - OPTIONEEL:
-Dit systeem ondersteunt TECHNISCHE CODES die widgets activeren wanneer nodig.
-Gebruik deze codes ALLEEN wanneer je daadwerkelijk een widget wilt tonen:
+WIDGET CODE SYSTEEM:
+Je hebt ÉÉN technische code die de boekingswidget activeert.
+Dit is de ENIGE actie die je kunt uitvoeren:
 
-BESCHIKBARE CODES:
+BESCHIKBARE CODE:
 - 12345 = Klaar om te boeken widget (gebruik wanneer je genoeg informatie hebt verzameld en klaar bent om door te gaan naar boeking)
-- 89902 = Tandarts aanbevelingen widget (gebruik ALLEEN als je voldoende info hebt om een tandarts aan te bevelen)
-- 77843 = Betalingen widget
-- 66754 = Afspraak herplannen widget
-- 55621 = Afspraak annuleren widget
-- 44598 = Recepten widget
-- 33476 = Afspraken bekijken widget
 
 GEBRUIK:
-Als je een widget wilt tonen, begin je antwoord met de code en voeg JSON metadata toe:
+Als je klaar bent om te boeken, begin je antwoord met de code en voeg metadata toe:
 "12345 [[SERVICE:service_naam_hier]] [[SYMPTOMS:korte samenvatting symptomen hier]] Perfect! Ik heb alle informatie die ik nodig heb om u te helpen een afspraak te maken."
 
 De [[SERVICE:...]] tag moet de exacte naam bevatten van de meest geschikte service uit de BESCHIKBARE DIENSTEN lijst.
 De [[SYMPTOMS:...]] tag moet een samenvatting van 1-2 zinnen bevatten van wat de patiënt beschreef (bijv. "Scherpe pijn in linker onderkies sinds 3 dagen, gevoelig voor koude")
 
-Als je GEEN widget nodig hebt, gebruik dan GEEN code:
-"Wie is de afspraak voor? Voor uzelf of voor iemand anders?"
+Als je GEEN boeking nodig hebt, gebruik dan GEEN code:
+"Wat brengt u vandaag hier? Heeft u pijn of specifieke klachten?"
 
 BELANGRIJK:
 - Gebruik code 12345 wanneer je genoeg informatie hebt over de symptomen/reden voor bezoek
 - Voeg ALTIJD [[SERVICE:...]] en [[SYMPTOMS:...]] tags toe bij gebruik van code 12345
-- Gebruik codes ALLEEN wanneer je een widget wilt activeren
+- Gebruik GEEN andere codes - 12345 is de enige beschikbare code
 - Voor algemene vragen en informatie verzamelen: GEEN code
 - Codes zijn onzichtbaar voor de gebruiker`,
             
@@ -479,40 +500,34 @@ INSTRUCTIONS IMPORTANTES:
 - Vous connaissez le patient: ${user_profile?.first_name} ${user_profile?.last_name}
 - POUR TOUTES LES INTERACTIONS: Laissez la conversation se dérouler naturellement
 - POUR NOUVEAUX RENDEZ-VOUS: Collectez d'abord suffisamment d'informations
-  - Demandez d'abord pour qui est le rendez-vous
-  - Demandez ensuite les symptômes spécifiques
-  - ATTENDEZ leur réponse avant de recommander
+  - Demandez les symptômes spécifiques
+  - ATTENDEZ leur réponse avant de procéder
   - POSEZ SEULEMENT UNE QUESTION à la fois
 - NE JAMAIS mentionner des noms de dentistes spécifiques
 - NE JAMAIS parler d'heure ou de disponibilité
+- Vous pouvez UNIQUEMENT aider à réserver des rendez-vous. Vous NE pouvez PAS aider avec les paiements, ordonnances, reprogrammations, annulations ou consultation des rendez-vous. Redirigez vers le tableau de bord pour ces demandes.
 
-SYSTÈME DE CODES WIDGET - OPTIONNEL:
-Ce système supporte des CODES TECHNIQUES qui activent des widgets quand nécessaire.
-Utilisez ces codes UNIQUEMENT quand vous voulez vraiment afficher un widget:
+SYSTÈME DE CODE WIDGET:
+Vous avez UN code technique qui active le widget de réservation.
+C'est la SEULE action que vous pouvez effectuer:
 
-CODES DISPONIBLES:
+CODE DISPONIBLE:
 - 12345 = Widget prêt à réserver (utilisez quand vous avez collecté assez d'informations et êtes prêt à procéder à la réservation)
-- 89902 = Widget de recommandation de dentiste (utilisez UNIQUEMENT si vous avez assez d'infos pour recommander)
-- 77843 = Widget de paiement
-- 66754 = Widget de reprogrammation
-- 55621 = Widget d'annulation
-- 44598 = Widget d'ordonnances
-- 33476 = Widget pour voir les rendez-vous
 
 UTILISATION:
-Si vous voulez afficher un widget, commencez votre réponse par le code et incluez les métadonnées JSON:
+Quand vous êtes prêt à réserver, commencez votre réponse par le code et incluez les métadonnées:
 "12345 [[SERVICE:nom_du_service_ici]] [[SYMPTOMS:résumé bref des symptômes ici]] Parfait! J'ai toutes les informations dont j'ai besoin pour vous aider à prendre rendez-vous."
 
 Le tag [[SERVICE:...]] doit contenir le nom exact du service le plus approprié de la liste des SERVICES DISPONIBLES.
 Le tag [[SYMPTOMS:...]] doit contenir un résumé en 1-2 phrases de ce que le patient a décrit (ex: "Douleur vive dans la molaire inférieure gauche depuis 3 jours, sensibilité au froid")
 
-Si vous n'avez PAS besoin d'un widget, n'utilisez PAS de code:
-"Pour qui est le rendez-vous? Pour vous ou pour quelqu'un d'autre?"
+Si vous collectez encore des informations, N'utilisez PAS de code:
+"Qu'est-ce qui vous amène aujourd'hui? Avez-vous des douleurs ou des préoccupations spécifiques?"
 
 IMPORTANT:
 - Utilisez le code 12345 quand vous avez assez d'informations sur les symptômes/raison de la visite
 - Incluez TOUJOURS les tags [[SERVICE:...]] et [[SYMPTOMS:...]] lors de l'utilisation du code 12345
-- Utilisez des codes UNIQUEMENT quand vous voulez activer un widget
+- N'utilisez AUCUN autre code - 12345 est le seul code disponible
 - Pour les questions générales et la collecte d'informations: PAS de code
 - Les codes sont invisibles pour l'utilisateur`,
             
@@ -528,9 +543,8 @@ EXEMPLES DE LANGAGE PROFESSIONNEL:
           };
           
         default: // English
-          return {
-            persona: customGreeting || `You are DentiBot, a friendly and professional dental assistant.${personalityIntro} You know the patient ${user_profile?.first_name} ${user_profile?.last_name}. You help patients book appointments with the right dentist based on their needs.`,
-            guidelines: `
+          // Use admin-configured system prompt if available, otherwise use hardcoded default
+          const defaultGuidelines = `
 CORE RULES:
 - Keep responses SHORT and CONVERSATIONAL (2-3 sentences max)
 - Ask ONE question at a time
@@ -538,47 +552,51 @@ CORE RULES:
 - Never discuss time/availability - focus only on symptoms and needs
 - Be warm, helpful, and natural
 - The appointment is always for the patient you're talking to (${user_profile?.first_name})
+- You can ONLY help with booking appointments. You cannot help with payments, prescriptions, rescheduling, cancellations, or viewing appointments. If asked about those, politely redirect to booking or suggest they use the dashboard.
 
 BOOKING FLOW:
 1. Ask about symptoms or concerns: "What brings you in today?"
 2. Ask follow-up questions to understand the issue better
 3. Once you understand the problem, use code 12345 to proceed to booking
 
-WIDGET CODE SYSTEM - OPTIONAL:
-You have technical codes that activate widgets when needed.
-Use these codes ONLY when you actually want to show a widget:
+WIDGET CODE SYSTEM:
+You have ONE technical code that activates the booking widget.
+This is the ONLY action you can perform:
 
-AVAILABLE CODES:
+AVAILABLE CODE:
 - 12345 = Ready to book widget (use when you have collected enough information and are ready to proceed to booking)
-- 89902 = Dentist recommendation widget (use ONLY if you have enough info to recommend)
-- 77843 = Payment widget
-- 66754 = Reschedule widget
-- 55621 = Cancel widget
-- 44598 = Prescription widget
-- 33476 = View appointments widget
 
 USAGE:
-If you want to show a widget, start your response with the code, then include JSON metadata:
+When ready to book, start your response with the code and include metadata:
 "12345 [[SERVICE:service_name_here]] [[SYMPTOMS:brief symptom summary here]] Perfect! I have all the information I need to help you book an appointment."
 
 The [[SERVICE:...]] tag should contain the exact name of the most appropriate service from the AVAILABLE SERVICES list.
 The [[SYMPTOMS:...]] tag should contain a 1-2 sentence summary of what the patient described (e.g., "Sharp pain in lower left molar for 3 days, sensitive to cold")
 
-If you DON'T need a widget, DON'T use a code:
+If you're still gathering information, DON'T use a code:
 "What brings you in today? Any pain or specific concerns?"
 
 IMPORTANT:
 - Use code 12345 when you have enough information about the patient's symptoms/reason for visit
 - Always include [[SERVICE:...]] and [[SYMPTOMS:...]] tags when using code 12345
-- Use codes ONLY when you want to activate a widget
+- Do NOT use any other codes - 12345 is the only code available
 - For general questions and gathering info: NO code
 - Codes are invisible to the user
 
 RESPONSE STYLE:
-✓ "What brings you in today? Any pain or specific concerns?"
-✓ "I see, can you describe the pain - is it sharp, throbbing, or constant?"
-✓ "12345 [[SERVICE:General Checkup]] [[SYMPTOMS:Routine dental checkup, no specific concerns]] Got it! Let me help you book your appointment."
-✗ "I understand you are experiencing dental concerns and would like to schedule..."`,
+Good: "What brings you in today? Any pain or specific concerns?"
+Good: "I see, can you describe the pain - is it sharp, throbbing, or constant?"
+Good: "12345 [[SERVICE:General Checkup]] [[SYMPTOMS:Routine dental checkup, no specific concerns]] Got it! Let me help you book your appointment."
+Bad: "I understand you are experiencing dental concerns and would like to schedule..."`;
+
+          // Admin prompt takes priority; inject patient name context into it
+          const effectiveGuidelines = adminSystemPrompt
+            ? `${adminSystemPrompt}\n\nPATIENT CONTEXT:\n- The appointment is always for the patient you're talking to (${user_profile?.first_name})`
+            : defaultGuidelines;
+
+          return {
+            persona: customGreeting || `You are DentiBot, a friendly and professional dental assistant.${personalityIntro} You know the patient ${user_profile?.first_name} ${user_profile?.last_name}. You help patients book appointments with the right dentist based on their needs.`,
+            guidelines: effectiveGuidelines,
             
             dentists: ``,
             
@@ -849,134 +867,18 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
     // Parse suggestions from AI response (no forced keyword matching)
     const suggestions: string[] = [];
     
-    // Extract recommendations from AI if they added widget codes
+    // Extract booking widget code from AI response - only 12345 (booking-ready) is supported
     const codeMatch = botResponse.match(/^(\d{5})\s/);
-    if (codeMatch) {
-      const code = codeMatch[1];
-      switch(code) {
-        case '89902':
-          suggestions.push('recommend-dentist');
-          break;
-        case '77843':
-          suggestions.push('pay-now');
-          break;
-        case '66754':
-          suggestions.push('reschedule');
-          break;
-        case '55621':
-          suggestions.push('cancel-appointment');
-          break;
-        case '44598':
-          suggestions.push('prescription-refill');
-          break;
-        case '33476':
-          suggestions.push('view-appointments');
-          break;
-      }
+    if (codeMatch && codeMatch[1] === '12345') {
+      // Code 12345 is handled by the frontend via detectAndExtractCodes
+      // No additional suggestion needed here as it's detected client-side
     }
     
-    // Extract dentist recommendations based on conversation context
+    // AI is restricted to booking only - no dentist recommendations from backend
     const recommendedDentists: string[] = [];
-    const lowerResponse = botResponse.toLowerCase();
-    const lowerMessage = sanitizedMessage.toLowerCase();
-    const fullContext = buildConversationContext(sanitizedMessage, conversation_history);
-    
-    // Check if we should recommend dentists based on context (patient info + symptoms gathered)
-    const shouldRecommendDentist = hasPatientInfo(fullContext) && hasSymptomInfo(fullContext);
-    
-    // Prepare match reason keywords
-    const pediatricKeywords = /child|kid|enfant|daughter|son|fils|fille|pediatric|pédiatrique/i;
-    const orthodonticKeywords = /braces|orthodontic|orthodontie|alignement|alignment|invisalign/i;
-    const urgentKeywords = /pain|urgentce|emergency|douleur|hurt|mal/i;
-    
-    let matchReason = "Highly experienced in general dentistry and patient care";
-    if (pediatricKeywords.test(fullContext)) {
-      matchReason = "Specialized in pediatric dentistry and excellent with children";
-    } else if (orthodonticKeywords.test(fullContext)) {
-      matchReason = "Expert in orthodontics and teeth alignment";
-    } else if (urgentKeywords.test(fullContext)) {
-      matchReason = "Available for urgent consultations and pain management";
-    }
-    
-    // Only recommend dentists if AI decided to show the widget OR we have enough context
-    if (suggestions.includes('recommend-dentist') || shouldRecommendDentist) {
-      if (shouldRecommendDentist && !suggestions.includes('recommend-dentist')) {
-        suggestions.push('recommend-dentist');
-      }
-      // Fetch available dentists from database to make real recommendations
-      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-      const supabase = createClient(supabaseUrl, supabaseKey);
+    const matchReason = "";
+    const finalRecommendations = recommendedDentists;
 
-      try {
-        const { data: dentists } = await supabase
-          .from('dentists')
-          .select(`
-            id,
-            first_name,
-            last_name,
-            specialty,
-            bio,
-            profiles:profile_id (
-              avatar_url
-            )
-          `)
-          .eq('is_active', true)
-          .limit(5);
-
-        if (dentists && dentists.length > 0) {
-          // Intelligent matching based on symptoms and context
-          let bestMatch = dentists[0]; // Default to first dentist
-          
-          // Define dentist type for type safety
-          type DentistRecord = {
-            id: string;
-            first_name?: string;
-            last_name?: string;
-            specialty?: string;
-            bio?: string;
-          };
-          
-          // Pediatric case
-          if (pediatricKeywords.test(fullContext)) {
-            const pediatricDentist = dentists.find((d: DentistRecord) => 
-              d.specialty?.toLowerCase().includes('pediatric') || 
-              d.specialty?.toLowerCase().includes('pédiatrique') ||
-              d.bio?.toLowerCase().includes('child')
-            );
-            if (pediatricDentist) bestMatch = pediatricDentist;
-          }
-          
-          // Orthodontic case
-          else if (orthodonticKeywords.test(fullContext)) {
-            const orthodontist = dentists.find((d: DentistRecord) => 
-              d.specialty?.toLowerCase().includes('orthodontic') ||
-              d.specialty?.toLowerCase().includes('orthodontie')
-            );
-            if (orthodontist) bestMatch = orthodontist;
-          }
-          
-          // Urgent/pain case - prefer general dentist
-          else if (urgentKeywords.test(fullContext)) {
-            const generalDentist = dentists.find((d: DentistRecord) => 
-              d.specialty?.toLowerCase().includes('general') ||
-              d.specialty?.toLowerCase().includes('générale')
-            );
-            if (generalDentist) bestMatch = generalDentist;
-          }
-
-          // Return dentist name as string (recommendedDentists is string[])
-          recommendedDentists.push(`Dr. ${bestMatch.first_name || ''} ${bestMatch.last_name || ''}`.trim());
-        }
-      } catch (error) {
-        console.error('Error fetching dentists:', error);
-      }
-    }
-    
-    // Return dentist objects, not names
-    const finalRecommendations = recommendedDentists.slice(0, 1);
-    
     const urgency_detected = false;
     const emergency_detected = false;
 

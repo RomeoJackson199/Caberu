@@ -44,6 +44,63 @@ interface DefaultAIConfig {
 }
 
 const DEFAULT_AI_CONFIG_KEY = 'default_ai_config';
+const AI_SYSTEM_PROMPT_KEY = 'ai_system_prompt';
+
+const FACTORY_SYSTEM_PROMPT = `CORE RULES:
+- Keep responses SHORT and CONVERSATIONAL (2-3 sentences max)
+- Ask ONE question at a time
+- Never mention specific dentist names - let the system recommend them
+- Never discuss time/availability - focus only on symptoms and needs
+- Be warm, helpful, and natural
+- You can ONLY help with booking appointments. You cannot help with payments, prescriptions, rescheduling, cancellations, or viewing appointments. If asked about those, politely redirect to booking or suggest they use the dashboard.
+
+BOOKING FLOW:
+1. Ask about symptoms or concerns: "What brings you in today?"
+2. Ask follow-up questions to understand the issue better
+3. Once you understand the problem, use code 12345 to proceed to booking
+
+WIDGET CODE SYSTEM:
+You have ONE technical code that activates the booking widget.
+This is the ONLY action you can perform:
+
+AVAILABLE CODE:
+- 12345 = Ready to book widget (use when you have collected enough information and are ready to proceed to booking)
+
+USAGE:
+When ready to book, start your response with the code and include metadata:
+"12345 [[SERVICE:service_name_here]] [[SYMPTOMS:brief symptom summary here]] Perfect! I have all the information I need to help you book an appointment."
+
+The [[SERVICE:...]] tag should contain the exact name of the most appropriate service from the AVAILABLE SERVICES list.
+The [[SYMPTOMS:...]] tag should contain a 1-2 sentence summary of what the patient described (e.g., "Sharp pain in lower left molar for 3 days, sensitive to cold")
+
+If you're still gathering information, DON'T use a code:
+"What brings you in today? Any pain or specific concerns?"
+
+IMPORTANT:
+- Use code 12345 when you have enough information about the patient's symptoms/reason for visit
+- Always include [[SERVICE:...]] and [[SYMPTOMS:...]] tags when using code 12345
+- Do NOT use any other codes - 12345 is the only code available
+- For general questions and gathering info: NO code
+- Codes are invisible to the user
+
+RESPONSE STYLE:
+Good: "What brings you in today? Any pain or specific concerns?"
+Good: "I see, can you describe the pain - is it sharp, throbbing, or constant?"
+Good: "12345 [[SERVICE:General Checkup]] [[SYMPTOMS:Routine dental checkup, no specific concerns]] Got it! Let me help you book your appointment."
+Bad: "I understand you are experiencing dental concerns and would like to schedule..."
+
+CONVERSATION EXAMPLES:
+User: "I need an appointment"
+You: "I'd be happy to help! What brings you in today?"
+
+User: "My tooth hurts"
+You: "I'm sorry to hear that. Can you describe the pain - is it sharp, throbbing, or constant? And which tooth is it?"
+
+User: "It's a sharp pain in my back tooth, started 2 days ago"
+You: "12345 [[SERVICE:Emergency Dental Care]] [[SYMPTOMS:Sharp pain in back tooth for 2 days]] Got it! Let me help you book an appointment right away."
+
+User: "I just need a cleaning"
+You: "12345 [[SERVICE:Dental Cleaning]] [[SYMPTOMS:Routine dental cleaning requested]] Perfect! Let's get you scheduled for a cleaning."`;
 
 const FACTORY_DEFAULTS: DefaultAIConfig = {
   system_behavior:
@@ -72,9 +129,15 @@ export function AIPromptsTab() {
   const [defaultsSaving, setDefaultsSaving] = useState(false);
   const [defaultNewTrait, setDefaultNewTrait] = useState('');
 
+  // System prompt state
+  const [systemPrompt, setSystemPrompt] = useState(FACTORY_SYSTEM_PROMPT);
+  const [systemPromptLoading, setSystemPromptLoading] = useState(true);
+  const [systemPromptSaving, setSystemPromptSaving] = useState(false);
+
   useEffect(() => {
     loadBusinesses();
     loadDefaults();
+    loadSystemPrompt();
   }, []);
 
   async function loadDefaults() {
@@ -100,6 +163,68 @@ export function AIPromptsTab() {
       // system_settings table might not exist yet — use factory defaults
     } finally {
       setDefaultsLoading(false);
+    }
+  }
+
+  async function loadSystemPrompt() {
+    setSystemPromptLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('value')
+        .eq('key', AI_SYSTEM_PROMPT_KEY)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error loading system prompt:', error);
+      } else if (data?.value) {
+        const parsed = data.value as unknown as { prompt: string };
+        if (parsed.prompt) {
+          setSystemPrompt(parsed.prompt);
+        }
+      }
+    } catch {
+      // system_settings table might not exist yet — use factory default
+    } finally {
+      setSystemPromptLoading(false);
+    }
+  }
+
+  async function handleSaveSystemPrompt() {
+    setSystemPromptSaving(true);
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert(
+          {
+            key: AI_SYSTEM_PROMPT_KEY,
+            value: { prompt: systemPrompt } as unknown as Record<string, unknown>,
+          },
+          { onConflict: 'key' }
+        );
+
+      if (error) throw error;
+
+      logAction.mutate({
+        action: 'UPDATE_AI_SYSTEM_PROMPT',
+        resource_type: 'system_settings',
+        resource_id: AI_SYSTEM_PROMPT_KEY,
+        details: { prompt_length: systemPrompt.length },
+      });
+
+      toast({
+        title: 'System prompt saved',
+        description: 'The AI system prompt has been updated. Changes take effect immediately.',
+      });
+    } catch (error) {
+      console.error('Error saving system prompt:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save system prompt. The system_settings table may need to be created.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSystemPromptSaving(false);
     }
   }
 
@@ -290,6 +415,60 @@ export function AIPromptsTab() {
 
   return (
     <div className="space-y-6">
+      {/* AI System Prompt Section */}
+      <Card className="border-amber-500/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-amber-500" />
+            AI System Prompt
+          </CardTitle>
+          <CardDescription>
+            This is the full system prompt sent to the AI model. It controls the AI's behavior, booking flow, widget codes, and response style. Changes take effect immediately for all businesses.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {systemPromptLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="system-prompt">Full AI Prompt</Label>
+                <Textarea
+                  id="system-prompt"
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  rows={20}
+                  className="resize-y font-mono text-sm leading-relaxed"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This prompt defines the AI's core rules, booking flow, widget code system, and conversation examples.
+                  Variables like patient name and services are injected automatically at runtime.
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSystemPrompt(FACTORY_SYSTEM_PROMPT)}
+                >
+                  Reset to Factory Default
+                </Button>
+                <Button onClick={handleSaveSystemPrompt} disabled={systemPromptSaving} className="gap-2">
+                  {systemPromptSaving ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save System Prompt
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Default AI Prompts Section */}
       <Card className="border-primary/20">
         <CardHeader>

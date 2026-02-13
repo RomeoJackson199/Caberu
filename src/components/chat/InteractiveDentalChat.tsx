@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useLanguage, changeLanguage } from "@/hooks/useLanguage";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/hooks/use-toast";
-import { useTheme } from "next-themes";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,6 @@ import { format } from "date-fns";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { ChatLoadingIndicator } from "./ChatLoadingIndicator";
 import { generateBotResponse } from "./aiUtils";
-import { WIDGET_CODES, DENTIST_NAMES, LANGUAGE_NAMES } from "./constants";
 import {
   PrivacyConsentWidget,
   InlineCalendarWidget,
@@ -23,13 +21,6 @@ import {
   DentistSelectionWidget,
   AppointmentConfirmationWidget,
   PersonalInfoFormWidget,
-  QuickSettingsWidget,
-  ImageUploadWidget,
-  UrgencySliderWidget,
-  PayNowWidget,
-  RescheduleWidget,
-  CancelAppointmentWidget,
-  PrescriptionRefillWidget
 } from "./InteractiveChatWidgets";
 import { AIChatOnboardingDialog } from "./AIChatOnboardingDialog";
 import { BookingReadyWidget } from "./BookingReadyWidget";
@@ -133,9 +124,8 @@ export const InteractiveDentalChat = ({
     step: 'dentist'
   });
 
-  const { t } = useLanguage();
+  useLanguage();
   const { toast } = useToast();
-  const { setTheme } = useTheme();
   const navigate = useNavigate();
   const { businessId, businessName } = useBusinessContext();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -286,8 +276,8 @@ export const InteractiveDentalChat = ({
     if (messages.length === 0 && isAIConfigLoaded) {
       // Use custom greeting if available, otherwise use default
       const defaultGreeting = user && userProfile ?
-        `Hello ${userProfile.first_name}! 👋 I'm your scheduling assistant. I can help with appointments, symptom summaries for your dentist, payments, and prescription refills. What do you need?` :
-        `Hello! 👋 Welcome to First Smile AI. I'm your scheduling assistant — I help with appointments, symptom summaries, payments, and prescription refills. I don't provide medical advice. How can I help?`;
+        `Hello ${userProfile.first_name}! 👋 I'm your booking assistant. Tell me about your symptoms or concerns and I'll help you book an appointment.` :
+        `Hello! 👋 Welcome to First Smile AI. I'm your booking assistant — tell me about your dental concerns and I'll help you book an appointment. I don't provide medical advice.`;
       
       const welcomeMessage: ChatMessage = {
         id: crypto.randomUUID(),
@@ -337,82 +327,21 @@ export const InteractiveDentalChat = ({
     if (!suggestions || suggestions.length === 0) {
       return;
     }
-    
+
     suggestions.forEach(suggestion => {
       const normalizedSuggestion = suggestion.toLowerCase().trim();
 
-      // Normalize appointment-related suggestions
-      if (['view-appointments', 'appointments-list', 'show-appointments', 'appointments'].includes(normalizedSuggestion)) {
-        setActiveWidget('view-appointments');
-        showAppointments();
-        return;
+      // AI is restricted to booking only - only handle booking-ready widget
+      if (normalizedSuggestion === 'booking-ready') {
+        setActiveWidget('booking-ready');
+        // Store recommended service and symptoms in widgetData
+        setWidgetData(prev => ({
+          ...prev,
+          recommendedService,
+          symptomSummary
+        }));
       }
-
-      switch (normalizedSuggestion) {
-        case 'recommend-dentist':
-        case 'dentist-selection':
-          setActiveWidget('recommend-dentist');
-          loadDentistsForBooking(false, recommendedDentists);
-          break;
-        case 'book-appointment':
-        case 'appointment-booking':
-          setActiveWidget('book-appointment');
-          startBookingFlow();
-          break;
-        case 'reschedule':
-          setActiveWidget('reschedule');
-          showRescheduleWidget();
-          break;
-        case 'cancel-appointment':
-          setActiveWidget('cancel-appointment');
-          showCancelAppointmentWidget();
-          break;
-        case 'pay-now':
-          setActiveWidget('pay-now');
-          showPayNowWidget();
-          break;
-        case 'prescription-refill':
-          setActiveWidget('prescription-refill');
-          showPrescriptionRefillWidget();
-          break;
-        case 'booking-ready':
-          setActiveWidget('booking-ready');
-          // Store recommended service and symptoms in widgetData
-          setWidgetData(prev => ({
-            ...prev,
-            recommendedService,
-            symptomSummary
-          }));
-          break;
-        case 'theme-dark':
-          setTheme('dark');
-          addBotMessage('Theme changed to dark mode! 🌙');
-          break;
-        case 'theme-light':
-          setTheme('light');
-          addBotMessage('Theme changed to light mode! ☀️');
-          break;
-        case 'language-en':
-          handleLanguageChange('en');
-          break;
-        case 'language-fr':
-          handleLanguageChange('fr');
-          break;
-        case 'language-nl':
-          handleLanguageChange('nl');
-          break;
-        case 'language-options':
-          setActiveWidget('quick-settings');
-          addBotMessage('Please choose your preferred language:');
-          break;
-        case 'theme-options':
-          setActiveWidget('quick-settings');
-          addBotMessage('Please select a theme:');
-          break;
-        default:
-          // Unknown suggestion - do nothing
-          break;
-      }
+      // All other suggestions are ignored - AI only books appointments
     });
   };
 
@@ -428,98 +357,6 @@ export const InteractiveDentalChat = ({
     addBotMessage("Welcome to First Smile AI! 🎉 Please log in to book appointments and access all features.");
   };
 
-
-  const showAppointments = async () => {
-    if (!user) {
-      addBotMessage("Please log in to view your appointments.");
-      return;
-    }
-
-    addBotMessage("Let me check your appointments... 🔍");
-    
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) {
-        addBotMessage("I couldn't find your profile. Please complete your profile first.");
-        return;
-      }
-
-      const { data: appointments, error } = await supabase
-        .from("appointments_decrypted")
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          status,
-          notes,
-          dentists:dentist_id (
-            profiles:profile_id (
-              first_name,
-              last_name
-            )
-          )
-        `)
-        .eq("patient_id", profile.id)
-        .order("appointment_date", { ascending: true });
-
-      if (error) throw error;
-
-      if (!appointments || appointments.length === 0) {
-        addBotMessage("You don't have any appointments scheduled yet. Would you like to book one? 📅");
-        return;
-      }
-
-      const now = new Date();
-      const upcoming = appointments.filter(apt => new Date(apt.appointment_date) >= now);
-      const past = appointments.filter(apt => new Date(apt.appointment_date) < now);
-
-      let responseMessage = "";
-
-      if (upcoming.length > 0) {
-        responseMessage += `📅 **Your upcoming appointments:**\n\n`;
-        upcoming.forEach((apt, index) => {
-          const date = new Date(apt.appointment_date);
-          const dentistProfiles = (apt.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
-          const dentistName = dentistProfiles 
-            ? `Dr. ${dentistProfiles.first_name} ${dentistProfiles.last_name}`
-            : "Unknown dentist";
-          
-          responseMessage += `${index + 1}. **${format(date, "EEEE, MMMM d")}** at **${format(date, "h:mm a")}**\n`;
-          responseMessage += `   👨‍⚕️ ${dentistName}\n`;
-          responseMessage += `   📝 ${apt.reason}\n`;
-          responseMessage += `   🔸 Status: ${apt.status}\n\n`;
-        });
-      }
-
-      if (past.length > 0 && upcoming.length === 0) {
-        responseMessage += `📋 **Your recent appointments:**\n\n`;
-        past.slice(-3).forEach((apt, index) => {
-          const date = new Date(apt.appointment_date);
-          const dentistProfiles = (apt.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
-          const dentistName = dentistProfiles 
-            ? `Dr. ${dentistProfiles.first_name} ${dentistProfiles.last_name}`
-            : "Unknown dentist";
-          responseMessage += `${index + 1}. **${format(date, "EEEE, MMMM d")}** at **${format(date, "h:mm a")}**\n`;
-          responseMessage += `   👨‍⚕️ ${dentistName}\n`;
-          responseMessage += `   📝 ${apt.reason}\n\n`;
-        });
-        responseMessage += "\nNo upcoming appointments. Would you like to book one? 📅";
-      }
-
-      addBotMessage(responseMessage);
-      
-
-
-  } catch (error) {
-    logger.error("Error fetching appointments:", error);
-    addBotMessage("I'm sorry, I couldn't retrieve your appointments right now. Please try again later.");
-  }
-};
 
   const startBookingFlow = () => {
     if (!user) {
@@ -574,33 +411,6 @@ export const InteractiveDentalChat = ({
     
     addBotMessage(urgencyMessage);
     loadDentistsForBooking(true); // Auto-select first available dentist for urgent cases
-  };
-
-  const showHelp = () => {
-    const helpMessage = `
-**Here's what I can help you with:** ❓
-
-🗓️ **Appointments**
-- "Show my appointments"
-- "Book an appointment"
-- "Find earliest slot"
-
-⚙️ **Settings**
-- "Change language to English/French/Dutch"
-- "Switch to dark/light mode"
-- "Update my personal information"
-
-📷 **Upload Images**
-- "Upload a photo"
-- Share X-rays or dental images
-
-🚨 **Emergency**
-- "Emergency booking" for urgent care
-
-Just type what you need! 😊
-    `;
-    
-    addBotMessage(helpMessage);
   };
 
   const loadDentistsForBooking = async (autoSelect = false, recommendedDentists?: string[]) => {
@@ -925,18 +735,6 @@ You'll receive a confirmation email shortly.`;
   }
 
 
-    if (currentInput.includes('help')) {
-      showHelp();
-      setIsLoading(false);
-      return;
-    }
-
-    if (currentInput.includes('emergency') || currentInput.includes('urgent')) {
-      startEmergencyBooking();
-      setIsLoading(false);
-      return;
-    }
-
     const history = [...messages, userMessage].slice(-10);
 
     const { message: botResponse, fallback, suggestions, recommendedDentists, recommendedService, symptomSummary } = await generateBotResponse(
@@ -955,382 +753,6 @@ You'll receive a confirmation email shortly.`;
 
     if (suggestions && suggestions.length > 0) {
       handleSuggestions(suggestions, recommendedDentists, recommendedService, symptomSummary);
-    }
-  };
-
-  const handleLanguageChange = (lang: string) => {
-    changeLanguage(lang as 'en' | 'fr' | 'nl');
-    localStorage.setItem('preferred-language', lang);
-
-    addBotMessage(`✅ Language changed to ${LANGUAGE_NAMES[lang as keyof typeof LANGUAGE_NAMES]} successfully!`);
-
-    toast({
-      title: "Success",
-      description: `Language changed to ${LANGUAGE_NAMES[lang as keyof typeof LANGUAGE_NAMES]}`
-    });
-  };
-
-  const handlePayNow = async () => {
-    if (!user) return;
-    
-    try {
-      setActiveWidget(null);
-      addBotMessage("Opening secure payment page... 💳");
-      
-      // Get user's profile and outstanding payments
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile) throw new Error("Profile not found");
-
-      // Get outstanding payment requests
-      const { data: paymentRequests } = await supabase
-        .from('payment_requests')
-        .select('*')
-        .eq('patient_id', profile.id)
-        .eq('status', 'pending')
-        .limit(1);
-
-      if (paymentRequests && paymentRequests.length > 0) {
-        const paymentRequest = paymentRequests[0];
-        
-        const { data } = await supabase.functions.invoke('create-payment-request', {
-          body: {
-            payment_request_id: paymentRequest.id
-          }
-        });
-
-        if (data?.payment_url) {
-          window.open(data.payment_url, '_blank');
-          addBotMessage("✅ Payment page opened in a new tab. Complete your payment there and I'll update your status!");
-        }
-      } else {
-        addBotMessage("No outstanding payments found. Your account appears to be up to date! ✅");
-      }
-    } catch (error) {
-      logger.error('Error initiating payment:', error);
-      addBotMessage("Sorry, I couldn't open the payment page. Please try again or contact your dentist.");
-    }
-  };
-
-  const handleReschedule = () => {
-    setActiveWidget(null);
-    addBotMessage("Let me help you reschedule your appointment. I'll start the booking process to find you a new slot!");
-    
-    // Start booking flow for rescheduling
-    setTimeout(() => {
-      startBookingFlow();
-    }, 1000);
-  };
-
-  const handleCancelAppointment = async () => {
-    if (!user || !widgetData?.appointment) return;
-    
-    try {
-      setActiveWidget(null);
-      addBotMessage("Cancelling your appointment... 🗓️");
-      
-      const { error } = await supabase
-        .from('appointments')
-        .update({ status: 'cancelled' })
-        .eq('id', widgetData.appointment.id);
-
-      if (error) throw error;
-
-      addBotMessage("✅ Your appointment has been cancelled successfully. If you need to book a new appointment, just let me know!");
-      
-    } catch (error) {
-      logger.error('Error cancelling appointment:', error);
-      addBotMessage("Sorry, I couldn't cancel your appointment. Please contact your dentist directly.");
-    }
-  };
-
-  const handlePrescriptionRefill = async (prescriptionId: string) => {
-    if (!user) return;
-    
-    try {
-      setActiveWidget(null);
-      addBotMessage("Sending refill request to your dentist... 💊");
-      
-      // Get prescription details
-      const { data: prescription } = await supabase
-        .from('prescriptions')
-        .select('*, dentist_id')
-        .eq('id', prescriptionId)
-        .single();
-
-      if (!prescription) throw new Error("Prescription not found");
-
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile) throw new Error("Profile not found");
-
-      // Create notification for dentist
-      const { data: dentistProfile } = await supabase
-        .from('dentists')
-        .select('profile_id')
-        .eq('id', prescription.dentist_id)
-        .single();
-
-      if (dentistProfile) {
-        const { data: dentistUserProfile } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name')
-          .eq('id', dentistProfile.profile_id)
-          .single();
-
-        if (dentistUserProfile) {
-          await supabase
-            .from('notifications')
-            .insert({
-              user_id: dentistUserProfile.user_id,
-              patient_id: profile.id,
-              dentist_id: prescription.dentist_id,
-              type: 'prescription_refill',
-              title: 'Prescription Refill Request',
-              message: `Refill request for ${prescription.medication_name}`,
-              priority: 'medium',
-              metadata: { prescription_id: prescriptionId }
-            });
-        }
-      }
-
-      addBotMessage(`✅ Refill request sent for ${prescription.medication_name}! Your dentist will review and contact you soon.`);
-      
-    } catch (error) {
-      logger.error('Error requesting refill:', error);
-      addBotMessage("Sorry, I couldn't send the refill request. Please contact your dentist directly.");
-    }
-  };
-
-  const showPayNowWidget = async () => {
-    if (!user) {
-      addBotMessage("Please log in to view your payment information.");
-      return;
-    }
-
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) {
-        addBotMessage("Profile not found. Please complete your profile first.");
-        return;
-      }
-
-      // Get outstanding payment requests
-      const { data: paymentRequests, error } = await supabase
-        .from('payment_requests')
-        .select('amount')
-        .eq('patient_id', profile.id)
-        .eq('status', 'pending');
-
-      if (error) throw error;
-
-      const totalOutstanding = paymentRequests?.reduce((sum, req) => sum + req.amount, 0) || 0;
-
-      if (totalOutstanding === 0) {
-        addBotMessage("Great news! You don't have any outstanding payments. Your account is up to date! ✅");
-        return;
-      }
-
-      setWidgetData({ outstandingAmount: totalOutstanding });
-      setActiveWidget('pay-now');
-      addBotMessage("I found outstanding payments on your account. You can pay securely online:");
-
-    } catch (error) {
-      logger.error("Error fetching payment info:", error);
-      addBotMessage("I couldn't retrieve your payment information. Please try again.");
-    }
-  };
-
-  const showRescheduleWidget = async () => {
-    if (!user) {
-      addBotMessage("Please log in to reschedule your appointment.");
-      return;
-    }
-
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) {
-        addBotMessage("Profile not found. Please complete your profile first.");
-        return;
-      }
-
-      // Get next upcoming appointment
-      const { data: appointments, error } = await supabase
-        .from("appointments_decrypted")
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          dentists (
-            profiles:profile_id (
-              first_name,
-              last_name
-            )
-          )
-        `)
-        .eq("patient_id", profile.id)
-        .gte("appointment_date", new Date().toISOString())
-        .eq("status", "confirmed")
-        .order("appointment_date", { ascending: true })
-        .limit(1);
-
-      if (error) throw error;
-
-      if (!appointments || appointments.length === 0) {
-        addBotMessage("You don't have any upcoming appointments to reschedule. Would you like to book a new appointment?");
-        return;
-      }
-
-      const appointment = appointments[0];
-      const dentistProfiles = (appointment.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
-      const dentistName = dentistProfiles ? 
-        `${dentistProfiles.first_name} ${dentistProfiles.last_name}` : 
-        "Your dentist";
-
-      setWidgetData({ 
-        appointment: { 
-          ...appointment, 
-          dentist_name: dentistName 
-        } 
-      });
-      setActiveWidget('reschedule');
-      addBotMessage("I found your next appointment. Would you like to reschedule it?");
-
-    } catch (error) {
-      logger.error("Error fetching appointment:", error);
-      addBotMessage("I couldn't retrieve your appointment information. Please try again.");
-    }
-  };
-
-  const showCancelAppointmentWidget = async () => {
-    if (!user) {
-      addBotMessage("Please log in to cancel your appointment.");
-      return;
-    }
-
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) {
-        addBotMessage("Profile not found. Please complete your profile first.");
-        return;
-      }
-
-      // Get next upcoming appointment
-      const { data: appointments, error } = await supabase
-        .from("appointments_decrypted")
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          dentists (
-            profiles:profile_id (
-              first_name,
-              last_name
-            )
-          )
-        `)
-        .eq("patient_id", profile.id)
-        .gte("appointment_date", new Date().toISOString())
-        .eq("status", "confirmed")
-        .order("appointment_date", { ascending: true })
-        .limit(1);
-
-      if (error) throw error;
-
-      if (!appointments || appointments.length === 0) {
-        addBotMessage("You don't have any upcoming appointments to cancel.");
-        return;
-      }
-
-      const appointment = appointments[0];
-      const dentistProfiles = (appointment.dentists as unknown as { profiles: { first_name: string; last_name: string } })?.profiles;
-      const dentistName = dentistProfiles ? 
-        `${dentistProfiles.first_name} ${dentistProfiles.last_name}` : 
-        "Your dentist";
-
-      setWidgetData({ 
-        appointment: { 
-          ...appointment, 
-          dentist_name: dentistName 
-        } 
-      });
-      setActiveWidget('cancel-appointment');
-      addBotMessage("I found your next appointment. Are you sure you want to cancel it?");
-
-    } catch (error) {
-      logger.error("Error fetching appointment:", error);
-      addBotMessage("I couldn't retrieve your appointment information. Please try again.");
-    }
-  };
-
-  const showPrescriptionRefillWidget = async () => {
-    if (!user) {
-      addBotMessage("Please log in to request prescription refills.");
-      return;
-    }
-
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!profile) {
-        addBotMessage("Profile not found. Please complete your profile first.");
-        return;
-      }
-
-      // Get recent prescriptions (last 6 months)
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-      const { data: prescriptions, error } = await supabase
-        .from('prescriptions')
-        .select('*')
-        .eq('patient_id', profile.id)
-        .gte('created_at', sixMonthsAgo.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-
-      setWidgetData({ prescriptions: prescriptions || [] });
-      setActiveWidget('prescription-refill');
-      
-      if (!prescriptions || prescriptions.length === 0) {
-        addBotMessage("I couldn't find any recent prescriptions. You can still request a refill - I'll help you contact your dentist.");
-      } else {
-        addBotMessage("I found your recent prescriptions. Which one would you like to refill?");
-      }
-
-    } catch (error) {
-      logger.error("Error fetching prescriptions:", error);
-      addBotMessage("I couldn't retrieve your prescription information. Please try again.");
     }
   };
 
@@ -1408,92 +830,6 @@ You'll receive a confirmation email shortly.`;
           />
         ) : null;
       
-      case 'quick-settings':
-        return (
-          <QuickSettingsWidget
-            onLanguageChange={handleLanguageChange}
-            onThemeChange={(theme) => {
-              setTheme(theme);
-              addBotMessage(`✅ Theme changed to ${theme} mode!`);
-            }}
-          />
-        );
-      
-      case 'image-upload':
-        return (
-          <ImageUploadWidget
-            onUpload={(file) => {
-              setActiveWidget(null);
-              addBotMessage(`✅ Image "${file.name}" uploaded successfully! I'll analyze it and get back to you.`);
-            }}
-            onCancel={() => {
-              setActiveWidget(null);
-              addBotMessage("Image upload cancelled.");
-            }}
-          />
-        );
-
-      case 'pay-now':
-        return (widgetData?.outstandingAmount ?? 0) > 0 ? (
-          <PayNowWidget
-            outstandingAmount={widgetData?.outstandingAmount ?? 0}
-            onPay={handlePayNow}
-            onCancel={() => {
-              setActiveWidget(null);
-              addBotMessage("Payment cancelled. You can pay your balance anytime from your dashboard.");
-            }}
-          />
-        ) : null;
-
-      case 'reschedule':
-        return widgetData?.appointment ? (
-          <RescheduleWidget
-            appointment={widgetData.appointment}
-            onReschedule={handleReschedule}
-            onCancel={() => {
-              setActiveWidget(null);
-              addBotMessage("Keeping your current appointment. If you need to reschedule later, just let me know!");
-            }}
-          />
-        ) : null;
-
-      case 'cancel-appointment':
-        return widgetData?.appointment ? (
-          <CancelAppointmentWidget
-            appointment={widgetData.appointment}
-            onConfirm={handleCancelAppointment}
-            onCancel={() => {
-              setActiveWidget(null);
-              addBotMessage("Your appointment is still scheduled. If you need to cancel later, just let me know!");
-            }}
-          />
-        ) : null;
-
-      case 'prescription-refill':
-        return (
-          <PrescriptionRefillWidget
-            prescriptions={widgetData?.prescriptions || []}
-            onRequestRefill={handlePrescriptionRefill}
-            onCancel={() => {
-              setActiveWidget(null);
-              addBotMessage("Prescription refill request cancelled. You can request refills anytime!");
-            }}
-          />
-        );
-
-      case 'urgency-slider':
-        return (
-          <UrgencySliderWidget
-            value={bookingFlow.urgency}
-            onChange={(value) => {
-              setBookingFlow({ ...bookingFlow, urgency: value });
-              setActiveWidget(null);
-              addBotMessage(`Urgency level set to ${value}/5. Let me help you with your appointment.`);
-              loadDentistsForBooking(false);
-            }}
-          />
-        );
-
       case 'booking-ready':
         return (
           <BookingReadyWidget

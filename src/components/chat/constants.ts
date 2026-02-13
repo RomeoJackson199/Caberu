@@ -5,12 +5,6 @@
  */
 
 export const WIDGET_CODES: Record<string, string> = {
-  '89902': 'recommend-dentist',
-  '77843': 'pay-now',
-  '66754': 'reschedule',
-  '55621': 'cancel-appointment',
-  '44598': 'prescription-refill',
-  '33476': 'view-appointments',
   '12345': 'booking-ready',
 };
 
