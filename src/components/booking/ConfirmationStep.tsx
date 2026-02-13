@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { formatTimeSlot } from "@/lib/timezone";
+import { useRef } from "react";
 import type { Dentist, Service } from "./types";
 
 interface ConfirmationStepProps {
@@ -29,6 +31,14 @@ export function ConfirmationStep({
       currency: "EUR",
       minimumFractionDigits: 2,
     }).format(cents / 100);
+
+  const clickGuard = useRef(false);
+  const handleConfirm = () => {
+    if (clickGuard.current || isBooking) return;
+    clickGuard.current = true;
+    onConfirm();
+    setTimeout(() => { clickGuard.current = false; }, 2000);
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-4 py-8">
@@ -77,14 +87,14 @@ export function ConfirmationStep({
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Time</span>
-              <span className="font-medium">{selectedTime}</span>
+              <span className="font-medium">{formatTimeSlot(selectedTime)}</span>
             </div>
           </div>
 
           <Button
             size="lg"
             className="w-full"
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isBooking}
             aria-busy={isBooking}
           >

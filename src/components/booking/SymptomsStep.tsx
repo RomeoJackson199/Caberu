@@ -43,7 +43,8 @@ export function SymptomsStep({
             </p>
             <Textarea
               value={symptomSummary}
-              onChange={(e) => onSymptomChange(e.target.value)}
+              onChange={(e) => onSymptomChange(e.target.value.slice(0, 500))}
+              maxLength={500}
               placeholder="E.g., I have a toothache on my upper left molar, sensitivity to cold drinks, mild swelling..."
               className="min-h-[120px]"
             />
