@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BusinessSelectionForPatients } from "@/components/shared/BusinessPicker";
@@ -14,6 +15,7 @@ import {
 } from "@/components/booking";
 
 function BookAppointmentContent() {
+  const navigate = useNavigate();
   const booking = useBookingFlow();
 
   if (booking.businessLoading || booking.loading) {
@@ -66,7 +68,7 @@ function BookAppointmentContent() {
           symptomSummary={booking.symptomSummary}
           onSymptomChange={booking.setSymptomSummary}
           onNext={booking.handleSymptomsNext}
-          onBack={undefined}
+          onBack={() => navigate(-1)}
         />
       )}
 
