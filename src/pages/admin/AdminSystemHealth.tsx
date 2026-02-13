@@ -20,6 +20,8 @@ import {
   useAdminHealthChecks,
   useAdminBusinesses,
 } from '@/hooks/useAdminData';
+import { PlatformStatusControl } from '@/components/super-admin/PlatformStatusControl';
+import { DowntimeManagement } from '@/components/super-admin/DowntimeManagement';
 
 const severityColors: Record<string, string> = {
   critical: 'bg-red-500/10 text-red-700 dark:text-red-400',
@@ -51,12 +53,19 @@ export default function AdminSystemHealth() {
         <p className="text-sm text-muted-foreground">Monitor errors, health checks, and system status</p>
       </div>
 
-      <Tabs defaultValue="errors" className="space-y-4">
+      <Tabs defaultValue="status" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="status">Status & Downtimes</TabsTrigger>
           <TabsTrigger value="errors">System Errors ({errors?.length || 0})</TabsTrigger>
           <TabsTrigger value="archive">Archive ({archivedErrors?.length || 0})</TabsTrigger>
           <TabsTrigger value="health">Health Checks</TabsTrigger>
         </TabsList>
+
+        {/* Status & Downtimes */}
+        <TabsContent value="status" className="space-y-6">
+          <PlatformStatusControl />
+          <DowntimeManagement />
+        </TabsContent>
 
         {/* Active Errors */}
         <TabsContent value="errors">
