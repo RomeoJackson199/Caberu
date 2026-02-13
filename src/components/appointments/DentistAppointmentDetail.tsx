@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Calendar, Eye, XCircle, ExternalLink, Loader2, Stethoscope, AlertTriangle, Cloud, CloudOff } from "lucide-react";
-import { RescheduleAssistant } from "@/components/RescheduleAssistant";
+import { RescheduleDialog } from "@/components/RescheduleDialog";
 import { toast } from "sonner";
 
 import {
@@ -488,15 +488,14 @@ export function DentistAppointmentDetail({
       </div>
 
       {/* Reschedule Dialog */}
-      <RescheduleAssistant
+      <RescheduleDialog
         appointmentId={appointment.id}
         open={showReschedule}
         onOpenChange={setShowReschedule}
-        onRescheduled={() => {
+        onSuccess={() => {
           setShowReschedule(false);
           onClose();
         }}
-        reason="patient_requested"
       />
 
       {/* Cancel Confirmation Dialog */}

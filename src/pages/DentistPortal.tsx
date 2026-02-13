@@ -18,7 +18,7 @@ import { AvailabilitySettings } from "@/components/AvailabilitySettings";
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
 // Lazy load analytics (includes heavy chart library ~400KB)
 const DentistAnalytics = lazy(() => import("@/components/analytics/DentistAnalytics").then(m => ({ default: m.DentistAnalytics })));
-import { InventoryManager } from "@/components/inventory/InventoryManager";
+// Inventory removed
 import DataImportManager from "@/components/DataImportManager";
 import DentistAdminBranding from "./DentistAdminBranding";
 import DentistAdminSecurity from "./DentistAdminSecurity";
@@ -103,7 +103,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
 
       const validSections: DentistSection[] = [
         'dashboard', 'patients', 'appointments', 'employees', 'messages', 'clinical',
-        'schedule', 'payments', 'analytics', 'reports', 'inventory',
+        'schedule', 'payments', 'analytics', 'reports',
         'imports', 'users', 'team', 'branding', 'security', 'settings', 'services',
         'admin-schedule', 'admin-analytics'
       ];
@@ -224,18 +224,8 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         .eq('dentist_id', dentist.id)
         .eq('status', 'overdue');
 
-      const { data: inventory } = await supabase
-        .from('inventory_items')
-        .select('quantity, min_threshold')
-        .eq('dentist_id', dentist.id);
-
-      const lowStockCount = (inventory || []).filter(
-        (item: any) => item.quantity <= item.min_threshold
-      ).length;
-
       setBadges({
         payments: (payments || []).length,
-        inventory: lowStockCount,
       });
     } catch (error: unknown) {
       toast({
@@ -322,8 +312,6 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         );
       case 'reports':
         return <div className="p-4">{t.reportsComingSoon || "Reports (Coming Soon)"}</div>;
-      case 'inventory':
-        return <InventoryManager dentistId={dentistId} userId={user.id} />;
       case 'imports':
         return <DataImportManager />;
       case 'users':

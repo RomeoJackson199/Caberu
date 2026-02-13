@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { RescheduleAssistant } from '@/components/RescheduleAssistant';
+import { RescheduleDialog } from '@/components/RescheduleDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -189,14 +189,13 @@ export function PatientAppointmentActions({
       </AlertDialog>
 
       {/* Reschedule Dialog */}
-      <RescheduleAssistant
+      <RescheduleDialog
         appointmentId={appointmentId}
         open={showRescheduleDialog}
         onOpenChange={setShowRescheduleDialog}
-        onRescheduled={() => {
+        onSuccess={() => {
           onUpdate?.();
         }}
-        reason="patient_requested"
       />
     </>
   );

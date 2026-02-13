@@ -4,9 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
-  FileText, Upload, DollarSign, Calendar,
-  Plus, Trash2, Loader2, Check, Package, Stethoscope
+  FileText, Upload, Calendar,
+  Plus, Loader2, Check, Package, Stethoscope
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AppointmentImagingTab } from "@/components/imaging";
@@ -262,8 +270,20 @@ export function ConsultationWorkspace({
     onChargesChange?.(updatedCharges);
   }, [charges, onChargesChange]);
 
+  // New service creation state
+  const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
+  const [newServiceName, setNewServiceName] = useState("");
+  const [newServicePrice, setNewServicePrice] = useState("");
+  const [newServiceDuration, setNewServiceDuration] = useState("30");
+  const [creatingSvc, setCreatingSvc] = useState(false);
+
   const handleServiceChange = useCallback(async (serviceId: string) => {
     if (!isEditable) return;
+
+    if (serviceId === "__create_new__") {
+      setShowNewServiceDialog(true);
+      return;
+    }
 
     const parsedServiceId = serviceId === "none" ? null : serviceId;
     setSelectedServiceId(parsedServiceId);
@@ -303,6 +323,45 @@ export function ConsultationWorkspace({
     }
   }, [isEditable, services, appointmentId, existingServiceId, onServiceChange, toast]);
 
+  const handleCreateService = useCallback(async () => {
+    if (!newServiceName.trim() || !newServicePrice) return;
+    setCreatingSvc(true);
+    try {
+      const priceCents = Math.round(parseFloat(newServicePrice) * 100);
+      if (isNaN(priceCents)) throw new Error("Invalid price");
+
+      const { data, error } = await supabase
+        .from('business_services')
+        .insert({
+          business_id: businessId,
+          name: newServiceName.trim(),
+          price_cents: priceCents,
+          duration_minutes: parseInt(newServiceDuration) || 30,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to local list and select it
+      setServices(prev => [...prev, data]);
+      setShowNewServiceDialog(false);
+      setNewServiceName("");
+      setNewServicePrice("");
+      setNewServiceDuration("30");
+
+      // Auto-select the new service
+      await handleServiceChange(data.id);
+
+      toast({ title: "Service Created", description: `${data.name} has been added` });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to create service", variant: "destructive" });
+    } finally {
+      setCreatingSvc(false);
+    }
+  }, [newServiceName, newServicePrice, newServiceDuration, businessId, toast, handleServiceChange]);
+
   return (
     <div className="space-y-4">
       {/* Service Selection */}
@@ -338,6 +397,12 @@ export function ConsultationWorkspace({
                     {service.name} - ${(service.price_cents / 100).toFixed(2)} ({service.duration_minutes || 30} min)
                   </SelectItem>
                 ))}
+                <SelectItem value="__create_new__" className="text-primary font-medium">
+                  <span className="flex items-center gap-1">
+                    <Plus className="h-3 w-3" />
+                    Add New Service
+                  </span>
+                </SelectItem>
               </SelectContent>
             </Select>
           ) : (
@@ -404,97 +469,7 @@ export function ConsultationWorkspace({
         </CardContent>
       </Card>
 
-      {/* Charges / Financials */}
-      <Card className="border-muted/60">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary/70" />
-            Charges
-            {chargesSaving && (
-              <span className="ml-auto text-xs text-muted-foreground flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Saving...
-              </span>
-            )}
-            {chargesSaved && !chargesSaving && (
-              <span className="ml-auto text-xs text-emerald-600 flex items-center gap-1">
-                <Check className="h-3 w-3" />
-                Saved
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Existing charges */}
-          {charges.length > 0 && (
-            <div className="space-y-2">
-              {charges.map((charge) => (
-                <div 
-                  key={charge.id} 
-                  className="flex items-center justify-between p-2 bg-muted/30 rounded-md"
-                >
-                  <span className="text-sm">{charge.description}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">
-                      ${(charge.amount_cents / 100).toFixed(2)}
-                    </span>
-                    {isEditable && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive"
-                        onClick={() => handleRemoveCharge(charge.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              
-              <Separator />
-              
-              <div className="flex items-center justify-between font-medium">
-                <span>Total</span>
-                <span>${totalFormatted}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Add new charge */}
-          {isEditable && (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Description"
-                value={newChargeDesc}
-                onChange={(e) => setNewChargeDesc(e.target.value)}
-                className="flex-1"
-              />
-              <Input
-                type="number"
-                placeholder="Amount"
-                value={newChargeAmount}
-                onChange={(e) => setNewChargeAmount(e.target.value)}
-                className="w-24"
-                min="0"
-                step="0.01"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleAddCharge}
-                disabled={!newChargeDesc.trim() || !newChargeAmount}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-
-          {charges.length === 0 && !isEditable && (
-            <p className="text-sm text-muted-foreground">No charges recorded.</p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Charges section removed - service prices define costs */}
 
       {/* Follow-up placeholder - to be implemented with scheduling */}
       <Card className="border-muted/60">
@@ -515,6 +490,58 @@ export function ConsultationWorkspace({
           )}
         </CardContent>
       </Card>
+
+      {/* New Service Dialog */}
+      <Dialog open={showNewServiceDialog} onOpenChange={setShowNewServiceDialog}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Create New Service</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="svc-name">Service Name</Label>
+              <Input
+                id="svc-name"
+                value={newServiceName}
+                onChange={(e) => setNewServiceName(e.target.value)}
+                placeholder="e.g. Root Canal"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="svc-price">Price ($)</Label>
+                <Input
+                  id="svc-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newServicePrice}
+                  onChange={(e) => setNewServicePrice(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="svc-dur">Duration (min)</Label>
+                <Input
+                  id="svc-dur"
+                  type="number"
+                  min="5"
+                  value={newServiceDuration}
+                  onChange={(e) => setNewServiceDuration(e.target.value)}
+                  placeholder="30"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewServiceDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateService} disabled={!newServiceName.trim() || !newServicePrice || creatingSvc}>
+              {creatingSvc ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
