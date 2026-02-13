@@ -31,12 +31,13 @@ import {
   Pill
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { createAppointmentDateTimeFromStrings, formatClinicTime, utcToClinicTime } from "@/lib/timezone";
+import { createAppointmentDateTimeFromStrings, formatClinicTime } from "@/lib/timezone";
 import { useLanguage } from "@/hooks/useLanguage";
 import PaymentWizard from "@/components/payments/PaymentWizard";
 import { PrescriptionManager } from "@/components/PrescriptionManager";
 import { Sheet as UISheet, SheetContent as UISheetContent } from "@/components/ui/sheet";
 import { logger } from '@/lib/logger';
+import { RescheduleDialog } from '@/components/RescheduleDialog';
 
 interface UnifiedAppointment {
   id: string;
@@ -88,8 +89,6 @@ export function UnifiedAppointments({
   const [showCompletion, setShowCompletion] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
-  const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -294,12 +293,6 @@ export function UnifiedAppointments({
 
   const handleReschedule = (appointment: UnifiedAppointment) => {
     setSelectedAppointment(appointment);
-    const clinicDate = utcToClinicTime(appointment.appointment_date);
-    const year = clinicDate.getFullYear();
-    const month = String(clinicDate.getMonth() + 1).padStart(2, '0');
-    const day = String(clinicDate.getDate()).padStart(2, '0');
-    setRescheduleDate(`${year}-${month}-${day}`);
-    setRescheduleTime(`${String(clinicDate.getHours()).padStart(2, '0')}:${String(clinicDate.getMinutes()).padStart(2, '0')}`);
     setShowReschedule(true);
   };
 
@@ -327,34 +320,10 @@ export function UnifiedAppointments({
     }
   };
 
-  const applyReschedule = async () => {
-    if (!selectedAppointment || !rescheduleDate || !rescheduleTime) return;
-
-    try {
-      const newDateTime = createAppointmentDateTimeFromStrings(rescheduleDate, rescheduleTime).toISOString();
-
-      const { error } = await supabase
-        .from('appointments')
-        .update({ appointment_date: newDateTime })
-        .eq('id', selectedAppointment.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Appointment Rescheduled",
-        description: "The appointment has been rescheduled successfully.",
-      });
-
-      setShowReschedule(false);
-      setSelectedAppointment(null);
-      fetchAppointments();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to reschedule appointment",
-        variant: "destructive",
-      });
-    }
+  const onRescheduleSuccess = () => {
+    setShowReschedule(false);
+    setSelectedAppointment(null);
+    fetchAppointments();
   };
 
   const handleQuickBook = async () => {
@@ -682,41 +651,12 @@ export function UnifiedAppointments({
       </Dialog>
 
       {/* Reschedule Dialog */}
-      <Dialog open={showReschedule} onOpenChange={setShowReschedule}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t.rescheduleAppointment || 'Reschedule Appointment'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>New Date</Label>
-                <Input
-                  type="date"
-                  value={rescheduleDate}
-                  onChange={(e) => setRescheduleDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>New Time</Label>
-                <Input
-                  type="time"
-                  value={rescheduleTime}
-                  onChange={(e) => setRescheduleTime(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={applyReschedule} className="flex-1">
-                Confirm Reschedule
-              </Button>
-              <Button variant="outline" onClick={() => setShowReschedule(false)} className="flex-1">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <RescheduleDialog
+        appointmentId={selectedAppointment?.id ?? null}
+        open={showReschedule}
+        onOpenChange={setShowReschedule}
+        onSuccess={onRescheduleSuccess}
+      />
 
       {/* Payment Wizard Dialog */}
       {showPaymentWizard && (
