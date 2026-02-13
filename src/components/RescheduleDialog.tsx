@@ -111,7 +111,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       if (avail) {
         const map: Record<number, boolean> = {};
-        avail.forEach((a: any) => { map[a.day_of_week] = a.is_available; });
+        avail.forEach((a: { day_of_week: number; is_available: boolean }) => { map[a.day_of_week] = a.is_available; });
         setDentistAvailability(map);
       }
     } catch (error) {
@@ -142,17 +142,17 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
+      const businessId = await getCurrentBusinessId();
 
       const { error: generateError } = await supabase.rpc('generate_daily_slots', {
         p_dentist_id: appointment.dentist_id,
-        p_date: dateStr
+        p_date: dateStr,
+        p_business_id: businessId
       });
 
       if (generateError) {
         logger.warn('Slot generation warning:', generateError);
       }
-
-      const businessId = await getCurrentBusinessId();
 
       const { data: slots, error: slotsError } = await supabase
         .from('appointment_slots')
@@ -191,7 +191,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-      const { error: rpcError } = await (supabase as any).rpc('reschedule_appointment', {
+      const { error: rpcError } = await supabase.rpc('reschedule_appointment', {
         p_appointment_id: appointment.id,
         p_user_id: userData.user.id,
         p_slot_date: dateStr,
