@@ -24,6 +24,7 @@ import {
   Flag,
   DollarSign,
   ScrollText,
+  Bot,
   Menu,
   X,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ const navItems: NavItem[] = [
   { id: 'communications', label: 'Communications', path: '/admin/communications', icon: Phone, section: 'main' },
   { id: 'system', label: 'System Health', path: '/admin/system', icon: Server, section: 'system' },
   { id: 'compliance', label: 'GDPR & Compliance', path: '/admin/compliance', icon: ShieldCheck, section: 'system' },
+  { id: 'ai-prompts', label: 'AI Prompts', path: '/admin/ai-prompts', icon: Bot, section: 'tools' },
   { id: 'features', label: 'Feature Flags', path: '/admin/features', icon: Flag, section: 'tools' },
   { id: 'revenue', label: 'Revenue & Billing', path: '/admin/revenue', icon: DollarSign, section: 'tools' },
   { id: 'audit', label: 'Audit Log', path: '/admin/audit', icon: ScrollText, section: 'tools' },
