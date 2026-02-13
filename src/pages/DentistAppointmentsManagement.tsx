@@ -11,7 +11,7 @@ import { DayCalendarView } from "@/components/appointments/DayCalendarView";
 import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { MonthlyOverview } from "@/components/appointments/MonthlyOverview";
-// DentistAdminScheduleDashboard import removed - team view now uses WeeklyCalendarView with showAllDentists
+import { DentistAdminScheduleDashboard } from "@/components/DentistAdminScheduleDashboard";
 import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -668,15 +668,7 @@ function DentistAppointmentsManagementContent() {
           selectedAppointment ? "hidden md:block md:w-[65%]" : "flex-1"
         )}>
           {viewMode === "team" ? (
-            <WeeklyCalendarView
-              dentistId={dentistId}
-              businessId={businessId || undefined}
-              currentDate={currentDate}
-              onAppointmentClick={handleAppointmentClick}
-              selectedAppointmentId={selectedAppointment?.id}
-              googleCalendarEvents={googleCalendarEvents}
-              showAllDentists={true}
-            />
+            <DentistAdminScheduleDashboard />
           ) : dentistLoading ? (
             <div className="flex justify-center items-center h-full">
               <div className="text-center space-y-4">

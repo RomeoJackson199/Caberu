@@ -305,12 +305,9 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                   }
                 }}
                 disabled={isDateDisabled}
-                fromDate={new Date()}
-                toDate={addDays(new Date(), 90)}
+                startMonth={new Date()}
+                endMonth={addDays(new Date(), 90)}
                 className="rounded-md border pointer-events-auto"
-                classNames={{
-                  day: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-                }}
               />
             </div>
           </div>
