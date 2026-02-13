@@ -11,6 +11,7 @@ import { DayCalendarView } from "@/components/appointments/DayCalendarView";
 import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { MonthlyOverview } from "@/components/appointments/MonthlyOverview";
+import { DentistAdminScheduleDashboard } from "@/components/DentistAdminScheduleDashboard";
 import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -20,12 +21,20 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle, RefreshCw, WifiOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle, RefreshCw, WifiOff, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedStatCard } from "@/components/ui/page-enhancements";
 import { ErrorState, EmptyState, CalendarSyncStatusCompact, AppointmentErrorBoundary, OfflineBanner } from "@/components/stability";
 import { motion, AnimatePresence } from "framer-motion";
 import { getFriendlyErrorMessage } from "@/lib/userFriendlyErrors";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 function DentistAppointmentsManagementContent() {
   const { businessId } = useBusinessContext();
@@ -35,7 +44,7 @@ function DentistAppointmentsManagementContent() {
   } = useCurrentDentist(businessId);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [viewMode, setViewMode] = useState<"week" | "day" | "completed">("week");
+  const [viewMode, setViewMode] = useState<"week" | "day" | "completed" | "team">("week");
   const [showStats, setShowStats] = useState(false);
   const [calendarSyncError, setCalendarSyncError] = useState<Error | null>(null);
   const [lastCalendarSync, setLastCalendarSync] = useState<Date | null>(null);
@@ -523,6 +532,22 @@ function DentistAppointmentsManagementContent() {
               </Button>
             </div>
 
+            {/* Team Schedule Button - Desktop only */}
+            <Button
+              variant={viewMode === "team" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode(viewMode === "team" ? "week" : "team")}
+              className={cn(
+                "h-9 rounded-xl border-2 transition-all shadow-sm font-semibold hidden lg:flex",
+                viewMode === "team"
+                  ? "bg-foreground text-background"
+                  : "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
+              )}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Team
+            </Button>
+
             {/* Stats Toggle */}
             <Button
               variant="outline"
@@ -642,7 +667,9 @@ function DentistAppointmentsManagementContent() {
           "px-4 sm:px-6 pt-4 pb-4 overflow-auto transition-all duration-300",
           selectedAppointment ? "hidden md:block md:w-[65%]" : "flex-1"
         )}>
-          {dentistLoading ? (
+          {viewMode === "team" ? (
+            <DentistAdminScheduleDashboard />
+          ) : dentistLoading ? (
             <div className="flex justify-center items-center h-full">
               <div className="text-center space-y-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"></div>

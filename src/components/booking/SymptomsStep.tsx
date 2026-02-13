@@ -21,7 +21,7 @@ export function SymptomsStep({
   onBack,
 }: SymptomsStepProps) {
   return (
-    <div className="max-w-4xl mx-auto p-4 py-8">
+    <div className="max-w-4xl mx-auto p-3 py-4 sm:p-4 sm:py-8">
       {onBack && (
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 mb-6">
           <ArrowLeft className="h-4 w-4" />
