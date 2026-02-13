@@ -999,81 +999,6 @@ export type Database = {
           },
         ]
       }
-      communication_metrics: {
-        Row: {
-          ai_intake_completed: number | null
-          avg_call_quality_score: number | null
-          business_id: string
-          completed_calls: number | null
-          created_at: string
-          failed_calls: number | null
-          id: string
-          metric_date: string
-          sms_delivered: number | null
-          sms_sent: number | null
-          total_call_duration_seconds: number | null
-          total_calls: number | null
-          updated_at: string
-          whatsapp_delivered: number | null
-          whatsapp_failed: number | null
-          whatsapp_read: number | null
-          whatsapp_sent: number | null
-        }
-        Insert: {
-          ai_intake_completed?: number | null
-          avg_call_quality_score?: number | null
-          business_id: string
-          completed_calls?: number | null
-          created_at?: string
-          failed_calls?: number | null
-          id?: string
-          metric_date?: string
-          sms_delivered?: number | null
-          sms_sent?: number | null
-          total_call_duration_seconds?: number | null
-          total_calls?: number | null
-          updated_at?: string
-          whatsapp_delivered?: number | null
-          whatsapp_failed?: number | null
-          whatsapp_read?: number | null
-          whatsapp_sent?: number | null
-        }
-        Update: {
-          ai_intake_completed?: number | null
-          avg_call_quality_score?: number | null
-          business_id?: string
-          completed_calls?: number | null
-          created_at?: string
-          failed_calls?: number | null
-          id?: string
-          metric_date?: string
-          sms_delivered?: number | null
-          sms_sent?: number | null
-          total_call_duration_seconds?: number | null
-          total_calls?: number | null
-          updated_at?: string
-          whatsapp_delivered?: number | null
-          whatsapp_failed?: number | null
-          whatsapp_read?: number | null
-          whatsapp_sent?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "communication_metrics_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "communication_metrics_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "public_businesses_view"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       dentist_availability: {
         Row: {
           break_end_time: string | null
@@ -3843,73 +3768,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subscriptions: {
-        Row: {
-          billing_cycle: string
-          cancel_at_period_end: boolean
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          dentist_id: string
-          id: string
-          plan_id: string
-          status: string
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          billing_cycle?: string
-          cancel_at_period_end?: boolean
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          dentist_id: string
-          id?: string
-          plan_id: string
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          billing_cycle?: string
-          cancel_at_period_end?: boolean
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          dentist_id?: string
-          id?: string
-          plan_id?: string
-          status?: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_dentist_id_fkey"
-            columns: ["dentist_id"]
-            isOneToOne: false
-            referencedRelation: "dentists"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_dentist_id_fkey"
-            columns: ["dentist_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       super_admin_audit_log: {
         Row: {
           action: string
@@ -4390,51 +4248,6 @@ export type Database = {
             columns: ["created_by_dentist_id"]
             isOneToOne: false
             referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      usage_metrics: {
-        Row: {
-          business_id: string
-          created_at: string
-          id: string
-          metadata: Json | null
-          metric_date: string
-          metric_type: string
-          metric_value: number
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          metric_date?: string
-          metric_type: string
-          metric_value?: number
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          metric_date?: string
-          metric_type?: string
-          metric_value?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "usage_metrics_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "usage_metrics_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]

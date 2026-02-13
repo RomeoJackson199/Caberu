@@ -9,8 +9,6 @@ verify_jwt = true
 [functions.google-calendar-sync]
 verify_jwt = true
 
-[functions.send-sms]
-verify_jwt = true
 
 [functions.create-payment-request]
 verify_jwt = true
@@ -138,8 +136,6 @@ verify_jwt = true
 [functions.schedule-plan-change]
 verify_jwt = true
 
-[functions.test-email]
-verify_jwt = false
 
 [functions.upload-imaging]
 verify_jwt = true

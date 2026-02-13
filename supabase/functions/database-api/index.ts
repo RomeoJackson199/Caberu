@@ -43,72 +43,69 @@ function validateTable(table: string, action: string): { valid: boolean; error?:
   return { valid: true };
 }
 
-// SECURITY: This API is protected by Supabase Edge Function isolation
-// Only accessible via direct URL - no public exposure
-// For PHI operations, audit logging is performed
+// SECURITY: This API requires authentication via API key or JWT
+// API key for MCP/external integrations, JWT for authenticated users
 async function validateAuth(req: Request, supabase: any): Promise<{ valid: boolean; error?: string; userId?: string }> {
   const authHeader = req.headers.get('authorization');
+  const apiKeyHeader = req.headers.get('x-api-key');
   const url = new URL(req.url);
   
-  // Check for service key in query params (for ElevenLabs/external integrations)
-  const serviceKey = url.searchParams.get('service_key');
   const apiKey = Deno.env.get('DATABASE_API_SECRET');
   
-  // Validate service key from query param
-  if (serviceKey && apiKey && serviceKey === apiKey) {
-    console.log('Auth: Service key validated (query param)');
-    return { valid: true };
-  }
-  
-  // Allow internal service calls from other edge functions (trusted internal)
-  const internalServiceHeader = req.headers.get('x-internal-service');
-  if (internalServiceHeader) {
-    console.log('Auth: Internal service call from:', internalServiceHeader);
-    return { valid: true };
-  }
-  
-  // IMPORTANT: Allow unauthenticated calls for internal edge function communication
-  // This is safe because:
-  // 1. Edge functions are not publicly discoverable
-  // 2. Service role key is used for actual DB operations
-  // 3. All PHI access is audit logged
-  // 4. Rate limiting is applied at Supabase level
-  if (!authHeader) {
-    console.log('Auth: No auth header - allowing internal call');
-    return { valid: true };
-  }
-  
-  // Check for API key authentication (for ElevenLabs/MCP integration)
-  if (apiKey) {
-    const providedKey = authHeader.replace('Bearer ', '');
-    const actual = crypto.createHash('sha256').update(providedKey).digest();
+  // Method 1: x-api-key header (preferred for MCP/external integrations)
+  if (apiKeyHeader && apiKey) {
+    const actual = crypto.createHash('sha256').update(apiKeyHeader).digest();
     const expected = crypto.createHash('sha256').update(apiKey).digest();
     if (crypto.timingSafeEqual(actual, expected)) {
-      console.log('Auth: API key validated');
+      console.log('Auth: API key validated (header)');
       return { valid: true };
     }
   }
   
-  // Check for JWT authentication
-  if (authHeader.startsWith('Bearer ')) {
+  // Method 2: service_key query param (for ElevenLabs/webhooks)
+  const serviceKey = url.searchParams.get('service_key');
+  if (serviceKey && apiKey) {
+    const actual = crypto.createHash('sha256').update(serviceKey).digest();
+    const expected = crypto.createHash('sha256').update(apiKey).digest();
+    if (crypto.timingSafeEqual(actual, expected)) {
+      console.log('Auth: Service key validated (query param)');
+      return { valid: true };
+    }
+  }
+  
+  // Method 3: Internal service calls from other edge functions
+  const internalServiceHeader = req.headers.get('x-internal-service');
+  const internalSecret = Deno.env.get('INTERNAL_SERVICE_SECRET');
+  if (internalServiceHeader && internalSecret && internalServiceHeader === internalSecret) {
+    console.log('Auth: Internal service call validated');
+    return { valid: true };
+  }
+  
+  // Method 4: JWT Bearer token authentication
+  if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.replace('Bearer ', '');
     
-    // Validate JWT using Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      // Don't block - just log and allow (for internal calls with invalid tokens)
-      console.log('Auth: JWT validation skipped, allowing request');
-      return { valid: true };
+    // Check if it's the API key passed as Bearer token
+    if (apiKey) {
+      const actual = crypto.createHash('sha256').update(token).digest();
+      const expected = crypto.createHash('sha256').update(apiKey).digest();
+      if (crypto.timingSafeEqual(actual, expected)) {
+        console.log('Auth: API key validated (Bearer)');
+        return { valid: true };
+      }
     }
     
-    console.log('Auth: JWT validated for user:', user.id);
-    return { valid: true, userId: user.id };
+    // Validate as JWT
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (!error && user) {
+      console.log('Auth: JWT validated for user:', user.id);
+      return { valid: true, userId: user.id };
+    }
   }
   
-  // Allow all requests - this API is internal only
-  console.log('Auth: Allowing request (internal API)');
-  return { valid: true };
+  // SECURITY: Reject unauthenticated requests
+  console.warn('Auth: Request rejected - no valid authentication provided');
+  return { valid: false, error: 'Authentication required. Provide x-api-key header, service_key param, or Bearer JWT token.' };
 }
 
 serve(async (req) => {
