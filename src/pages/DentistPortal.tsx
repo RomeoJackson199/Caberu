@@ -25,7 +25,6 @@ import DentistAdminSecurity from "./DentistAdminSecurity";
 import DentistAdminUsers from "./DentistAdminUsers";
 import DentistTeamManagement from "./DentistTeamManagement";
 import DentistSettings from "./DentistSettings";
-import DentistAdminSchedule from "./DentistAdminSchedule";
 import DentistAdminAnalytics from "./DentistAdminAnalytics";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import DentistAppointmentsManagement from "./DentistAppointmentsManagement";
@@ -105,7 +104,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         'dashboard', 'patients', 'appointments', 'employees', 'messages', 'clinical',
         'schedule', 'payments', 'analytics', 'reports',
         'imports', 'users', 'team', 'branding', 'security', 'settings', 'services',
-        'admin-schedule', 'admin-analytics'
+        'admin-analytics'
       ];
 
       if (validSections.includes(sectionFromUrl as DentistSection)) {
@@ -326,8 +325,6 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         return <DentistSettings />;
       case 'services':
         return <ServiceManager />;
-      case 'admin-schedule':
-        return <DentistAdminSchedule />;
       case 'admin-analytics':
         return <DentistAdminAnalytics />;
       default:

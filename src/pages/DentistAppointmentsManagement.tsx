@@ -11,7 +11,6 @@ import { DayCalendarView } from "@/components/appointments/DayCalendarView";
 import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { MonthlyOverview } from "@/components/appointments/MonthlyOverview";
-// DentistAdminScheduleDashboard import removed - team view now uses WeeklyCalendarView with showAllDentists
 import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -609,23 +608,33 @@ function DentistAppointmentsManagementContent() {
                 {teamDentists.length === 0 ? (
                   <DropdownMenuItem disabled>No dentists available</DropdownMenuItem>
                 ) : (
-                  teamDentists.map((teamDentist) => {
-                    const fullName = [teamDentist.first_name, teamDentist.last_name].filter(Boolean).join(' ').trim() || 'Unnamed dentist';
-                    const isSelected = selectedTeamDentistId === teamDentist.id;
+                  [...teamDentists]
+                    .sort((a, b) => {
+                      if (a.id === dentistId) return -1;
+                      if (b.id === dentistId) return 1;
+                      return 0;
+                    })
+                    .map((teamDentist) => {
+                      const fullName = [teamDentist.first_name, teamDentist.last_name].filter(Boolean).join(' ').trim() || 'Unnamed dentist';
+                      const isSelected = selectedTeamDentistId === teamDentist.id;
+                      const isCurrentUser = teamDentist.id === dentistId;
 
-                    return (
-                      <DropdownMenuItem
-                        key={teamDentist.id}
-                        onSelect={() => {
-                          setSelectedTeamDentistId(teamDentist.id);
-                          setViewMode('team');
-                        }}
-                        className={cn(isSelected && 'bg-muted')}
-                      >
-                        {fullName}
-                      </DropdownMenuItem>
-                    );
-                  })
+                      return (
+                        <DropdownMenuItem
+                          key={teamDentist.id}
+                          onSelect={() => {
+                            setSelectedTeamDentistId(teamDentist.id);
+                            setViewMode('team');
+                          }}
+                          className={cn(isSelected && 'bg-muted')}
+                        >
+                          {fullName}
+                          {isCurrentUser && (
+                            <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0">YOU</Badge>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
