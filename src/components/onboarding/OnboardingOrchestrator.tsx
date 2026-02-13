@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { DentistOnboardingFlow } from "./DentistOnboardingFlow";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
@@ -19,6 +19,7 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
     role: string | null;
   } | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isDentist, loading: rolesLoading } = useUserRole();
 
   useEffect(() => {
@@ -96,6 +97,8 @@ export const OnboardingOrchestrator = ({ user }: OnboardingOrchestratorProps) =>
           setShowOnboarding(false);
           // Notify DentistPortal that onboarding is complete so it can start the tour
           window.dispatchEvent(new CustomEvent('onboarding-completed'));
+          // Redirect to business selection so user picks their practice
+          navigate('/select-business', { replace: true });
         } else {
           console.warn("Profile refetch shows onboarding not completed, keeping modal open");
         }
