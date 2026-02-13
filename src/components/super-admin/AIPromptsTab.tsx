@@ -21,9 +21,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Bot, Building2, Edit, Save, X, Sparkles, Globe } from 'lucide-react';
+import { Search, Bot, Building2, Edit, Save, X, Sparkles, Globe, RotateCcw, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLogAction } from '@/hooks/useSuperAdmin';
@@ -43,24 +49,40 @@ interface DefaultAIConfig {
   personality_traits: string[];
 }
 
+/** Each section of the system prompt */
+interface PromptSections {
+  core_rules: string;
+  language_handling: string;
+  booking_flow: string;
+  widget_code_system: string;
+  response_style: string;
+  examples: string;
+}
+
 const DEFAULT_AI_CONFIG_KEY = 'default_ai_config';
 const AI_SYSTEM_PROMPT_KEY = 'ai_system_prompt';
 
-const FACTORY_SYSTEM_PROMPT = `CORE RULES:
-- Keep responses SHORT and CONVERSATIONAL (2-3 sentences max)
+// ── Factory defaults for each section ──────────────────────────────
+
+const FACTORY_SECTIONS: PromptSections = {
+  core_rules: `- Keep responses SHORT and CONVERSATIONAL (2-3 sentences max)
 - Ask ONE question at a time
 - Never mention specific dentist names - let the system recommend them
 - Never discuss time/availability - focus only on symptoms and needs
 - Be warm, helpful, and natural
-- You can ONLY help with booking appointments. You cannot help with payments, prescriptions, rescheduling, cancellations, or viewing appointments. If asked about those, politely redirect to booking or suggest they use the dashboard.
+- The appointment is always for the patient you're talking to
+- You can ONLY help with booking appointments. You cannot help with payments, prescriptions, rescheduling, cancellations, or viewing appointments. If asked about those, politely redirect to booking or suggest they use the dashboard.`,
 
-BOOKING FLOW:
-1. Ask about symptoms or concerns: "What brings you in today?"
+  language_handling: `- Respond in whatever language the patient uses
+- If they switch languages mid-conversation, switch with them seamlessly
+- [[SERVICE:...]] must always use the exact service name from AVAILABLE SERVICES list
+- [[SYMPTOMS:...]] should be written in the patient's language`,
+
+  booking_flow: `1. Ask about symptoms or concerns: "What brings you in today?"
 2. Ask follow-up questions to understand the issue better
-3. Once you understand the problem, use code 12345 to proceed to booking
+3. Once you understand the problem, use code 12345 to proceed to booking`,
 
-WIDGET CODE SYSTEM:
-You have ONE technical code that activates the booking widget.
+  widget_code_system: `You have ONE technical code that activates the booking widget.
 This is the ONLY action you can perform:
 
 AVAILABLE CODE:
@@ -71,26 +93,23 @@ When ready to book, start your response with the code and include metadata:
 "12345 [[SERVICE:service_name_here]] [[SYMPTOMS:brief symptom summary here]] Perfect! I have all the information I need to help you book an appointment."
 
 The [[SERVICE:...]] tag should contain the exact name of the most appropriate service from the AVAILABLE SERVICES list.
-The [[SYMPTOMS:...]] tag should contain a 1-2 sentence summary of what the patient described (e.g., "Sharp pain in lower left molar for 3 days, sensitive to cold")
+The [[SYMPTOMS:...]] tag should contain a 1-2 sentence summary of what the patient described in THEIR language.
 
-If you're still gathering information, DON'T use a code:
-"What brings you in today? Any pain or specific concerns?"
+If you're still gathering information, DON'T use a code.
 
 IMPORTANT:
 - Use code 12345 when you have enough information about the patient's symptoms/reason for visit
 - Always include [[SERVICE:...]] and [[SYMPTOMS:...]] tags when using code 12345
 - Do NOT use any other codes - 12345 is the only code available
 - For general questions and gathering info: NO code
-- Codes are invisible to the user
+- Codes are invisible to the user`,
 
-RESPONSE STYLE:
-Good: "What brings you in today? Any pain or specific concerns?"
+  response_style: `Good: "What brings you in today? Any pain or specific concerns?"
 Good: "I see, can you describe the pain - is it sharp, throbbing, or constant?"
 Good: "12345 [[SERVICE:General Checkup]] [[SYMPTOMS:Routine dental checkup, no specific concerns]] Got it! Let me help you book your appointment."
-Bad: "I understand you are experiencing dental concerns and would like to schedule..."
+Bad: "I understand you are experiencing dental concerns and would like to schedule..."`,
 
-CONVERSATION EXAMPLES:
-User: "I need an appointment"
+  examples: `User: "I need an appointment"
 You: "I'd be happy to help! What brings you in today?"
 
 User: "My tooth hurts"
@@ -100,7 +119,83 @@ User: "It's a sharp pain in my back tooth, started 2 days ago"
 You: "12345 [[SERVICE:Emergency Dental Care]] [[SYMPTOMS:Sharp pain in back tooth for 2 days]] Got it! Let me help you book an appointment right away."
 
 User: "I just need a cleaning"
-You: "12345 [[SERVICE:Dental Cleaning]] [[SYMPTOMS:Routine dental cleaning requested]] Perfect! Let's get you scheduled for a cleaning."`;
+You: "12345 [[SERVICE:Dental Cleaning]] [[SYMPTOMS:Routine dental cleaning requested]] Perfect! Let's get you scheduled for a cleaning."`,
+};
+
+const SECTION_LABELS: Record<keyof PromptSections, { title: string; description: string }> = {
+  core_rules: {
+    title: 'Core Rules',
+    description: 'Fundamental behavioral rules for the AI assistant',
+  },
+  language_handling: {
+    title: 'Language Handling',
+    description: 'How the AI handles multilingual conversations',
+  },
+  booking_flow: {
+    title: 'Booking Flow',
+    description: 'The step-by-step booking conversation flow',
+  },
+  widget_code_system: {
+    title: 'Widget Code System',
+    description: 'Technical code system for activating the booking widget',
+  },
+  response_style: {
+    title: 'Response Style',
+    description: 'Good and bad response examples for the AI',
+  },
+  examples: {
+    title: 'Conversation Examples',
+    description: 'Full conversation examples for few-shot learning',
+  },
+};
+
+const SECTION_ORDER: (keyof PromptSections)[] = [
+  'core_rules',
+  'language_handling',
+  'booking_flow',
+  'widget_code_system',
+  'response_style',
+  'examples',
+];
+
+/** Assemble sections into a single prompt string */
+function assembleSections(sections: PromptSections): string {
+  return `CORE RULES:\n${sections.core_rules}\n\nLANGUAGE HANDLING:\n${sections.language_handling}\n\nBOOKING FLOW:\n${sections.booking_flow}\n\nWIDGET CODE SYSTEM:\n${sections.widget_code_system}\n\nRESPONSE STYLE:\n${sections.response_style}\n\nCONVERSATION EXAMPLES:\n${sections.examples}`;
+}
+
+/** Parse a full prompt string back into sections */
+function parseSections(prompt: string): PromptSections {
+  const sections: PromptSections = { ...FACTORY_SECTIONS };
+
+  const sectionMap: Record<string, keyof PromptSections> = {
+    'CORE RULES:': 'core_rules',
+    'LANGUAGE HANDLING:': 'language_handling',
+    'BOOKING FLOW:': 'booking_flow',
+    'WIDGET CODE SYSTEM:': 'widget_code_system',
+    'RESPONSE STYLE:': 'response_style',
+    'CONVERSATION EXAMPLES:': 'examples',
+  };
+
+  const headers = Object.keys(sectionMap);
+  const indices: { header: string; key: keyof PromptSections; idx: number }[] = [];
+
+  for (const header of headers) {
+    const idx = prompt.indexOf(header);
+    if (idx !== -1) {
+      indices.push({ header, key: sectionMap[header], idx });
+    }
+  }
+
+  indices.sort((a, b) => a.idx - b.idx);
+
+  for (let i = 0; i < indices.length; i++) {
+    const start = indices[i].idx + indices[i].header.length;
+    const end = i + 1 < indices.length ? indices[i + 1].idx : prompt.length;
+    sections[indices[i].key] = prompt.slice(start, end).trim();
+  }
+
+  return sections;
+}
 
 const FACTORY_DEFAULTS: DefaultAIConfig = {
   system_behavior:
@@ -129,8 +224,8 @@ export function AIPromptsTab() {
   const [defaultsSaving, setDefaultsSaving] = useState(false);
   const [defaultNewTrait, setDefaultNewTrait] = useState('');
 
-  // System prompt state
-  const [systemPrompt, setSystemPrompt] = useState(FACTORY_SYSTEM_PROMPT);
+  // System prompt sections state
+  const [sections, setSections] = useState<PromptSections>({ ...FACTORY_SECTIONS });
   const [systemPromptLoading, setSystemPromptLoading] = useState(true);
   const [systemPromptSaving, setSystemPromptSaving] = useState(false);
 
@@ -160,7 +255,7 @@ export function AIPromptsTab() {
         });
       }
     } catch {
-      // system_settings table might not exist yet — use factory defaults
+      // system_settings table might not exist yet
     } finally {
       setDefaultsLoading(false);
     }
@@ -180,11 +275,11 @@ export function AIPromptsTab() {
       } else if (data?.value) {
         const parsed = data.value as unknown as { prompt: string };
         if (parsed.prompt) {
-          setSystemPrompt(parsed.prompt);
+          setSections(parseSections(parsed.prompt));
         }
       }
     } catch {
-      // system_settings table might not exist yet — use factory default
+      // system_settings table might not exist yet
     } finally {
       setSystemPromptLoading(false);
     }
@@ -193,12 +288,13 @@ export function AIPromptsTab() {
   async function handleSaveSystemPrompt() {
     setSystemPromptSaving(true);
     try {
+      const assembledPrompt = assembleSections(sections);
       const { error } = await supabase
         .from('system_settings')
         .upsert(
           {
             key: AI_SYSTEM_PROMPT_KEY,
-            value: { prompt: systemPrompt } as unknown as Record<string, unknown>,
+            value: { prompt: assembledPrompt } as unknown as Record<string, unknown>,
           },
           { onConflict: 'key' }
         );
@@ -209,7 +305,7 @@ export function AIPromptsTab() {
         action: 'UPDATE_AI_SYSTEM_PROMPT',
         resource_type: 'system_settings',
         resource_id: AI_SYSTEM_PROMPT_KEY,
-        details: { prompt_length: systemPrompt.length },
+        details: { prompt_length: assembledPrompt.length },
       });
 
       toast({
@@ -413,9 +509,17 @@ export function AIPromptsTab() {
     'Patient',
   ];
 
+  function updateSection(key: keyof PromptSections, value: string) {
+    setSections((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function resetSection(key: keyof PromptSections) {
+    setSections((prev) => ({ ...prev, [key]: FACTORY_SECTIONS[key] }));
+  }
+
   return (
     <div className="space-y-6">
-      {/* AI System Prompt Section */}
+      {/* ── AI System Prompt (Sectioned) ──────────────────────────── */}
       <Card className="border-amber-500/30">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -423,7 +527,9 @@ export function AIPromptsTab() {
             AI System Prompt
           </CardTitle>
           <CardDescription>
-            This is the full system prompt sent to the AI model. It controls the AI's behavior, booking flow, widget codes, and response style. Changes take effect immediately for all businesses.
+            The full system prompt sent to the AI model, broken into editable sections.
+            Variables like patient name and services are injected automatically at runtime.
+            Changes take effect immediately for all businesses.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -433,27 +539,53 @@ export function AIPromptsTab() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="system-prompt">Full AI Prompt</Label>
-                <Textarea
-                  id="system-prompt"
-                  value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  rows={20}
-                  className="resize-y font-mono text-sm leading-relaxed"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This prompt defines the AI's core rules, booking flow, widget code system, and conversation examples.
-                  Variables like patient name and services are injected automatically at runtime.
-                </p>
-              </div>
+              <Accordion type="multiple" defaultValue={['core_rules']} className="w-full">
+                {SECTION_ORDER.map((key) => {
+                  const meta = SECTION_LABELS[key];
+                  const isModified = sections[key] !== FACTORY_SECTIONS[key];
+                  return (
+                    <AccordionItem key={key} value={key} className="border rounded-lg mb-2 px-1">
+                      <AccordionTrigger className="hover:no-underline py-3 px-3">
+                        <div className="flex items-center gap-2 text-left">
+                          <span className="font-medium">{meta.title}</span>
+                          {isModified && (
+                            <Badge variant="secondary" className="text-xs">Modified</Badge>
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-3 pb-4">
+                        <p className="text-xs text-muted-foreground mb-2">{meta.description}</p>
+                        <Textarea
+                          value={sections[key]}
+                          onChange={(e) => updateSection(key, e.target.value)}
+                          rows={Math.min(15, Math.max(4, sections[key].split('\n').length + 1))}
+                          className="resize-y font-mono text-sm leading-relaxed"
+                        />
+                        {isModified && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mt-2 text-xs gap-1"
+                            onClick={() => resetSection(key)}
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Reset to factory default
+                          </Button>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+
               <div className="flex items-center justify-between pt-4 border-t">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSystemPrompt(FACTORY_SYSTEM_PROMPT)}
+                  onClick={() => setSections({ ...FACTORY_SECTIONS })}
                 >
-                  Reset to Factory Default
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Reset All to Factory
                 </Button>
                 <Button onClick={handleSaveSystemPrompt} disabled={systemPromptSaving} className="gap-2">
                   {systemPromptSaving ? (
@@ -469,7 +601,7 @@ export function AIPromptsTab() {
         </CardContent>
       </Card>
 
-      {/* Default AI Prompts Section */}
+      {/* ── Default AI Prompts ──────────────────────────────────── */}
       <Card className="border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -477,7 +609,7 @@ export function AIPromptsTab() {
             Default AI Prompts
           </CardTitle>
           <CardDescription>
-            These are the system-wide default prompts used for all new businesses. Businesses can override these individually.
+            System-wide default prompts for all new businesses. Businesses can override these individually.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -610,7 +742,7 @@ export function AIPromptsTab() {
         </CardContent>
       </Card>
 
-      {/* Per-Business AI Configurations */}
+      {/* ── Per-Business AI Configurations ──────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -794,7 +926,7 @@ export function AIPromptsTab() {
         </CardContent>
       </Card>
 
-      {/* Edit AI Prompts Dialog */}
+      {/* ── Edit AI Prompts Dialog ──────────────────────────────── */}
       <Dialog open={!!editingBusiness} onOpenChange={(open) => !open && closeEditDialog()}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
