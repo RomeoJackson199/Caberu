@@ -38,6 +38,7 @@ import { NotificationPermissionPrompt } from "@/components/notifications/Notific
 import { initializePushNotifications } from "@/lib/pushNotifications";
 import { SkipNavigation } from "@/components/accessibility/SkipNavigation";
 import { offlineManager } from "@/lib/offlineManager";
+import { StatusBanner } from "@/components/StatusBanner";
 
 // Bridge React Query's onlineManager with our custom offlineManager.
 // This ensures React Query pauses mutations when offline and auto-resumes them on reconnect.
@@ -107,6 +108,7 @@ const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
 const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
+const StatusPage = lazy(() => import("./pages/StatusPage"));
 
 // Admin Dashboard pages
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -386,6 +388,7 @@ const App = () => {
                 <NotificationPermissionPrompt />
                 <ConfirmationProvider>
                 <BrowserRouter>
+                  <StatusBanner />
                   <SkipNavigation />
                   <RouteProgressBar />
                   <EmailLimitProvider>
@@ -492,6 +495,8 @@ const App = () => {
                         <Route path="/smart-book-appointment" element={<Navigate to="/book-appointment" replace />} />
                         {/* Business portal route - must come before catch-all */}
                         <Route path="/clinic/:slug" element={<BusinessPortal />} />
+                        {/* Public status page */}
+                        <Route path="/status" element={<StatusPage />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>

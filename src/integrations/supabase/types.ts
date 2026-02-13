@@ -3283,6 +3283,39 @@ export type Database = {
           },
         ]
       }
+      platform_status: {
+        Row: {
+          banner_message: string | null
+          banner_severity: string | null
+          id: string
+          overall_status: string
+          show_banner: boolean | null
+          status_message: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          banner_message?: string | null
+          banner_severity?: string | null
+          id?: string
+          overall_status?: string
+          show_banner?: boolean | null
+          status_message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          banner_message?: string | null
+          banner_severity?: string | null
+          id?: string
+          overall_status?: string
+          show_banner?: boolean | null
+          status_message?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       practice_consents: {
         Row: {
           consent_date: string
@@ -3572,6 +3605,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scheduled_downtimes: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          affected_services: string[] | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          notify_users: boolean | null
+          reason: string | null
+          scheduled_end: string
+          scheduled_start: string
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          affected_services?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          notify_users?: boolean | null
+          reason?: string | null
+          scheduled_end: string
+          scheduled_start: string
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          affected_services?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          notify_users?: boolean | null
+          reason?: string | null
+          scheduled_end?: string
+          scheduled_start?: string
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       session_business: {
         Row: {
@@ -4426,6 +4516,54 @@ export type Database = {
       }
     }
     Views: {
+      admin_encryption_key_status: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string | null
+          is_active: boolean | null
+          key_version: number | null
+          rotated_at: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          key_version?: number | null
+          rotated_at?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          key_version?: number | null
+          rotated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_encryption_keys_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_encryption_keys_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_reminders_decrypted: {
         Row: {
           appointment_id: string | null

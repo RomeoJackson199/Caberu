@@ -24,6 +24,8 @@ import {
   Database,
   Wifi,
 } from 'lucide-react';
+import { DowntimeManagement } from './DowntimeManagement';
+import { PlatformStatusControl } from './PlatformStatusControl';
 
 export function SystemHealthTab() {
   const [timeRange, setTimeRange] = useState('24h');
@@ -89,6 +91,9 @@ export function SystemHealthTab() {
 
   return (
     <div className="space-y-6">
+      {/* Platform Status Control */}
+      <PlatformStatusControl />
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">System Health</h2>
@@ -239,6 +244,9 @@ export function SystemHealthTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Scheduled Downtimes */}
+      <DowntimeManagement />
     </div>
   );
 }
