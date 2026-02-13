@@ -47,6 +47,7 @@ export function useBookingFlow() {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [dentistAvailableDays, setDentistAvailableDays] = useState<number[]>([]);
+  const [vacationRanges, setVacationRanges] = useState<{ start_date: string; end_date: string }[]>([]);
 
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -276,10 +277,23 @@ export function useBookingFlow() {
 
       if (error) throw error;
 
+      const now = new Date();
+      const isToday = format(date, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+      const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
       const slots: TimeSlot[] = (data || []).map((slot) => ({
         time: extractSlotTime(slot),
         available: true,
-      })).filter((slot: TimeSlot) => slot.time);
+      })).filter((slot: TimeSlot) => {
+        if (!slot.time) return false;
+        if (isToday) {
+          const [h, m] = slot.time.split(':').map(Number);
+          const slotDate = new Date(date);
+          slotDate.setHours(h, m, 0, 0);
+          return slotDate > oneHourFromNow;
+        }
+        return true;
+      });
 
       setAvailableSlots(slots);
     } catch (error) {
@@ -300,18 +314,30 @@ export function useBookingFlow() {
     setBookingStep('datetime');
 
     if (businessId) {
-      const { data: availabilityData } = await supabase
-        .from('dentist_availability')
-        .select('day_of_week, is_available')
-        .eq('dentist_id', dentist.id)
-        .eq('business_id', businessId)
-        .eq('is_available', true);
+      // Fetch availability and vacation days in parallel
+      const [availResult, vacationResult] = await Promise.all([
+        supabase
+          .from('dentist_availability')
+          .select('day_of_week, is_available')
+          .eq('dentist_id', dentist.id)
+          .eq('business_id', businessId)
+          .eq('is_available', true),
+        supabase
+          .from('dentist_vacation_days')
+          .select('start_date, end_date')
+          .eq('dentist_id', dentist.id)
+          .eq('business_id', businessId)
+          .eq('is_approved', true)
+          .gte('end_date', format(new Date(), 'yyyy-MM-dd')),
+      ]);
 
-      if (availabilityData && availabilityData.length > 0) {
-        setDentistAvailableDays(availabilityData.map(d => d.day_of_week));
+      if (availResult.data && availResult.data.length > 0) {
+        setDentistAvailableDays(availResult.data.map(d => d.day_of_week));
       } else {
         setDentistAvailableDays([1, 2, 3, 4, 5]);
       }
+
+      setVacationRanges(vacationResult.data || []);
     }
   }, [businessId]);
 
@@ -355,8 +381,12 @@ export function useBookingFlow() {
     if (date < today) return true;
     if (isPublicHoliday(date)) return true;
     const dayOfWeek = date.getDay();
-    return !dentistAvailableDays.includes(dayOfWeek);
-  }, [dentistAvailableDays]);
+    if (!dentistAvailableDays.includes(dayOfWeek)) return true;
+
+    // Check vacation ranges
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return vacationRanges.some(v => dateStr >= v.start_date && dateStr <= v.end_date);
+  }, [dentistAvailableDays, vacationRanges]);
 
   const confirmBooking = useCallback(async () => {
     if (!selectedDate || !selectedTime || !selectedDentist || !businessId || !selectedService) return;

@@ -99,7 +99,7 @@ export const FloatingBookingButton = ({
             <Bot className="mr-2 h-4 w-4" />
             {t.bookWithAIAssistant || 'Book with AI Assistant'}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/book-appointment-ai')} className="cursor-pointer">
+          <DropdownMenuItem onClick={() => navigate('/book-appointment')} className="cursor-pointer">
             <CalendarDays className="mr-2 h-4 w-4" />
             {t.bookManually || 'Book Manually'}
           </DropdownMenuItem>
