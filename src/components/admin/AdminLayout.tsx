@@ -26,6 +26,7 @@ import {
   ScrollText,
   Menu,
   X,
+  Globe,
 } from 'lucide-react';
 
 interface NavItem {
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
   { id: 'users', label: 'Users', path: '/admin/users', icon: Users, section: 'main' },
   { id: 'appointments', label: 'Appointments', path: '/admin/appointments', icon: Calendar, section: 'main' },
   { id: 'communications', label: 'Communications', path: '/admin/communications', icon: Phone, section: 'main' },
+  { id: 'status', label: 'Status Management', path: '/admin/status', icon: Globe, section: 'system' },
   { id: 'system', label: 'System Health', path: '/admin/system', icon: Server, section: 'system' },
   { id: 'compliance', label: 'GDPR & Compliance', path: '/admin/compliance', icon: ShieldCheck, section: 'system' },
   { id: 'features', label: 'Feature Flags', path: '/admin/features', icon: Flag, section: 'tools' },

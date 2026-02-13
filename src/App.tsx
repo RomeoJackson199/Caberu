@@ -122,6 +122,7 @@ const AdminCompliance = lazy(() => import("./pages/admin/AdminCompliance"));
 const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
 const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
+const AdminStatusManagement = lazy(() => import("./pages/admin/AdminStatusManagement"));
 const AdminBusinessDetail = lazy(() => import("./pages/admin/AdminBusinessDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 
@@ -484,6 +485,7 @@ const App = () => {
                           <Route path="features" element={<AdminFeatureFlags />} />
                           <Route path="revenue" element={<AdminRevenue />} />
                           <Route path="audit" element={<AdminAuditLog />} />
+                          <Route path="status" element={<AdminStatusManagement />} />
                         </Route>
                         {/* Super Admin Dashboard - Protected */}
                         <Route path="/admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
