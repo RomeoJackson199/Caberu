@@ -8,12 +8,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Bot, 
-  Calendar, 
-  MessageSquare, 
-  Settings, 
-  Image, 
+import {
+  Bot,
+  Calendar,
+  MessageSquare,
+  Stethoscope,
   AlertCircle,
   ChevronRight,
   CheckCircle2
@@ -37,45 +36,34 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     icon: Bot,
     title: 'Your scheduling assistant',
-    description: 'I help you manage appointments, summarize symptoms for your dentist, and handle payments — not medical advice.',
-    highlight: 'I collect what you tell me and pass a summary to your dentist. Any clinical decisions are made by them.',
+    description: 'I help you book and manage dental appointments. I can also pass a summary of your symptoms to your dentist.',
+    highlight: 'I do not give medical advice. Any clinical decisions are made by your dentist.',
     examples: [
-      'Show my appointments',
       'Book an appointment',
+      'Show my appointments',
       'I have a toothache'
     ]
   },
   {
     icon: Calendar,
     title: 'Manage your appointments',
-    description: 'Book, reschedule, or cancel visits for yourself or family members.',
-    highlight: 'Tell me what you need — emergency or routine — and I will find the best available slot.',
+    description: 'Book a new visit, view upcoming appointments, or request an emergency slot.',
+    highlight: 'Tell me what you need and I will guide you through picking a dentist, date, and time.',
     examples: [
       'Find earliest available slot',
-      'Reschedule my appointment',
-      'Emergency booking'
+      'Emergency booking',
+      'Show my appointments'
     ]
   },
   {
-    icon: Settings,
-    title: 'Payments & prescriptions',
-    description: 'View balances, handle payments, and request prescription refills from your dentist.',
-    highlight: 'Say "show my balance" or "refill my prescription" and I will walk you through it.',
+    icon: Stethoscope,
+    title: 'Describe your symptoms',
+    description: 'Tell me what is bothering you and I will create a summary for your dentist so they can prepare for your visit.',
+    highlight: 'You can also change your language (English, French, Dutch) or switch between light and dark mode.',
     examples: [
-      'Show my balance',
-      'Refill my prescription',
-      'Make a payment'
-    ]
-  },
-  {
-    icon: Image,
-    title: 'Share photos for triage',
-    description: 'Upload dental photos so your dentist can review them. I do not analyze or diagnose.',
-    highlight: "Photos are shared securely with your dental practice to help them prepare for your visit.",
-    examples: [
-      'Upload a photo',
-      'Share my X-ray',
-      'Take a picture'
+      'I have tooth pain when chewing',
+      'Change language to French',
+      'Switch to dark mode'
     ]
   }
 ];
@@ -141,7 +129,7 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
             </Button>
           </div>
           <DialogDescription className="text-sm sm:text-base">
-            See how the assistant helps with scheduling, symptom summaries, and payments.
+            See how the assistant helps with scheduling and symptom summaries.
           </DialogDescription>
           <div className="flex items-center gap-2 mt-1 sm:mt-2">
             <Badge variant="secondary" className="text-xs">Step {currentStep + 1} of {ONBOARDING_STEPS.length}</Badge>
@@ -192,13 +180,13 @@ export const AIChatOnboardingDialog = ({ isOpen, onClose }: AIChatOnboardingDial
               <div className="flex items-start gap-2 p-2 sm:p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                 <div className="text-xs sm:text-sm text-green-900 dark:text-green-100">
-                  You're all set! I handle scheduling and summaries — your dentist handles the rest.
+                  You're all set! Just type what you need and I'll guide you through it.
                 </div>
               </div>
               <div className="flex items-start gap-2 p-2 sm:p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="text-xs sm:text-sm text-blue-900 dark:text-blue-100">
-                  Ask for a visit time and I'll confirm how long it takes and when you'll be done.
+                  Say "book an appointment" to get started with scheduling.
                 </div>
               </div>
             </div>
