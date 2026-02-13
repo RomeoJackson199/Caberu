@@ -160,6 +160,7 @@ export interface DayCalendarViewProps {
   onAppointmentClick: (appointment: CalendarEvent) => void;
   selectedAppointmentId?: string;
   googleCalendarEvents?: GoogleCalendarEvent[];
+  showAllDentists?: boolean;
 }
 
 /**
@@ -172,6 +173,7 @@ export interface WeeklyCalendarViewProps {
   onAppointmentClick: (appointment: CalendarEvent) => void;
   selectedAppointmentId?: string;
   googleCalendarEvents?: GoogleCalendarEvent[];
+  showAllDentists?: boolean;
 }
 
 /**

@@ -39,7 +39,8 @@ export function WeeklyCalendarView({
   currentDate,
   onAppointmentClick,
   selectedAppointmentId,
-  googleCalendarEvents = []
+  googleCalendarEvents = [],
+  showAllDentists = false
 }: WeeklyCalendarViewProps) {
   const isMobile = useIsMobile();
   const { t } = useLanguage();
@@ -84,10 +85,14 @@ export function WeeklyCalendarView({
             email
           )
         `)
-        .eq("dentist_id", dentistId)
         .gte("appointment_date", weekStart.toISOString())
         .lt("appointment_date", weekEnd.toISOString())
         .order("appointment_date", { ascending: true });
+
+      // Filter by specific dentist unless showing all
+      if (!showAllDentists) {
+        query = query.eq("dentist_id", dentistId);
+      }
 
       // Filter by business if provided
       if (businessId) {

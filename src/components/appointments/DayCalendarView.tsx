@@ -33,7 +33,8 @@ export function DayCalendarView({
   currentDate,
   onAppointmentClick,
   selectedAppointmentId,
-  googleCalendarEvents = []
+  googleCalendarEvents = [],
+  showAllDentists = false
 }: DayCalendarViewProps) {
   const [quickAppointmentOpen, setQuickAppointmentOpen] = useState(false);
   const [quickAppointmentDate, setQuickAppointmentDate] = useState<Date>(new Date());
@@ -57,10 +58,14 @@ export function DayCalendarView({
       let query = supabase
         .from("appointments_decrypted")
         .select("*")
-        .eq("dentist_id", dentistId)
         .gte("appointment_date", dayStart.toISOString())
         .lte("appointment_date", dayEnd.toISOString())
         .order("appointment_date", { ascending: true });
+
+      // Filter by specific dentist unless showing all
+      if (!showAllDentists) {
+        query = query.eq("dentist_id", dentistId);
+      }
 
       // Filter by business if provided
       if (businessId) {
