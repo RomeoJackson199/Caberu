@@ -100,32 +100,31 @@ export default function SelectBusiness() {
         fetchBusinesses();
     }, [isAuthenticated]);
 
-    // Check subscription status for a dentist
-    const checkDentistSubscription = async (dentistId: string): Promise<boolean> => {
+    // Check subscription status via businesses table
+    const checkDentistSubscription = async (_dentistId: string, businessId: string): Promise<boolean> => {
         try {
             const { data, error } = await supabase
-                .from('subscriptions')
-                .select('id, status, current_period_end')
-                .eq('dentist_id', dentistId)
-                .maybeSingle();
+                .from('businesses')
+                .select('subscription_status, subscription_ends_at')
+                .eq('id', businessId)
+                .single();
 
             if (error) {
                 logger.error('Error checking subscription:', error);
-                return false;
+                return true; // Default to allowing access on error
             }
 
-            if (!data) {
-                return false; // No subscription found
+            if (!data || !data.subscription_status) {
+                return true; // No subscription info = allow (free tier or not set up)
             }
 
-            // Check if subscription is active and not expired
-            const periodEnd = data.current_period_end ? new Date(data.current_period_end) : null;
+            const endsAt = data.subscription_ends_at ? new Date(data.subscription_ends_at) : null;
             const now = new Date();
 
-            return data.status === 'active' && (!periodEnd || periodEnd > now);
+            return ['active', 'trialing'].includes(data.subscription_status) && (!endsAt || endsAt > now);
         } catch (err) {
             logger.error('Subscription check error:', err);
-            return false;
+            return true;
         }
     };
 
@@ -171,7 +170,7 @@ export default function SelectBusiness() {
                     const dentistId = await getDentistId(user.id, targetBusinessId);
 
                     if (dentistId) {
-                        const hasActiveSubscription = await checkDentistSubscription(dentistId);
+                        const hasActiveSubscription = await checkDentistSubscription(dentistId, targetBusinessId);
 
                         if (!hasActiveSubscription) {
                             // No active subscription - redirect to billing settings to resolve

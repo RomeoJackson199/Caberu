@@ -738,23 +738,10 @@ export function DiagnosticsCard() {
         description: 'Executing test suite...',
       });
 
-      // Call edge function to run tests
-      const { data, error } = await supabase.functions.invoke('run-tests');
-
-      if (error) {
-        throw error;
-      }
-
-      const testResults = data;
-      const passed = testResults?.passed || 0;
-      const failed = testResults?.failed || 0;
-      const total = testResults?.total || 0;
-      const coverage = testResults?.coverage || 'N/A';
-
+      // Tests must be run from the command line
       toast({
-        title: failed === 0 ? 'All Tests Passed ✓' : 'Some Tests Failed',
-        description: `${passed}/${total} tests passed. Coverage: ${coverage}%`,
-        variant: failed === 0 ? 'default' : 'destructive',
+        title: 'Run Tests Locally',
+        description: 'Execute "npm test" from the command line to run unit tests.',
       });
     } catch (error: any) {
       toast({

@@ -149,23 +149,11 @@ export function TestStatusTab() {
     setIsRunning(true);
 
     try {
-      // Call edge function to run tests
-      const { data, error } = await supabase.functions.invoke('run-tests', {
-        body: { pattern },
+      // Tests must be run from the command line
+      toast({
+        title: 'Run Tests Locally',
+        description: `Execute "npm test${pattern ? ` -- --testPathPattern="${pattern}"` : ''}" from the command line.`,
       });
-
-      if (error) throw error;
-
-      if (data?.results) {
-        setTestResults(data.results);
-        setLastRunTime(new Date());
-
-        toast({
-          title: data.results.failedTests > 0 ? 'Tests Completed with Failures' : 'All Tests Passed',
-          description: `${data.results.passedTests}/${data.results.totalTests} tests passed`,
-          variant: data.results.failedTests > 0 ? 'destructive' : 'default',
-        });
-      }
     } catch (error) {
       console.error('Test run error:', error);
       toast({
