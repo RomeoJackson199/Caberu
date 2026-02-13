@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Calendar as CalendarIcon, Clock, User, ArrowRight, CheckCircle } from "lucide-react";
-import { format, startOfDay } from "date-fns";
+import { format, startOfDay, addDays } from "date-fns";
 import { isPublicHoliday } from "@/lib/belgianHolidays";
 import { cn } from "@/lib/utils";
 import { showAppointmentRescheduled } from "@/lib/successNotifications";
@@ -48,6 +48,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [dentistAvailability, setDentistAvailability] = useState<Record<number, boolean>>({});
   const { toast } = useToast();
 
   // Load appointment details when dialog opens
@@ -55,10 +56,11 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     if (open && appointmentId) {
       loadAppointmentDetails();
     } else {
-      // Reset state when dialog closes
       setSelectedDate(undefined);
       setSelectedTime("");
       setAvailableSlots([]);
+      setAppointment(null);
+      setDentistAvailability({});
     }
   }, [open, appointmentId]);
 
@@ -86,9 +88,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       if (error) throw error;
 
-      // Transform nested dentists array to single object
       const dentistData = Array.isArray(data.dentists) ? data.dentists[0] : data.dentists;
-      // Handle profiles being array or object
       const profilesData = dentistData?.profiles;
       const normalizedProfiles = Array.isArray(profilesData) ? profilesData[0] : profilesData;
       
@@ -100,6 +100,20 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         dentist: dentistData ? { profiles: normalizedProfiles || null } : null,
       };
       setAppointment(transformedData);
+
+      // Load dentist availability schedule
+      const businessId = await getCurrentBusinessId();
+      const { data: avail } = await supabase
+        .from('dentist_availability')
+        .select('day_of_week, is_available')
+        .eq('dentist_id', data.dentist_id)
+        .eq('business_id', businessId);
+
+      if (avail) {
+        const map: Record<number, boolean> = {};
+        avail.forEach((a: any) => { map[a.day_of_week] = a.is_available; });
+        setDentistAvailability(map);
+      }
     } catch (error) {
       logger.error('Error loading appointment:', error);
       toast({
@@ -127,8 +141,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     setAvailableSlots([]);
 
     try {
-      // Generate slots for the selected date
-      // Use format to get date string in Brussels timezone (avoid UTC conversion)
       const dateStr = format(date, 'yyyy-MM-dd');
 
       const { error: generateError } = await supabase.rpc('generate_daily_slots', {
@@ -142,24 +154,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       const businessId = await getCurrentBusinessId();
 
-      // Check schedule; if closed or missing, return empty
-      try {
-        const dayOfWeek = date.getDay();
-        const { data: availability } = await supabase
-          .from('dentist_availability')
-          .select('is_available')
-          .eq('dentist_id', appointment.dentist_id)
-          .eq('business_id', businessId)
-          .eq('day_of_week', dayOfWeek)
-          .maybeSingle();
-        if (!availability || availability.is_available === false) {
-          setAvailableSlots([]);
-          setLoadingSlots(false);
-          return;
-        }
-      } catch { }
-
-      // Fetch available slots
       const { data: slots, error: slotsError } = await supabase
         .from('appointment_slots')
         .select('slot_time, is_available')
@@ -172,14 +166,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       if (slotsError) throw slotsError;
 
       setAvailableSlots(slots || []);
-
-      if (!slots || slots.length === 0) {
-        toast({
-          title: "No slots available",
-          description: "Please select a different date",
-          variant: "default"
-        });
-      }
     } catch (error) {
       logger.error('Error loading slots:', error);
       toast({
@@ -198,13 +184,11 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     setProcessing(true);
 
     try {
-      // Atomically reschedule via secure RPC (handles RLS, releases old slot, books new slot, updates appointment)
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr || !userData?.user) {
         throw new Error('You must be logged in to reschedule.');
       }
 
-      // Use format to get date string in Brussels timezone (avoid UTC conversion)
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
       const { error: rpcError } = await (supabase as any).rpc('reschedule_appointment', {
@@ -216,7 +200,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       if (rpcError) throw rpcError;
 
-      // Success!
       showAppointmentRescheduled(format(selectedDate, 'MMM d, yyyy') + ' at ' + selectedTime);
 
       toast({
@@ -245,31 +228,25 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
   const isDateDisabled = (date: Date) => {
     const today = startOfDay(new Date());
-    // Disable past dates
     if (date < today) return true;
-    // Disable Belgian public holidays
     if (isPublicHoliday(date)) return true;
-    // Disable weekends (TODO: should check dentist availability instead)
-    return date.getDay() === 0 || date.getDay() === 6;
+    // Check actual dentist availability instead of hardcoding weekends
+    const dayOfWeek = date.getDay();
+    if (Object.keys(dentistAvailability).length > 0) {
+      return dentistAvailability[dayOfWeek] === false || dentistAvailability[dayOfWeek] === undefined;
+    }
+    // Fallback: disable weekends if no availability data
+    return dayOfWeek === 0 || dayOfWeek === 6;
   };
 
   if (!appointment && loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-lg">
           <div className="py-8 space-y-4">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-10 w-10 rounded-lg" />
-              <div className="space-y-2 flex-1">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-            </div>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
             <Skeleton className="h-64 w-full rounded-lg" />
-            <div className="flex gap-3 justify-end">
-              <Skeleton className="h-10 w-20" />
-              <Skeleton className="h-10 w-32" />
-            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -283,129 +260,122 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Reschedule Appointment</DialogTitle>
-          <DialogDescription>
-            Choose a new date and time for your appointment
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">Reschedule Appointment</DialogTitle>
+            <DialogDescription className="text-sm">
+              Choose a new date and time for your appointment
+            </DialogDescription>
+          </DialogHeader>
 
-        {appointment && (
-          <div className="space-y-6 py-4">
-            {/* Current Appointment Info */}
-            <Card className="bg-muted/50 border-dashed">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Current Appointment</p>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <CalendarIcon className="h-4 w-4" />
-                        <span className="font-medium">
-                          {currentDate && format(currentDate, 'EEEE, MMMM d, yyyy')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4" />
-                        <span className="font-medium">
-                          {currentDate && format(currentDate, 'h:mm a')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4" />
-                        <span>{dentistName}</span>
-                      </div>
-                    </div>
+          {/* Current appointment summary */}
+          {appointment && currentDate && (
+            <div className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                <span>{format(currentDate, 'MMM d, yyyy')}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                <span>{format(currentDate, 'h:mm a')}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
+                <span>{dentistName}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
+          {/* Calendar */}
+          <div>
+            <h4 className="text-sm font-medium mb-3">Select a new date</h4>
+            <div className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setSelectedTime("");
+                  }
+                }}
+                disabled={isDateDisabled}
+                fromDate={new Date()}
+                toDate={addDays(new Date(), 90)}
+                className="rounded-md border pointer-events-auto"
+                classNames={{
+                  day: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Time Slots */}
+          {selectedDate && (
+            <div>
+              <h4 className="text-sm font-medium mb-3">
+                Available times for {format(selectedDate, 'EEEE, MMM d')}
+              </h4>
+
+              {loadingSlots ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+                  <span className="text-sm text-muted-foreground">Loading times...</span>
+                </div>
+              ) : availableSlots.length > 0 ? (
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                  {availableSlots.map((slot) => {
+                    const timeStr = slot.slot_time.substring(0, 5);
+                    const isSelected = selectedTime === timeStr;
+                    return (
+                      <Button
+                        key={slot.slot_time}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "h-10 text-sm font-medium",
+                          isSelected && "ring-2 ring-primary ring-offset-2"
+                        )}
+                        onClick={() => setSelectedTime(timeStr)}
+                      >
+                        {timeStr}
+                      </Button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-sm text-muted-foreground border rounded-lg bg-muted/30">
+                  No available times for this date. Try another day.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Confirmation summary */}
+          {selectedDate && selectedTime && (
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium">
+                      {format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}
+                    </p>
+                    <p className="text-muted-foreground">with {dentistName}</p>
                   </div>
-                  <Badge variant="outline">{appointment.reason}</Badge>
                 </div>
               </CardContent>
             </Card>
+          )}
+        </div>
 
-            {/* New Date Selection */}
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <ArrowRight className="h-4 w-4" />
-                  Select New Date
-                </h4>
-                <div className="flex justify-center">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    disabled={isDateDisabled}
-                    className="rounded-md border"
-                  />
-                </div>
-              </div>
-
-              {/* Time Slot Selection */}
-              {selectedDate && (
-                <div className="space-y-3">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Select New Time
-                  </h4>
-
-                  {loadingSlots ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                      <span className="text-sm text-muted-foreground">Loading available times...</span>
-                    </div>
-                  ) : availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                      {availableSlots.map((slot) => (
-                        <Button
-                          key={slot.slot_time}
-                          variant={selectedTime === slot.slot_time.substring(0, 5) ? "default" : "outline"}
-                          className={cn(
-                            "h-auto py-3",
-                            selectedTime === slot.slot_time.substring(0, 5) && "ring-2 ring-primary"
-                          )}
-                          onClick={() => setSelectedTime(slot.slot_time.substring(0, 5))}
-                        >
-                          {slot.slot_time.substring(0, 5)}
-                        </Button>
-                      ))}
-                    </div>
-                  ) : (
-                    <Card>
-                      <CardContent className="py-8 text-center">
-                        <p className="text-sm text-muted-foreground">
-                          No available time slots for this date.
-                          <br />
-                          Please select a different date.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-
-              {/* Summary */}
-              {selectedDate && selectedTime && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-semibold mb-1">New Appointment</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(selectedDate, 'EEEE, MMMM d, yyyy')} at {selectedTime}
-                        </p>
-                        <p className="text-sm text-muted-foreground">with {dentistName}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        )}
-
-        <DialogFooter>
+        {/* Footer */}
+        <div className="px-6 py-4 border-t bg-muted/30 flex justify-end gap-3">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -423,13 +393,10 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                 Rescheduling...
               </>
             ) : (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Confirm Reschedule
-              </>
+              "Confirm Reschedule"
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
