@@ -197,11 +197,11 @@ export function AuthRedirectHandler() {
           // Patient signup via OAuth - profile is already set correctly, continue normal flow
         }
 
-        // Priority 1: Super Admin -> /super-admin
+        // Priority 1: Super Admin -> /admin
         if (isSuperAdmin) {
-          logger.info('AuthRedirectHandler: Redirecting super admin to /super-admin');
+          logger.info('AuthRedirectHandler: Redirecting super admin to /admin');
           sessionStorage.removeItem(REDIRECT_KEY);
-          navigate('/super-admin', { replace: true });
+          navigate('/admin', { replace: true });
           return;
         }
 
