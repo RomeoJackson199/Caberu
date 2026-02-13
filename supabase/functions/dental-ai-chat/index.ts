@@ -311,13 +311,40 @@ serve(async (req) => {
         console.log('Detected language:', detectedLanguage);
       }
 
-    // Fetch AI settings and knowledge documents if business_id is provided
+    // Fetch AI settings and knowledge documents
     let knowledgeBaseContent = '';
     let customGreeting = '';
     let customSystemBehavior = '';
     let customPersonalityTraits: string[] = [];
     let servicesContent = '';
-    
+    let adminSystemPrompt = ''; // System prompt from admin panel
+
+    // Always try to load the admin-configured system prompt
+    try {
+      const { createClient: createAdminClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const adminSupabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const adminSupabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+      const adminClient = createAdminClient(adminSupabaseUrl, adminSupabaseKey);
+
+      const { data: promptData, error: promptError } = await adminClient
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'ai_system_prompt')
+        .maybeSingle();
+
+      if (!promptError && promptData?.value) {
+        const parsed = promptData.value as { prompt?: string };
+        if (parsed.prompt) {
+          adminSystemPrompt = parsed.prompt;
+          if (Deno.env.get('ENVIRONMENT') === 'development') {
+            console.log('Loaded admin system prompt from database');
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Could not load admin system prompt, using hardcoded default:', error);
+    }
+
     if (business_id) {
       try {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
@@ -516,9 +543,8 @@ EXEMPLES DE LANGAGE PROFESSIONNEL:
           };
           
         default: // English
-          return {
-            persona: customGreeting || `You are DentiBot, a friendly and professional dental assistant.${personalityIntro} You know the patient ${user_profile?.first_name} ${user_profile?.last_name}. You help patients book appointments with the right dentist based on their needs.`,
-            guidelines: `
+          // Use admin-configured system prompt if available, otherwise use hardcoded default
+          const defaultGuidelines = `
 CORE RULES:
 - Keep responses SHORT and CONVERSATIONAL (2-3 sentences max)
 - Ask ONE question at a time
@@ -558,10 +584,19 @@ IMPORTANT:
 - Codes are invisible to the user
 
 RESPONSE STYLE:
-✓ "What brings you in today? Any pain or specific concerns?"
-✓ "I see, can you describe the pain - is it sharp, throbbing, or constant?"
-✓ "12345 [[SERVICE:General Checkup]] [[SYMPTOMS:Routine dental checkup, no specific concerns]] Got it! Let me help you book your appointment."
-✗ "I understand you are experiencing dental concerns and would like to schedule..."`,
+Good: "What brings you in today? Any pain or specific concerns?"
+Good: "I see, can you describe the pain - is it sharp, throbbing, or constant?"
+Good: "12345 [[SERVICE:General Checkup]] [[SYMPTOMS:Routine dental checkup, no specific concerns]] Got it! Let me help you book your appointment."
+Bad: "I understand you are experiencing dental concerns and would like to schedule..."`;
+
+          // Admin prompt takes priority; inject patient name context into it
+          const effectiveGuidelines = adminSystemPrompt
+            ? `${adminSystemPrompt}\n\nPATIENT CONTEXT:\n- The appointment is always for the patient you're talking to (${user_profile?.first_name})`
+            : defaultGuidelines;
+
+          return {
+            persona: customGreeting || `You are DentiBot, a friendly and professional dental assistant.${personalityIntro} You know the patient ${user_profile?.first_name} ${user_profile?.last_name}. You help patients book appointments with the right dentist based on their needs.`,
+            guidelines: effectiveGuidelines,
             
             dentists: ``,
             
