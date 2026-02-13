@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AlertTriangle, CheckCircle, Trash2, Server } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { DowntimeManagement } from '@/components/super-admin/DowntimeManagement';
+import { PlatformStatusControl } from '@/components/super-admin/PlatformStatusControl';
 import {
   useAdminSystemErrors,
   useAdminSystemErrorsArchive,
@@ -50,6 +52,12 @@ export default function AdminSystemHealth() {
         <h2 className="text-xl font-bold">System Health</h2>
         <p className="text-sm text-muted-foreground">Monitor errors, health checks, and system status</p>
       </div>
+
+      {/* Platform Status & Banner Control */}
+      <PlatformStatusControl />
+
+      {/* Scheduled Downtimes */}
+      <DowntimeManagement />
 
       <Tabs defaultValue="errors" className="space-y-4">
         <TabsList>
