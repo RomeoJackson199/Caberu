@@ -122,6 +122,7 @@ const AdminCompliance = lazy(() => import("./pages/admin/AdminCompliance"));
 const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
 const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
+const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
 const AdminBusinessDetail = lazy(() => import("./pages/admin/AdminBusinessDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 
@@ -481,6 +482,7 @@ const App = () => {
                           <Route path="communications" element={<AdminCommunications />} />
                           <Route path="system" element={<AdminSystemHealth />} />
                           <Route path="compliance" element={<AdminCompliance />} />
+                          <Route path="ai-prompts" element={<AdminAIPrompts />} />
                           <Route path="features" element={<AdminFeatureFlags />} />
                           <Route path="revenue" element={<AdminRevenue />} />
                           <Route path="audit" element={<AdminAuditLog />} />
