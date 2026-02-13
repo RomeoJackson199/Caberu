@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
-export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services' | 'admin-schedule' | 'admin-analytics';
+export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services' | 'admin-analytics';
 interface DentistAppShellProps {
   activeSection: DentistSection;
   onChangeSection: (section: DentistSection) => void;
