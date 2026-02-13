@@ -485,8 +485,8 @@ const App = () => {
                           <Route path="revenue" element={<AdminRevenue />} />
                           <Route path="audit" element={<AdminAuditLog />} />
                         </Route>
-                        {/* Super Admin Dashboard (legacy tab-based version) - Protected */}
-                        <Route path="/super-admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
+                        {/* Super Admin Dashboard - Protected */}
+                        <Route path="/admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
                         {/* Main booking route */}
                         <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
                         {/* Redirect old routes to main booking */}
