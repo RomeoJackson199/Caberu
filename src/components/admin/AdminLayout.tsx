@@ -157,11 +157,11 @@ export default function AdminLayout() {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-60 lg:w-64 flex-col border-r bg-card">
         <div className="flex items-center gap-2.5 px-4 py-4 border-b">
-          <div className="p-1.5 bg-destructive rounded-md">
-            <Shield className="h-4 w-4 text-destructive-foreground" />
+          <div className="p-1.5 bg-primary rounded-md">
+            <Shield className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-bold truncate">Super Admin</h1>
+            <h1 className="text-sm font-bold truncate">Admin Dashboard</h1>
             <p className="text-xs text-muted-foreground">Caberu Healthcare</p>
           </div>
         </div>
@@ -188,11 +188,11 @@ export default function AdminLayout() {
               </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex items-center gap-2.5 px-4 py-4 border-b">
-                  <div className="p-1.5 bg-destructive rounded-md">
-                    <Shield className="h-4 w-4 text-destructive-foreground" />
+                  <div className="p-1.5 bg-primary rounded-md">
+                    <Shield className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div>
-                    <h1 className="text-sm font-bold">Super Admin</h1>
+                    <h1 className="text-sm font-bold">Admin Dashboard</h1>
                     <p className="text-xs text-muted-foreground">Caberu Healthcare</p>
                   </div>
                 </div>

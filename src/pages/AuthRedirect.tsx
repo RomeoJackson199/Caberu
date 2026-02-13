@@ -6,7 +6,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 /**
  * Post-authentication redirect page that routes users based on their roles:
- * 1. Super admins -> /super-admin
+ * 1. Super admins -> /admin
  * 2. Dentists/Providers -> /dentist/dashboard
  * 3. Patients -> /dashboard
  */

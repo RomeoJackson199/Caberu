@@ -100,7 +100,6 @@ const PatientAccountPrivacyPage = lazy(() => import("./pages/PatientAccountPriva
 const PatientAccountHelpPage = lazy(() => import("./pages/PatientAccountHelpPage"));
 const PatientSettingsPage = lazy(() => import("./pages/PatientSettingsPage"));
 // SmartBookAppointment removed - unused
-const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
@@ -482,8 +481,8 @@ const App = () => {
                           <Route path="revenue" element={<AdminRevenue />} />
                           <Route path="audit" element={<AdminAuditLog />} />
                         </Route>
-                        {/* Super Admin Dashboard (legacy tab-based version) - Protected */}
-                        <Route path="/super-admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
+                        {/* Redirect legacy super-admin route to new admin dashboard */}
+                        <Route path="/super-admin" element={<Navigate to="/admin" replace />} />
                         {/* Main booking route */}
                         <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
                         {/* Redirect old routes to main booking */}
