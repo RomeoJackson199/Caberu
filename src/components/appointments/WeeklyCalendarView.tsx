@@ -40,7 +40,8 @@ export function WeeklyCalendarView({
   onAppointmentClick,
   selectedAppointmentId,
   googleCalendarEvents = [],
-  showAllDentists = false
+  showAllDentists = false,
+  dentistFilterId
 }: WeeklyCalendarViewProps) {
   const isMobile = useIsMobile();
   const { t } = useLanguage();
@@ -69,7 +70,7 @@ export function WeeklyCalendarView({
 
   // Fetch appointments with patient profiles in a single query (eliminates N+1 pattern)
   const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ["appointments-calendar", dentistId, businessId, format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["appointments-calendar", dentistId, businessId, format(weekStart, "yyyy-MM-dd"), dentistFilterId ?? "all"],
     queryFn: async () => {
       const weekEnd = addDays(weekStart, 7);
 
@@ -94,6 +95,11 @@ export function WeeklyCalendarView({
         query = query.eq("dentist_id", dentistId);
       }
 
+      // Optional explicit dentist filter for team mode selection
+      if (showAllDentists && dentistFilterId) {
+        query = query.eq("dentist_id", dentistFilterId);
+      }
+
       // Filter by business if provided
       if (businessId) {
         query = query.eq("business_id", businessId);
@@ -111,33 +117,37 @@ export function WeeklyCalendarView({
     }
   });
 
+  const calendarDentistId = dentistFilterId || dentistId;
+
   // Fetch dentist availability for the week (break times, working hours, availability)
   const { data: availability = [] } = useQuery({
-    queryKey: ["dentist-availability", dentistId],
+    queryKey: ["dentist-availability", calendarDentistId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dentist_availability")
         .select("*")
-        .eq("dentist_id", dentistId);
+        .eq("dentist_id", calendarDentistId);
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: !!calendarDentistId
   });
 
   // Fetch vacation/sick leave days for the current week
   const { data: vacationDays = [] } = useQuery({
-    queryKey: ["dentist-vacation-days", dentistId, format(weekStart, "yyyy-MM-dd")],
+    queryKey: ["dentist-vacation-days", calendarDentistId, format(weekStart, "yyyy-MM-dd")],
     queryFn: async () => {
       const weekEnd = addDays(weekStart, 7);
       const { data, error } = await supabase
         .from("dentist_vacation_days")
         .select("*")
-        .eq("dentist_id", dentistId)
+        .eq("dentist_id", calendarDentistId)
         .gte("end_date", format(weekStart, "yyyy-MM-dd"))
         .lte("start_date", format(weekEnd, "yyyy-MM-dd"));
       if (error) throw error;
       return data || [];
-    }
+    },
+    enabled: !!calendarDentistId
   });
 
   // Get availability info for a specific day

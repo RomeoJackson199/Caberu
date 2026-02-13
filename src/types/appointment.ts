@@ -174,6 +174,7 @@ export interface WeeklyCalendarViewProps {
   selectedAppointmentId?: string;
   googleCalendarEvents?: GoogleCalendarEvent[];
   showAllDentists?: boolean;
+  dentistFilterId?: string;
 }
 
 /**

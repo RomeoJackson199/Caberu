@@ -46,6 +46,7 @@ function DentistAppointmentsManagementContent() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [viewMode, setViewMode] = useState<"week" | "day" | "completed" | "team">("week");
   const [showStats, setShowStats] = useState(false);
+  const [selectedTeamDentistId, setSelectedTeamDentistId] = useState<string | null>(null);
   const [calendarSyncError, setCalendarSyncError] = useState<Error | null>(null);
   const [lastCalendarSync, setLastCalendarSync] = useState<Date | null>(null);
   const lastScrollY = useRef(0);
@@ -57,6 +58,59 @@ function DentistAppointmentsManagementContent() {
   } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  type TeamDentist = {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+
+  const {
+    data: teamDentists = []
+  } = useQuery<TeamDentist[]>({
+    queryKey: ['team-dentists', businessId],
+    queryFn: async () => {
+      if (!businessId) return [];
+
+      const { data: members, error: membersError } = await supabase
+        .from('business_members')
+        .select('profile_id')
+        .eq('business_id', businessId)
+        .in('role', ['dentist', 'admin', 'owner']);
+
+      if (membersError) throw membersError;
+
+      const profileIds = (members || []).map(member => member.profile_id).filter(Boolean);
+      if (!profileIds.length) return [];
+
+      const { data: dentistsData, error: dentistsError } = await supabase
+        .from('dentists')
+        .select('id, first_name, last_name')
+        .in('profile_id', profileIds)
+        .eq('is_active', true);
+
+      if (dentistsError) throw dentistsError;
+
+      return dentistsData || [];
+    },
+    enabled: !!businessId,
+  });
+
+  useEffect(() => {
+    if (!teamDentists.length) return;
+
+    setSelectedTeamDentistId(prevSelected => {
+      if (prevSelected && teamDentists.some(dentist => dentist.id === prevSelected)) {
+        return prevSelected;
+      }
+
+      if (dentistId && teamDentists.some(dentist => dentist.id === dentistId)) {
+        return dentistId;
+      }
+
+      return teamDentists[0].id;
+    });
+  }, [teamDentists, dentistId]);
 
   // Fetch all appointments for stats
   const {
@@ -532,21 +586,49 @@ function DentistAppointmentsManagementContent() {
               </Button>
             </div>
 
-            {/* Team Schedule Button - Desktop only */}
-            <Button
-              variant={viewMode === "team" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode(viewMode === "team" ? "week" : "team")}
-              className={cn(
-                "h-9 rounded-xl border-2 transition-all shadow-sm font-semibold hidden lg:flex",
-                viewMode === "team"
-                  ? "bg-foreground text-background"
-                  : "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
-              )}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Team
-            </Button>
+            {/* Team Schedule Dropdown - Desktop only */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={viewMode === "team" ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "h-9 rounded-xl border-2 transition-all shadow-sm font-semibold hidden lg:flex",
+                    viewMode === "team"
+                      ? "bg-foreground text-background"
+                      : "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
+                  )}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Team
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Select dentist</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {teamDentists.length === 0 ? (
+                  <DropdownMenuItem disabled>No dentists available</DropdownMenuItem>
+                ) : (
+                  teamDentists.map((teamDentist) => {
+                    const fullName = [teamDentist.first_name, teamDentist.last_name].filter(Boolean).join(' ').trim() || 'Unnamed dentist';
+                    const isSelected = selectedTeamDentistId === teamDentist.id;
+
+                    return (
+                      <DropdownMenuItem
+                        key={teamDentist.id}
+                        onSelect={() => {
+                          setSelectedTeamDentistId(teamDentist.id);
+                          setViewMode('team');
+                        }}
+                        className={cn(isSelected && 'bg-muted')}
+                      >
+                        {fullName}
+                      </DropdownMenuItem>
+                    );
+                  })
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Stats Toggle */}
             <Button
@@ -676,6 +758,7 @@ function DentistAppointmentsManagementContent() {
               selectedAppointmentId={selectedAppointment?.id}
               googleCalendarEvents={googleCalendarEvents}
               showAllDentists={true}
+              dentistFilterId={selectedTeamDentistId || undefined}
             />
           ) : dentistLoading ? (
             <div className="flex justify-center items-center h-full">
