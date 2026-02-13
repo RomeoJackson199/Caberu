@@ -1,10 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, elevenlabs-signature, x-elevenlabs-signature',
-};
+// Override getCorsHeaders to include elevenlabs-specific headers
+function getWebhookCorsHeaders(origin: string | null): Record<string, string> {
+    const base = getCorsHeaders(origin);
+    return {
+        ...base,
+        'Access-Control-Allow-Headers': base['Access-Control-Allow-Headers'] + ', elevenlabs-signature, x-elevenlabs-signature',
+    };
+}
 
 // Pay-as-you-go rate: $0.10 per minute overage (10 cents)
 const OVERAGE_RATE_CENTS_PER_MINUTE = 10;
@@ -81,8 +86,11 @@ async function verifySignature(payload: string, signature: string, secret: strin
 }
 
 serve(async (req) => {
+    const origin = req.headers.get('Origin');
+    const corsHeaders = getWebhookCorsHeaders(origin);
+
     if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+        return new Response(null, { status: 204, headers: corsHeaders });
     }
 
     try {

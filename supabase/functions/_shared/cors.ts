@@ -89,21 +89,10 @@ export function jsonResponseSafe(
   });
 }
 
-// Legacy support - DEPRECATED: Use getCorsHeaders(origin) instead
-// This exists only for backward compatibility during migration
-// WARNING: Using '*' origin is a security risk - migrate to getCorsHeaders(origin) ASAP
-/** @deprecated Use getCorsHeaders(origin) instead for proper origin validation */
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-};
-
 export default {
   getCorsHeaders,
   handleCorsPreflightSafe,
   jsonResponseSafe,
-  corsHeaders,
   isAllowedOrigin,
   ALLOWED_ORIGINS,
 };
