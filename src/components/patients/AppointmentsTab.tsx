@@ -264,28 +264,24 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
       
       const { data, error } = await supabase
         .from('appointments_decrypted')
-        .select(`
-          id,
-          appointment_date,
-          status,
-          payment_status,
-          completed_at,
-          reason,
-          dentists:dentists!appointments_dentist_id_fkey(
-            profiles:profile_id(first_name, last_name)
-          )
-        `)
+        .select('id, appointment_date, status, payment_status, completed_at, reason, dentist_id')
         .eq('patient_id', profile.id)
         .eq('business_id', businessId)
         .order('appointment_date', { ascending: false });
-      
+
       if (error) throw error;
-      
+
+      // Fetch dentist profiles separately (views don't support PostgREST joins)
+      const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter(Boolean))];
+      const { data: dentists } = dentistIds.length > 0
+        ? await supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+        : { data: [] };
+      const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
+
       const transformedData: Appointment[] = (data || []).map(apt => {
-        // Handle dentist data - could be array or single object depending on query
-        const dentistData = apt.dentists as any;
-        const profile = dentistData?.profiles;
-        
+        const dentistData = dentistsMap.get(apt.dentist_id) as any;
+        const dentistProfile = dentistData?.profiles;
+
         return {
           id: apt.id,
           appointment_date: apt.appointment_date,
@@ -293,9 +289,9 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
           payment_status: apt.payment_status,
           completed_at: apt.completed_at,
           reason: apt.reason,
-          dentist: profile ? {
-            first_name: profile.first_name,
-            last_name: profile.last_name
+          dentist: dentistProfile ? {
+            first_name: dentistProfile.first_name,
+            last_name: dentistProfile.last_name
           } : undefined,
           clinicName: businessName || undefined
         };

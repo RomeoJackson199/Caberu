@@ -66,17 +66,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
         // Fetch pending appointments scoped to current business
         let query = supabase
           .from('appointments_decrypted')
-          .select(`
-            id,
-            appointment_date,
-            reason,
-            patient_name,
-            patient_id,
-            profiles!appointments_patient_id_fkey (
-              first_name,
-              last_name
-            )
-          `)
+          .select('id, appointment_date, reason, patient_name, patient_id')
           .eq('dentist_id', dentistId)
           .eq('status', 'pending')
           .gte('appointment_date', new Date().toISOString())
@@ -90,9 +80,16 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
         if (error) throw error;
 
+        // Fetch patient profiles separately (views don't support PostgREST joins)
+        const patientIds = [...new Set((appointments || []).map(a => a.patient_id).filter(Boolean))];
+        const { data: profiles } = patientIds.length > 0
+          ? await supabase.from('profiles').select('id, first_name, last_name').in('id', patientIds)
+          : { data: [] };
+        const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
         const validAppointments = (appointments || []).map(apt => ({
           ...apt,
-          profiles: Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles
+          profiles: profilesMap.get(apt.patient_id) || undefined,
         })) as PendingAppointment[];
 
         setPendingAppointments(validAppointments);

@@ -35,23 +35,24 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
 
       const { data: appointments, error } = await supabase
         .from("appointments_decrypted")
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          status,
-          notes,
-          dentist:dentists!dentist_id (
-            profile:profiles!profile_id (
-              first_name,
-              last_name
-            )
-          )
-        `)
+        .select('id, appointment_date, reason, status, notes, dentist_id')
         .eq("patient_id", profile.id)
         .order("appointment_date", { ascending: true });
 
       if (error) throw error;
+
+      // Fetch dentist profiles separately (views don't support PostgREST joins)
+      const dentistIds = [...new Set((appointments || []).map(a => a.dentist_id).filter(Boolean))];
+      if (dentistIds.length > 0) {
+        const { data: dentists } = await supabase
+          .from('dentists')
+          .select('id, profiles:profile_id(first_name, last_name)')
+          .in('id', dentistIds);
+        const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
+        appointments?.forEach((apt: any) => {
+          apt.dentist = dentistsMap.get(apt.dentist_id) || undefined;
+        });
+      }
 
       if (!appointments || appointments.length === 0) {
         onResponse("You don't have any appointments scheduled yet. Would you like to book one?", [

@@ -63,27 +63,10 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				const weekStart = new Date(today);
 				weekStart.setDate(today.getDate() - today.getDay());
 
-				// Build queries scoped to current business
+				// Build queries scoped to current business (no joins on decrypted views)
 				let todayQuery = supabase
 					.from('appointments_decrypted')
-					.select(`
-						id,
-						appointment_date,
-						patient_id,
-						patient_name,
-						reason,
-						status,
-						urgency,
-						duration_minutes,
-						profiles!appointments_patient_id_fkey (
-							first_name,
-							last_name,
-							email,
-							phone,
-							allergies,
-							medical_conditions
-						)
-					`)
+					.select('id, appointment_date, patient_id, patient_name, reason, status, urgency, duration_minutes')
 					.eq('dentist_id', dentistId)
 					.gte('appointment_date', startOfDay.toISOString())
 					.lt('appointment_date', endOfDay.toISOString())
@@ -111,22 +94,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 
 				let nextQuery = supabase
 					.from('appointments_decrypted')
-					.select(`
-						id,
-						appointment_date,
-						patient_id,
-						patient_name,
-						reason,
-						status,
-						urgency,
-						duration_minutes,
-						profiles!appointments_patient_id_fkey (
-							first_name,
-							last_name,
-							email,
-							phone
-						)
-					`)
+					.select('id, appointment_date, patient_id, patient_name, reason, status, urgency, duration_minutes')
 					.eq('dentist_id', dentistId)
 					.gte('appointment_date', new Date().toISOString())
 					.neq('status', 'cancelled')
@@ -160,22 +128,33 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				const nextApt = nextAptResult.status === 'fulfilled' ? nextAptResult.value.data : null;
 
 				if (todayError) {
-					logger.error('❌ Error fetching today appointments:', { code: todayError.code, message: todayError.message, details: (todayError as any)?.details });
+					logger.error('Error fetching today appointments:', { code: todayError.code, message: todayError.message, details: (todayError as any)?.details });
 				}
 
-				// Filter out appointments without profile data and unwrap profiles array
+				// Fetch patient profiles separately (views don't support PostgREST joins)
+				const allPatientIds = [...new Set([
+					...(todayAppts || []).map(a => a.patient_id),
+					...(nextApt || []).map(a => a.patient_id),
+				].filter(Boolean))];
+
+				const { data: profilesData } = allPatientIds.length > 0
+					? await supabase.from('profiles').select('id, first_name, last_name, email, phone, allergies, medical_conditions').in('id', allPatientIds)
+					: { data: [] };
+				const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
+
+				// Attach profiles to appointments
 				const validAppts = (todayAppts || [])
-					.filter(apt => apt.profiles && (Array.isArray(apt.profiles) ? apt.profiles.length > 0 : true))
 					.map(apt => ({
 						...apt,
-						profiles: Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles
-					})) as TodayAppointment[];
+						profiles: profilesMap.get(apt.patient_id) || null,
+					}))
+					.filter(apt => apt.profiles) as TodayAppointment[];
 
 				// Get next appointment
-				const nextAppointmentData = nextApt && nextApt.length > 0 
+				const nextAppointmentData = nextApt && nextApt.length > 0
 					? {
 						...nextApt[0],
-						profiles: Array.isArray(nextApt[0].profiles) ? nextApt[0].profiles[0] : nextApt[0].profiles
+						profiles: profilesMap.get(nextApt[0].patient_id) || null,
 					} as TodayAppointment
 					: null;
 

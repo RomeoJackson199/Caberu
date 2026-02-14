@@ -491,15 +491,7 @@ export async function validateBufferTimes(
 
   const { data: nearbyAppointments, error } = await supabase
     .from('appointments_decrypted')
-    .select(`
-      id,
-      appointment_date,
-      duration_minutes,
-      appointment_type_id,
-      appointment_types (
-        buffer_time_after_minutes
-      )
-    `)
+    .select('id, appointment_date, duration_minutes, appointment_type_id')
     .eq('dentist_id', dentistId)
     .eq('business_id', businessId)
     .gte('appointment_date', startWindow.toISOString())
@@ -510,11 +502,19 @@ export async function validateBufferTimes(
     return { valid: true, conflicts: [] };
   }
 
+  // Fetch appointment type buffer times separately (views don't support PostgREST joins)
+  const typeIds = [...new Set(nearbyAppointments.map(a => a.appointment_type_id).filter(Boolean))];
+  const { data: appointmentTypes } = typeIds.length > 0
+    ? await supabase.from('appointment_types').select('id, buffer_time_after_minutes').in('id', typeIds)
+    : { data: [] };
+  const typesMap = new Map((appointmentTypes || []).map(t => [t.id, t]));
+
   // Check each nearby appointment for buffer conflicts
   for (const apt of nearbyAppointments) {
     const aptStart = parseISO(apt.appointment_date);
     const aptDuration = apt.duration_minutes || 30;
-    const bufferTime = (apt.appointment_types as any)?.buffer_time_after_minutes || 0;
+    const aptType = apt.appointment_type_id ? typesMap.get(apt.appointment_type_id) : null;
+    const bufferTime = aptType?.buffer_time_after_minutes || 0;
     const aptEnd = addMinutes(aptStart, aptDuration + bufferTime);
 
     const proposedEnd = addMinutes(proposedDateTime, durationMinutes);

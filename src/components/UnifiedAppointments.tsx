@@ -154,24 +154,7 @@ export function UnifiedAppointments({
       setLoading(true);
       let query = supabase
         .from('appointments_decrypted')
-        .select(`
-          *,
-          patient:profiles!appointments_patient_id_fkey (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            date_of_birth
-          ),
-          dentist:dentists!appointments_dentist_id_fkey (
-            id,
-            profiles:profile_id (
-              first_name,
-              last_name
-            )
-          )
-        `)
+        .select('*')
         .order('appointment_date', { ascending: false });
 
       if (patientId) {
@@ -188,7 +171,28 @@ export function UnifiedAppointments({
       const { data, error } = await query;
 
       if (error) throw error;
-      setAppointments(data || []);
+
+      // Fetch patient and dentist data separately (views don't support PostgREST joins)
+      const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
+      const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter(Boolean))];
+
+      const [profilesResult, dentistsResult] = await Promise.all([
+        patientIds.length > 0
+          ? supabase.from('profiles').select('id, first_name, last_name, email, phone, date_of_birth').in('id', patientIds)
+          : { data: [], error: null },
+        dentistIds.length > 0
+          ? supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+          : { data: [], error: null },
+      ]);
+
+      const profilesMap = new Map((profilesResult.data || []).map(p => [p.id, p]));
+      const dentistsMap = new Map((dentistsResult.data || []).map(d => [d.id, d]));
+
+      setAppointments((data || []).map(apt => ({
+        ...apt,
+        patient: profilesMap.get(apt.patient_id) || undefined,
+        dentist: dentistsMap.get(apt.dentist_id) || undefined,
+      })));
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast({

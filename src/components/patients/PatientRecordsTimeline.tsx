@@ -74,33 +74,36 @@ export const PatientRecordsTimeline = memo(function PatientRecordsTimeline({ pat
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments_decrypted")
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          consultation_notes,
-          ai_summary,
-          completed_at,
-          duration_minutes,
-          dentist_id,
-          business_id,
-          treatment_plan_id,
-          businesses!inner (
-            id,
-            name
-          ),
-          dentists!inner (
-            id,
-            first_name,
-            last_name
-          )
-        `)
+        .select('id, appointment_date, reason, consultation_notes, ai_summary, completed_at, duration_minutes, dentist_id, business_id, treatment_plan_id')
         .eq("patient_id", patientId)
         .eq("status", "completed")
         .order("completed_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      // Fetch business and dentist data separately (views don't support PostgREST joins)
+      const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter(Boolean))];
+      const businessIds = [...new Set((data || []).map(a => a.business_id).filter(Boolean))];
+
+      const [dentistsResult, businessesResult] = await Promise.all([
+        dentistIds.length > 0
+          ? supabase.from('dentists').select('id, first_name, last_name').in('id', dentistIds)
+          : { data: [] },
+        businessIds.length > 0
+          ? supabase.from('businesses').select('id, name').in('id', businessIds)
+          : { data: [] },
+      ]);
+
+      const dentistsMap = new Map((dentistsResult.data || []).map(d => [d.id, d]));
+      const businessesMap = new Map((businessesResult.data || []).map(b => [b.id, b]));
+
+      return (data || [])
+        .filter(apt => dentistsMap.has(apt.dentist_id) && businessesMap.has(apt.business_id))
+        .map(apt => ({
+          ...apt,
+          dentists: dentistsMap.get(apt.dentist_id)!,
+          businesses: businessesMap.get(apt.business_id)!,
+        }));
     }
   });
 

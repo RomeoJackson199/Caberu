@@ -338,31 +338,35 @@ const PatientDashboardComponent = ({
       const {
         data: appointmentsData,
         error
-      } = await supabase.from('appointments_decrypted').select(`
-          *,
-          dentists:dentist_id(
-            specialization,
-            profiles:profile_id(first_name, last_name)
-          )
-        `).eq('patient_id', profileId).order('appointment_date', {
+      } = await supabase.from('appointments_decrypted').select('*').eq('patient_id', profileId).order('appointment_date', {
         ascending: false
       }).limit(5);
       if (error) {
-        console.error('❌ Error fetching appointments:', error);
+        console.error('Error fetching appointments:', error);
         return;
       }
-      const transformed = (appointmentsData || []).map(apt => ({
-        ...apt,
-        duration: apt.duration_minutes || 60,
-        urgency_level: apt.urgency === 'emergency' ? 'urgent' : apt.urgency || 'normal',
-        status: apt.status === 'pending' ? 'scheduled' : apt.status,
-        // Transform the dentist data to match expected structure
-        dentists: apt.dentists ? {
-          first_name: apt.dentists.profiles?.first_name,
-          last_name: apt.dentists.profiles?.last_name,
-          specialization: apt.dentists.specialization
-        } : undefined
-      }));
+
+      // Fetch dentist data separately (views don't support PostgREST joins)
+      const dentistIds = [...new Set((appointmentsData || []).map(a => a.dentist_id).filter(Boolean))];
+      const { data: dentists } = dentistIds.length > 0
+        ? await supabase.from('dentists').select('id, specialization, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+        : { data: [] };
+      const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
+
+      const transformed = (appointmentsData || []).map(apt => {
+        const dentist = dentistsMap.get(apt.dentist_id);
+        return {
+          ...apt,
+          duration: apt.duration_minutes || 60,
+          urgency_level: apt.urgency === 'emergency' ? 'urgent' : apt.urgency || 'normal',
+          status: apt.status === 'pending' ? 'scheduled' : apt.status,
+          dentists: dentist ? {
+            first_name: (dentist.profiles as any)?.first_name,
+            last_name: (dentist.profiles as any)?.last_name,
+            specialization: dentist.specialization
+          } : undefined
+        };
+      });
       setRecentAppointments(transformed);
     } catch (error) {
       console.error('💥 Exception fetching recent appointments:', error);

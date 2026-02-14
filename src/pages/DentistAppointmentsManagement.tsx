@@ -152,10 +152,7 @@ function DentistAppointmentsManagementContent() {
       if (!dentistId || !businessId) return [];
       const { data, error } = await supabase
         .from("appointments_decrypted")
-        .select(`
-          *,
-          patient:secure_profiles_view!appointments_patient_id_fkey(id, first_name, last_name, email)
-        `)
+        .select("*")
         .eq("dentist_id", dentistId)
         .eq("business_id", businessId)
         .eq("status", "completed")
@@ -163,7 +160,18 @@ function DentistAppointmentsManagementContent() {
         .limit(50);
 
       if (error) throw error;
-      return data || [];
+
+      // Fetch patient profiles separately (views don't support PostgREST joins)
+      const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
+      const { data: profiles } = patientIds.length > 0
+        ? await supabase.from('profiles').select('id, first_name, last_name, email').in('id', patientIds)
+        : { data: [] };
+
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+      return (data || []).map(apt => ({
+        ...apt,
+        patient: profilesMap.get(apt.patient_id) || undefined,
+      }));
     },
     enabled: !!dentistId && !!businessId && viewMode === 'completed',
     retry: 2,

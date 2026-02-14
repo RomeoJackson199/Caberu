@@ -58,19 +58,20 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
 
   const fetchPatients = async () => {
     try {
+      // Fetch patient IDs from appointments, then fetch profiles separately
       const { data, error } = await supabase
-        .from('appointments_decrypted')
-        .select('patient_id, profiles(id, first_name, last_name)')
+        .from('appointments')
+        .select('patient_id')
         .eq('dentist_id', dentistId);
 
       if (error) throw error;
 
-      const uniquePatients = Array.from(
-        new Map(data?.map((item: any) => [
-          item.patient?.id,
-          { id: item.patient?.id, first_name: item.patient?.first_name, last_name: item.patient?.last_name }
-        ])).values()
-      ).filter(p => p.id);
+      const patientIds = [...new Set((data || []).map(item => item.patient_id).filter(Boolean))];
+      const { data: profiles } = patientIds.length > 0
+        ? await supabase.from('profiles').select('id, first_name, last_name').in('id', patientIds)
+        : { data: [] };
+
+      const uniquePatients = (profiles || []).filter(p => p.id);
 
       setPatients(uniquePatients as any);
     } catch (error) {
