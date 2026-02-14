@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   FlaskConical,
   Mail,
+  MessageSquareText,
   ScrollText,
   ShieldCheck,
   FileText,
@@ -48,6 +49,7 @@ import { AnalyticsTab } from '@/components/super-admin/AnalyticsTab';
 import { SystemHealthTab } from '@/components/super-admin/SystemHealthTab';
 import { CommsMonitorTab } from '@/components/super-admin/CommsMonitorTab';
 import { ComplianceTab } from '@/components/super-admin/ComplianceTab';
+import { SmsAdminTab } from '@/components/super-admin/SmsAdminTab';
 
 interface NavItem {
   id: string;
@@ -66,6 +68,7 @@ const navItems: NavItem[] = [
   { id: 'audit', label: 'Audit Logs', icon: ScrollText, section: 'system' },
   { id: 'tests', label: 'Tests', icon: FlaskConical, section: 'system' },
   { id: 'comms', label: 'Comms Monitor', icon: Phone, section: 'tools' },
+  { id: 'sms', label: 'SMS Management', icon: MessageSquareText, section: 'tools' },
   { id: 'feature-flags', label: 'Feature Flags', icon: Flag, section: 'tools' },
   { id: 'ai-prompts', label: 'AI Prompts', icon: Bot, section: 'tools' },
   { id: 'compliance', label: 'Compliance', icon: ShieldCheck, section: 'tools' },
@@ -149,6 +152,8 @@ function TabContent({ activeTab, onNavigate }: { activeTab: string; onNavigate: 
       return <ComplianceTab />;
     case 'comms':
       return <CommsMonitorTab />;
+    case 'sms':
+      return <SmsAdminTab />;
     case 'feature-flags':
       return <FeatureFlagsTab />;
     case 'docs':

@@ -354,7 +354,7 @@ export function QuickAppointmentDialog({
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-xs">
-                            {selectedPatient.first_name[0]}{selectedPatient.last_name[0]}
+                            {selectedPatient.first_name?.[0]}{selectedPatient.last_name?.[0]}
                           </AvatarFallback>
                         </Avatar>
                         <span>{selectedPatient.first_name} {selectedPatient.last_name}</span>
@@ -393,7 +393,7 @@ export function QuickAppointmentDialog({
                                 <div className="flex items-center gap-3 w-full">
                                   <Avatar className="h-8 w-8">
                                     <AvatarFallback>
-                                      {p.first_name[0]}{p.last_name[0]}
+                                      {p.first_name?.[0]}{p.last_name?.[0]}
                                     </AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1 min-w-0">
@@ -420,7 +420,7 @@ export function QuickAppointmentDialog({
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="text-sm">
-                    {selectedPatient?.first_name[0]}{selectedPatient?.last_name[0]}
+                    {selectedPatient?.first_name?.[0]}{selectedPatient?.last_name?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div>

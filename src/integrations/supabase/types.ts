@@ -3714,6 +3714,90 @@ export type Database = {
           },
         ]
       }
+      sms_logs: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          message_body: string
+          message_type: string
+          recipient_phone: string
+          status: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_body: string
+          message_type?: string
+          recipient_phone: string
+          status?: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_body?: string
+          message_type?: string
+          recipient_phone?: string
+          status?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          template_body: string
+          template_key: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          template_body: string
+          template_key: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          template_body?: string
+          template_key?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           created_at: string
