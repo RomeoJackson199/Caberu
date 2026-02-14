@@ -41,16 +41,17 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
 
       if (error) throw error;
 
-      // Fetch dentist profiles separately (views don't support PostgREST joins)
+      // Fetch dentist profiles separately
       const dentistIds = [...new Set((appointments || []).map(a => a.dentist_id).filter(Boolean))];
+      const dentistsMap = new Map<string, { first_name: string; last_name: string }>();
       if (dentistIds.length > 0) {
         const { data: dentists } = await supabase
           .from('dentists')
           .select('id, profiles:profile_id(first_name, last_name)')
           .in('id', dentistIds);
-        const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
-        appointments?.forEach((apt: any) => {
-          apt.dentist = dentistsMap.get(apt.dentist_id) || undefined;
+        (dentists || []).forEach((d: any) => {
+          const p = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
+          if (p) dentistsMap.set(d.id, p);
         });
       }
 
@@ -74,8 +75,7 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
         responseMessage += `📅 **Your upcoming appointments:**\n\n`;
         upcoming.forEach((apt, index) => {
           const date = new Date(apt.appointment_date);
-          const dentistData = apt.dentist as any;
-          const profileData = dentistData?.profile as any;
+          const profileData = dentistsMap.get(apt.dentist_id);
           const dentistName = profileData?.first_name 
             ? `Dr. ${profileData.first_name} ${profileData.last_name}`
             : "Unknown dentist";
@@ -111,8 +111,7 @@ export const ChatAppointmentManager = ({ user, onResponse }: ChatAppointmentMana
         responseMessage += `📋 **Your past appointments:**\n\n`;
         past.slice(-3).forEach((apt, index) => {
           const date = new Date(apt.appointment_date);
-          const dentistData = apt.dentist as any;
-          const profileData = dentistData?.profile as any;
+          const profileData = dentistsMap.get(apt.dentist_id);
           const dentistName = profileData?.first_name 
             ? `Dr. ${profileData.first_name} ${profileData.last_name}`
             : "Unknown dentist";
