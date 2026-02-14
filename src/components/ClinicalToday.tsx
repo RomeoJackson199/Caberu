@@ -137,9 +137,9 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 					...(nextApt || []).map(a => a.patient_id),
 				].filter(Boolean))];
 
-				const { data: profilesData } = allPatientIds.length > 0
-					? await supabase.from('profiles').select('id, first_name, last_name, email, phone, allergies, medical_conditions').in('id', allPatientIds)
-					: { data: [] };
+			const { data: profilesData } = allPatientIds.length > 0
+				? await supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', allPatientIds)
+				: { data: [] };
 				const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
 
 				// Attach profiles to appointments
