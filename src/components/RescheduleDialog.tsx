@@ -105,7 +105,12 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
           .select('profiles:profile_id(first_name, last_name)')
           .eq('id', data.dentist_id)
           .single();
-        dentistProfile = dentist?.profiles || null;
+        const rawProfiles = dentist?.profiles;
+        if (Array.isArray(rawProfiles) && rawProfiles.length > 0) {
+          dentistProfile = rawProfiles[0];
+        } else if (rawProfiles && !Array.isArray(rawProfiles)) {
+          dentistProfile = rawProfiles as { first_name: string; last_name: string };
+        }
       }
 
       const transformedData: AppointmentDetails = {
