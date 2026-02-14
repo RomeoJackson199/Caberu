@@ -268,6 +268,20 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         description: `Your appointment has been moved to ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}`,
       });
 
+      // Send SMS/email/push notification for reschedule (non-blocking)
+      try {
+        await supabase.functions.invoke('send-appointment-rescheduled', {
+          body: {
+            appointment_id: appointment.id,
+            new_date: dateStr,
+            new_time: selectedTime,
+          },
+        });
+        logger.info('Reschedule notification sent for appointment:', appointment.id);
+      } catch (notifError) {
+        logger.warn('Failed to send reschedule notification (non-critical):', notifError);
+      }
+
       onOpenChange(false);
       if (onSuccess) onSuccess();
 
