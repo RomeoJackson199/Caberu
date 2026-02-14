@@ -44,7 +44,7 @@ function cleanPhoneNumber(phone: string): string | null {
   if (!phone) return null;
   
   // Remove all non-digit characters except leading +
-  let cleaned = phone.replace(/[^\\d+]/g, '');
+  let cleaned = phone.replace(/[^\d+]/g, '');
   
   // Ensure it starts with +
   if (!cleaned.startsWith('+')) {
