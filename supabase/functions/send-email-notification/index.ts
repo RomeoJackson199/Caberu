@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 import { checkRateLimitDB, getClientIP, rateLimitResponse } from '../_shared/rateLimit.ts';
+import { sendSms, htmlToPlainText } from '../_shared/sms.ts';
 
 // Rate limit: 50 emails per hour per business
 const RATE_LIMIT_EMAILS = {
@@ -287,16 +288,18 @@ serve(async (req) => {
       }
     }
 
-    // Fetch patient data if available
+    // Fetch patient data if available (including phone for SMS)
     let patientName = 'Valued Patient';
+    let patientPhone: string | null = null;
     if (patientId) {
       const { data: pData } = await supabase
         .from('profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, phone')
         .eq('id', patientId)
-        .maybeSingle(); // Use maybeSingle to be safe
+        .maybeSingle();
       if (pData) {
         patientName = `${pData.first_name || ''} ${pData.last_name || ''}`.trim() || 'Valued Patient';
+        patientPhone = pData.phone || null;
       }
     }
 
@@ -390,10 +393,50 @@ serve(async (req) => {
 
     console.log(`✅ Email sent successfully for ${messageType}`);
 
+    // --- SMS: Send alongside email if patient has a phone number ---
+    let smsSent = false;
+    if (patientPhone) {
+      try {
+        // Build plain-text SMS from the email content
+        const plainText = htmlToPlainText(emailBody);
+        // Compose a concise SMS: subject + condensed body
+        const smsBody = `${emailSubject}\n\n${plainText}`.substring(0, 1500);
+        
+        const smsResult = await sendSms({ to: patientPhone, message: smsBody });
+        smsSent = smsResult.success;
+        if (smsResult.success) {
+          console.log(`📱 SMS sent to ${patientPhone} for ${messageType}`);
+        } else {
+          console.warn(`📱 SMS failed for ${patientPhone}: ${smsResult.error}`);
+        }
+      } catch (smsError) {
+        console.warn('📱 SMS send error (non-critical):', smsError);
+      }
+    } else if (patientId) {
+      // Try to fetch phone if we only have email (e.g. system notifications with email-only)
+      try {
+        const { data: phoneData } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('email', to)
+          .maybeSingle();
+        if (phoneData?.phone) {
+          const plainText = htmlToPlainText(emailBody);
+          const smsBody = `${emailSubject}\n\n${plainText}`.substring(0, 1500);
+          const smsResult = await sendSms({ to: phoneData.phone, message: smsBody });
+          smsSent = smsResult.success;
+          if (smsResult.success) {
+            console.log(`📱 SMS sent (via email lookup) for ${messageType}`);
+          }
+        }
+      } catch (_) {
+        // Non-critical
+      }
+    }
+
     // Increment business email count if associated with a business
     if (dentistId) {
       try {
-        // Quick lookup for business_id via membership if we don't have it handy in this scope
         const { data: memberData } = await supabase
           .from('business_members')
           .select('business_id')
@@ -412,7 +455,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       notificationId,
-      message: 'Email sent successfully'
+      smsSent,
+      message: smsSent ? 'Email and SMS sent successfully' : 'Email sent successfully'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

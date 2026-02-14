@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
 import { format as formatTz } from "https://esm.sh/date-fns-tz@3.2.0";
 import { toZonedTime } from "https://esm.sh/date-fns-tz@3.2.0";
+import { sendSms } from '../_shared/sms.ts';
 
 const CLINIC_TIMEZONE = 'Europe/Brussels';
 
@@ -200,6 +201,21 @@ serve(async (req) => {
           results.failed++;
           results.errors.push(`Reminder ${reminder.id}: ${emailError.message}`);
         } else {
+          // Send SMS alongside email if patient has a phone number
+          if (patient.phone) {
+            try {
+              const smsBody = `Appointment Reminder: Your dental appointment with Dr. ${dentist.first_name} ${dentist.last_name} is ${reminderText} on ${formattedDate} at ${formattedTime}. Please arrive 10 minutes early.`;
+              const smsResult = await sendSms({ to: patient.phone, message: smsBody });
+              if (smsResult.success) {
+                console.log(`📱 SMS reminder sent for reminder ${reminder.id}`);
+              } else {
+                console.warn(`📱 SMS reminder failed for ${reminder.id}: ${smsResult.error}`);
+              }
+            } catch (smsErr) {
+              console.warn(`📱 SMS error for reminder ${reminder.id}:`, smsErr);
+            }
+          }
+
           // Also send push notification if patient has a user_id
           if (patient.user_id) {
             try {
@@ -223,13 +239,11 @@ serve(async (req) => {
 
               if (pushError) {
                 console.warn(`Push notification failed for reminder ${reminder.id}:`, pushError.message);
-                // Don't fail the reminder if push fails, email was still sent
               } else {
                 console.log(`Push notification sent for reminder ${reminder.id}`);
               }
             } catch (pushErr) {
               console.warn(`Push notification error for reminder ${reminder.id}:`, pushErr);
-              // Don't fail the reminder if push fails, email was still sent
             }
           }
 
