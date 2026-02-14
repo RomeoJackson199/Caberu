@@ -59,7 +59,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
   const fetchPatients = async () => {
     try {
       const { data, error } = await supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select('patient_id, profiles(id, first_name, last_name)')
         .eq('dentist_id', dentistId);
 

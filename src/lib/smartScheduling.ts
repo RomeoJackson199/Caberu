@@ -490,7 +490,7 @@ export async function validateBufferTimes(
   const endWindow = addMinutes(proposedDateTime, durationMinutes + 120);
 
   const { data: nearbyAppointments, error } = await supabase
-    .from('appointments_decrypted')
+    .from('appointments')
     .select(`
       id,
       appointment_date,

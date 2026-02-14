@@ -153,7 +153,7 @@ export function UnifiedAppointments({
     try {
       setLoading(true);
       let query = supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`
           *,
           patient:profiles!appointments_patient_id_fkey (
@@ -221,7 +221,7 @@ export function UnifiedAppointments({
     } else {
       // Load all patients for dentist view
       let query = supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`patient_id, patient:profiles!appointments_patient_id_fkey ( id, first_name, last_name, email )`)
         .eq('dentist_id', dentistId);
 

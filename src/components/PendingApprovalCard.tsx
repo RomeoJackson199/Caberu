@@ -65,7 +65,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
         // Fetch pending appointments scoped to current business
         let query = supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select(`
             id,
             appointment_date,

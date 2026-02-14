@@ -257,7 +257,7 @@ const LegalSupport: React.FC = () => {
         { data: paymentRequests }
       ] = await Promise.all([
         supabase.from('secure_profiles_view').select('*').eq('user_id', user.id).single(),
-        supabase.from('appointments_decrypted').select('*').eq('patient_id', user.id),
+        supabase.from('appointments').select('*').eq('patient_id', user.id),
         supabase.from('prescriptions').select('*').eq('patient_id', user.id),
         supabase.from('notes_decrypted').select('*').eq('patient_id', user.id),
         supabase.from('treatment_plans_decrypted').select('*').eq('patient_id', user.id),

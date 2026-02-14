@@ -462,7 +462,7 @@ export function useBookingFlow() {
       const requestedEnd = addMinutes(requestedStart, serviceDuration);
 
       const { data: existingAppts } = await supabase
-        .from("appointments_decrypted")
+        .from("appointments")
         .select("appointment_date, duration_minutes, status")
         .eq("dentist_id", selectedDentist.id)
         .eq("business_id", businessId)

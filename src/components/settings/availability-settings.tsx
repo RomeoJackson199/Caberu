@@ -239,7 +239,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
 
       // Get future appointments for this dentist
       const { data: appointments, error } = await supabase
-        .from('appointments_decrypted' as any)
+        .from('appointments' as any)
         .select(`
           id,
           appointment_date,

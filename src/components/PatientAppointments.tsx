@@ -61,7 +61,7 @@ export function PatientAppointments({ patientId, dentistId }: PatientAppointment
       }
 
       const { data, error } = await supabase
-        .from('appointments_decrypted' as any)
+        .from('appointments' as any)
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId)

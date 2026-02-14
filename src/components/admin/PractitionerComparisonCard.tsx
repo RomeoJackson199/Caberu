@@ -70,7 +70,7 @@ export function PractitionerComparisonCard({
 
       // OPTIMIZED: Batch fetch ALL appointments for ALL selected practitioners in one query
       const { data: allAppointments } = await supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select('id, status, dentist_id')
         .in('dentist_id', practitionerIds)
         .eq('business_id', businessId)

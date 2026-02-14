@@ -171,7 +171,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
       if (!isDentistUser) {
         // Patients should see all dentists they've had appointments with
         const { data: appointments } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('dentist_id, business_id')
           .eq('patient_id', profileId);
 
@@ -256,7 +256,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         if (!dentistData) return;
 
         const { data: appointments } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('patient_id, business_id')
           .eq('dentist_id', dentistData.id);
 

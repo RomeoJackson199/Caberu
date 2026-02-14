@@ -320,7 +320,7 @@ export const HealthData = ({
 
   const loadAppointments = async (profileId: string) => {
     let query = supabase
-      .from('appointments_decrypted')
+      .from('appointments')
       .select(`
         id,
         appointment_date,

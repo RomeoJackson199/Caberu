@@ -70,7 +70,7 @@ export function OnboardingProgressTracker({
           .select("*", { count: "exact", head: true })
           .eq("business_id", businessId || ""),
         supabase
-          .from("appointments_decrypted")
+          .from("appointments")
           .select("*", { count: "exact", head: true })
           .eq("business_id", businessId || ""),
         supabase

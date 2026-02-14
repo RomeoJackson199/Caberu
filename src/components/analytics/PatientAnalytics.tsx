@@ -67,7 +67,7 @@ export const PatientAnalytics = ({ userId }: PatientAnalyticsProps) => {
 
       // Get appointments data
       const { data: appointments } = await supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select('*')
         .eq('patient_id', profile.id)
         .order('appointment_date', { ascending: false });

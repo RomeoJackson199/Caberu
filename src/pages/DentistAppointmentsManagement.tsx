@@ -125,7 +125,7 @@ function DentistAppointmentsManagementContent() {
       const weekStart = startOfWeek(currentDate);
       const weekEnd = endOfWeek(addDays(currentDate, 7));
       const { data, error } = await supabase
-        .from("appointments_decrypted")
+        .from("appointments")
         .select("*")
         .eq("dentist_id", dentistId)
         .eq("business_id", businessId)
@@ -151,7 +151,7 @@ function DentistAppointmentsManagementContent() {
     queryFn: async () => {
       if (!dentistId || !businessId) return [];
       const { data, error } = await supabase
-        .from("appointments_decrypted")
+        .from("appointments")
         .select(`
           *,
           patient:secure_profiles_view!appointments_patient_id_fkey(id, first_name, last_name, email)
@@ -179,7 +179,7 @@ function DentistAppointmentsManagementContent() {
       const monthStart = startOfMonth(currentDate);
       const monthEnd = endOfMonth(currentDate);
       const { data, error } = await supabase
-        .from("appointments_decrypted")
+        .from("appointments")
         .select("*")
         .eq("dentist_id", dentistId)
         .eq("business_id", businessId)

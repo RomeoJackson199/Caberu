@@ -300,7 +300,7 @@ const PatientDashboardComponent = ({
       // Fetch appointments
       const {
         data: appointmentsData
-      } = await supabase.from('appointments_decrypted').select('*').eq('patient_id', profileId);
+      } = await supabase.from('appointments').select('*').eq('patient_id', profileId);
       const upcomingAppointments = appointmentsData?.filter(apt => new Date(apt.appointment_date) > new Date() && apt.status === 'confirmed').length || 0;
       const completedAppointments = appointmentsData?.filter(apt => apt.status === 'completed').length || 0;
       const lastVisit = appointmentsData?.filter(apt => apt.status === 'completed').sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())[0]?.appointment_date || null;
@@ -338,7 +338,7 @@ const PatientDashboardComponent = ({
       const {
         data: appointmentsData,
         error
-      } = await supabase.from('appointments_decrypted').select(`
+      } = await supabase.from('appointments').select(`
           *,
           dentists:dentist_id(
             specialization,

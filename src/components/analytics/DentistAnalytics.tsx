@@ -172,7 +172,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
       try {
         // Appointments in range for this dentist
         const { data: appts } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('id, appointment_date, status, patient_id, reason, dentist_id')
           .eq('dentist_id', dentistId)
           .eq('business_id', businessId!)
@@ -365,7 +365,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
       for (let i = 0; i < currentPatients.length; i += chunkSize) {
         const chunk = currentPatients.slice(i, i + chunkSize);
         const { data: prior } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('id, patient_id, appointment_date')
           .eq('dentist_id', dentistId)
           .in('patient_id', chunk)
@@ -522,7 +522,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
           .eq('business_id', businessId!)
           .gte('created_at', prevStart.toISOString())
           .lte('created_at', prevEnd.toISOString()),
-        supabase.from('appointments_decrypted')
+        supabase.from('appointments')
           .select('id, appointment_date, status, patient_id')
           .eq('dentist_id', dentistId)
           .eq('business_id', businessId!)
@@ -548,7 +548,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
       if (prevPatients.length) {
         const sixMonthsBeforePrev = subMonths(prevStart, 6);
         const { data: priorPrev } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('patient_id, appointment_date')
           .eq('dentist_id', dentistId)
           .in('patient_id', prevPatients)

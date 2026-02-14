@@ -67,7 +67,7 @@ const AppointmentManagerComponent: React.FC<AppointmentManagerProps> = ({ dentis
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('appointments_decrypted' as any)
+        .from('appointments' as any)
         .select(`
           id,
           patient_id,

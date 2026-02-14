@@ -96,7 +96,7 @@ export const HomeTab = React.memo<HomeTabProps>(({
 
         // Get patient's dentist from most recent appointment
         const { data: recentAppointment } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('dentist_id')
           .eq('patient_id', profile.id)
           .order('appointment_date', { ascending: false })

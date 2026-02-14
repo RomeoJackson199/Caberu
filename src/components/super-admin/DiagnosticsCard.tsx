@@ -443,7 +443,7 @@ export function DiagnosticsCard() {
       const connectionTests = await Promise.allSettled([
         supabase.from('businesses').select('id').limit(1),
         supabase.from('secure_profiles_view').select('id').limit(1),
-        supabase.from('appointments_decrypted').select('id').limit(1),
+        supabase.from('appointments').select('id').limit(1),
       ]);
 
       const latency = Math.round(performance.now() - start);
@@ -609,7 +609,7 @@ export function DiagnosticsCard() {
       const tests = await Promise.allSettled([
         supabase.rpc('get_system_stats'),
         supabase.from('businesses').select('id').limit(1),
-        supabase.from('appointments_decrypted').select('id').limit(1),
+        supabase.from('appointments').select('id').limit(1),
       ]);
 
       const latency = Math.round(performance.now() - start);

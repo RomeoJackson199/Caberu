@@ -160,7 +160,7 @@ export function CancelSubscriptionSection() {
                 if (customerCount === 0) {
                     // Try counting unique patients from appointments
                     const { data: appointments } = await supabase
-                        .from('appointments_decrypted')
+                        .from('appointments')
                         .select('patient_id')
                         .eq('business_id', businessId);
 

@@ -177,7 +177,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
       }
 
       const { data: appointmentData, error: appointmentError } = await supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`
           patient_id,
           profiles(
@@ -228,7 +228,7 @@ function PatientManagementComponent({ dentistId }: PatientManagementProps) {
     try {
       // Fetch appointments scoped to current business
       let appointmentsQuery = supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);

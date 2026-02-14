@@ -201,7 +201,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
       if (!membership?.business_id) return [];
 
       const { data: appointments, error } = await supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`
           id,
           appointment_date,

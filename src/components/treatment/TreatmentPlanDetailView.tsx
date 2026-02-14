@@ -105,7 +105,7 @@ export function TreatmentPlanDetailView({
             setTreatmentPlan(plan);
 
             const { data: appointments, error: apptError } = await supabase
-                .from('appointments_decrypted' as any)
+                .from('appointments' as any)
                 .select('id, appointment_date, status, reason, notes, consultation_notes')
                 .eq('patient_id', patientId)
                 .in('status', ['completed', 'confirmed', 'scheduled'])

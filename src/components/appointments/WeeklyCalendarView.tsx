@@ -76,7 +76,7 @@ export function WeeklyCalendarView({
 
       // Use a join to fetch appointments with patient profiles in one query
       let query = supabase
-        .from("appointments_decrypted")
+        .from("appointments")
         .select(`
           *,
           patient:profiles!appointments_patient_id_fkey (

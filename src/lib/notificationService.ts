@@ -308,7 +308,7 @@ export class NotificationService {
         .from('notification_preferences')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         // Return default preferences if none exist

@@ -354,7 +354,7 @@ export function PatientAppointmentDetail({
     
     try {
       const { data, error } = await supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`
           id,
           appointment_date,

@@ -293,7 +293,7 @@ export function LinkedAppointmentsList({
     queryKey: ["plan-linked-appointments", planId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointments_decrypted")
+        .from("appointments")
         .select(`
           id,
           appointment_date,

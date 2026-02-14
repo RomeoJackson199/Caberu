@@ -90,7 +90,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`
           id,
           appointment_date,

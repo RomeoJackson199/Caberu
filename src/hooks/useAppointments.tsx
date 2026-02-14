@@ -299,7 +299,7 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
       setError(null);
 
       let query = supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`
           id,
           patient_id,

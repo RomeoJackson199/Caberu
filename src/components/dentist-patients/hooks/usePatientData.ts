@@ -26,7 +26,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
 
       // Use profiles table directly instead of view to avoid FK ambiguity
       let appointmentQuery = supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select(`
           patient_id,
           profiles!fk_appointments_patient (
@@ -77,7 +77,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
 
       // Fetch appointments scoped to current business
       let appointmentsQuery = supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
@@ -170,7 +170,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       }));
 
       let query = supabase
-        .from('appointments_decrypted')
+        .from('appointments')
         .select('*')
         .eq('patient_id', patientId)
         .eq('dentist_id', dentistId);
