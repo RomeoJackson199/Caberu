@@ -590,19 +590,25 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">
-            {t.availabilityManagement}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage your working hours and time off</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20 p-6 rounded-2xl border-2 border-blue-100 dark:border-blue-900 shadow-md">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <Clock className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              {t.availabilityManagement}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">Manage your working hours and time off</p>
+          </div>
         </div>
         <Button
           onClick={() => saveAvailability(false)}
           disabled={saving}
-          className="px-6"
+          size="lg"
+          className="h-12 px-8 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg font-semibold"
         >
-          <Save className="h-4 w-4 mr-2" />
+          <Save className="h-5 w-5 mr-2" />
           {saving ? t.saving : t.saveAvailability}
         </Button>
       </div>
@@ -664,48 +670,38 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
       </Dialog>
 
       <Tabs defaultValue="schedule" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="schedule">
+        <TabsList className="grid w-full grid-cols-2 h-14 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/50 dark:to-purple-950/50 p-1 rounded-xl shadow-inner">
+          <TabsTrigger
+            value="schedule"
+            className="text-sm sm:text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg"
+          >
             <Calendar className="h-4 w-4 mr-2" />
             {t.weeklySchedule}
           </TabsTrigger>
-          <TabsTrigger value="vacation">
+          <TabsTrigger
+            value="vacation"
+            className="text-sm sm:text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg"
+          >
             <Coffee className="h-4 w-4 mr-2" />
             {t.vacationsAbsences}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="schedule">
-          <Card>
-            <CardHeader className="border-b bg-muted/30">
-              <CardTitle className="flex items-center text-lg font-medium">
-                <Calendar className="h-5 w-5 mr-2" />
+          <Card className="glass-card border-2 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20 border-b">
+              <CardTitle className="flex items-center text-xl sm:text-2xl font-bold">
+                <Calendar className="h-6 w-6 mr-3 text-blue-600" />
                 {t.weeklyPlanning}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 p-6">
-              {/* Calendar Display Settings */}
-              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-md">
-                <div className="flex items-center gap-3">
-                  <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <Label className="text-sm font-medium">Hide Non-Working Days</Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Only show available days in calendar
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={hideNonWorkingDays}
-                  onCheckedChange={setHideNonWorkingDays}
-                />
-              </div>
-
               {/* Quick Preset Buttons */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-10 px-4 rounded-lg border-2 border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-950/30"
                   onClick={() => {
                     setAvailability(prev => prev.map(day => ({
                       ...day,
@@ -717,12 +713,13 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
                     })));
                   }}
                 >
-                  <Clock className="h-4 w-4 mr-2" />
+                  <Clock className="h-4 w-4 mr-2 text-blue-600" />
                   Standard 9-17
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-10 px-4 rounded-lg border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-950/30"
                   onClick={() => {
                     setAvailability(prev => prev.map(day => ({
                       ...day,
@@ -734,13 +731,13 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
                     })));
                   }}
                 >
-                  <Clock className="h-4 w-4 mr-2" />
+                  <Clock className="h-4 w-4 mr-2 text-purple-600" />
                   Extended 8-20
                 </Button>
               </div>
 
               {/* Day Schedule Grid */}
-              <div className="space-y-3">
+              <div className="grid gap-4">
                 {DAYS_OF_WEEK.map((day, index) => {
                   const dayAvailability: DentistAvailability = availability[index] ?? {
                     day_of_week: day.value,
@@ -752,124 +749,122 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
                   };
 
                   return (
-                    <div key={day.value} className={`border rounded-lg p-4 transition-colors ${dayAvailability.is_available ? 'bg-background' : 'bg-muted/50'}`}>
-                      <div className="space-y-4">
-                        {/* Day Header */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
-                              <span className="text-sm font-medium text-muted-foreground">{day.short}</span>
+                    <Card key={day.value} className={`border-2 transition-all ${dayAvailability.is_available ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                      <CardContent className="p-5">
+                        <div className="space-y-4">
+                          {/* Day Header */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${dayAvailability.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                {day.short}
+                              </div>
+                              <Label className="text-lg font-medium">{day.label}</Label>
                             </div>
-                            <div>
-                              <Label className="text-base font-medium">{day.label}</Label>
+                            <div className="flex items-center gap-3">
+                              {/* Copy Schedule Dropdown */}
                               {dayAvailability.is_available && (
-                                <p className="text-xs text-muted-foreground">
-                                  {dayAvailability.start_time} - {dayAvailability.end_time}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {/* Copy Schedule Dropdown */}
-                            {dayAvailability.is_available && (
-                              <Select
-                                value=""
-                                onValueChange={(value) => {
-                                  if (value === 'weekdays') {
-                                    copyToAllWeekdays(index);
-                                  } else {
-                                    const targetIndex = DAYS_OF_WEEK.findIndex(d => d.value === parseInt(value));
-                                    if (targetIndex >= 0) {
-                                      copyAvailabilityToDay(index, targetIndex);
+                                <Select
+                                  value=""
+                                  onValueChange={(value) => {
+                                    if (value === 'weekdays') {
+                                      copyToAllWeekdays(index);
+                                    } else {
+                                      const targetIndex = DAYS_OF_WEEK.findIndex(d => d.value === parseInt(value));
+                                      if (targetIndex >= 0) {
+                                        copyAvailabilityToDay(index, targetIndex);
+                                      }
                                     }
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="w-9 h-9 p-0 border-dashed">
-                                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="weekdays" className="font-medium">
-                                    Copy to all weekdays
-                                  </SelectItem>
-                                  {DAYS_OF_WEEK.filter((_, i) => i !== index).map((targetDay) => (
-                                    <SelectItem key={targetDay.value} value={targetDay.value.toString()}>
-                                      Copy to {targetDay.label}
+                                  }}
+                                >
+                                  <SelectTrigger className="w-10 h-10 p-0 border-dashed">
+                                    <Copy className="h-4 w-4 text-muted-foreground" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="weekdays" className="font-medium">
+                                      Copy to all weekdays
                                     </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                            <Switch
-                              checked={dayAvailability.is_available}
-                              onCheckedChange={(checked) =>
-                                updateAvailability(index, 'is_available', checked)
-                              }
-                            />
+                                    {DAYS_OF_WEEK.filter((_, i) => i !== index).map((targetDay) => (
+                                      <SelectItem key={targetDay.value} value={targetDay.value.toString()}>
+                                        Copy to {targetDay.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              <Switch
+                                checked={dayAvailability.is_available}
+                                onCheckedChange={(checked) =>
+                                  updateAvailability(index, 'is_available', checked)
+                                }
+                                className="scale-125"
+                              />
+                            </div>
                           </div>
-                        </div>
 
-                        {/* Time Settings */}
-                        {dayAvailability.is_available && (
-                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t">
-                            <div>
-                              <Label htmlFor={`start-${day.value}`} className="text-xs text-muted-foreground">{t.startTime}</Label>
-                              <Input
-                                id={`start-${day.value}`}
-                                type="time"
-                                value={dayAvailability.start_time}
-                                onChange={(e) =>
-                                  updateAvailability(index, 'start_time', e.target.value)
-                                }
-                                className="mt-1.5"
-                              />
+                          {/* Time Settings - Improved responsive grid */}
+                          {dayAvailability.is_available && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                              <div>
+                                <Label htmlFor={`start-${day.value}`} className="text-sm font-medium">{t.startTime}</Label>
+                                <Input
+                                  id={`start-${day.value}`}
+                                  type="time"
+                                  value={dayAvailability.start_time}
+                                  onChange={(e) =>
+                                    updateAvailability(index, 'start_time', e.target.value)
+                                  }
+                                  className="h-10 mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`end-${day.value}`} className="text-sm font-medium">{t.endTime}</Label>
+                                <Input
+                                  id={`end-${day.value}`}
+                                  type="time"
+                                  value={dayAvailability.end_time}
+                                  onChange={(e) =>
+                                    updateAvailability(index, 'end_time', e.target.value)
+                                  }
+                                  className="h-10 mt-1"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`break-start-${day.value}`} className="text-sm font-medium">
+                                  <Coffee className="h-3 w-3 inline mr-1" />
+                                  {t.breakStart} <span className="text-muted-foreground">(optional)</span>
+                                </Label>
+                                <Input
+                                  id={`break-start-${day.value}`}
+                                  type="time"
+                                  value={dayAvailability.break_start_time || ''}
+                                  onChange={(e) =>
+                                    updateAvailability(index, 'break_start_time', e.target.value || null)
+                                  }
+                                  className="h-10 mt-1"
+                                  placeholder="No break"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`break-end-${day.value}`} className="text-sm font-medium">
+                                  <Coffee className="h-3 w-3 inline mr-1" />
+                                  {t.breakEnd} <span className="text-muted-foreground">(optional)</span>
+                                </Label>
+                                <Input
+                                  id={`break-end-${day.value}`}
+                                  type="time"
+                                  value={dayAvailability.break_end_time || ''}
+                                  onChange={(e) =>
+                                    updateAvailability(index, 'break_end_time', e.target.value || null)
+                                  }
+                                  className="h-10 mt-1"
+                                  placeholder="No break"
+                                />
+                              </div>
                             </div>
-                            <div>
-                              <Label htmlFor={`end-${day.value}`} className="text-xs text-muted-foreground">{t.endTime}</Label>
-                              <Input
-                                id={`end-${day.value}`}
-                                type="time"
-                                value={dayAvailability.end_time}
-                                onChange={(e) =>
-                                  updateAvailability(index, 'end_time', e.target.value)
-                                }
-                                className="mt-1.5"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor={`break-start-${day.value}`} className="text-xs text-muted-foreground">
-                                {t.breakStart} <span className="opacity-60">(optional)</span>
-                              </Label>
-                              <Input
-                                id={`break-start-${day.value}`}
-                                type="time"
-                                value={dayAvailability.break_start_time || ''}
-                                onChange={(e) =>
-                                  updateAvailability(index, 'break_start_time', e.target.value || null)
-                                }
-                                className="mt-1.5"
-                                placeholder="--:--"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor={`break-end-${day.value}`} className="text-xs text-muted-foreground">
-                                {t.breakEnd} <span className="opacity-60">(optional)</span>
-                              </Label>
-                              <Input
-                                id={`break-end-${day.value}`}
-                                type="time"
-                                value={dayAvailability.break_end_time || ''}
-                                onChange={(e) =>
-                                  updateAvailability(index, 'break_end_time', e.target.value || null)
-                                }
-                                className="mt-1.5"
-                                placeholder="--:--"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>
@@ -880,9 +875,9 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
         <TabsContent value="vacation">
           <div className="space-y-6">
             {/* Add New Vacation */}
-            <Card>
-              <CardHeader className="border-b bg-muted/30">
-                <CardTitle className="flex items-center text-lg font-medium">
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center">
                   <Plus className="h-5 w-5 mr-2" />
                   {t.addVacation}
                 </CardTitle>
@@ -949,9 +944,9 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
             </Card>
 
             {/* Vacation List */}
-            <Card>
-              <CardHeader className="border-b bg-muted/30">
-                <CardTitle className="text-lg font-medium">{t.scheduledVacations}</CardTitle>
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle>{t.scheduledVacations}</CardTitle>
               </CardHeader>
               <CardContent>
                 {vacationDays.length === 0 ? (
