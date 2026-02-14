@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clock, Save, Plus, Trash2, Calendar, Coffee, Copy, AlertTriangle } from "lucide-react";
+import { Clock, Save, Plus, Trash2, Calendar, Coffee, Copy, AlertTriangle, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useCalendarSettings } from "@/hooks/useCalendarSettings";
 import { logger } from '@/lib/logger';
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 import { format, parseISO } from "date-fns";
@@ -69,6 +70,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
   });
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { hideNonWorkingDays, setHideNonWorkingDays } = useCalendarSettings();
 
   // Localized day labels - defined once inside component for translations
   const DAYS_OF_WEEK = [
@@ -696,6 +698,24 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 p-6">
+              {/* Calendar Display Settings */}
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <EyeOff className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label className="text-sm font-medium">Hide Non-Working Days in Calendar</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Only show days marked as available in the weekly calendar view
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={hideNonWorkingDays}
+                  onCheckedChange={setHideNonWorkingDays}
+                  className="scale-110"
+                />
+              </div>
+
               {/* Quick Preset Buttons */}
               <div className="flex flex-wrap justify-end gap-2">
                 <Button

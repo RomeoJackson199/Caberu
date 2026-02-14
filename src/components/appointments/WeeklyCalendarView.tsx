@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, Plus, Clock, CalendarX } from "lucide-react"
 import { QuickAppointmentDialog } from "./QuickAppointmentDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useCalendarSettings } from "@/hooks/useCalendarSettings";
 import {
   CALENDAR_DISPLAY,
   APPOINTMENT_STATUS_COLORS,
@@ -45,6 +46,7 @@ export function WeeklyCalendarView({
 }: WeeklyCalendarViewProps) {
   const isMobile = useIsMobile();
   const { t } = useLanguage();
+  const { hideNonWorkingDays } = useCalendarSettings();
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
@@ -59,14 +61,6 @@ export function WeeklyCalendarView({
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
-
-  // Sync mobile day with current date prop
-  useEffect(() => {
-    if (isMobile) {
-      const dayIndex = weekDays.findIndex(day => isSameDay(day, currentDate));
-      if (dayIndex !== -1) setMobileCurrentDay(dayIndex);
-    }
-  }, [currentDate, isMobile, weekDays]);
 
   // Fetch appointments with patient profiles in a single query (eliminates N+1 pattern)
   const { data: appointments = [], isLoading } = useQuery({
@@ -160,6 +154,27 @@ export function WeeklyCalendarView({
       dateStr >= v.start_date && dateStr <= v.end_date
     );
   };
+
+  // Filter weekDays based on hideNonWorkingDays setting
+  const filteredWeekDays = useMemo(() => {
+    if (!hideNonWorkingDays) {
+      return weekDays;
+    }
+
+    return weekDays.filter((day) => {
+      const dayAvail = getDayAvailability(day);
+      // Show day if it's marked as available, or if no availability data exists
+      return !dayAvail || dayAvail.is_available;
+    });
+  }, [weekDays, hideNonWorkingDays, availability]);
+
+  // Sync mobile day with current date prop
+  useEffect(() => {
+    if (isMobile) {
+      const dayIndex = filteredWeekDays.findIndex(day => isSameDay(day, currentDate));
+      if (dayIndex !== -1) setMobileCurrentDay(dayIndex);
+    }
+  }, [currentDate, isMobile, filteredWeekDays]);
 
   // Get scheduled blocks (breaks, unavailable time) for a day
   const getScheduleBlocks = (day: Date) => {
@@ -316,7 +331,7 @@ export function WeeklyCalendarView({
     };
   }, [toClinicTime]);
 
-  const displayDays = isMobile ? [weekDays[mobileCurrentDay]] : weekDays;
+  const displayDays = isMobile ? [filteredWeekDays[mobileCurrentDay]] : filteredWeekDays;
 
   if (isLoading) {
     return (
@@ -338,7 +353,7 @@ export function WeeklyCalendarView({
             <div className="text-center">
               <div className="text-sm font-semibold">{format(displayDays[0], "EEEE, MMM d")}</div>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setMobileCurrentDay(Math.min(6, mobileCurrentDay + 1))} disabled={mobileCurrentDay === 6}>
+            <Button variant="ghost" size="icon" onClick={() => setMobileCurrentDay(Math.min(filteredWeekDays.length - 1, mobileCurrentDay + 1))} disabled={mobileCurrentDay === filteredWeekDays.length - 1}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
