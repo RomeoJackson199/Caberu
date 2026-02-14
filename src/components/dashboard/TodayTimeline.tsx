@@ -37,8 +37,6 @@ interface TimelineAppointment {
   profiles?: {
     first_name: string;
     last_name: string;
-    allergies?: string | null;
-    medical_conditions?: string | null;
   };
 }
 
@@ -92,9 +90,7 @@ function AppointmentCard({
     ? `${appointment.profiles.first_name} ${appointment.profiles.last_name}`
     : appointment.patient_name || 'Unknown Patient';
   
-  const hasAlert = appointment.profiles && hasMedicalRisk(
-    `${appointment.profiles.allergies || ''} ${appointment.profiles.medical_conditions || ''}`
-  );
+  const hasAlert = false; // allergies/medical_conditions not available on profiles
 
   const getStatusColor = (status: string): string => {
     switch (status) {

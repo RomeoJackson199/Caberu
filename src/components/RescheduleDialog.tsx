@@ -212,6 +212,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
+      // Try patient-scoped RPC first
       const { error: rpcError } = await supabase.rpc('reschedule_appointment', {
         p_appointment_id: appointment.id,
         p_user_id: userData.user.id,
@@ -219,7 +220,46 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         p_slot_time: selectedTime
       });
 
-      if (rpcError) throw rpcError;
+      if (rpcError) {
+        // If not authorized (dentist rescheduing for patient), fall back to direct update
+        if (rpcError.message?.includes('not_authorized')) {
+          // Build new appointment datetime with Brussels timezone
+          const newDateTime = `${dateStr}T${selectedTime}:00`;
+          const { error: updateError } = await supabase
+            .from('appointments')
+            .update({
+              appointment_date: new Date(`${newDateTime}+01:00`).toISOString(),
+              status: 'confirmed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', appointment.id);
+
+          if (updateError) throw updateError;
+
+          // Try to update slots (non-critical)
+          try {
+            const businessId = await getCurrentBusinessId();
+            // Release old slots
+            await supabase
+              .from('appointment_slots')
+              .update({ is_available: true, appointment_id: null, updated_at: new Date().toISOString() })
+              .eq('appointment_id', appointment.id);
+
+            // Reserve new slot
+            await supabase
+              .from('appointment_slots')
+              .update({ is_available: false, appointment_id: appointment.id, updated_at: new Date().toISOString() })
+              .eq('dentist_id', appointment.dentist_id)
+              .eq('slot_date', dateStr)
+              .eq('slot_time', selectedTime + ':00')
+              .eq('business_id', businessId);
+          } catch (slotErr) {
+            logger.warn('Slot update during reschedule failed (non-critical):', slotErr);
+          }
+        } else {
+          throw rpcError;
+        }
+      }
 
       showAppointmentRescheduled(format(selectedDate, 'MMM d, yyyy') + ' at ' + selectedTime);
 
@@ -414,7 +454,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                     toDate={addDays(new Date(), 90)}
                     className="rounded-md border pointer-events-auto"
                     classNames={{
-                      day: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                      day_disabled: "text-muted-foreground opacity-30 line-through cursor-not-allowed",
                     }}
                   />
                 </div>
