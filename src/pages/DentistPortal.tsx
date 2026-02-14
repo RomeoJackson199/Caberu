@@ -14,7 +14,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
 import { DentistPatientManagement } from "@/components/dentist-patients";
-import { AvailabilitySettings } from "@/components/settings/availability-settings";
+import { AvailabilitySettings } from "@/components/AvailabilitySettings";
 import { PaymentRequestManager } from "@/components/PaymentRequestManager";
 // Lazy load analytics (includes heavy chart library ~400KB)
 const DentistAnalytics = lazy(() => import("@/components/analytics/DentistAnalytics").then(m => ({ default: m.DentistAnalytics })));
