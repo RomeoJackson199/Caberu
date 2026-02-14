@@ -321,17 +321,7 @@ export const HealthData = ({
   const loadAppointments = async (profileId: string) => {
     let query = supabase
       .from('appointments_decrypted')
-      .select(`
-        id,
-        appointment_date,
-        status,
-        reason,
-        consultation_notes,
-        urgency,
-        dentist:dentists(
-          profile:profiles(first_name, last_name)
-        )
-      `)
+      .select('id, appointment_date, status, reason, consultation_notes, urgency, dentist_id')
       .eq('patient_id', profileId)
       .order('appointment_date', { ascending: false });
 
@@ -341,7 +331,18 @@ export const HealthData = ({
 
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+
+    // Fetch dentist profiles separately (views don't support PostgREST joins)
+    const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter(Boolean))];
+    const { data: dentists } = dentistIds.length > 0
+      ? await supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+      : { data: [] };
+    const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
+
+    return (data || []).map(apt => ({
+      ...apt,
+      dentist: dentistsMap.get(apt.dentist_id) || undefined,
+    }));
   };
 
   const formatDate = (dateString: string) => {

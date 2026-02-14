@@ -74,18 +74,9 @@ export function WeeklyCalendarView({
     queryFn: async () => {
       const weekEnd = addDays(weekStart, 7);
 
-      // Use a join to fetch appointments with patient profiles in one query
       let query = supabase
         .from("appointments_decrypted")
-        .select(`
-          *,
-          patient:profiles!appointments_patient_id_fkey (
-            id,
-            first_name,
-            last_name,
-            email
-          )
-        `)
+        .select("*")
         .gte("appointment_date", weekStart.toISOString())
         .lt("appointment_date", weekEnd.toISOString())
         .order("appointment_date", { ascending: true });
@@ -109,10 +100,16 @@ export function WeeklyCalendarView({
 
       if (error) throw error;
 
+      // Fetch patient profiles separately (views don't support PostgREST joins)
+      const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
+      const { data: profiles } = patientIds.length > 0
+        ? await supabase.from('profiles').select('id, first_name, last_name, email').in('id', patientIds)
+        : { data: [] };
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
       return (data || []).map((appointment) => ({
         ...appointment,
-        // Normalize the patient field (Supabase returns it from the join)
-        patient: appointment.patient || null,
+        patient: profilesMap.get(appointment.patient_id) || null,
       }));
     }
   });

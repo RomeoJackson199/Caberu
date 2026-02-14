@@ -355,46 +355,28 @@ export function PatientAppointmentDetail({
     try {
       const { data, error } = await supabase
         .from('appointments_decrypted')
-        .select(`
-          id,
-          appointment_date,
-          status,
-          urgency,
-          reason,
-          notes,
-          consultation_notes,
-          ai_summary,
-          duration_minutes,
-          payment_status,
-          amount_paid_cents,
-          completed_at,
-          created_at,
-          patient_id,
-          businesses!inner (
-            id,
-            name,
-            address,
-            logo_url
-          ),
-          dentists!inner (
-            first_name,
-            last_name,
-            specialization,
-            profile_picture_url
-          ),
-          business_services (
-            name,
-            price_cents
-          )
-        `)
+        .select('id, appointment_date, status, urgency, reason, notes, consultation_notes, ai_summary, duration_minutes, payment_status, amount_paid_cents, completed_at, created_at, patient_id, dentist_id, business_id, service_id')
         .eq('id', appointmentId)
         .single();
 
       if (error) throw error;
 
-      const businessData = Array.isArray(data.businesses) ? data.businesses[0] : data.businesses;
-      const dentistData = Array.isArray(data.dentists) ? data.dentists[0] : data.dentists;
-      const serviceData = Array.isArray(data.business_services) ? data.business_services[0] : data.business_services;
+      // Fetch related data separately (views don't support PostgREST joins)
+      const [businessResult, dentistResult, serviceResult] = await Promise.all([
+        data.business_id
+          ? supabase.from('businesses').select('id, name, address, logo_url').eq('id', data.business_id).single()
+          : { data: null, error: null },
+        data.dentist_id
+          ? supabase.from('dentists').select('first_name, last_name, specialization, profile_picture_url').eq('id', data.dentist_id).single()
+          : { data: null, error: null },
+        data.service_id
+          ? supabase.from('business_services').select('name, price_cents').eq('id', data.service_id).single()
+          : { data: null, error: null },
+      ]);
+
+      const businessData = businessResult.data;
+      const dentistData = dentistResult.data;
+      const serviceData = serviceResult.data;
 
       setAppointment({
         id: data.id,

@@ -139,25 +139,21 @@ export function QuickAppointmentDialog({
   const { data: patients = [], isLoading: patientsLoading } = useQuery({
     queryKey: ["dentist-patients", dentistId],
     queryFn: async () => {
+      // Fetch patient IDs from appointments, then profiles separately
       const { data, error } = await supabase
-        .from("appointments_decrypted")
-        .select(`
-          patient_id,
-          profiles!appointments_patient_id_fkey (
-            id,
-            first_name,
-            last_name,
-            email,
-            phone
-          )
-        `)
+        .from("appointments")
+        .select("patient_id")
         .eq("dentist_id", dentistId);
 
       if (error) throw error;
 
+      const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
+      const { data: profiles } = patientIds.length > 0
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', patientIds)
+        : { data: [] };
+
       const uniquePatients = new Map<string, Patient>();
-      data?.forEach((apt: any) => {
-        const profile = Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles;
+      (profiles || []).forEach((profile: any) => {
         if (profile && !uniquePatients.has(profile.id)) {
           uniquePatients.set(profile.id, profile);
         }

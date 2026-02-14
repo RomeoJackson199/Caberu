@@ -24,16 +24,10 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
       setLoading(true);
 
 
-      // Use profiles table directly instead of view to avoid FK ambiguity
+      // Fetch patient IDs from appointments, then profiles separately
       let appointmentQuery = supabase
-        .from('appointments_decrypted')
-        .select(`
-          patient_id,
-          profiles!fk_appointments_patient (
-            id, first_name, last_name, email, phone, date_of_birth,
-            address, medical_history, emergency_contact, avatar_url
-          )
-        `)
+        .from('appointments')
+        .select('patient_id')
         .eq('dentist_id', dentistId);
 
       if (businessId) {
@@ -42,13 +36,14 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
 
       const { data: appointmentData, error: appointmentError } = await appointmentQuery;
 
-
-
       if (appointmentError) throw appointmentError;
 
-      const patientsFromAppointments = (appointmentData || [])
-        .map(apt => Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles)
-        .filter(Boolean) as DentistPatient[];
+      const patientIds = [...new Set((appointmentData || []).map(a => a.patient_id).filter(Boolean))];
+      const { data: profilesData } = patientIds.length > 0
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone, date_of_birth, address, medical_history, emergency_contact, avatar_url').in('id', patientIds)
+        : { data: [] };
+
+      const patientsFromAppointments = (profilesData || []).filter(Boolean) as DentistPatient[];
 
       // Remove duplicates
       const uniquePatients = patientsFromAppointments.filter((patient, index, self) =>

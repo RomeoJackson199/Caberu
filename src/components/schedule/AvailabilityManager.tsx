@@ -202,15 +202,7 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
 
       const { data: appointments, error } = await supabase
         .from('appointments_decrypted')
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          profiles!appointments_patient_id_fkey (
-            first_name,
-            last_name
-          )
-        `)
+        .select('id, appointment_date, reason, patient_id')
         .eq('dentist_id', dentistId)
         .eq('business_id', membership.business_id)
         .gte('appointment_date', new Date().toISOString())
@@ -218,9 +210,22 @@ export function AvailabilityManager({ dentistId }: AvailabilityManagerProps) {
 
       if (error || !appointments) return [];
 
+      // Fetch patient profiles separately (views don't support PostgREST joins)
+      const patientIds = [...new Set(appointments.map(a => a.patient_id).filter(Boolean))];
+      const { data: profiles } = patientIds.length > 0
+        ? await supabase.from('profiles').select('id, first_name, last_name').in('id', patientIds)
+        : { data: [] };
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
+      // Attach profiles to appointments for downstream use
+      const appointmentsWithProfiles = appointments.map(apt => ({
+        ...apt,
+        profiles: profilesMap.get(apt.patient_id) || null,
+      }));
+
       const affected: AffectedAppointment[] = [];
 
-      for (const apt of appointments) {
+      for (const apt of appointmentsWithProfiles) {
         const aptDate = new Date(apt.appointment_date);
         const dayOfWeek = aptDate.getDay();
         const aptTime = format(aptDate, 'HH:mm');

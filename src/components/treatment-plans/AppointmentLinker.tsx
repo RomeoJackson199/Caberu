@@ -294,23 +294,23 @@ export function LinkedAppointmentsList({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments_decrypted")
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          status,
-          completed_at,
-          dentist_id,
-          dentists (
-            first_name,
-            last_name
-          )
-        `)
+        .select('id, appointment_date, reason, status, completed_at, dentist_id')
         .eq("treatment_plan_id", planId)
         .order("appointment_date", { ascending: true });
 
       if (error) throw error;
-      return data || [];
+
+      // Fetch dentist data separately (views don't support PostgREST joins)
+      const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter(Boolean))];
+      const { data: dentists } = dentistIds.length > 0
+        ? await supabase.from('dentists').select('id, first_name, last_name').in('id', dentistIds)
+        : { data: [] };
+      const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
+
+      return (data || []).map(apt => ({
+        ...apt,
+        dentists: dentistsMap.get(apt.dentist_id) || undefined,
+      }));
     },
     enabled: !!planId,
   });

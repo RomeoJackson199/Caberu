@@ -91,33 +91,29 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     try {
       const { data, error } = await supabase
         .from('appointments_decrypted')
-        .select(`
-          id,
-          appointment_date,
-          reason,
-          dentist_id,
-          dentists!appointments_dentist_id_fkey (
-            profiles:profile_id (
-              first_name,
-              last_name
-            )
-          )
-        `)
+        .select('id, appointment_date, reason, dentist_id')
         .eq('id', appointmentId)
         .single();
 
       if (error) throw error;
 
-      const dentistData = Array.isArray(data.dentists) ? data.dentists[0] : data.dentists;
-      const profilesData = dentistData?.profiles;
-      const normalizedProfiles = Array.isArray(profilesData) ? profilesData[0] : profilesData;
+      // Fetch dentist profile separately (views don't support PostgREST joins)
+      let dentistProfile = null;
+      if (data.dentist_id) {
+        const { data: dentist } = await supabase
+          .from('dentists')
+          .select('profiles:profile_id(first_name, last_name)')
+          .eq('id', data.dentist_id)
+          .single();
+        dentistProfile = dentist?.profiles || null;
+      }
 
       const transformedData: AppointmentDetails = {
         id: data.id,
         appointment_date: data.appointment_date,
         reason: data.reason,
         dentist_id: data.dentist_id,
-        dentist: dentistData ? { profiles: normalizedProfiles || null } : null,
+        dentist: dentistProfile ? { profiles: dentistProfile } : null,
       };
       setAppointment(transformedData);
 

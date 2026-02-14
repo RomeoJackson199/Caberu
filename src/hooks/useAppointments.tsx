@@ -312,19 +312,7 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
           patient_name,
           duration_minutes,
           created_at,
-          updated_at,
-          profiles:secure_profiles_view(
-            first_name,
-            last_name,
-            email,
-            phone
-          ),
-          dentists(
-            profiles:secure_profiles_view(
-              first_name,
-              last_name
-            )
-          )
+          updated_at
         `);
 
       // Apply filters based on role and parameters
@@ -360,7 +348,31 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
 
       if (error) throw error;
 
-      const appointmentsList = (data || []) as Appointment[];
+      const rawAppointments = data || [];
+
+      // Fetch related patient profiles and dentist data separately
+      // (appointments_decrypted view doesn't support PostgREST joins)
+      const patientIds = [...new Set(rawAppointments.map(a => a.patient_id).filter(Boolean))];
+      const dentistIds = [...new Set(rawAppointments.map(a => a.dentist_id).filter(Boolean))];
+
+      const [profilesResult, dentistsResult] = await Promise.all([
+        patientIds.length > 0
+          ? supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', patientIds)
+          : { data: [], error: null },
+        dentistIds.length > 0
+          ? supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+          : { data: [], error: null },
+      ]);
+
+      const profilesMap = new Map((profilesResult.data || []).map(p => [p.id, p]));
+      const dentistsMap = new Map((dentistsResult.data || []).map(d => [d.id, d]));
+
+      const appointmentsList = rawAppointments.map(apt => ({
+        ...apt,
+        patient: profilesMap.get(apt.patient_id) || undefined,
+        dentist: dentistsMap.get(apt.dentist_id) || undefined,
+      })) as Appointment[];
+
       setAppointments(appointmentsList);
       setCounts(calculateCounts(appointmentsList));
 

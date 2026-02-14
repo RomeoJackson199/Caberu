@@ -68,34 +68,22 @@ const AppointmentManagerComponent: React.FC<AppointmentManagerProps> = ({ dentis
       setLoading(true);
       const { data, error } = await supabase
         .from('appointments_decrypted' as any)
-        .select(`
-          id,
-          patient_id,
-          dentist_id,
-          appointment_date,
-          duration_minutes,
-          status,
-          urgency,
-          reason,
-          patient_name,
-          notes,
-          consultation_notes,
-          profiles:patient_id (
-            first_name,
-            last_name,
-            email,
-            phone
-          )
-        `)
+        .select('id, patient_id, dentist_id, appointment_date, duration_minutes, status, urgency, reason, patient_name, notes, consultation_notes')
         .eq('dentist_id', dentistId)
         .order('appointment_date', { ascending: true });
 
       if (error) throw error;
 
-      // Transform profiles from array to single object
-      const transformedData = (data || []).map(apt => ({
+      // Fetch patient profiles separately (views don't support PostgREST joins)
+      const patientIds = [...new Set((data || []).map((a: any) => a.patient_id).filter(Boolean))];
+      const { data: profiles } = patientIds.length > 0
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', patientIds)
+        : { data: [] };
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+
+      const transformedData = (data || []).map((apt: any) => ({
         ...apt,
-        profiles: Array.isArray(apt.profiles) ? apt.profiles[0] : apt.profiles
+        profiles: profilesMap.get(apt.patient_id) || undefined
       })) as Appointment[];
 
       setAppointments(transformedData);
