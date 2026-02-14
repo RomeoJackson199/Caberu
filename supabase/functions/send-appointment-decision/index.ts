@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { format } from 'https://esm.sh/date-fns@3.6.0';
 import { toZonedTime } from 'https://esm.sh/date-fns-tz@3.1.3';
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
+import { sendSms } from '../_shared/sms.ts';
 
 serve(async (req) => {
     const origin = req.headers.get('Origin');
@@ -73,16 +74,18 @@ serve(async (req) => {
         let patientEmail = null;
         let patientUserId = null;
         let patientName = '';
+        let patientPhone: string | null = null;
         try {
             const { data: patientProfile } = await supabase
                 .from('profiles')
-                .select('email, first_name, last_name, user_id')
+                .select('email, first_name, last_name, user_id, phone')
                 .eq('id', appointment.patient_id)
                 .single();
 
             patientEmail = patientProfile?.email;
             patientUserId = patientProfile?.user_id;
             patientName = `${patientProfile?.first_name || ''} ${patientProfile?.last_name || ''}`.trim();
+            patientPhone = patientProfile?.phone || null;
             console.log('Patient profile:', patientProfile);
         } catch (profileError) {
             console.error('Failed to get patient profile:', profileError);
@@ -136,6 +139,23 @@ serve(async (req) => {
             }
         } catch (emailCatchError) {
             console.error('Failed to invoke email function:', emailCatchError);
+        }
+
+        // Send SMS alongside email
+        let smsSent = false;
+        if (patientPhone) {
+            try {
+                const smsBody = decision === 'approved'
+                    ? `✅ Your appointment on ${formattedDate} at ${formattedTime} has been confirmed! Please arrive 10 minutes early.`
+                    : `Your appointment request for ${formattedDate} at ${formattedTime} could not be confirmed. Please book a new appointment.`;
+                const smsResult = await sendSms({ to: patientPhone, message: smsBody });
+                smsSent = smsResult.success;
+                if (smsResult.success) {
+                    console.log('📱 Decision SMS sent successfully');
+                }
+            } catch (smsCatchError) {
+                console.warn('📱 SMS send failed (non-critical):', smsCatchError);
+            }
         }
 
         // Create in-app notification and send push notification
@@ -215,6 +235,7 @@ serve(async (req) => {
                 success: true,
                 message: emailSent ? `Email sent to ${patientEmail}` : 'Appointment processed but email not sent',
                 email_sent: emailSent,
+                sms_sent: smsSent,
                 notification_created: notificationCreated,
                 push_sent: pushSent,
                 appointment_id: appointment_id,
