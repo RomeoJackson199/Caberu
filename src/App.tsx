@@ -125,6 +125,7 @@ const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
 const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
 const AdminBusinessDetail = lazy(() => import("./pages/admin/AdminBusinessDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
+const AdminSmsManagement = lazy(() => import("./pages/admin/AdminSmsManagement"));
 
 
 const Dashboard = () => {
@@ -486,9 +487,8 @@ const App = () => {
                           <Route path="features" element={<AdminFeatureFlags />} />
                           <Route path="revenue" element={<AdminRevenue />} />
                           <Route path="audit" element={<AdminAuditLog />} />
+                          <Route path="sms" element={<AdminSmsManagement />} />
                         </Route>
-                        {/* Super Admin Dashboard - Protected */}
-                        <Route path="/admin" element={<RoleBasedRouter requiredRole='admin'><SuperAdminDashboard /></RoleBasedRouter>} />
                         {/* Main booking route */}
                         <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
                         {/* Redirect old routes to main booking */}
