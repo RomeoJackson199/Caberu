@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clock, Save, Calendar, X, Check, Plus, Minus, AlertCircle, Info } from "lucide-react";
+import { Clock, Save, Calendar, X, Check, Plus, Minus, AlertCircle, Info, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCalendarSettings } from "@/hooks/useCalendarSettings";
 import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 
 interface DentistAvailability {
@@ -85,6 +86,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
   const [showPresets, setShowPresets] = useState(false);
   const [activeTab, setActiveTab] = useState("weekly");
   const { toast } = useToast();
+  const { hideNonWorkingDays, setHideNonWorkingDays } = useCalendarSettings();
 
   useEffect(() => {
     fetchAvailability();
@@ -361,6 +363,28 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
         </TabsList>
 
         <TabsContent value="weekly" className="space-y-4">
+          {/* Calendar Display Settings */}
+          <Card className="glass-card border-2 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <EyeOff className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label className="text-sm font-medium">Hide Non-Working Days in Calendar</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Only show days marked as available in the weekly calendar view
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={hideNonWorkingDays}
+                  onCheckedChange={setHideNonWorkingDays}
+                  className="scale-110"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="glass-card">
             <CardContent className="p-6">
               <div className="space-y-4">
