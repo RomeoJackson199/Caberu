@@ -623,37 +623,26 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20 p-6 rounded-2xl border-2 border-blue-100 dark:border-blue-900 shadow-md">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <Clock className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              {t.availabilityManagement}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">Manage your working hours and time off</p>
-          </div>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">{t.availabilityManagement}</h2>
+          <p className="text-sm text-muted-foreground">Manage your working hours and time off</p>
         </div>
-        <Button
-          onClick={() => saveAvailability(false)}
-          disabled={saving}
-          size="lg"
-          className="h-12 px-8 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg font-semibold"
-        >
-          <Save className="h-5 w-5 mr-2" />
+        <Button onClick={() => saveAvailability(false)} disabled={saving}>
+          <Save className="h-4 w-4 mr-2" />
           {saving ? t.saving : t.saveAvailability}
         </Button>
       </div>
 
-      {/* Validation Errors Alert */}
+      {/* Validation Errors */}
       {validationErrors.length > 0 && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Validation Errors</AlertTitle>
           <AlertDescription>
-            <ul className="list-disc list-inside mt-2 space-y-1">
+            <ul className="list-disc list-inside mt-1 space-y-0.5">
               {validationErrors.map((error, index) => (
                 <li key={index}>{error.message}</li>
               ))}
@@ -662,7 +651,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
         </Alert>
       )}
 
-      {/* Affected Appointments Warning Dialog */}
+      {/* Affected Appointments Dialog */}
       <Dialog open={showAffectedDialog} onOpenChange={setShowAffectedDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -671,20 +660,16 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
               Appointments May Be Affected
             </DialogTitle>
             <DialogDescription>
-              The following {affectedAppointments.length} appointment(s) fall outside the new availability hours.
-              They will remain scheduled but may conflict with your new hours.
+              {affectedAppointments.length} appointment(s) fall outside the new hours.
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-64 overflow-y-auto space-y-2">
             {affectedAppointments.map((apt) => (
-              <div key={apt.id} className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <div className="font-medium">{apt.patient_name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {format(parseISO(apt.appointment_date), 'EEEE, MMM d, yyyy - h:mm a')}
+              <div key={apt.id} className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                <div className="font-medium text-sm">{apt.patient_name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {format(parseISO(apt.appointment_date), 'EEE, MMM d, yyyy - h:mm a')}
                 </div>
-                {apt.reason && (
-                  <div className="text-sm text-muted-foreground mt-1">{apt.reason}</div>
-                )}
               </div>
             ))}
           </div>
@@ -692,395 +677,298 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
             <Button variant="outline" onClick={() => setShowAffectedDialog(false)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => saveAvailability(true)}
-              disabled={saving}
-            >
+            <Button variant="destructive" onClick={() => saveAvailability(true)} disabled={saving}>
               {saving ? 'Saving...' : 'Save Anyway'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Tabs defaultValue="schedule" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 h-14 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-950/50 dark:to-purple-950/50 p-1 rounded-xl shadow-inner">
-          <TabsTrigger
-            value="schedule"
-            className="text-sm sm:text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg"
-          >
+      <Tabs defaultValue="schedule" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="schedule">
             <Calendar className="h-4 w-4 mr-2" />
             {t.weeklySchedule}
           </TabsTrigger>
-          <TabsTrigger
-            value="vacation"
-            className="text-sm sm:text-base font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-lg"
-          >
+          <TabsTrigger value="vacation">
             <Coffee className="h-4 w-4 mr-2" />
             {t.vacationsAbsences}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="schedule">
-          <Card className="glass-card border-2 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20 border-b">
-              <CardTitle className="flex items-center text-xl sm:text-2xl font-bold">
-                <Calendar className="h-6 w-6 mr-3 text-blue-600" />
-                {t.weeklyPlanning}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6 p-6">
-              {/* Quick Preset Buttons */}
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-10 px-4 rounded-lg border-2 border-blue-300 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-950/30"
-                  onClick={() => {
-                    setAvailability(prev => prev.map(day => ({
-                      ...day,
-                      is_available: day.day_of_week >= 1 && day.day_of_week <= 5, // Mon-Fri
-                      start_time: '09:00',
-                      end_time: '17:00',
-                      break_start_time: '12:00',
-                      break_end_time: '13:00'
-                    })));
-                  }}
-                >
-                  <Clock className="h-4 w-4 mr-2 text-blue-600" />
-                  Standard 9-17
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-10 px-4 rounded-lg border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-950/30"
-                  onClick={() => {
-                    setAvailability(prev => prev.map(day => ({
-                      ...day,
-                      is_available: day.day_of_week !== 0, // All except Sunday
-                      start_time: '08:00',
-                      end_time: '20:00',
-                      break_start_time: '',
-                      break_end_time: ''
-                    })));
-                  }}
-                >
-                  <Clock className="h-4 w-4 mr-2 text-purple-600" />
-                  Extended 8-20
-                </Button>
-              </div>
+        {/* Weekly Schedule Tab */}
+        <TabsContent value="schedule" className="space-y-3">
+          {/* Presets */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setAvailability(prev => prev.map(day => ({
+                  ...day,
+                  is_available: day.day_of_week >= 1 && day.day_of_week <= 5,
+                  start_time: '09:00',
+                  end_time: '17:00',
+                  break_start_time: '12:00',
+                  break_end_time: '13:00'
+                })));
+              }}
+            >
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
+              Standard 9-17
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setAvailability(prev => prev.map(day => ({
+                  ...day,
+                  is_available: day.day_of_week !== 0,
+                  start_time: '08:00',
+                  end_time: '20:00',
+                  break_start_time: '',
+                  break_end_time: ''
+                })));
+              }}
+            >
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
+              Extended 8-20
+            </Button>
+          </div>
 
-              {/* Day Schedule Grid */}
-              <div className="grid gap-4">
-                {DAYS_OF_WEEK.map((day, index) => {
-                  const dayAvailability: DentistAvailability = availability[index] ?? {
-                    day_of_week: day.value,
-                    start_time: '09:00',
-                    end_time: '17:00',
-                    is_available: day.value >= 1 && day.value <= 5,
-                    break_start_time: '12:00',
-                    break_end_time: '13:00',
-                  };
-
-                  return (
-                    <Card key={day.value} className={`border-2 transition-all ${dayAvailability.is_available ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                      <CardContent className="p-5">
-                        <div className="space-y-4">
-                          {/* Day Header */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${dayAvailability.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                {day.short}
-                              </div>
-                              <Label className="text-lg font-medium">{day.label}</Label>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {/* Copy Schedule Dropdown */}
-                              {dayAvailability.is_available && (
-                                <Select
-                                  value=""
-                                  onValueChange={(value) => {
-                                    if (value === 'weekdays') {
-                                      copyToAllWeekdays(index);
-                                    } else {
-                                      const targetIndex = DAYS_OF_WEEK.findIndex(d => d.value === parseInt(value));
-                                      if (targetIndex >= 0) {
-                                        copyAvailabilityToDay(index, targetIndex);
-                                      }
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="w-10 h-10 p-0 border-dashed">
-                                    <Copy className="h-4 w-4 text-muted-foreground" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="weekdays" className="font-medium">
-                                      Copy to all weekdays
-                                    </SelectItem>
-                                    {DAYS_OF_WEEK.filter((_, i) => i !== index).map((targetDay) => (
-                                      <SelectItem key={targetDay.value} value={targetDay.value.toString()}>
-                                        Copy to {targetDay.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                              <Switch
-                                checked={dayAvailability.is_available}
-                                onCheckedChange={(checked) =>
-                                  updateAvailability(index, 'is_available', checked)
-                                }
-                                className="scale-125"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Time Settings - Improved responsive grid */}
-                          {dayAvailability.is_available && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                              <div>
-                                <Label htmlFor={`start-${day.value}`} className="text-sm font-medium">{t.startTime}</Label>
-                                <Input
-                                  id={`start-${day.value}`}
-                                  type="time"
-                                  value={dayAvailability.start_time}
-                                  onChange={(e) =>
-                                    updateAvailability(index, 'start_time', e.target.value)
-                                  }
-                                  className="h-10 mt-1"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`end-${day.value}`} className="text-sm font-medium">{t.endTime}</Label>
-                                <Input
-                                  id={`end-${day.value}`}
-                                  type="time"
-                                  value={dayAvailability.end_time}
-                                  onChange={(e) =>
-                                    updateAvailability(index, 'end_time', e.target.value)
-                                  }
-                                  className="h-10 mt-1"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`break-start-${day.value}`} className="text-sm font-medium">
-                                  <Coffee className="h-3 w-3 inline mr-1" />
-                                  {t.breakStart} <span className="text-muted-foreground">(optional)</span>
-                                </Label>
-                                <Input
-                                  id={`break-start-${day.value}`}
-                                  type="time"
-                                  value={dayAvailability.break_start_time || ''}
-                                  onChange={(e) =>
-                                    updateAvailability(index, 'break_start_time', e.target.value || null)
-                                  }
-                                  className="h-10 mt-1"
-                                  placeholder="No break"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`break-end-${day.value}`} className="text-sm font-medium">
-                                  <Coffee className="h-3 w-3 inline mr-1" />
-                                  {t.breakEnd} <span className="text-muted-foreground">(optional)</span>
-                                </Label>
-                                <Input
-                                  id={`break-end-${day.value}`}
-                                  type="time"
-                                  value={dayAvailability.break_end_time || ''}
-                                  onChange={(e) =>
-                                    updateAvailability(index, 'break_end_time', e.target.value || null)
-                                  }
-                                  className="h-10 mt-1"
-                                  placeholder="No break"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="vacation">
-          <div className="space-y-6">
-            {/* Time Off Summary */}
-            {vacationDays.length > 0 && (() => {
-              const summary = getTimeOffSummary();
-              const totalDays = Object.values(summary).reduce((sum, s) => sum + s.total, 0);
-              const typesWithDays = VACATION_TYPES.filter(vt => summary[vt.value]?.total > 0);
+          {/* Days */}
+          <div className="space-y-2">
+            {DAYS_OF_WEEK.map((day, index) => {
+              const dayAvailability: DentistAvailability = availability[index] ?? {
+                day_of_week: day.value,
+                start_time: '09:00',
+                end_time: '17:00',
+                is_available: day.value >= 1 && day.value <= 5,
+                break_start_time: '12:00',
+                break_end_time: '13:00',
+              };
 
               return (
-                <Card className="glass-card border-2 border-blue-100 dark:border-blue-900">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center text-lg">
-                      <Calendar className="h-5 w-5 mr-2 text-blue-600" />
-                      {t.timeOffSummary}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border">
-                        <div className="text-2xl font-bold text-blue-600">{totalDays}</div>
-                        <div className="text-xs text-muted-foreground">{t.totalDaysTaken}</div>
-                      </div>
-                      {typesWithDays.map(vt => {
-                        const s = summary[vt.value];
-                        return (
-                          <div key={vt.value} className="p-3 rounded-lg border bg-white dark:bg-gray-950/50">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <span className="text-sm">{vt.icon}</span>
-                              <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${vt.color}`}>
-                                {vt.label}
-                              </Badge>
-                            </div>
-                            <div className="text-lg font-bold">{s.total} {s.total === 1 ? t.day : t.days}</div>
-                            {s.upcoming > 0 && (
-                              <div className="text-xs text-muted-foreground">
-                                {s.upcoming} {t.upcoming.toLowerCase()}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })()}
-
-            {/* Add New Vacation */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Plus className="h-5 w-5 mr-2" />
-                  {t.addVacation}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="start-date">{t.startDate}</Label>
-                    <Input
-                      id="start-date"
-                      type="date"
-                      value={newVacation.start_date}
-                      onChange={(e) => setNewVacation(prev => ({ ...prev, start_date: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="end-date">{t.endDate}</Label>
-                    <Input
-                      id="end-date"
-                      type="date"
-                      value={newVacation.end_date}
-                      onChange={(e) => setNewVacation(prev => ({ ...prev, end_date: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>{t.vacationType}</Label>
-                    <Select
-                      value={newVacation.vacation_type}
-                      onValueChange={(value: string) =>
-                        setNewVacation(prev => ({ ...prev, vacation_type: value }))
+                <div
+                  key={day.value}
+                  className={`rounded-lg border p-3 ${dayAvailability.is_available ? 'bg-white dark:bg-card' : 'bg-muted/40'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={dayAvailability.is_available}
+                      onCheckedChange={(checked) =>
+                        updateAvailability(index, 'is_available', checked)
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {VACATION_TYPES.map(type => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
+                    <span className={`font-medium w-24 text-sm ${!dayAvailability.is_available ? 'text-muted-foreground' : ''}`}>
+                      {day.label}
+                    </span>
+
+                    {dayAvailability.is_available && (
+                      <>
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
+                          <Input
+                            type="time"
+                            value={dayAvailability.start_time}
+                            onChange={(e) => updateAvailability(index, 'start_time', e.target.value)}
+                            className="h-8 w-28 text-sm"
+                          />
+                          <span className="text-muted-foreground text-xs">to</span>
+                          <Input
+                            type="time"
+                            value={dayAvailability.end_time}
+                            onChange={(e) => updateAvailability(index, 'end_time', e.target.value)}
+                            className="h-8 w-28 text-sm"
+                          />
+
+                          <span className="text-muted-foreground text-xs ml-2">break</span>
+                          <Input
+                            type="time"
+                            value={dayAvailability.break_start_time || ''}
+                            onChange={(e) => updateAvailability(index, 'break_start_time', e.target.value || null)}
+                            className="h-8 w-28 text-sm"
+                            placeholder="--:--"
+                          />
+                          <span className="text-muted-foreground text-xs">to</span>
+                          <Input
+                            type="time"
+                            value={dayAvailability.break_end_time || ''}
+                            onChange={(e) => updateAvailability(index, 'break_end_time', e.target.value || null)}
+                            className="h-8 w-28 text-sm"
+                            placeholder="--:--"
+                          />
+                        </div>
+
+                        <Select
+                          value=""
+                          onValueChange={(value) => {
+                            if (value === 'weekdays') {
+                              copyToAllWeekdays(index);
+                            } else {
+                              const targetIndex = DAYS_OF_WEEK.findIndex(d => d.value === parseInt(value));
+                              if (targetIndex >= 0) {
+                                copyAvailabilityToDay(index, targetIndex);
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-8 h-8 p-0 border-dashed shrink-0">
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="weekdays">Copy to all weekdays</SelectItem>
+                            {DAYS_OF_WEEK.filter((_, i) => i !== index).map((targetDay) => (
+                              <SelectItem key={targetDay.value} value={targetDay.value.toString()}>
+                                Copy to {targetDay.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </>
+                    )}
                   </div>
-                  <div className="flex items-end">
-                    <Button onClick={addVacationDay} className="w-full">
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t.addButton}
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        {/* Time Off Tab */}
+        <TabsContent value="vacation" className="space-y-4">
+          {/* Summary */}
+          {vacationDays.length > 0 && (() => {
+            const summary = getTimeOffSummary();
+            const totalDays = Object.values(summary).reduce((sum, s) => sum + s.total, 0);
+            const typesWithDays = VACATION_TYPES.filter(vt => summary[vt.value]?.total > 0);
+
+            return (
+              <div className="rounded-lg border p-4">
+                <h3 className="text-sm font-medium mb-3">{t.timeOffSummary}</h3>
+                <div className="flex flex-wrap gap-3">
+                  <div className="text-center px-3 py-1.5 rounded bg-muted">
+                    <div className="text-lg font-bold">{totalDays}</div>
+                    <div className="text-[11px] text-muted-foreground">{t.totalDaysTaken}</div>
+                  </div>
+                  {typesWithDays.map(vt => {
+                    const s = summary[vt.value];
+                    return (
+                      <div key={vt.value} className="text-center px-3 py-1.5 rounded bg-muted/50">
+                        <div className="text-lg font-bold">{s.total}</div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <span>{vt.icon}</span> {vt.label}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Add Time Off */}
+          <div className="rounded-lg border p-4 space-y-3">
+            <h3 className="text-sm font-medium">{t.addVacation}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <Label htmlFor="start-date" className="text-xs">{t.startDate}</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={newVacation.start_date}
+                  onChange={(e) => setNewVacation(prev => ({ ...prev, start_date: e.target.value }))}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label htmlFor="end-date" className="text-xs">{t.endDate}</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={newVacation.end_date}
+                  onChange={(e) => setNewVacation(prev => ({ ...prev, end_date: e.target.value }))}
+                  className="h-9"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">{t.vacationType}</Label>
+                <Select
+                  value={newVacation.vacation_type}
+                  onValueChange={(value: string) =>
+                    setNewVacation(prev => ({ ...prev, vacation_type: value }))
+                  }
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VACATION_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <span className="flex items-center gap-1.5">
+                          <span>{type.icon}</span> {type.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button onClick={addVacationDay} className="w-full h-9" size="sm">
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  {t.addButton}
+                </Button>
+              </div>
+            </div>
+            <Input
+              placeholder={`${t.reason} (${t.optional})`}
+              value={newVacation.reason || ''}
+              onChange={(e) => setNewVacation(prev => ({ ...prev, reason: e.target.value }))}
+              className="h-9"
+            />
+          </div>
+
+          {/* List */}
+          <div className="space-y-1.5">
+            {vacationDays.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <Calendar className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <p>{t.noVacationsScheduled}</p>
+              </div>
+            ) : (
+              vacationDays.map((vacation) => {
+                const typeConfig = getVacationTypeConfig(vacation.vacation_type);
+                const startDate = new Date(vacation.start_date);
+                const endDate = new Date(vacation.end_date);
+                const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+                return (
+                  <div key={vacation.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${typeConfig.color}`}>
+                        {typeConfig.icon} {typeConfig.label}
+                      </span>
+                      <span className="text-sm">
+                        {startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {duration} {duration > 1 ? t.days : t.day}
+                      </span>
+                      {vacation.reason && (
+                        <span className="text-xs text-muted-foreground truncate">{vacation.reason}</span>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => vacation.id && deleteVacationDay(vacation.id)}
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 shrink-0 h-8 w-8 p-0"
+                      aria-label={t.deleteVacation}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="vacation-reason">{t.reason} ({t.optional})</Label>
-                  <Textarea
-                    id="vacation-reason"
-                    placeholder={t.reason}
-                    value={newVacation.reason || ''}
-                    onChange={(e) => setNewVacation(prev => ({ ...prev, reason: e.target.value }))}
-                    rows={2}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Vacation List */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle>{t.scheduledVacations}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {vacationDays.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>{t.noVacationsScheduled}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {vacationDays.map((vacation) => {
-                      const typeConfig = getVacationTypeConfig(vacation.vacation_type);
-                      const startDate = new Date(vacation.start_date);
-                      const endDate = new Date(vacation.end_date);
-                      const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-                      return (
-                        <Card key={vacation.id} className="border">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="space-y-2">
-                                <div className="flex items-center space-x-3">
-                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeConfig.color}`}>
-                                    {typeConfig.label}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground">
-                                    {duration} {duration > 1 ? t.days : t.day}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-2 text-sm">
-                                  <span>{startDate.toLocaleDateString()}</span>
-                                  <span>-</span>
-                                  <span>{endDate.toLocaleDateString()}</span>
-                                </div>
-                                {vacation.reason && (
-                                  <p className="text-sm text-muted-foreground">{vacation.reason}</p>
-                                )}
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => vacation.id && deleteVacationDay(vacation.id)}
-                                className="text-red-600 hover:text-red-700"
-                                aria-label={t.deleteVacation}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                );
+              })
+            )}
           </div>
         </TabsContent>
       </Tabs>
