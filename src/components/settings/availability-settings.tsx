@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,9 +83,15 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
   ];
 
   const VACATION_TYPES = [
-    { value: 'vacation', label: t.vacationsTypeVacation, color: 'bg-blue-100 text-blue-800' },
-    { value: 'sick', label: t.vacationsTypeSick, color: 'bg-red-100 text-red-800' },
-    { value: 'personal', label: t.vacationsTypePersonal, color: 'bg-green-100 text-green-800' },
+    { value: 'vacation', label: t.vacationsTypeVacation, color: 'bg-blue-100 text-blue-800', icon: '🏖️' },
+    { value: 'sick', label: t.vacationsTypeSick, color: 'bg-red-100 text-red-800', icon: '🤒' },
+    { value: 'personal', label: t.vacationsTypePersonal, color: 'bg-green-100 text-green-800', icon: '👤' },
+    { value: 'maternity', label: t.vacationsTypeMaternity, color: 'bg-pink-100 text-pink-800', icon: '🤱' },
+    { value: 'paternity', label: t.vacationsTypePaternity, color: 'bg-indigo-100 text-indigo-800', icon: '👶' },
+    { value: 'bereavement', label: t.vacationsTypeBereavement, color: 'bg-gray-100 text-gray-800', icon: '🕊️' },
+    { value: 'training', label: t.vacationsTypeTraining, color: 'bg-yellow-100 text-yellow-800', icon: '📚' },
+    { value: 'unpaid', label: t.vacationsTypeUnpaid, color: 'bg-orange-100 text-orange-800', icon: '📋' },
+    { value: 'jury_duty', label: t.vacationsTypeJuryDuty, color: 'bg-purple-100 text-purple-800', icon: '⚖️' },
   ];
 
   useEffect(() => {
@@ -584,6 +591,33 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
     return VACATION_TYPES.find(t => t.value === type) || VACATION_TYPES[0];
   };
 
+  // Compute time-off summary by type
+  const getTimeOffSummary = () => {
+    const now = new Date();
+    const summary: Record<string, { total: number; upcoming: number }> = {};
+
+    for (const vt of VACATION_TYPES) {
+      summary[vt.value] = { total: 0, upcoming: 0 };
+    }
+
+    for (const v of vacationDays) {
+      const startDate = new Date(v.start_date);
+      const endDate = new Date(v.end_date);
+      const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const type = v.vacation_type || 'vacation';
+
+      if (!summary[type]) {
+        summary[type] = { total: 0, upcoming: 0 };
+      }
+      summary[type].total += duration;
+      if (startDate > now) {
+        summary[type].upcoming += duration;
+      }
+    }
+
+    return summary;
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8">{t.loadingSettings}</div>;
   }
@@ -874,6 +908,51 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
 
         <TabsContent value="vacation">
           <div className="space-y-6">
+            {/* Time Off Summary */}
+            {vacationDays.length > 0 && (() => {
+              const summary = getTimeOffSummary();
+              const totalDays = Object.values(summary).reduce((sum, s) => sum + s.total, 0);
+              const typesWithDays = VACATION_TYPES.filter(vt => summary[vt.value]?.total > 0);
+
+              return (
+                <Card className="glass-card border-2 border-blue-100 dark:border-blue-900">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center text-lg">
+                      <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                      {t.timeOffSummary}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+                      <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border">
+                        <div className="text-2xl font-bold text-blue-600">{totalDays}</div>
+                        <div className="text-xs text-muted-foreground">{t.totalDaysTaken}</div>
+                      </div>
+                      {typesWithDays.map(vt => {
+                        const s = summary[vt.value];
+                        return (
+                          <div key={vt.value} className="p-3 rounded-lg border bg-white dark:bg-gray-950/50">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-sm">{vt.icon}</span>
+                              <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${vt.color}`}>
+                                {vt.label}
+                              </Badge>
+                            </div>
+                            <div className="text-lg font-bold">{s.total} {s.total === 1 ? t.day : t.days}</div>
+                            {s.upcoming > 0 && (
+                              <div className="text-xs text-muted-foreground">
+                                {s.upcoming} {t.upcoming.toLowerCase()}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             {/* Add New Vacation */}
             <Card className="glass-card">
               <CardHeader>
@@ -906,7 +985,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
                     <Label>{t.vacationType}</Label>
                     <Select
                       value={newVacation.vacation_type}
-                      onValueChange={(value: 'vacation' | 'sick' | 'personal') =>
+                      onValueChange={(value: string) =>
                         setNewVacation(prev => ({ ...prev, vacation_type: value }))
                       }
                     >

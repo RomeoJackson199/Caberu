@@ -88,6 +88,14 @@ export interface Translations {
     vacationsTypeVacation: string;
     vacationsTypeSick: string;
     vacationsTypePersonal: string;
+    vacationsTypeMaternity: string;
+    vacationsTypePaternity: string;
+    vacationsTypeBereavement: string;
+    vacationsTypeTraining: string;
+    vacationsTypeUnpaid: string;
+    vacationsTypeJuryDuty: string;
+    timeOffSummary: string;
+    totalDaysTaken: string;
     addButton: string;
     noVacationsScheduled: string;
     deleteVacation: string;
@@ -1134,6 +1142,14 @@ export const translations: Record<Language, TranslationEntry> = {
         vacationsTypeVacation: "Vacation",
         vacationsTypeSick: "Sick Leave",
         vacationsTypePersonal: "Personal Leave",
+        vacationsTypeMaternity: "Maternity Leave",
+        vacationsTypePaternity: "Paternity Leave",
+        vacationsTypeBereavement: "Bereavement Leave",
+        vacationsTypeTraining: "Training / Conference",
+        vacationsTypeUnpaid: "Unpaid Leave",
+        vacationsTypeJuryDuty: "Jury Duty",
+        timeOffSummary: "Time Off Summary",
+        totalDaysTaken: "Total Days Taken",
         addButton: "Add",
         noVacationsScheduled: "No vacations scheduled",
         deleteVacation: "Delete",
@@ -2156,6 +2172,14 @@ export const translations: Record<Language, TranslationEntry> = {
         vacationsTypeVacation: "Vacances",
         vacationsTypeSick: "Congé maladie",
         vacationsTypePersonal: "Congé personnel",
+        vacationsTypeMaternity: "Congé maternité",
+        vacationsTypePaternity: "Congé paternité",
+        vacationsTypeBereavement: "Congé de deuil",
+        vacationsTypeTraining: "Formation / Conférence",
+        vacationsTypeUnpaid: "Congé sans solde",
+        vacationsTypeJuryDuty: "Devoir de juré",
+        timeOffSummary: "Résumé des congés",
+        totalDaysTaken: "Total jours pris",
         addButton: "Ajouter",
         noVacationsScheduled: "Aucun congé programmé",
         deleteVacation: "Supprimer",
@@ -3319,6 +3343,14 @@ export const translations: Record<Language, TranslationEntry> = {
         vacationsTypeVacation: "Vakantie",
         vacationsTypeSick: "Ziekteverlof",
         vacationsTypePersonal: "Persoonlijk verlof",
+        vacationsTypeMaternity: "Zwangerschapsverlof",
+        vacationsTypePaternity: "Vaderschapsverlof",
+        vacationsTypeBereavement: "Rouwverlof",
+        vacationsTypeTraining: "Opleiding / Conferentie",
+        vacationsTypeUnpaid: "Onbetaald verlof",
+        vacationsTypeJuryDuty: "Juryplicht",
+        timeOffSummary: "Verlofoverzicht",
+        totalDaysTaken: "Totaal opgenomen dagen",
         addButton: "Toevoegen",
         noVacationsScheduled: "Geen vakanties gepland",
         deleteVacation: "Verwijderen",
