@@ -62,7 +62,7 @@ export function ComplianceTab() {
     queryKey: ['admin-encryption-keys'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('business_encryption_keys')
+        .from('admin_encryption_key_status' as 'business_encryption_keys')
         .select('business_id, is_active, key_version, expires_at, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
