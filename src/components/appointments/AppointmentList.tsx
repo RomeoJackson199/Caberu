@@ -6,6 +6,8 @@ import { AppointmentConfirmationWidget } from '@/components/AppointmentConfirmat
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useBusinessContext } from '@/hooks/useBusinessContext';
+import { useBusinessDetails } from '@/hooks/useBusinessDetails';
 import type { AppointmentListItem, OptimizedAppointmentListProps, DentistAppointmentListProps } from '@/types';
 
 type StatusType = 'pending' | 'confirmed' | 'cancelled' | 'completed';
@@ -137,6 +139,8 @@ export const AppointmentList = React.memo<AppointmentListProps>(({
   onDelete,
   onComplete,
 }) => {
+  const { businessId } = useBusinessContext();
+  const { data: businessData } = useBusinessDetails(businessId);
   // Use filtered appointments only for optimized dentist view with search
   const displayAppointments = (isDentistView && onConfirm) 
     ? useFilteredAppointments(appointments, searchTerm)
@@ -191,7 +195,8 @@ export const AppointmentList = React.memo<AppointmentListProps>(({
               status: appointment.status,
               urgency: appointment.urgency,
               reason: appointment.reason,
-              consultation_notes: appointment.consultation_notes
+              consultation_notes: appointment.consultation_notes,
+              location: businessData?.address || undefined
             }}
             isDentistView={isDentistView}
             onConfirm={() => onConfirm(appointment.id)}

@@ -7,11 +7,12 @@ import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { DashboardSkeleton } from "@/components/ui/page-skeletons";
 import { AnimatedBackground } from "@/components/ui/polished-components";
 import { TimeGreeting } from "@/components/ui/page-enhancements";
-import { 
-	HeroAppointmentCard, 
-	DashboardStats, 
-	TodayTimeline, 
-	FloatingQuickAction 
+import {
+	HeroAppointmentCard,
+	DashboardStats,
+	TodayTimeline,
+	FloatingQuickAction,
+	AboutBusinessCard
 } from "@/components/dashboard";
 import { PendingApprovalCard } from "@/components/PendingApprovalCard";
 
@@ -219,6 +220,9 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				appointment={nextAppointment}
 				loading={loading}
 			/>
+
+			{/* About this Business */}
+			<AboutBusinessCard />
 
 			{/* Pending Approvals (if dentist requires approval) */}
 			<PendingApprovalCard dentistId={dentistId} />
