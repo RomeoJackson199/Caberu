@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Phone, MessageSquare, X } from "lucide-react";
+import { Loader2, Phone, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
@@ -21,12 +21,11 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
   const [codeSent, setCodeSent] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
   const { toast } = useToast();
 
   // Check if user needs phone verification
   useEffect(() => {
-    if (!user || dismissed) return;
+    if (!user) return;
 
     const checkPhoneVerification = async () => {
       try {
@@ -39,14 +38,8 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
         // Only show if onboarding is completed but phone is not verified
         // This prevents showing during the onboarding flow
         if (profile?.onboarding_completed && !profile?.phone_verified) {
-          // Check if user has already dismissed this session
-          const dismissedKey = `phone_verification_dismissed_${user.id}`;
-          const wasDismissed = sessionStorage.getItem(dismissedKey);
-
-          if (!wasDismissed) {
-            // Delay showing the dialog slightly to not be intrusive
-            setTimeout(() => setOpen(true), 2000);
-          }
+          // Delay showing the dialog slightly to not be intrusive
+          setTimeout(() => setOpen(true), 2000);
 
           // Pre-fill phone if available
           if (profile?.phone) {
@@ -59,7 +52,7 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
     };
 
     checkPhoneVerification();
-  }, [user, dismissed]);
+  }, [user]);
 
   const formatPhoneNumber = (value: string) => {
     let cleaned = value.replace(/[^\d+]/g, '');
@@ -180,24 +173,12 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
     setCodeSent(false);
   };
 
-  const handleSkip = () => {
-    // Remember dismissal for this session
-    if (user) {
-      sessionStorage.setItem(`phone_verification_dismissed_${user.id}`, 'true');
-    }
-    setDismissed(true);
-    handleClose();
-  };
-
   if (!user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      if (!newOpen) {
-        handleSkip();
-      }
-    }}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={() => {}}>
+
+      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Phone className="h-5 w-5 text-blue-600" />
@@ -305,18 +286,6 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
             </>
           )}
 
-          <Button
-            variant="ghost"
-            onClick={handleSkip}
-            className="w-full text-muted-foreground"
-          >
-            <X className="mr-2 h-4 w-4" />
-            Skip for now
-          </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            You can verify your phone number anytime in your account settings
-          </p>
         </div>
       </DialogContent>
     </Dialog>
