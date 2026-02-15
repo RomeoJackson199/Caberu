@@ -239,10 +239,6 @@ const Onboarding = () => {
     }
   };
 
-  const handleSkipPhoneVerification = () => {
-    setCurrentStep('address');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -545,28 +541,13 @@ const Onboarding = () => {
                 </>
               )}
 
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={() => setCurrentStep('personal')}
-                  className="flex-1"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleSkipPhoneVerification}
-                  className="flex-1 text-muted-foreground"
-                >
-                  Skip for now
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-
-              <p className="text-xs text-center text-muted-foreground">
-                You can verify your phone number later in your account settings
-              </p>
+              <Button
+                variant="ghost"
+                onClick={() => setCurrentStep('personal')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
             </div>
           )}
 
