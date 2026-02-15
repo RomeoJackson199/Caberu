@@ -21,6 +21,8 @@ interface Business {
   welcome_message: string | null;
   business_hours: Record<string, any>;
   currency: string;
+  email: string | null;
+  website: string | null;
   specialty_type: string;
   template_type: string;
   subscription_plan: string | null;
