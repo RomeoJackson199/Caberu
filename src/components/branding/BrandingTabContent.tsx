@@ -216,6 +216,9 @@ export function BrandingTabContent({ branding }: BrandingTabContentProps) {
               onChange={branding.setAddress}
               placeholder={t.clinicAddressPlaceholder}
             />
+            <p className="text-xs text-muted-foreground">
+              ({t.optional})
+            </p>
           </div>
 
           <div className="space-y-2">
