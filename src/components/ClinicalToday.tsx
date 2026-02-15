@@ -11,8 +11,7 @@ import {
 	HeroAppointmentCard,
 	DashboardStats,
 	TodayTimeline,
-	FloatingQuickAction,
-	AboutBusinessCard
+	FloatingQuickAction
 } from "@/components/dashboard";
 import { PendingApprovalCard } from "@/components/PendingApprovalCard";
 
@@ -220,9 +219,6 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				appointment={nextAppointment}
 				loading={loading}
 			/>
-
-			{/* About this Business */}
-			<AboutBusinessCard />
 
 			{/* Pending Approvals (if dentist requires approval) */}
 			<PendingApprovalCard dentistId={dentistId} />

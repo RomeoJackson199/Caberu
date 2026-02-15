@@ -12,6 +12,7 @@ interface ConfirmationStepProps {
   selectedTime: string;
   isBooking: boolean;
   selectedService?: Service | null;
+  businessAddress?: string | null;
   onConfirm: () => void;
   onBack: () => void;
 }
@@ -22,6 +23,7 @@ export function ConfirmationStep({
   selectedTime,
   isBooking,
   selectedService,
+  businessAddress,
   onConfirm,
   onBack,
 }: ConfirmationStepProps) {
@@ -79,6 +81,12 @@ export function ConfirmationStep({
                 Dr. {dentist.first_name} {dentist.last_name}
               </span>
             </div>
+            {businessAddress && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Location</span>
+                <span className="font-medium text-right">{businessAddress}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Date</span>
               <span className="font-medium">

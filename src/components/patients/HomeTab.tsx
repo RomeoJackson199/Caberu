@@ -41,6 +41,7 @@ import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
 import { TimeGreeting, AvatarWithInitials, AnimatedStatCard } from "@/components/ui/page-enhancements";
 import { StaggeredList } from "@/components/ui/micro-interactions";
 import { PriorityHomeCards } from "./PriorityHomeCards";
+import { AboutBusinessCard } from "@/components/dashboard";
 
 export interface HomeTabProps {
   userId: string;
@@ -177,6 +178,9 @@ export const HomeTab = React.memo<HomeTabProps>(({
         onOpenAssistant={onOpenAssistant}
         onBookAppointment={onBookAppointment}
       />
+
+      {/* About this Business */}
+      <AboutBusinessCard />
     </div>
   );
 });

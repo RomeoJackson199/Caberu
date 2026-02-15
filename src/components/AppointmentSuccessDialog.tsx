@@ -11,6 +11,7 @@ interface AppointmentSuccessDialogProps {
     time: string;
     dentist?: string;
     reason?: string;
+    location?: string;
     pendingApproval?: boolean;
   };
 }
@@ -39,7 +40,7 @@ export function AppointmentSuccessDialog({
     const startDate = new Date(appointmentDetails.date + ' ' + appointmentDetails.time);
     const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour
 
-    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Dental Appointment')}&dates=${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(appointmentDetails.reason || 'Dental consultation')}&location=${encodeURIComponent(appointmentDetails.dentist || '')}`;
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Dental Appointment')}&dates=${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z&details=${encodeURIComponent(appointmentDetails.reason || 'Dental consultation')}&location=${encodeURIComponent(appointmentDetails.location || '')}`;
 
     window.open(googleCalendarUrl, '_blank');
   };
@@ -83,6 +84,12 @@ export function AppointmentSuccessDialog({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Dentist:</span>
                 <span className="font-medium">{appointmentDetails.dentist}</span>
+              </div>
+            )}
+            {appointmentDetails.location && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Location:</span>
+                <span className="font-medium text-right">{appointmentDetails.location}</span>
               </div>
             )}
             {appointmentDetails.reason && (

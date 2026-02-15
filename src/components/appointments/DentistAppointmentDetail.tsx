@@ -334,8 +334,7 @@ export function DentistAppointmentDetail({
         state={state}
         dentistName={dentistName}
         dentistSpecialization={dentist?.specialization}
-        clinicName={business?.name}
-        clinicAddress={business?.address || undefined}
+        clinicName={business?.name || business?.address}
       />
 
       {/* Scrollable Content */}
