@@ -171,6 +171,7 @@ export interface WeeklyCalendarViewProps {
   businessId?: string;
   currentDate: Date;
   onAppointmentClick: (appointment: CalendarEvent) => void;
+  onDayHeaderClick?: (date: Date) => void;
   selectedAppointmentId?: string;
   googleCalendarEvents?: GoogleCalendarEvent[];
   showAllDentists?: boolean;

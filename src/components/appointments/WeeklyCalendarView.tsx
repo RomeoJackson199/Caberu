@@ -38,6 +38,7 @@ export function WeeklyCalendarView({
   businessId,
   currentDate,
   onAppointmentClick,
+  onDayHeaderClick,
   selectedAppointmentId,
   googleCalendarEvents = [],
   showAllDentists = false,
@@ -368,7 +369,16 @@ export function WeeklyCalendarView({
               const densityColor = getDensityColor(dayEventCount);
 
               return (
-                <div key={day.toISOString()} className={cn("py-3 text-center relative", isToday && "bg-blue-50/50 dark:bg-blue-900/10")}>
+                <button
+                  key={day.toISOString()}
+                  className={cn(
+                    "py-3 text-center relative transition-colors",
+                    isToday && "bg-blue-50/50 dark:bg-blue-900/10",
+                    onDayHeaderClick && "hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                  )}
+                  onClick={() => onDayHeaderClick?.(day)}
+                  type="button"
+                >
                   <div className={cn("text-xs font-medium uppercase mb-1", isToday ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground")}>
                     {format(day, "EEE")}
                   </div>
@@ -392,7 +402,7 @@ export function WeeklyCalendarView({
                       <span className="text-[10px] text-teal-600 dark:text-teal-400 mt-0.5">Off</span>
                     )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
