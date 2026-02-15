@@ -71,7 +71,7 @@ const Onboarding = () => {
         .single();
 
       if (profile?.onboarding_completed && profile?.first_name && profile?.last_name && profile?.date_of_birth) {
-        navigate("/dashboard");
+        navigate("/select-business");
         return;
       }
 
@@ -273,10 +273,10 @@ const Onboarding = () => {
 
       toast({
         title: "Welcome to Caberu!",
-        description: "Your profile is complete. Let's book your first appointment!",
+        description: "Your profile is complete. Now select a practice to get started!",
       });
 
-      navigate("/dashboard");
+      navigate("/select-business");
     } catch (error: unknown) {
       toast({
         title: "Error",
