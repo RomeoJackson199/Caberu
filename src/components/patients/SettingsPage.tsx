@@ -14,6 +14,7 @@ import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadW
 import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySettings";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
+import { PhoneVerificationDialog } from "@/components/auth/PhoneVerificationDialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SettingsPageProps {
@@ -34,6 +35,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const { toast } = useToast();
   const [active, setActive] = useState<Section>('Profile & Personal Info');
   const [saving, setSaving] = useState(false);
+  const [savedPhone, setSavedPhone] = useState('');
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
     first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', address_street: '', address_postal_code: '', address_city: '', emergency_contact: '', ai_opt_out: false,
   });
@@ -43,16 +46,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       try {
         const data = await loadProfileData(user);
         setProfile(data);
+        setSavedPhone(data.phone || '');
       } catch {
         // ignore profile load errors in settings
       }
     })();
   }, [user]);
 
-  const handleSave = async () => {
+  const phoneChanged = (profile.phone || '') !== savedPhone;
+
+  const doSave = async (profileToSave: ProfileData) => {
     setSaving(true);
     try {
-      await saveProfileData(user, profile);
+      await saveProfileData(user, profileToSave);
+      setSavedPhone(profileToSave.phone || '');
       toast({
         title: "Success",
         description: "Your profile has been saved successfully",
@@ -68,12 +75,27 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
     }
   };
 
+  const handleSave = async () => {
+    if (phoneChanged && profile.phone?.trim()) {
+      setShowPhoneVerification(true);
+      return;
+    }
+    await doSave(profile);
+  };
+
+  const handlePhoneVerified = async (verifiedPhone: string) => {
+    const updatedProfile = { ...profile, phone: verifiedPhone };
+    setProfile(updatedProfile);
+    setShowPhoneVerification(false);
+    await doSave(updatedProfile);
+  };
+
   const mobile = (
     <Accordion type="single" collapsible className="md:hidden px-4 py-4">
       <AccordionItem value="profile">
         <AccordionTrigger>Profile & Personal Info</AccordionTrigger>
         <AccordionContent>
-          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} />
+          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} />
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="preferences">
@@ -108,7 +130,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       </div>
       <div className="flex-1 overflow-auto p-4">
         {active === 'Profile & Personal Info' && (
-          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} />
+          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} />
         )}
         {active === 'Preferences' && (
           <Preferences theme={theme} setTheme={setTheme} />
@@ -124,6 +146,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       <h2 className="text-xl font-semibold mb-4">Settings</h2>
       {mobile}
       {desktop}
+      <PhoneVerificationDialog
+        open={showPhoneVerification}
+        onOpenChange={setShowPhoneVerification}
+        phoneNumber={profile.phone}
+        onSuccess={handlePhoneVerified}
+        userId={user.id}
+      />
     </div>
   );
 };
@@ -135,9 +164,10 @@ interface ProfileFormProps {
   onSave: () => Promise<void> | void;
   saving: boolean;
   userId: string;
+  phoneChanged?: boolean;
 }
 
-const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, onSave, saving, userId }) => {
+const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, onSave, saving, userId, phoneChanged }) => {
   return (
     <Card>
       <CardHeader>
@@ -169,6 +199,11 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
               onChange={(val) => setProfile({ ...profile, phone: val || "" })}
               placeholder="Enter phone number"
             />
+            {phoneChanged && profile.phone?.trim() && (
+              <p className="text-xs text-amber-600 mt-1">
+                Phone number changed — verification required on save
+              </p>
+            )}
           </div>
           <div className="sm:col-span-2">
             <Label>Address</Label>
