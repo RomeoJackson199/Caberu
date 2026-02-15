@@ -4,7 +4,9 @@ export interface BrandingState {
   clinicName: string;
   slug: string;
   tagline: string;
-  address: string;
+  addressStreet: string;
+  addressPostalCode: string;
+  addressCity: string;
   phone: string;
   primaryColor: string;
   secondaryColor: string;
@@ -19,7 +21,9 @@ export interface BrandingActions {
   setClinicName: (value: string) => void;
   setSlug: (value: string) => void;
   setTagline: (value: string) => void;
-  setAddress: (value: string) => void;
+  setAddressStreet: (value: string) => void;
+  setAddressPostalCode: (value: string) => void;
+  setAddressCity: (value: string) => void;
   setPhone: (value: string) => void;
   setPrimaryColor: (value: string) => void;
   setSecondaryColor: (value: string) => void;

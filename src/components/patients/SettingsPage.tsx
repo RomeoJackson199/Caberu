@@ -12,7 +12,6 @@ import { saveProfileData, loadProfileData, ProfileData } from "@/lib/profileUtil
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySettings";
-import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { PhoneVerificationDialog } from "@/components/auth/PhoneVerificationDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,22 +209,10 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
             <div className="space-y-3 mt-1">
               <div className="space-y-1">
                 <Label htmlFor="address_street" className="text-sm text-muted-foreground">Street Address</Label>
-                <AddressAutocomplete
+                <Input
+                  id="address_street"
                   value={profile.address_street}
-                  onChange={(val) => {
-                    // If a full address was selected from autocomplete, parse it into parts
-                    const parts = val.split(", ");
-                    if (parts.length >= 2) {
-                      setProfile({
-                        ...profile,
-                        address_street: parts[0],
-                        address_postal_code: parts.length >= 2 ? parts[1].split(" ")[0] || "" : "",
-                        address_city: parts.length >= 2 ? parts[1].split(" ").slice(1).join(" ") || (parts[2] || "") : "",
-                      });
-                    } else {
-                      setProfile({ ...profile, address_street: val });
-                    }
-                  }}
+                  onChange={(e) => setProfile({ ...profile, address_street: e.target.value })}
                   placeholder="Rue de la Loi 16"
                 />
               </div>
