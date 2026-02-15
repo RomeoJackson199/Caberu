@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Upload, Image as ImageIcon, Briefcase, Copy, Check, QrCode } from "lucide-react";
 import { BusinessTemplateSelector } from "@/components/BusinessTemplateSelector";
 import { getTemplateConfig } from "@/lib/businessTemplates";
-import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import type { UseBrandingSettingsReturn } from "./types";
 
@@ -210,12 +209,41 @@ export function BrandingTabContent({ branding }: BrandingTabContentProps) {
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address">{t.clinicAddress}</Label>
-            <AddressAutocomplete
-              value={branding.address}
-              onChange={branding.setAddress}
-              placeholder={t.clinicAddressPlaceholder}
-            />
+            <Label>{t.clinicAddress}</Label>
+            <p className="text-xs text-muted-foreground">
+              ({t.optional})
+            </p>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="address-street" className="text-sm text-muted-foreground">{t.streetAddress || "Street Address"}</Label>
+                <Input
+                  id="address-street"
+                  value={branding.addressStreet}
+                  onChange={(e) => branding.setAddressStreet(e.target.value)}
+                  placeholder={t.streetPlaceholder || "Rue de la Loi 16"}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="address-postal-code" className="text-sm text-muted-foreground">{t.postalCode || "Postal Code"}</Label>
+                  <Input
+                    id="address-postal-code"
+                    value={branding.addressPostalCode}
+                    onChange={(e) => branding.setAddressPostalCode(e.target.value)}
+                    placeholder="1000"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="address-city" className="text-sm text-muted-foreground">{t.city || "City"}</Label>
+                  <Input
+                    id="address-city"
+                    value={branding.addressCity}
+                    onChange={(e) => branding.setAddressCity(e.target.value)}
+                    placeholder={t.cityPlaceholder || "Brussels"}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

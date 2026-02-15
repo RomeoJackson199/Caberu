@@ -25,7 +25,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   const [copiedLink, setCopiedLink] = useState(false);
   const [showQrDialog, setShowQrDialog] = useState(false);
   const [tagline, setTagline] = useState("");
-  const [address, setAddress] = useState("");
+  const [addressStreet, setAddressStreet] = useState("");
+  const [addressPostalCode, setAddressPostalCode] = useState("");
+  const [addressCity, setAddressCity] = useState("");
   const [phone, setPhone] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#0EA5E9");
   const [secondaryColor, setSecondaryColor] = useState("#10B981");
@@ -41,7 +43,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     clinicName: "",
     slug: "",
     tagline: "",
-    address: "",
+    addressStreet: "",
+    addressPostalCode: "",
+    addressCity: "",
     phone: "",
     primaryColor: "#0EA5E9",
     secondaryColor: "#10B981",
@@ -73,7 +77,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
       clinicName,
       slug,
       tagline,
-      address,
+      addressStreet,
+      addressPostalCode,
+      addressCity,
       phone,
       primaryColor,
       secondaryColor,
@@ -84,7 +90,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
       aiPersonalityTraits,
     };
     setHasChanges(JSON.stringify(currentState) !== JSON.stringify(initialState));
-  }, [clinicName, slug, tagline, address, phone, primaryColor, secondaryColor, logoUrl, templateType, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
+  }, [clinicName, slug, tagline, addressStreet, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
 
   useUnsavedChanges({
     when: hasChanges,
@@ -110,11 +116,30 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
           personalityTraits: [],
         };
 
+        // Parse address into separate fields: "Street, PostalCode City" format
+        const rawAddress = business.address || "";
+        let parsedStreet = "";
+        let parsedPostalCode = "";
+        let parsedCity = "";
+        if (rawAddress) {
+          const parts = rawAddress.split(", ");
+          if (parts.length >= 2) {
+            parsedStreet = parts[0];
+            const cityParts = parts.slice(1).join(", ").split(" ");
+            parsedPostalCode = cityParts[0] || "";
+            parsedCity = cityParts.slice(1).join(" ") || "";
+          } else {
+            parsedStreet = rawAddress;
+          }
+        }
+
         const state: BrandingState = {
           clinicName: business.name || "",
           slug: business.slug || "",
           tagline: business.tagline || "",
-          address: business.address || "",
+          addressStreet: parsedStreet,
+          addressPostalCode: parsedPostalCode,
+          addressCity: parsedCity,
           phone: business.phone || "",
           primaryColor: customConfig.primaryColor || "#0EA5E9",
           secondaryColor: customConfig.secondaryColor || "#10B981",
@@ -128,7 +153,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         setClinicName(state.clinicName);
         setSlug(state.slug);
         setTagline(state.tagline);
-        setAddress(state.address);
+        setAddressStreet(state.addressStreet);
+        setAddressPostalCode(state.addressPostalCode);
+        setAddressCity(state.addressCity);
         setPhone(state.phone);
         setPrimaryColor(state.primaryColor);
         setSecondaryColor(state.secondaryColor);
@@ -265,7 +292,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         clinicName,
         slug,
         tagline,
-        address,
+        addressStreet,
+        addressPostalCode,
+        addressCity,
         phone,
         primaryColor,
         secondaryColor,
@@ -383,11 +412,17 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
 
       const existingConfig = (existingBusiness?.custom_config as Record<string, any>) || {};
 
+      // Combine address fields back into single string: "Street, PostalCode City"
+      const combinedAddress = [
+        addressStreet,
+        [addressPostalCode, addressCity].filter(Boolean).join(" "),
+      ].filter(Boolean).join(", ");
+
       const updateData: any = {
         name: clinicName,
         slug,
         tagline,
-        address,
+        address: combinedAddress,
         phone,
         custom_config: {
           ...existingConfig,
@@ -420,7 +455,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         clinicName,
         slug,
         tagline,
-        address,
+        addressStreet,
+        addressPostalCode,
+        addressCity,
         phone,
         primaryColor,
         secondaryColor,
@@ -448,7 +485,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     clinicName,
     slug,
     tagline,
-    address,
+    addressStreet,
+    addressPostalCode,
+    addressCity,
     phone,
     primaryColor,
     secondaryColor,
@@ -462,7 +501,9 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     setClinicName,
     setSlug,
     setTagline,
-    setAddress,
+    setAddressStreet,
+    setAddressPostalCode,
+    setAddressCity,
     setPhone,
     setPrimaryColor,
     setSecondaryColor,
