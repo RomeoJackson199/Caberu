@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { sendSms } from '../_shared/sms.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -257,6 +258,27 @@ serve(async (req) => {
           });
           await adminClient.from('payment_requests').update({ last_reminder_at: new Date().toISOString() }).eq('id', newPaymentRequestId);
         } catch (e) { console.error('Failed to send email:', e); }
+
+        // Send SMS alongside email if patient has a phone
+        if (patient_id) {
+          try {
+            const { data: patientProfile } = await adminClient
+              .from('profiles')
+              .select('phone')
+              .eq('id', patient_id)
+              .single();
+
+            if (patientProfile?.phone) {
+              const smsBody = `Payment request: €${(totalAmount / 100).toFixed(2)} for ${description || 'your visit'}. Pay securely here: ${session.url}`;
+              const smsResult = await sendSms({ to: patientProfile.phone, message: smsBody, messageType: 'payment_request' });
+              if (smsResult.success) {
+                console.log(`📱 Payment request SMS sent for ${newPaymentRequestId}`);
+              }
+            }
+          } catch (smsErr) {
+            console.warn(`📱 SMS failed for payment request:`, smsErr);
+          }
+        }
       }
       await adminClient.from('payment_requests').update({ status: 'pending' }).eq('id', newPaymentRequestId);
     }

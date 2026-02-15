@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { format } from 'https://esm.sh/date-fns@3.6.0';
 import { toZonedTime } from 'https://esm.sh/date-fns-tz@3.1.3';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
+import { sendSms } from '../_shared/sms.ts';
 
 const CLINIC_TIMEZONE = 'Europe/Brussels';
 
@@ -62,7 +63,8 @@ serve(async (req) => {
                 profiles!appointments_patient_id_fkey (
                     email,
                     first_name,
-                    last_name
+                    last_name,
+                    phone
                 )
             `)
             .eq('dentist_id', dentist_id)
@@ -174,6 +176,20 @@ ${dentistName}'s Office`;
                     }
                 } catch (emailCatchError) {
                     console.error(`Failed to invoke email function for ${patientEmail}:`, emailCatchError);
+                }
+
+                // Send SMS alongside email
+                const patientPhone = (apt.profiles as any)?.phone;
+                if (patientPhone) {
+                    try {
+                        const smsBody = `⚠️ Your appointment on ${formattedDate} at ${formattedTime} has been cancelled. ${cancellationReason} Please book a new appointment at your convenience.`;
+                        const smsResult = await sendSms({ to: patientPhone, message: smsBody, messageType: 'appointment_cancelled' });
+                        if (smsResult.success) {
+                            console.log(`📱 Cancellation SMS sent to ${patientPhone}`);
+                        }
+                    } catch (smsErr) {
+                        console.warn(`📱 SMS error for ${patientPhone}:`, smsErr);
+                    }
                 }
             }
         }
