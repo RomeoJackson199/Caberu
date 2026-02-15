@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import type { Appointment } from "@/types/shared";
 import type { CalendarEvent } from "@/types/appointment";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ import { DayCalendarView } from "@/components/appointments/DayCalendarView";
 import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
 import { AppointmentStats } from "@/components/appointments/AppointmentStats";
 import { MonthlyOverview } from "@/components/appointments/MonthlyOverview";
-import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
+import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isToday, addHours } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -20,12 +20,27 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronLeft, ChevronRight, Calendar, Grid3x3, CalendarDays, BarChart3, CheckCircle, Clock, AlertTriangle, RefreshCw, WifiOff, Users } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Grid3x3,
+  CalendarDays,
+  BarChart3,
+  Clock,
+  AlertTriangle,
+  RefreshCw,
+  WifiOff,
+  Users,
+  List,
+  Stethoscope,
+  CircleDot,
+  ChevronDown,
+  ArrowRight,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AnimatedStatCard } from "@/components/ui/page-enhancements";
 import { ErrorState, EmptyState, CalendarSyncStatusCompact, AppointmentErrorBoundary, OfflineBanner } from "@/components/stability";
 import { motion, AnimatePresence } from "framer-motion";
-import { getFriendlyErrorMessage } from "@/lib/userFriendlyErrors";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +50,24 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
+type ViewMode = "week" | "day" | "agenda" | "team";
+type StatusFilter = "all" | "pending" | "confirmed" | "completed" | "cancelled";
+
+const STATUS_FILTER_CONFIG: Record<StatusFilter, { label: string; color: string; activeColor: string }> = {
+  all: { label: "All", color: "text-muted-foreground", activeColor: "bg-foreground text-background" },
+  pending: { label: "Pending", color: "text-amber-600", activeColor: "bg-amber-500 text-white" },
+  confirmed: { label: "Confirmed", color: "text-blue-600", activeColor: "bg-blue-500 text-white" },
+  completed: { label: "Completed", color: "text-emerald-600", activeColor: "bg-emerald-500 text-white" },
+  cancelled: { label: "Cancelled", color: "text-gray-500", activeColor: "bg-gray-500 text-white" },
+};
+
+const STATUS_BADGE_STYLES: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+  confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+  completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400 border-gray-200 dark:border-gray-700",
+};
+
 function DentistAppointmentsManagementContent() {
   const { businessId } = useBusinessContext();
   const {
@@ -43,12 +76,12 @@ function DentistAppointmentsManagementContent() {
   } = useCurrentDentist(businessId);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [viewMode, setViewMode] = useState<"week" | "day" | "completed" | "team">("week");
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showStats, setShowStats] = useState(false);
   const [selectedTeamDentistId, setSelectedTeamDentistId] = useState<string | null>(null);
   const [calendarSyncError, setCalendarSyncError] = useState<Error | null>(null);
   const [lastCalendarSync, setLastCalendarSync] = useState<Date | null>(null);
-  const lastScrollY = useRef(0);
   const {
     toast
   } = useToast();
@@ -111,7 +144,7 @@ function DentistAppointmentsManagementContent() {
     });
   }, [teamDentists, dentistId]);
 
-  // Fetch all appointments for stats
+  // Fetch all appointments for stats and agenda view
   const {
     data: allAppointments = [],
     isLoading: appointmentsLoading,
@@ -134,34 +167,8 @@ function DentistAppointmentsManagementContent() {
         .order("appointment_date", { ascending: true });
 
       if (error) throw error;
-      return data || [];
-    },
-    enabled: !!dentistId && !!businessId,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-  });
 
-  // Fetch completed appointments (for "Completed" view)
-  const {
-    data: completedAppointments = [],
-    isLoading: completedLoading,
-    error: completedError
-  } = useQuery({
-    queryKey: ['completed-appointments', dentistId, businessId],
-    queryFn: async () => {
-      if (!dentistId || !businessId) return [];
-      const { data, error } = await supabase
-        .from("appointments_decrypted")
-        .select("*")
-        .eq("dentist_id", dentistId)
-        .eq("business_id", businessId)
-        .eq("status", "completed")
-        .order("appointment_date", { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-
-      // Fetch patient profiles separately (views don't support PostgREST joins)
+      // Fetch patient profiles
       const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
       const { data: profiles } = patientIds.length > 0
         ? await supabase.from('profiles').select('id, first_name, last_name, email').in('id', patientIds)
@@ -173,8 +180,9 @@ function DentistAppointmentsManagementContent() {
         patient: profilesMap.get(apt.patient_id) || undefined,
       }));
     },
-    enabled: !!dentistId && !!businessId && viewMode === 'completed',
+    enabled: !!dentistId && !!businessId,
     retry: 2,
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   // Fetch monthly appointments for overview
@@ -204,7 +212,6 @@ function DentistAppointmentsManagementContent() {
   const {
     data: googleCalendarEvents,
     isLoading: isCalendarSyncing,
-    error: googleCalendarError,
     refetch: refetchGoogleCalendar
   } = useQuery({
     queryKey: ['google-calendar-events', dentistId, currentDate],
@@ -242,13 +249,58 @@ function DentistAppointmentsManagementContent() {
       }
     },
     enabled: !!dentistId,
-    refetchInterval: 300000, // Refresh every 5 minutes
+    refetchInterval: 300000,
     retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
+  // Compute agenda items (for agenda view) - filtered by status and sorted by time
+  const agendaAppointments = useMemo(() => {
+    let filtered = allAppointments;
+
+    // In agenda view, show appointments for the selected day
+    if (viewMode === "agenda") {
+      filtered = filtered.filter(apt =>
+        isSameDay(parseISO(apt.appointment_date), currentDate)
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(apt => apt.status === statusFilter);
+    }
+
+    return filtered.sort((a, b) =>
+      new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+    );
+  }, [allAppointments, statusFilter, viewMode, currentDate]);
+
+  // Compute "next up" appointment - the nearest upcoming confirmed/pending appointment
+  const nextUpAppointment = useMemo(() => {
+    const now = new Date();
+    return allAppointments.find(apt => {
+      const aptDate = new Date(apt.appointment_date);
+      return aptDate > now && (apt.status === 'confirmed' || apt.status === 'pending');
+    });
+  }, [allAppointments]);
+
+  // Status counts for filter badges
+  const statusCounts = useMemo(() => {
+    const todayAppts = allAppointments.filter(apt =>
+      isSameDay(parseISO(apt.appointment_date), currentDate)
+    );
+    const source = viewMode === "agenda" ? todayAppts : allAppointments;
+    return {
+      all: source.length,
+      pending: source.filter(a => a.status === 'pending').length,
+      confirmed: source.filter(a => a.status === 'confirmed').length,
+      completed: source.filter(a => a.status === 'completed').length,
+      cancelled: source.filter(a => a.status === 'cancelled').length,
+    };
+  }, [allAppointments, viewMode, currentDate]);
+
   const navigateDate = useCallback((direction: "prev" | "next") => {
-    const daysToAdd = viewMode === "week" ? 7 : 1;
+    const daysToAdd = viewMode === "week" || viewMode === "team" ? 7 : 1;
     setCurrentDate(prev => direction === "next" ? addDays(prev, daysToAdd) : subDays(prev, daysToAdd));
   }, [viewMode]);
 
@@ -259,7 +311,6 @@ function DentistAppointmentsManagementContent() {
   // Keyboard navigation for dates
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
@@ -298,6 +349,13 @@ function DentistAppointmentsManagementContent() {
             setViewMode('day');
           }
           break;
+        case 'a':
+        case 'A':
+          if (!e.metaKey && !e.ctrlKey) {
+            e.preventDefault();
+            setViewMode('agenda');
+          }
+          break;
       }
     };
 
@@ -306,37 +364,47 @@ function DentistAppointmentsManagementContent() {
   }, [navigateDate, goToToday]);
 
   const handleAppointmentClick = (calendarEvent: CalendarEvent) => {
-    // Cast calendar event to Appointment-like object for handling
     const appointment = calendarEvent as unknown as Appointment;
-    
-    // Determine if appointment is actionable (can enter consultation)
+
     const isPending = appointment.status === 'pending';
     const isCompleted = appointment.status === 'completed';
     const isCancelled = appointment.status === 'cancelled';
 
-    // Actionable = not pending, not completed, not cancelled
     const isActionable = !isPending && !isCompleted && !isCancelled && appointment.patient_id;
 
     if (isActionable) {
-      // Navigate directly to consultation mode
       navigate(`/dentist/patients?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`);
       return;
     }
 
-    // For non-actionable (pending/completed/cancelled), show the appointment details sidebar
     setSelectedAppointment(appointment);
-    setViewMode("day");
-    setCurrentDate(parseISO(appointment.appointment_date));
+    if (viewMode === "week") {
+      setViewMode("day");
+      setCurrentDate(parseISO(appointment.appointment_date));
+    }
+  };
+
+  const handleAgendaAppointmentClick = (apt: Appointment) => {
+    const isPending = apt.status === 'pending';
+    const isCompleted = apt.status === 'completed';
+    const isCancelled = apt.status === 'cancelled';
+
+    const isActionable = !isPending && !isCompleted && !isCancelled && apt.patient_id;
+
+    if (isActionable) {
+      navigate(`/dentist/patients?patientId=${apt.patient_id}&appointmentId=${apt.id}`);
+      return;
+    }
+
+    setSelectedAppointment(apt);
   };
 
   const handleDayViewAppointmentClick = (calendarEvent: CalendarEvent) => {
-    // For day view, we just select the appointment (the full data is fetched by the calendar)
     const appointment = calendarEvent as unknown as Appointment;
     setSelectedAppointment(appointment);
   };
 
-  const handleBackToWeek = () => {
-    setViewMode("week");
+  const handleCloseDetail = () => {
     setSelectedAppointment(null);
   };
 
@@ -350,7 +418,6 @@ function DentistAppointmentsManagementContent() {
       }).eq("id", appointmentId);
       if (error) throw error;
 
-      // Sync to Google Calendar - delete if cancelled, otherwise update
       try {
         const action = newStatus === 'cancelled' ? 'delete' : 'update';
         await supabase.functions.invoke('google-calendar-create-event', {
@@ -367,7 +434,6 @@ function DentistAppointmentsManagementContent() {
         description: "Appointment status updated successfully"
       });
 
-      // Refresh the selected appointment if it's the one being updated
       if (selectedAppointment?.id === appointmentId) {
         setSelectedAppointment({
           ...selectedAppointment,
@@ -375,9 +441,12 @@ function DentistAppointmentsManagementContent() {
         });
       }
 
-      // Invalidate calendar queries to refresh agenda colors/status
       await queryClient.invalidateQueries({
         queryKey: ["appointments-calendar"],
+        exact: false
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["all-appointments"],
         exact: false
       });
     } catch (error) {
@@ -391,17 +460,17 @@ function DentistAppointmentsManagementContent() {
   };
 
   const getDateRangeLabel = () => {
-    if (viewMode === "day") {
+    if (viewMode === "day" || viewMode === "agenda") {
       return format(currentDate, "EEEE, MMMM d, yyyy");
     }
-    const weekEnd = addDays(currentDate, 6);
-    return `${format(currentDate, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const weekEnd = addDays(weekStart, 6);
+    return `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
   };
 
   if (dentistLoading) {
     return (
       <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-blue-950/30 dark:to-purple-950/30">
-        {/* Header skeleton */}
         <div className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl sticky top-0 z-30 px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -416,7 +485,6 @@ function DentistAppointmentsManagementContent() {
             </div>
           </div>
         </div>
-        {/* Calendar skeleton */}
         <div className="flex-1 p-4 sm:p-6">
           <div className="grid grid-cols-7 gap-4">
             {Array.from({ length: 7 }).map((_, dayIndex) => (
@@ -447,15 +515,17 @@ function DentistAppointmentsManagementContent() {
     );
   }
 
-  // Determine if there's an error to show
-  const hasError = appointmentsError || completedError;
+  const hasError = !!appointmentsError;
   const isNetworkError = (error: unknown) => {
     const err = error as Error | null;
     return err?.message?.includes('fetch') || err?.message?.includes('network');
   };
 
+  // Whether to show the status filter bar (agenda view always, others when useful)
+  const showStatusFilter = viewMode === "agenda";
+
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 dark:from-gray-950 dark:via-blue-950/30 dark:to-purple-950/30">
+    <div className="h-screen flex flex-col bg-gray-50/80 dark:bg-gray-950/80">
       {/* Error Banner */}
       <AnimatePresence>
         {hasError && (
@@ -467,19 +537,19 @@ function DentistAppointmentsManagementContent() {
           >
             <div className="flex items-center justify-between max-w-7xl mx-auto">
               <div className="flex items-center gap-3">
-                {isNetworkError(appointmentsError || completedError) ? (
+                {isNetworkError(appointmentsError) ? (
                   <WifiOff className="h-5 w-5 text-red-500" />
                 ) : (
                   <AlertTriangle className="h-5 w-5 text-red-500" />
                 )}
                 <div>
                   <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                    {isNetworkError(appointmentsError || completedError)
+                    {isNetworkError(appointmentsError)
                       ? "Connection issue"
                       : "Failed to load appointments"}
                   </p>
                   <p className="text-xs text-red-600 dark:text-red-400">
-                    {isNetworkError(appointmentsError || completedError)
+                    {isNetworkError(appointmentsError)
                       ? "Please check your internet connection"
                       : "Please try again in a moment"}
                   </p>
@@ -506,40 +576,58 @@ function DentistAppointmentsManagementContent() {
         )}
       </AnimatePresence>
 
-      {/* View Controls Only - Header Removed */}
-      <div className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl sticky top-0 z-30 transition-all duration-300 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 py-3">
-          {/* Date Navigation */}
-          <div className="flex items-center gap-3">
+      {/* ===== TOOLBAR ===== */}
+      <div className="border-b bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl sticky top-0 z-30 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 sm:px-6 py-2.5">
+          {/* Left: Date navigation */}
+          <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={() => navigateDate("prev")}
-              className="h-10 w-10 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950 transition-all shadow-sm"
+              className="h-9 w-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 rounded-xl border border-blue-100 dark:border-blue-900">
-              <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-base font-semibold text-foreground min-w-[180px] text-center">
-                {getDateRangeLabel()}
-              </span>
-            </div>
+            <button
+              onClick={goToToday}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors min-w-[200px] justify-center",
+                isSameDay(currentDate, new Date())
+                  ? "bg-gray-100 dark:bg-gray-800 text-foreground"
+                  : "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+              )}
+              title="Press 'T' to jump to today"
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              {getDateRangeLabel()}
+            </button>
 
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={() => navigateDate("next")}
-              className="h-10 w-10 rounded-xl border-2 hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950 transition-all shadow-sm"
+              className="h-9 w-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
+
+            {!isSameDay(currentDate, new Date()) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToToday}
+                className="h-8 px-2 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+              >
+                Today
+              </Button>
+            )}
           </div>
 
-          {/* View Mode & Today Button */}
+          {/* Right: View controls */}
           <div className="flex items-center gap-2">
-            {/* Google Calendar Sync Status */}
+            {/* Calendar sync */}
             <CalendarSyncStatusCompact
               lastSyncTime={lastCalendarSync}
               isSyncing={isCalendarSyncing}
@@ -547,71 +635,67 @@ function DentistAppointmentsManagementContent() {
               onSync={() => refetchGoogleCalendar()}
             />
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
-              <Button
-                variant={viewMode === "week" ? "default" : "ghost"}
-                size="sm"
+            {/* View Mode Toggle - clean segmented control */}
+            <div className="flex items-center p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <button
                 onClick={() => setViewMode("week")}
                 className={cn(
-                  "h-9 px-3 rounded-lg transition-all",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   viewMode === "week"
-                    ? "bg-white dark:bg-gray-900 shadow-sm"
-                    : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                    ? "bg-white dark:bg-gray-900 shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
+                title="Week view (W)"
               >
-                <Grid3x3 className="h-4 w-4 mr-2" />
+                <Grid3x3 className="h-3.5 w-3.5" />
                 Week
-              </Button>
-              <Button
-                variant={viewMode === "day" ? "default" : "ghost"}
-                size="sm"
+              </button>
+              <button
                 onClick={() => setViewMode("day")}
                 className={cn(
-                  "h-9 px-3 rounded-lg transition-all",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   viewMode === "day"
-                    ? "bg-white dark:bg-gray-900 shadow-sm"
-                    : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                    ? "bg-white dark:bg-gray-900 shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
+                title="Day view (D)"
               >
-                <CalendarDays className="h-4 w-4 mr-2" />
+                <CalendarDays className="h-3.5 w-3.5" />
                 Day
-              </Button>
-              <Button
-                variant={viewMode === "completed" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("completed")}
+              </button>
+              <button
+                onClick={() => setViewMode("agenda")}
                 className={cn(
-                  "h-9 px-3 rounded-lg transition-all",
-                  viewMode === "completed"
-                    ? "bg-white dark:bg-gray-900 shadow-sm"
-                    : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                  viewMode === "agenda"
+                    ? "bg-white dark:bg-gray-900 shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
+                title="Agenda list (A)"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Completed
-              </Button>
+                <List className="h-3.5 w-3.5" />
+                Agenda
+              </button>
             </div>
 
-            {/* Team Schedule Dropdown - Desktop only */}
+            {/* Team dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant={viewMode === "team" ? "default" : "outline"}
+                  variant={viewMode === "team" ? "default" : "ghost"}
                   size="sm"
                   className={cn(
-                    "h-9 rounded-xl border-2 transition-all shadow-sm font-semibold hidden lg:flex",
-                    viewMode === "team"
-                      ? "bg-foreground text-background"
-                      : "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
+                    "h-8 rounded-lg text-xs font-medium hidden lg:flex",
+                    viewMode === "team" && "bg-foreground text-background"
                   )}
                 >
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className="h-3.5 w-3.5 mr-1.5" />
                   Team
+                  <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel>Select dentist</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>View team schedule</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {teamDentists.length === 0 ? (
                   <DropdownMenuItem disabled>No dentists available</DropdownMenuItem>
@@ -638,7 +722,7 @@ function DentistAppointmentsManagementContent() {
                         >
                           {fullName}
                           {isCurrentUser && (
-                            <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0">YOU</Badge>
+                            <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">YOU</Badge>
                           )}
                         </DropdownMenuItem>
                       );
@@ -647,44 +731,93 @@ function DentistAppointmentsManagementContent() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Stats Toggle */}
+            {/* Stats toggle */}
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => setShowStats(!showStats)}
               className={cn(
-                "h-9 rounded-xl border-2 transition-all shadow-sm font-semibold",
-                showStats
-                  ? "bg-blue-50 border-blue-200 dark:bg-blue-950"
-                  : "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
+                "h-8 rounded-lg text-xs font-medium",
+                showStats && "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
               )}
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
+              <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
               Stats
-            </Button>
-
-            {/* Today Button - more prominent when not viewing today */}
-            <Button
-              variant={isSameDay(currentDate, new Date()) ? "outline" : "default"}
-              size="sm"
-              onClick={goToToday}
-              className={cn(
-                "h-9 rounded-xl border-2 transition-all shadow-sm font-semibold",
-                isSameDay(currentDate, new Date())
-                  ? "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
-                  : "bg-blue-600 hover:bg-blue-700 text-white border-blue-600 animate-pulse"
-              )}
-              title="Press 'T' to jump to today"
-            >
-              Today
             </Button>
           </div>
         </div>
+
+        {/* ===== NEXT UP STRIP ===== */}
+        {nextUpAppointment && isToday(currentDate) && !showStats && (
+          <div className="px-4 sm:px-6 pb-2.5">
+            <button
+              onClick={() => handleAgendaAppointmentClick(nextUpAppointment as Appointment)}
+              className="w-full flex items-center gap-3 px-3 py-2 bg-blue-50/80 dark:bg-blue-950/30 rounded-lg border border-blue-100 dark:border-blue-900/50 hover:bg-blue-100/80 dark:hover:bg-blue-950/50 transition-colors text-left group"
+            >
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex-shrink-0">
+                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">Next up</span>
+                  <span className="text-xs text-muted-foreground">
+                    {format(parseISO(nextUpAppointment.appointment_date), "h:mm a")}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-foreground truncate">
+                  {nextUpAppointment.patient
+                    ? `${nextUpAppointment.patient.first_name || ''} ${nextUpAppointment.patient.last_name || ''}`.trim()
+                    : 'Patient'}
+                  {nextUpAppointment.reason && (
+                    <span className="text-muted-foreground font-normal"> &middot; {nextUpAppointment.reason}</span>
+                  )}
+                </p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors flex-shrink-0" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Stats Dashboard */}
+      {/* ===== STATUS FILTER BAR (Agenda view) ===== */}
+      {showStatusFilter && (
+        <div className="px-4 sm:px-6 py-2 border-b bg-white/50 dark:bg-gray-900/50">
+          <div className="flex items-center gap-1.5">
+            {(Object.entries(STATUS_FILTER_CONFIG) as [StatusFilter, typeof STATUS_FILTER_CONFIG[StatusFilter]][]).map(([key, config]) => {
+              const count = statusCounts[key];
+              const isActive = statusFilter === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setStatusFilter(key)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                    isActive
+                      ? cn(config.activeColor, "border-transparent shadow-sm")
+                      : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-muted-foreground hover:border-gray-300 dark:hover:border-gray-600"
+                  )}
+                >
+                  {config.label}
+                  {count > 0 && (
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0 rounded-full min-w-[18px] text-center",
+                      isActive
+                        ? "bg-white/20"
+                        : "bg-gray-100 dark:bg-gray-800"
+                    )}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ===== STATS DASHBOARD ===== */}
       {showStats && (
-        <div className="px-4 sm:px-6 pt-4 pb-4 border-b bg-gradient-to-br from-gray-50/50 via-blue-50/30 to-purple-50/30 dark:from-gray-950/50 dark:via-blue-950/30 dark:to-purple-950/30 space-y-4">
+        <div className="px-4 sm:px-6 pt-4 pb-4 border-b bg-white/50 dark:bg-gray-900/30 space-y-4">
           <AppointmentStats appointments={allAppointments} dentistId={dentistId || ""} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -699,21 +832,18 @@ function DentistAppointmentsManagementContent() {
               />
             </div>
             <div className="lg:col-span-2">
-              <Card className="border-2 h-full bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
-                <CardHeader>
-                  <h3 className="text-base font-semibold">Quick Insights</h3>
+              <Card className="border h-full">
+                <CardHeader className="pb-3">
+                  <h3 className="text-sm font-semibold">Week at a Glance</h3>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm">
+                <CardContent className="space-y-2.5 text-sm">
                   {(() => {
-                    // Calculate busiest day properly
                     const dayGroups: Record<string, number> = {};
                     allAppointments.forEach(apt => {
                       const day = format(new Date(apt.appointment_date), "EEEE");
                       dayGroups[day] = (dayGroups[day] || 0) + 1;
                     });
                     const busiestDay = Object.entries(dayGroups).sort((a, b) => b[1] - a[1])[0];
-
-                    // Calculate week stats
                     const confirmed = allAppointments.filter(a => a.status === 'confirmed').length;
                     const completed = allAppointments.filter(a => a.status === 'completed').length;
                     const pending = allAppointments.filter(a => a.status === 'pending').length;
@@ -723,30 +853,28 @@ function DentistAppointmentsManagementContent() {
 
                     return (
                       <>
-                        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/30 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-                          <span className="text-muted-foreground font-medium">Busiest Day This Week</span>
-                          <span className="font-bold text-blue-600 dark:text-blue-400">
+                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                          <span className="text-muted-foreground text-xs">Busiest day</span>
+                          <span className="font-semibold text-sm">
                             {busiestDay ? `${busiestDay[0]} (${busiestDay[1]})` : "N/A"}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/50 dark:to-green-900/30 rounded-lg border border-green-200/50 dark:border-green-800/50">
-                          <span className="text-muted-foreground font-medium">Week Completion Rate</span>
-                          <span className="font-bold text-green-600 dark:text-green-400">
-                            {completionRate}%
-                          </span>
+                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                          <span className="text-muted-foreground text-xs">Completion rate</span>
+                          <span className="font-semibold text-sm">{completionRate}%</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="flex flex-col p-3 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30 rounded-lg border border-purple-200/50 dark:border-purple-800/50">
-                            <span className="text-xs text-muted-foreground font-medium mb-1">This Month</span>
-                            <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                              {monthlyAppointments.length}
-                            </span>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="flex flex-col items-center p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                            <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{pending}</span>
+                            <span className="text-[10px] text-muted-foreground">Pending</span>
                           </div>
-                          <div className="flex flex-col p-3 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-                            <span className="text-xs text-muted-foreground font-medium mb-1">Pending</span>
-                            <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                              {pending}
-                            </span>
+                          <div className="flex flex-col items-center p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/30">
+                            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{confirmed}</span>
+                            <span className="text-[10px] text-muted-foreground">Confirmed</span>
+                          </div>
+                          <div className="flex flex-col items-center p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+                            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{completed}</span>
+                            <span className="text-[10px] text-muted-foreground">Done</span>
                           </div>
                         </div>
                       </>
@@ -759,9 +887,8 @@ function DentistAppointmentsManagementContent() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Calendar View */}
         <div className={cn(
           "px-4 sm:px-6 pt-4 pb-4 overflow-auto transition-all duration-300",
           selectedAppointment ? "hidden md:block md:w-[65%]" : "flex-1"
@@ -777,24 +904,6 @@ function DentistAppointmentsManagementContent() {
               showAllDentists={true}
               dentistFilterId={selectedTeamDentistId || undefined}
             />
-          ) : dentistLoading ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="text-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"></div>
-                <p className="text-sm text-muted-foreground">Loading your schedule...</p>
-              </div>
-            </div>
-          ) : !dentistId ? (
-            <div className="flex justify-center items-center h-full">
-              <Card className="max-w-md">
-                <CardContent className="pt-6 text-center space-y-4">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-full flex items-center justify-center">
-                    <Calendar className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <p className="text-muted-foreground">{t.notRegisteredDentist}</p>
-                </CardContent>
-              </Card>
-            </div>
           ) : viewMode === "week" ? (
             <WeeklyCalendarView
               dentistId={dentistId}
@@ -814,76 +923,150 @@ function DentistAppointmentsManagementContent() {
               googleCalendarEvents={googleCalendarEvents}
             />
           ) : (
-            // Completed appointments list view
-            <div className="space-y-4 max-w-4xl">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-emerald-600" />
-                Completed Appointments
-              </h2>
-              {completedAppointments.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No completed appointments found.
-                  </CardContent>
-                </Card>
+            /* ===== AGENDA LIST VIEW ===== */
+            <div className="max-w-3xl mx-auto space-y-1">
+              {appointmentsLoading ? (
+                <div className="space-y-3 pt-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                  ))}
+                </div>
+              ) : agendaAppointments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                    <Calendar className="h-7 w-7 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {statusFilter !== "all"
+                      ? `No ${statusFilter} appointments for this day`
+                      : "No appointments scheduled for this day"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Navigate to another day or change the filter
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-2">
-                  {completedAppointments.map((apt) => {
-                    // Null safety checks
+                <>
+                  {/* Day summary header */}
+                  <div className="flex items-center justify-between py-3 mb-2">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                      {format(currentDate, "EEEE, MMMM d")}
+                    </h2>
+                    <span className="text-xs text-muted-foreground">
+                      {agendaAppointments.length} appointment{agendaAppointments.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  {/* Appointment list */}
+                  {agendaAppointments.map((apt, index) => {
                     const patientName = apt.patient
-                      ? `${apt.patient.first_name || 'Unknown'} ${apt.patient.last_name || 'Patient'}`
+                      ? `${apt.patient.first_name || ''} ${apt.patient.last_name || ''}`.trim() || 'Unknown Patient'
                       : 'Unknown Patient';
-                    const reason = apt.reason || 'No reason specified';
+                    const reason = apt.reason || null;
+                    const aptTime = parseISO(apt.appointment_date);
+                    const endTime = addHours(aptTime, (apt.duration_minutes || 30) / 60);
+                    const isPast = aptTime < new Date();
+                    const isNow = aptTime <= new Date() && endTime > new Date();
 
                     return (
-                      <Card
+                      <button
                         key={apt.id}
+                        onClick={() => handleAgendaAppointmentClick(apt as Appointment)}
                         className={cn(
-                          "cursor-pointer hover:border-emerald-300 transition-colors",
-                          selectedAppointment?.id === apt.id && "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20"
+                          "w-full flex items-stretch gap-4 p-3 rounded-lg border text-left transition-all group",
+                          "hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800",
+                          selectedAppointment?.id === apt.id && "ring-2 ring-blue-500 border-blue-300 dark:border-blue-700",
+                          isNow && "border-blue-300 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20",
+                          !isNow && "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800",
+                          apt.status === 'cancelled' && "opacity-60"
                         )}
-                        onClick={() => setSelectedAppointment(apt)}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <p className="font-medium">{patientName}</p>
-                              <p className="text-sm text-muted-foreground">{reason}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(parseISO(apt.appointment_date), "EEEE, MMM d, yyyy 'at' h:mm a")}
-                              </p>
+                        {/* Time column */}
+                        <div className="flex flex-col items-center justify-center w-16 flex-shrink-0">
+                          <span className={cn(
+                            "text-sm font-bold",
+                            isNow ? "text-blue-600 dark:text-blue-400" : isPast ? "text-muted-foreground" : "text-foreground"
+                          )}>
+                            {format(aptTime, "h:mm")}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground uppercase">
+                            {format(aptTime, "a")}
+                          </span>
+                          {isNow && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <CircleDot className="h-2.5 w-2.5 text-blue-500 animate-pulse" />
+                              <span className="text-[9px] font-semibold text-blue-600 dark:text-blue-400 uppercase">Now</span>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                                Completed
-                              </Badge>
-                              {apt.completed_at && (
-                                <span className="text-xs text-muted-foreground">Finalized</span>
-                              )}
-                            </div>
+                          )}
+                        </div>
+
+                        {/* Divider */}
+                        <div className={cn(
+                          "w-0.5 rounded-full flex-shrink-0",
+                          apt.status === 'confirmed' && "bg-blue-400",
+                          apt.status === 'pending' && "bg-amber-400",
+                          apt.status === 'completed' && "bg-emerald-400",
+                          apt.status === 'cancelled' && "bg-gray-300 dark:bg-gray-700",
+                        )} />
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 py-0.5">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-sm font-semibold truncate">{patientName}</span>
+                            <Badge
+                              variant="outline"
+                              className={cn("text-[10px] px-1.5 py-0 flex-shrink-0 border", STATUS_BADGE_STYLES[apt.status] || "")}
+                            >
+                              {apt.status}
+                            </Badge>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(aptTime, "h:mm a")} - {format(endTime, "h:mm a")}
+                            </span>
+                            {apt.duration_minutes && (
+                              <span>{apt.duration_minutes}min</span>
+                            )}
+                          </div>
+                          {reason && (
+                            <p className="text-xs text-muted-foreground mt-1 truncate">
+                              {reason}
+                            </p>
+                          )}
+                          {apt.urgency === 'high' && (
+                            <Badge variant="destructive" className="mt-1.5 text-[10px] h-4 px-1.5">Urgent</Badge>
+                          )}
+                        </div>
+
+                        {/* Action hint */}
+                        <div className="flex items-center flex-shrink-0">
+                          {apt.status === 'confirmed' && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Stethoscope className="h-4 w-4 text-blue-500" />
+                            </div>
+                          )}
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/50 ml-1" />
+                        </div>
+                      </button>
                     );
                   })}
-                </div>
+                </>
               )}
             </div>
           )}
         </div>
-
       </div>
 
-      {/* Appointment Detail Sheet */}
-      <Sheet open={!!selectedAppointment} onOpenChange={(open) => !open && handleBackToWeek()}>
+      {/* ===== APPOINTMENT DETAIL SHEET ===== */}
+      <Sheet open={!!selectedAppointment} onOpenChange={(open) => !open && handleCloseDetail()}>
         <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto" side="right">
           {selectedAppointment && (
             <DentistAppointmentDetail
               appointment={selectedAppointment}
-              onClose={handleBackToWeek}
+              onClose={handleCloseDetail}
               onStatusChange={handleStatusChange}
               onOptimisticUpdate={(appointmentId, updates) => {
-                // Update local state immediately for instant UI feedback
                 setSelectedAppointment((prev) => prev?.id === appointmentId ? { ...prev, ...updates } : prev);
               }}
             />
@@ -894,7 +1077,6 @@ function DentistAppointmentsManagementContent() {
   );
 }
 
-// Wrap with error boundary and offline detection for better stability
 export default function DentistAppointmentsManagement() {
   return (
     <AppointmentErrorBoundary context="management">
