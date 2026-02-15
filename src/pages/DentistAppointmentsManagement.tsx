@@ -9,14 +9,12 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { WeeklyCalendarView } from "@/components/appointments/WeeklyCalendarView";
 import { DayCalendarView } from "@/components/appointments/DayCalendarView";
 import { DentistAppointmentDetail } from "@/components/appointments/DentistAppointmentDetail";
-import { AppointmentStats } from "@/components/appointments/AppointmentStats";
-import { MonthlyOverview } from "@/components/appointments/MonthlyOverview";
-import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isToday, addHours } from "date-fns";
+import { format, addDays, subDays, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, isToday, addHours, eachDayOfInterval, getDay, subMonths, addMonths } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { logger } from '@/lib/logger';
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -26,7 +24,6 @@ import {
   Calendar,
   Grid3x3,
   CalendarDays,
-  BarChart3,
   Clock,
   AlertTriangle,
   RefreshCw,
@@ -78,7 +75,8 @@ function DentistAppointmentsManagementContent() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [showStats, setShowStats] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [monthPickerDate, setMonthPickerDate] = useState(new Date());
   const [selectedTeamDentistId, setSelectedTeamDentistId] = useState<string | null>(null);
   const [calendarSyncError, setCalendarSyncError] = useState<Error | null>(null);
   const [lastCalendarSync, setLastCalendarSync] = useState<Date | null>(null);
@@ -183,29 +181,6 @@ function DentistAppointmentsManagementContent() {
     enabled: !!dentistId && !!businessId,
     retry: 2,
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 5000),
-  });
-
-  // Fetch monthly appointments for overview
-  const {
-    data: monthlyAppointments = []
-  } = useQuery({
-    queryKey: ['monthly-appointments', dentistId, businessId, format(currentDate, 'yyyy-MM')],
-    queryFn: async () => {
-      if (!dentistId || !businessId) return [];
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
-      const { data, error } = await supabase
-        .from("appointments_decrypted")
-        .select("*")
-        .eq("dentist_id", dentistId)
-        .eq("business_id", businessId)
-        .gte("appointment_date", monthStart.toISOString())
-        .lte("appointment_date", monthEnd.toISOString());
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!dentistId && !!businessId && showStats,
   });
 
   // Fetch Google Calendar events
@@ -590,19 +565,139 @@ function DentistAppointmentsManagementContent() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <button
-              onClick={goToToday}
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors min-w-[200px] justify-center",
-                isSameDay(currentDate, new Date())
-                  ? "bg-gray-100 dark:bg-gray-800 text-foreground"
-                  : "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-              )}
-              title="Press 'T' to jump to today"
-            >
-              <Calendar className="h-3.5 w-3.5" />
-              {getDateRangeLabel()}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (viewMode === "week" || viewMode === "team") {
+                    setMonthPickerDate(currentDate);
+                    setShowMonthPicker(!showMonthPicker);
+                  } else {
+                    goToToday();
+                  }
+                }}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors min-w-[200px] justify-center",
+                  showMonthPicker
+                    ? "bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
+                    : isSameDay(currentDate, new Date())
+                      ? "bg-gray-100 dark:bg-gray-800 text-foreground"
+                      : "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                )}
+                title={viewMode === "week" || viewMode === "team" ? "Click to open month view" : "Press 'T' to jump to today"}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                {getDateRangeLabel()}
+                {(viewMode === "week" || viewMode === "team") && (
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", showMonthPicker && "rotate-180")} />
+                )}
+              </button>
+
+              {/* Month Picker Dropdown */}
+              <AnimatePresence>
+                {showMonthPicker && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white dark:bg-gray-900 rounded-xl border shadow-xl p-4 w-[300px]"
+                  >
+                    {/* Month navigation */}
+                    <div className="flex items-center justify-between mb-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setMonthPickerDate(subMonths(monthPickerDate, 1))}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm font-semibold">
+                        {format(monthPickerDate, "MMMM yyyy")}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => setMonthPickerDate(addMonths(monthPickerDate, 1))}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Day labels */}
+                    <div className="grid grid-cols-7 gap-1 mb-1">
+                      {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
+                        <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Calendar grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {(() => {
+                        const mStart = startOfMonth(monthPickerDate);
+                        const mEnd = endOfMonth(monthPickerDate);
+                        const days = eachDayOfInterval({ start: mStart, end: mEnd });
+                        const dayOfWeek = getDay(mStart);
+                        const firstDayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                        const empties = Array(firstDayOffset).fill(null);
+
+                        const currentWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+
+                        return (
+                          <>
+                            {empties.map((_, i) => (
+                              <div key={`empty-${i}`} className="w-9 h-9" />
+                            ))}
+                            {days.map((day) => {
+                              const dayWeekStart = startOfWeek(day, { weekStartsOn: 1 });
+                              const isInCurrentWeek = isSameDay(dayWeekStart, currentWeekStart);
+                              const isDayToday = isToday(day);
+
+                              return (
+                                <button
+                                  key={day.toISOString()}
+                                  onClick={() => {
+                                    setCurrentDate(day);
+                                    setShowMonthPicker(false);
+                                  }}
+                                  className={cn(
+                                    "w-9 h-9 rounded-lg text-xs font-medium transition-all hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-700 dark:hover:text-blue-300",
+                                    isInCurrentWeek && "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300",
+                                    isDayToday && "bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 font-bold",
+                                    !isInCurrentWeek && !isDayToday && "text-foreground"
+                                  )}
+                                >
+                                  {format(day, "d")}
+                                </button>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Today button */}
+                    <div className="mt-3 pt-3 border-t flex justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-blue-600 dark:text-blue-400 h-7"
+                        onClick={() => {
+                          setCurrentDate(new Date());
+                          setMonthPickerDate(new Date());
+                          setShowMonthPicker(false);
+                        }}
+                      >
+                        Today
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <Button
               variant="ghost"
@@ -638,7 +733,7 @@ function DentistAppointmentsManagementContent() {
             {/* View Mode Toggle - clean segmented control */}
             <div className="flex items-center p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <button
-                onClick={() => setViewMode("week")}
+                onClick={() => { setViewMode("week"); setShowMonthPicker(false); }}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   viewMode === "week"
@@ -651,7 +746,7 @@ function DentistAppointmentsManagementContent() {
                 Week
               </button>
               <button
-                onClick={() => setViewMode("day")}
+                onClick={() => { setViewMode("day"); setShowMonthPicker(false); }}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   viewMode === "day"
@@ -664,7 +759,7 @@ function DentistAppointmentsManagementContent() {
                 Day
               </button>
               <button
-                onClick={() => setViewMode("agenda")}
+                onClick={() => { setViewMode("agenda"); setShowMonthPicker(false); }}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                   viewMode === "agenda"
@@ -731,24 +826,11 @@ function DentistAppointmentsManagementContent() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Stats toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowStats(!showStats)}
-              className={cn(
-                "h-8 rounded-lg text-xs font-medium",
-                showStats && "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
-              )}
-            >
-              <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
-              Stats
-            </Button>
           </div>
         </div>
 
         {/* ===== NEXT UP STRIP ===== */}
-        {nextUpAppointment && isToday(currentDate) && !showStats && (
+        {nextUpAppointment && isToday(currentDate) && (
           <div className="px-4 sm:px-6 pb-2.5">
             <button
               onClick={() => handleAgendaAppointmentClick(nextUpAppointment as Appointment)}
@@ -815,78 +897,6 @@ function DentistAppointmentsManagementContent() {
         </div>
       )}
 
-      {/* ===== STATS DASHBOARD ===== */}
-      {showStats && (
-        <div className="px-4 sm:px-6 pt-4 pb-4 border-b bg-white/50 dark:bg-gray-900/30 space-y-4">
-          <AppointmentStats appointments={allAppointments} dentistId={dentistId || ""} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-1">
-              <MonthlyOverview
-                appointments={monthlyAppointments}
-                currentDate={currentDate}
-                onDateClick={(date) => {
-                  setCurrentDate(date);
-                  setViewMode("day");
-                }}
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <Card className="border h-full">
-                <CardHeader className="pb-3">
-                  <h3 className="text-sm font-semibold">Week at a Glance</h3>
-                </CardHeader>
-                <CardContent className="space-y-2.5 text-sm">
-                  {(() => {
-                    const dayGroups: Record<string, number> = {};
-                    allAppointments.forEach(apt => {
-                      const day = format(new Date(apt.appointment_date), "EEEE");
-                      dayGroups[day] = (dayGroups[day] || 0) + 1;
-                    });
-                    const busiestDay = Object.entries(dayGroups).sort((a, b) => b[1] - a[1])[0];
-                    const confirmed = allAppointments.filter(a => a.status === 'confirmed').length;
-                    const completed = allAppointments.filter(a => a.status === 'completed').length;
-                    const pending = allAppointments.filter(a => a.status === 'pending').length;
-                    const completionRate = (confirmed + completed) > 0
-                      ? Math.round((completed / (confirmed + completed)) * 100)
-                      : 0;
-
-                    return (
-                      <>
-                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                          <span className="text-muted-foreground text-xs">Busiest day</span>
-                          <span className="font-semibold text-sm">
-                            {busiestDay ? `${busiestDay[0]} (${busiestDay[1]})` : "N/A"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                          <span className="text-muted-foreground text-xs">Completion rate</span>
-                          <span className="font-semibold text-sm">{completionRate}%</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="flex flex-col items-center p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30">
-                            <span className="text-lg font-bold text-amber-600 dark:text-amber-400">{pending}</span>
-                            <span className="text-[10px] text-muted-foreground">Pending</span>
-                          </div>
-                          <div className="flex flex-col items-center p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{confirmed}</span>
-                            <span className="text-[10px] text-muted-foreground">Confirmed</span>
-                          </div>
-                          <div className="flex flex-col items-center p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
-                            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{completed}</span>
-                            <span className="text-[10px] text-muted-foreground">Done</span>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ===== MAIN CONTENT ===== */}
       <div className="flex-1 flex overflow-hidden">
         <div className={cn(
@@ -899,6 +909,10 @@ function DentistAppointmentsManagementContent() {
               businessId={businessId || undefined}
               currentDate={currentDate}
               onAppointmentClick={handleAppointmentClick}
+              onDayHeaderClick={(date) => {
+                setCurrentDate(date);
+                setViewMode("day");
+              }}
               selectedAppointmentId={selectedAppointment?.id}
               googleCalendarEvents={googleCalendarEvents}
               showAllDentists={true}
@@ -910,6 +924,10 @@ function DentistAppointmentsManagementContent() {
               businessId={businessId || undefined}
               currentDate={currentDate}
               onAppointmentClick={handleAppointmentClick}
+              onDayHeaderClick={(date) => {
+                setCurrentDate(date);
+                setViewMode("day");
+              }}
               selectedAppointmentId={selectedAppointment?.id}
               googleCalendarEvents={googleCalendarEvents}
             />
