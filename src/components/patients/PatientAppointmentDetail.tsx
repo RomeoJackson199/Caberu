@@ -592,6 +592,12 @@ export function PatientAppointmentDetail({
                 <Stethoscope className="h-4 w-4 flex-shrink-0" />
                 <span>{appointment.service?.name || appointment.reason || 'Appointment'}</span>
               </div>
+              {appointment.business?.address && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span>{appointment.business.address}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -620,22 +626,23 @@ export function PatientAppointmentDetail({
           {/* ============================================ */}
           <div className="flex-1 overflow-auto">
             <div className="p-6 space-y-5">
-              
+
+              {/* Location - always visible */}
+              {appointment.business?.address && (
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium text-foreground flex items-center gap-2 mb-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      Location
+                    </h4>
+                    <p className="text-sm text-muted-foreground">{appointment.business.address}</p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* -------- UPCOMING -------- */}
               {appointmentState === 'UPCOMING' && (
                 <>
-                  {appointment.business?.address && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <h4 className="font-medium text-foreground flex items-center gap-2 mb-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          Location
-                        </h4>
-                        <p className="text-sm text-muted-foreground">{appointment.business.address}</p>
-                      </CardContent>
-                    </Card>
-                  )}
-
                   {appointment.notes && (
                     <Card>
                       <CardContent className="p-4">

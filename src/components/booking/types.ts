@@ -48,5 +48,6 @@ export interface SuccessDetails {
   time: string;
   dentist?: string;
   reason?: string;
+  location?: string;
   pendingApproval?: boolean;
 }

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
+import { useBusinessDetails } from "@/hooks/useBusinessDetails";
 import { format, startOfWeek, addDays, addMinutes, startOfDay } from "date-fns";
 import { logger } from "@/lib/logger";
 import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
@@ -35,6 +36,7 @@ export function useBookingFlow() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { businessId, loading: businessLoading, switchBusiness } = useBusinessContext();
+  const { data: businessData } = useBusinessDetails(businessId);
 
   // Core booking state
   const [bookingStep, setBookingStep] = useState<BookingStep>('symptoms');
@@ -527,6 +529,7 @@ export function useBookingFlow() {
         time: selectedTime,
         dentist: `Dr. ${selectedDentist.first_name} ${selectedDentist.last_name}`,
         reason: selectedService.name,
+        location: businessData?.address || undefined,
         pendingApproval: needsApproval
       });
       setShowSuccessDialog(true);
@@ -560,7 +563,7 @@ export function useBookingFlow() {
     } finally {
       setIsBooking(false);
     }
-  }, [selectedDate, selectedTime, selectedDentist, businessId, selectedService, aiBookingData, symptomSummary, toast, navigate, fetchAvailableSlots]);
+  }, [selectedDate, selectedTime, selectedDentist, businessId, selectedService, aiBookingData, symptomSummary, businessData, toast, navigate, fetchAvailableSlots]);
 
   const handleSuccessDialogChange = useCallback((open: boolean) => {
     setShowSuccessDialog(open);
@@ -596,6 +599,7 @@ export function useBookingFlow() {
     isEditingSymptoms,
     setIsEditingSymptoms,
     businessId,
+    businessAddress: businessData?.address || null,
     businessLoading,
     switchBusiness,
     handleDentistSelect,

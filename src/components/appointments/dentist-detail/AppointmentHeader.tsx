@@ -34,7 +34,6 @@ interface AppointmentHeaderProps {
   dentistName?: string;
   dentistSpecialization?: string;
   clinicName?: string;
-  clinicAddress?: string;
 }
 
 /**
@@ -48,7 +47,6 @@ export function AppointmentHeader({
   dentistName,
   dentistSpecialization,
   clinicName,
-  clinicAddress,
 }: AppointmentHeaderProps) {
   const queryClient = useQueryClient();
   const stateConfig = DENTIST_STATE_CONFIG[state];
@@ -214,15 +212,10 @@ export function AppointmentHeader({
                 <span>{dentistName}</span>
               </div>
             )}
-            {(clinicName || clinicAddress) && (
+            {clinicName && (
               <div className="flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5" />
-                <div className="flex flex-col">
-                  {clinicName && <span>{clinicName}</span>}
-                  {clinicAddress && (
-                    <span className="text-xs text-muted-foreground/70">{clinicAddress}</span>
-                  )}
-                </div>
+                <span>{clinicName}</span>
               </div>
             )}
           </div>
