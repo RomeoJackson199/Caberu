@@ -588,6 +588,8 @@ export interface Translations {
     leftRoleRemoved: string;
     passwordRequired: string;
     enterPasswordLeave: string;
+    cannotLeave: string;
+    ownershipTransferred: string;
     couldntLoadSettings: string;
     refreshOrTryAgain: string;
     couldntSaveSettings: string;
@@ -727,6 +729,7 @@ export interface Translations {
     bioPlaceholder: string;
     profileUpdated: string;
     streetAddress: string;
+    houseNumber: string;
     streetPlaceholder: string;
     postalCode: string;
     city: string;
@@ -1743,6 +1746,8 @@ export const translations: Record<Language, TranslationEntry> = {
         leftRoleRemoved: "You left the clinic and your provider role was removed.",
         passwordRequired: "Password required",
         enterPasswordLeave: "Please enter your password to confirm leaving the clinic.",
+        cannotLeave: "Cannot leave",
+        ownershipTransferred: "Ownership has been transferred to another team member.",
         couldntLoadSettings: "Couldn't load appointment settings",
         refreshOrTryAgain: "Please refresh the page or try again in a moment.",
         couldntSaveSettings: "Couldn't save appointment settings",
@@ -1882,7 +1887,8 @@ export const translations: Record<Language, TranslationEntry> = {
         bioPlaceholder: "Tell patients about yourself, your experience, and specializations...",
         profileUpdated: "Profile updated successfully",
         streetAddress: "Street Address",
-        streetPlaceholder: "123 Main Street",
+        houseNumber: "Number",
+        streetPlaceholder: "Main Street",
         postalCode: "Postal Code",
         city: "City",
         cityPlaceholder: "Brussels",
@@ -2745,7 +2751,8 @@ export const translations: Record<Language, TranslationEntry> = {
         professionalBio: "Biographie Professionnelle",
         profileUpdated: "Profil mis à jour avec succès",
         streetAddress: "Adresse",
-        streetPlaceholder: "123 Rue Principale",
+        houseNumber: "Numéro",
+        streetPlaceholder: "Rue Principale",
         postalCode: "Code Postal",
         city: "Ville",
         cityPlaceholder: "Bruxelles",
@@ -2934,6 +2941,8 @@ export const translations: Record<Language, TranslationEntry> = {
         leftRoleRemoved: "Vous avez quitté la clinique et votre rôle de prestataire a été supprimé.",
         passwordRequired: "Mot de passe requis",
         enterPasswordLeave: "Veuillez entrer votre mot de passe pour confirmer votre départ de la clinique.",
+        cannotLeave: "Impossible de quitter",
+        ownershipTransferred: "La propriété a été transférée à un autre membre de l'équipe.",
         couldntLoadSettings: "Impossible de charger les paramètres de rendez-vous",
         refreshOrTryAgain: "Veuillez rafraîchir la page ou réessayer dans un moment.",
         couldntSaveSettings: "Impossible d'enregistrer les paramètres de rendez-vous",

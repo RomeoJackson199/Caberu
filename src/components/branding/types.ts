@@ -5,6 +5,7 @@ export interface BrandingState {
   slug: string;
   tagline: string;
   addressStreet: string;
+  addressHouseNumber: string;
   addressPostalCode: string;
   addressCity: string;
   phone: string;
@@ -22,6 +23,7 @@ export interface BrandingActions {
   setSlug: (value: string) => void;
   setTagline: (value: string) => void;
   setAddressStreet: (value: string) => void;
+  setAddressHouseNumber: (value: string) => void;
   setAddressPostalCode: (value: string) => void;
   setAddressCity: (value: string) => void;
   setPhone: (value: string) => void;

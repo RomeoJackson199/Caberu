@@ -210,18 +210,26 @@ export function BrandingTabContent({ branding }: BrandingTabContentProps) {
           </div>
           <div className="space-y-2">
             <Label>{t.clinicAddress}</Label>
-            <p className="text-xs text-muted-foreground">
-              ({t.optional})
-            </p>
             <div className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="address-street" className="text-sm text-muted-foreground">{t.streetAddress || "Street Address"}</Label>
-                <Input
-                  id="address-street"
-                  value={branding.addressStreet}
-                  onChange={(e) => branding.setAddressStreet(e.target.value)}
-                  placeholder={t.streetPlaceholder || "Rue de la Loi 16"}
-                />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2 space-y-1">
+                  <Label htmlFor="address-street" className="text-sm text-muted-foreground">{t.streetAddress || "Street Address"}</Label>
+                  <Input
+                    id="address-street"
+                    value={branding.addressStreet}
+                    onChange={(e) => branding.setAddressStreet(e.target.value)}
+                    placeholder={t.streetPlaceholder || "Rue de la Loi"}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="address-house-number" className="text-sm text-muted-foreground">{t.houseNumber || "Number"}</Label>
+                  <Input
+                    id="address-house-number"
+                    value={branding.addressHouseNumber}
+                    onChange={(e) => branding.setAddressHouseNumber(e.target.value)}
+                    placeholder="16"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
