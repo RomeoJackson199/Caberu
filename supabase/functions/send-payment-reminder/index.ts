@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
+import { sendSms } from '../_shared/sms.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -78,6 +79,29 @@ serve(async (req) => {
           .from('payment_requests')
           .update({ last_reminder_at: new Date().toISOString() })
           .eq('id', pr.id);
+
+        // Send SMS alongside email if patient has a phone number
+        if (pr.patient_id) {
+          try {
+            const { data: patientProfile } = await supabase
+              .from('profiles')
+              .select('phone')
+              .eq('id', pr.patient_id)
+              .single();
+
+            if (patientProfile?.phone) {
+              const smsBody = template_key === 'firm'
+                ? `Reminder: Your invoice #${pr.id.substring(0, 8)} is past due. Amount: €${(pr.amount / 100).toFixed(2)}. Please pay at your earliest convenience.`
+                : `Payment reminder: €${(pr.amount / 100).toFixed(2)} for ${pr.description || 'your visit'}. Thank you!`;
+              const smsResult = await sendSms({ to: patientProfile.phone, message: smsBody, messageType: 'payment_reminder', businessId: pr.dentist_id });
+              if (smsResult.success) {
+                console.log(`📱 Payment reminder SMS sent for ${pr.id}`);
+              }
+            }
+          } catch (smsErr) {
+            console.warn(`📱 SMS failed for payment ${pr.id}:`, smsErr);
+          }
+        }
 
         results[pr.id] = { ok: true };
       } catch (e) {
