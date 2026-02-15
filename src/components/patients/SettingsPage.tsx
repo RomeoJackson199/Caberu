@@ -35,7 +35,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const [active, setActive] = useState<Section>('Profile & Personal Info');
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', emergency_contact: '', ai_opt_out: false,
+    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', address_street: '', address_postal_code: '', address_city: '', emergency_contact: '', ai_opt_out: false,
   });
 
   useEffect(() => {
@@ -170,13 +170,51 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
               placeholder="Enter phone number"
             />
           </div>
-          <div>
+          <div className="sm:col-span-2">
             <Label>Address</Label>
-            <AddressAutocomplete
-              value={profile.address}
-              onChange={(val) => setProfile({ ...profile, address: val })}
-              placeholder="Search address..."
-            />
+            <div className="space-y-3 mt-1">
+              <div className="space-y-1">
+                <Label htmlFor="address_street" className="text-sm text-muted-foreground">Street Address</Label>
+                <AddressAutocomplete
+                  value={profile.address_street}
+                  onChange={(val) => {
+                    // If a full address was selected from autocomplete, parse it into parts
+                    const parts = val.split(", ");
+                    if (parts.length >= 2) {
+                      setProfile({
+                        ...profile,
+                        address_street: parts[0],
+                        address_postal_code: parts.length >= 2 ? parts[1].split(" ")[0] || "" : "",
+                        address_city: parts.length >= 2 ? parts[1].split(" ").slice(1).join(" ") || (parts[2] || "") : "",
+                      });
+                    } else {
+                      setProfile({ ...profile, address_street: val });
+                    }
+                  }}
+                  placeholder="Rue de la Loi 16"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="address_postal_code" className="text-sm text-muted-foreground">Postal Code</Label>
+                  <Input
+                    id="address_postal_code"
+                    value={profile.address_postal_code}
+                    onChange={(e) => setProfile({ ...profile, address_postal_code: e.target.value })}
+                    placeholder="1000"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="address_city" className="text-sm text-muted-foreground">City</Label>
+                  <Input
+                    id="address_city"
+                    value={profile.address_city}
+                    onChange={(e) => setProfile({ ...profile, address_city: e.target.value })}
+                    placeholder="Brussels"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <div>
             <Label>Date of Birth</Label>

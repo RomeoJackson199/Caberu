@@ -9,10 +9,36 @@ export interface ProfileData {
   date_of_birth: string;
   medical_history: string;
   address: string;
+  address_street: string;
+  address_postal_code: string;
+  address_city: string;
   emergency_contact: string;
   ai_opt_out?: boolean;
   profile_picture_url?: string;
 }
+
+/** Parse a combined address string ("Street, PostalCode City") into parts */
+export const parseAddress = (address: string): { street: string; postalCode: string; city: string } => {
+  if (!address) return { street: '', postalCode: '', city: '' };
+  const parts = address.split(', ');
+  if (parts.length >= 2) {
+    const street = parts[0];
+    const rest = parts.slice(1).join(', ');
+    const cityParts = rest.split(' ');
+    const postalCode = cityParts[0] || '';
+    const city = cityParts.slice(1).join(' ') || '';
+    return { street, postalCode, city };
+  }
+  return { street: address, postalCode: '', city: '' };
+};
+
+/** Combine address parts into a single string ("Street, PostalCode City") */
+export const combineAddress = (street: string, postalCode: string, city: string): string => {
+  return [
+    street,
+    [postalCode, city].filter(Boolean).join(' '),
+  ].filter(Boolean).join(', ');
+};
 
 const PROFILE_READ_SOURCE = 'secure_profiles_view';
 
@@ -166,9 +192,18 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
       }
     }
 
+    // Combine address parts into single string for storage
+    const combinedAddress = combineAddress(
+      profileData.address_street?.trim() || '',
+      profileData.address_postal_code?.trim() || '',
+      profileData.address_city?.trim() || ''
+    );
+    // Update the address field with the combined value
+    profileData.address = combinedAddress;
+
     // Validate address if provided
-    if (profileData.address?.trim()) {
-      const addressValidation = await validateAddress(profileData.address);
+    if (combinedAddress) {
+      const addressValidation = await validateAddress(combinedAddress);
       if (!addressValidation.valid) {
         throw new Error(`Address: ${addressValidation.error}`);
       }
@@ -264,13 +299,19 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
       throw error;
     }
 
+    const rawAddress = data?.address || '';
+    const parsedAddress = parseAddress(rawAddress);
+
     const profileData: ProfileData = {
       first_name: data?.first_name || '',
       last_name: data?.last_name || '',
       phone: data?.phone || '',
       date_of_birth: data?.date_of_birth || '',
       medical_history: data?.medical_history || '',
-      address: data?.address || '',
+      address: rawAddress,
+      address_street: parsedAddress.street,
+      address_postal_code: parsedAddress.postalCode,
+      address_city: parsedAddress.city,
       emergency_contact: data?.emergency_contact || '',
       ai_opt_out: data?.ai_opt_out || false,
       profile_picture_url: data?.profile_picture_url || ''
