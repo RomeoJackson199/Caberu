@@ -37,7 +37,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const [savedPhone, setSavedPhone] = useState('');
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', address_street: '', address_postal_code: '', address_city: '', emergency_contact: '', ai_opt_out: false,
+    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', address_street: '', address_house_number: '', address_postal_code: '', address_city: '', emergency_contact: '', ai_opt_out: false,
   });
 
   useEffect(() => {
@@ -207,14 +207,25 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
           <div className="sm:col-span-2">
             <Label>Address</Label>
             <div className="space-y-3 mt-1">
-              <div className="space-y-1">
-                <Label htmlFor="address_street" className="text-sm text-muted-foreground">Street Address</Label>
-                <Input
-                  id="address_street"
-                  value={profile.address_street}
-                  onChange={(e) => setProfile({ ...profile, address_street: e.target.value })}
-                  placeholder="Rue de la Loi 16"
-                />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2 space-y-1">
+                  <Label htmlFor="address_street" className="text-sm text-muted-foreground">Street Address</Label>
+                  <Input
+                    id="address_street"
+                    value={profile.address_street}
+                    onChange={(e) => setProfile({ ...profile, address_street: e.target.value })}
+                    placeholder="Rue de la Loi"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="address_house_number" className="text-sm text-muted-foreground">Number</Label>
+                  <Input
+                    id="address_house_number"
+                    value={profile.address_house_number}
+                    onChange={(e) => setProfile({ ...profile, address_house_number: e.target.value })}
+                    placeholder="16"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">

@@ -26,6 +26,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   const [showQrDialog, setShowQrDialog] = useState(false);
   const [tagline, setTagline] = useState("");
   const [addressStreet, setAddressStreet] = useState("");
+  const [addressHouseNumber, setAddressHouseNumber] = useState("");
   const [addressPostalCode, setAddressPostalCode] = useState("");
   const [addressCity, setAddressCity] = useState("");
   const [phone, setPhone] = useState("");
@@ -44,6 +45,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     slug: "",
     tagline: "",
     addressStreet: "",
+    addressHouseNumber: "",
     addressPostalCode: "",
     addressCity: "",
     phone: "",
@@ -78,6 +80,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
       slug,
       tagline,
       addressStreet,
+      addressHouseNumber,
       addressPostalCode,
       addressCity,
       phone,
@@ -90,7 +93,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
       aiPersonalityTraits,
     };
     setHasChanges(JSON.stringify(currentState) !== JSON.stringify(initialState));
-  }, [clinicName, slug, tagline, addressStreet, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
+  }, [clinicName, slug, tagline, addressStreet, addressHouseNumber, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
 
   useUnsavedChanges({
     when: hasChanges,
@@ -116,15 +119,19 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
           personalityTraits: [],
         };
 
-        // Parse address into separate fields: "Street, PostalCode City" format
+        // Parse address into separate fields: "Street HouseNumber, PostalCode City" format
         const rawAddress = business.address || "";
         let parsedStreet = "";
+        let parsedHouseNumber = "";
         let parsedPostalCode = "";
         let parsedCity = "";
         if (rawAddress) {
           const parts = rawAddress.split(", ");
           if (parts.length >= 2) {
-            parsedStreet = parts[0];
+            const streetPart = parts[0];
+            const streetMatch = streetPart.match(/^(.+?)\s+(\d+\S*)$/);
+            parsedStreet = streetMatch ? streetMatch[1] : streetPart;
+            parsedHouseNumber = streetMatch ? streetMatch[2] : "";
             const cityParts = parts.slice(1).join(", ").split(" ");
             parsedPostalCode = cityParts[0] || "";
             parsedCity = cityParts.slice(1).join(" ") || "";
@@ -138,6 +145,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
           slug: business.slug || "",
           tagline: business.tagline || "",
           addressStreet: parsedStreet,
+          addressHouseNumber: parsedHouseNumber,
           addressPostalCode: parsedPostalCode,
           addressCity: parsedCity,
           phone: business.phone || "",
@@ -154,6 +162,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         setSlug(state.slug);
         setTagline(state.tagline);
         setAddressStreet(state.addressStreet);
+        setAddressHouseNumber(state.addressHouseNumber);
         setAddressPostalCode(state.addressPostalCode);
         setAddressCity(state.addressCity);
         setPhone(state.phone);
@@ -293,6 +302,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         slug,
         tagline,
         addressStreet,
+        addressHouseNumber,
         addressPostalCode,
         addressCity,
         phone,
@@ -412,9 +422,10 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
 
       const existingConfig = (existingBusiness?.custom_config as Record<string, any>) || {};
 
-      // Combine address fields back into single string: "Street, PostalCode City"
+      // Combine address fields back into single string: "Street HouseNumber, PostalCode City"
+      const streetWithNumber = [addressStreet, addressHouseNumber].filter(Boolean).join(" ");
       const combinedAddress = [
-        addressStreet,
+        streetWithNumber,
         [addressPostalCode, addressCity].filter(Boolean).join(" "),
       ].filter(Boolean).join(", ");
 
@@ -456,6 +467,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         slug,
         tagline,
         addressStreet,
+        addressHouseNumber,
         addressPostalCode,
         addressCity,
         phone,
@@ -486,6 +498,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     slug,
     tagline,
     addressStreet,
+    addressHouseNumber,
     addressPostalCode,
     addressCity,
     phone,
@@ -502,6 +515,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     setSlug,
     setTagline,
     setAddressStreet,
+    setAddressHouseNumber,
     setAddressPostalCode,
     setAddressCity,
     setPhone,

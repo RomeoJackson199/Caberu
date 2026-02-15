@@ -25,13 +25,14 @@ import { PhoneUsageCard } from "@/components/settings/PhoneUsageCard";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export default function DentistSettings() {
-  const { businessId, loading: businessLoading } = useBusinessContext();
+  const { businessId, loading: businessLoading, membershipRole } = useBusinessContext();
   const { dentistId } = useCurrentDentist(businessId);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("appointments");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const isOwner = membershipRole === 'owner';
   const [requireApproval, setRequireApproval] = useState(false);
   const [appointmentLoading, setAppointmentLoading] = useState(true);
   const [savingAppointments, setSavingAppointments] = useState(false);
@@ -101,12 +102,27 @@ export default function DentistSettings() {
       }
 
       // Password verified, now leave the clinic
-      const businessId = await getCurrentBusinessId();
-      const { data, error } = await supabase.rpc('leave_clinic', { p_business_id: businessId });
+      const currentBusinessId = await getCurrentBusinessId();
+      const { data, error } = await supabase.rpc('leave_clinic', { p_business_id: currentBusinessId });
       if (error) throw error;
 
-      const remaining = (data as any)?.remaining_businesses ?? null;
-      const businessDeleted = (data as any)?.business_deleted ?? false;
+      const result = data as any;
+
+      // Check if leave was blocked due to active subscription
+      if (result?.success === false && result?.error === 'active_subscription') {
+        toast({
+          title: t.cannotLeave || "Cannot leave",
+          description: result.message || "You cannot leave as the last member while the subscription is active. Please cancel your subscription first.",
+          variant: "destructive",
+        });
+        setShowLeaveDialog(false);
+        setLeavePassword('');
+        return;
+      }
+
+      const remaining = result?.remaining_businesses ?? null;
+      const businessDeleted = result?.business_deleted ?? false;
+      const ownershipTransferred = result?.ownership_transferred ?? false;
 
       setShowLeaveDialog(false);
       setLeavePassword('');
@@ -118,17 +134,21 @@ export default function DentistSettings() {
           variant: "default",
         });
       } else {
+        let description = remaining === 0
+          ? (t.leftRoleRemoved || "You left the clinic and your provider role was removed.")
+          : (t.stillBelongOther || "You left the clinic. You still belong to other clinics.");
+        if (ownershipTransferred) {
+          description += " " + (t.ownershipTransferred || "Ownership has been transferred to another team member.");
+        }
         toast({
           title: t.leftClinic || "Left clinic",
-          description: remaining === 0
-            ? (t.leftRoleRemoved || "You left the clinic and your provider role was removed.")
-            : (t.stillBelongOther || "You left the clinic. You still belong to other clinics."),
+          description,
         });
       }
 
       // Navigate home to update role and UI
       navigate('/', { replace: true });
-      window.location.reload(); // Force reload to ensure clean state
+      window.location.reload();
     } catch (error) {
       logger.error('Error leaving clinic:', error);
       toast({
@@ -212,14 +232,18 @@ export default function DentistSettings() {
               <UserCog className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.team || "Team"}
             </TabsTrigger>
-            <TabsTrigger value="branding" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              {t.brand || "Brand"}
-            </TabsTrigger>
-            <TabsTrigger value="billing" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
-              <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              {t.billing || "Billing"}
-            </TabsTrigger>
+            {isOwner && (
+              <TabsTrigger value="branding" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
+                <Palette className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {t.brand || "Brand"}
+              </TabsTrigger>
+            )}
+            {isOwner && (
+              <TabsTrigger value="billing" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
+                <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {t.billing || "Billing"}
+              </TabsTrigger>
+            )}
             <TabsTrigger value="security" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.security || "Security"}
@@ -313,14 +337,18 @@ export default function DentistSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="branding" className="space-y-6">
-          <DentistAdminBranding />
-        </TabsContent>
+        {isOwner && (
+          <TabsContent value="branding" className="space-y-6">
+            <DentistAdminBranding />
+          </TabsContent>
+        )}
 
-        <TabsContent value="billing" className="space-y-6">
-          <PhoneUsageCard />
-          <CancelSubscriptionSection />
-        </TabsContent>
+        {isOwner && (
+          <TabsContent value="billing" className="space-y-6">
+            <PhoneUsageCard />
+            <CancelSubscriptionSection />
+          </TabsContent>
+        )}
 
         <TabsContent value="security" className="space-y-6">
           <DentistAdminSecurity />

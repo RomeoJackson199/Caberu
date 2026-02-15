@@ -10,6 +10,7 @@ export interface ProfileData {
   medical_history: string;
   address: string;
   address_street: string;
+  address_house_number: string;
   address_postal_code: string;
   address_city: string;
   emergency_contact: string;
@@ -17,25 +18,30 @@ export interface ProfileData {
   profile_picture_url?: string;
 }
 
-/** Parse a combined address string ("Street, PostalCode City") into parts */
-export const parseAddress = (address: string): { street: string; postalCode: string; city: string } => {
-  if (!address) return { street: '', postalCode: '', city: '' };
+/** Parse a combined address string ("Street HouseNumber, PostalCode City") into parts */
+export const parseAddress = (address: string): { street: string; houseNumber: string; postalCode: string; city: string } => {
+  if (!address) return { street: '', houseNumber: '', postalCode: '', city: '' };
   const parts = address.split(', ');
   if (parts.length >= 2) {
-    const street = parts[0];
+    const streetPart = parts[0];
+    // Try to extract house number from the end of the street part
+    const streetMatch = streetPart.match(/^(.+?)\s+(\d+\S*)$/);
+    const street = streetMatch ? streetMatch[1] : streetPart;
+    const houseNumber = streetMatch ? streetMatch[2] : '';
     const rest = parts.slice(1).join(', ');
     const cityParts = rest.split(' ');
     const postalCode = cityParts[0] || '';
     const city = cityParts.slice(1).join(' ') || '';
-    return { street, postalCode, city };
+    return { street, houseNumber, postalCode, city };
   }
-  return { street: address, postalCode: '', city: '' };
+  return { street: address, houseNumber: '', postalCode: '', city: '' };
 };
 
-/** Combine address parts into a single string ("Street, PostalCode City") */
-export const combineAddress = (street: string, postalCode: string, city: string): string => {
+/** Combine address parts into a single string ("Street HouseNumber, PostalCode City") */
+export const combineAddress = (street: string, houseNumber: string, postalCode: string, city: string): string => {
+  const streetWithNumber = [street, houseNumber].filter(Boolean).join(' ');
   return [
-    street,
+    streetWithNumber,
     [postalCode, city].filter(Boolean).join(' '),
   ].filter(Boolean).join(', ');
 };
@@ -195,6 +201,7 @@ export const saveProfileData = async (user: User, profileData: ProfileData) => {
     // Combine address parts into single string for storage
     const combinedAddress = combineAddress(
       profileData.address_street?.trim() || '',
+      profileData.address_house_number?.trim() || '',
       profileData.address_postal_code?.trim() || '',
       profileData.address_city?.trim() || ''
     );
@@ -310,6 +317,7 @@ export const loadProfileData = async (user: User): Promise<ProfileData> => {
       medical_history: data?.medical_history || '',
       address: rawAddress,
       address_street: parsedAddress.street,
+      address_house_number: parsedAddress.houseNumber,
       address_postal_code: parsedAddress.postalCode,
       address_city: parsedAddress.city,
       emergency_contact: data?.emergency_contact || '',
