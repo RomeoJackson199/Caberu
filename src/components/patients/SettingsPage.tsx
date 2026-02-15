@@ -15,6 +15,18 @@ import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySe
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { supabase } from "@/integrations/supabase/client";
+import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export interface SettingsPageProps {
   user: User;
@@ -138,6 +150,68 @@ interface ProfileFormProps {
 }
 
 const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, onSave, saving, userId }) => {
+  const { toast } = useToast();
+  const [deletingEmergencyContact, setDeletingEmergencyContact] = useState(false);
+  const [deletingMedicalHistory, setDeletingMedicalHistory] = useState(false);
+
+  const handleDeleteEmergencyContact = async () => {
+    setDeletingEmergencyContact(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ emergency_contact: null })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, emergency_contact: '' });
+      toast({
+        title: "Emergency contact deleted",
+        description: "Your emergency contact information has been removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete emergency contact",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingEmergencyContact(false);
+    }
+  };
+
+  const handleDeleteMedicalHistory = async () => {
+    setDeletingMedicalHistory(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ medical_history: null })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, medical_history: '' });
+      toast({
+        title: "Medical history deleted",
+        description: "Your medical history information has been removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete medical history",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingMedicalHistory(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -221,12 +295,82 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
             <Input type="date" value={profile.date_of_birth} onChange={(e) => setProfile({ ...profile, date_of_birth: e.target.value })} />
           </div>
           <div className="md:col-span-2">
-            <Label>Emergency Contact</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>Emergency Contact</Label>
+              {profile.emergency_contact && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive h-auto p-1"
+                      disabled={deletingEmergencyContact}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      {deletingEmergencyContact ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Emergency Contact</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete your emergency contact information? This action will take effect immediately.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteEmergencyContact}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
             <Input value={profile.emergency_contact} onChange={(e) => setProfile({ ...profile, emergency_contact: e.target.value })} />
           </div>
         </div>
         <div>
-          <Label>Medical History</Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label>Medical History</Label>
+            {profile.medical_history && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive h-auto p-1"
+                    disabled={deletingMedicalHistory}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    {deletingMedicalHistory ? 'Deleting...' : 'Delete'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Medical History</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete your medical history? This action will take effect immediately.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteMedicalHistory}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
           <Textarea value={profile.medical_history} onChange={(e) => setProfile({ ...profile, medical_history: e.target.value })} />
         </div>
         <div className="flex justify-end gap-2">
