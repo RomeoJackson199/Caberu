@@ -454,7 +454,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                     toDate={addDays(new Date(), 90)}
                     className="rounded-md border pointer-events-auto mx-auto"
                     classNames={{
-                      day_disabled: "text-muted-foreground opacity-30 line-through cursor-not-allowed",
+                      disabled: "text-muted-foreground opacity-30 line-through cursor-not-allowed",
                     }}
                   />
                 </div>
