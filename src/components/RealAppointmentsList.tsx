@@ -4,16 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Calendar, 
-  Clock, 
+import {
+  Calendar,
+  Clock,
   User as UserIcon,
   AlertTriangle,
   CheckCircle,
   XCircle,
   Loader2,
   RefreshCw,
-  Phone
+  Phone,
+  MapPin
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatClinicTime } from '@/lib/timezone';
@@ -42,6 +43,7 @@ interface Appointment {
   notes?: string;
   dentist: {
     id: string;
+    clinic_address?: string;
     profile: {
       first_name: string;
       last_name: string;
@@ -107,23 +109,57 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
         throw new Error('Failed to load appointments from database.');
       }
 
-      // Ensure appointments data is properly formatted
-      const formattedAppointments: Appointment[] = (appointmentsData || []).map(apt => ({
-        id: apt.id,
-        appointment_date: apt.appointment_date || new Date().toISOString(),
-        status: apt.status || 'scheduled',
-        reason: apt.reason || 'Dental checkup',
-        urgency: apt.urgency || 'low',
-        notes: apt.notes,
-        dentist: {
-          id: apt.dentist_id,
-          profile: {
-            first_name: 'Dr.',
-            last_name: 'Dentist',
-            phone: undefined
+      // Collect unique dentist IDs to fetch their profiles
+      const dentistIds = [...new Set((appointmentsData || []).map(apt => apt.dentist_id).filter(Boolean))];
+
+      // Fetch dentist details (name, phone, clinic address)
+      const dentistMap: Record<string, { first_name: string; last_name: string; phone?: string; clinic_address?: string }> = {};
+      if (dentistIds.length > 0) {
+        const { data: dentists } = await supabase
+          .from('dentists')
+          .select('id, clinic_address, profiles:profile_id(first_name, last_name, phone)')
+          .in('id', dentistIds);
+
+        if (dentists) {
+          for (const d of dentists) {
+            const rawProfiles = d.profiles as unknown;
+            let profileData: { first_name: string; last_name: string; phone?: string } | null = null;
+            if (Array.isArray(rawProfiles) && rawProfiles.length > 0) {
+              profileData = rawProfiles[0];
+            } else if (rawProfiles && !Array.isArray(rawProfiles)) {
+              profileData = rawProfiles as { first_name: string; last_name: string; phone?: string };
+            }
+            dentistMap[d.id] = {
+              first_name: profileData?.first_name || 'Unknown',
+              last_name: profileData?.last_name || 'Dentist',
+              phone: profileData?.phone || undefined,
+              clinic_address: d.clinic_address || undefined,
+            };
           }
         }
-      }));
+      }
+
+      // Ensure appointments data is properly formatted
+      const formattedAppointments: Appointment[] = (appointmentsData || []).map(apt => {
+        const dentistInfo = dentistMap[apt.dentist_id];
+        return {
+          id: apt.id,
+          appointment_date: apt.appointment_date || new Date().toISOString(),
+          status: apt.status || 'scheduled',
+          reason: apt.reason || 'Dental checkup',
+          urgency: apt.urgency || 'low',
+          notes: apt.notes,
+          dentist: {
+            id: apt.dentist_id,
+            clinic_address: dentistInfo?.clinic_address,
+            profile: {
+              first_name: dentistInfo?.first_name || 'Unknown',
+              last_name: dentistInfo?.last_name || 'Dentist',
+              phone: dentistInfo?.phone,
+            }
+          }
+        };
+      });
 
       setAppointments(formattedAppointments);
 
@@ -382,6 +418,12 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
                       </div>
                     )}
                   </div>
+                  {nextUpcoming.dentist?.clinic_address && (
+                    <div className="flex items-center space-x-1 text-sm text-dental-muted-foreground mb-2">
+                      <MapPin className="h-4 w-4 shrink-0" />
+                      <span>{nextUpcoming.dentist.clinic_address}</span>
+                    </div>
+                  )}
                   {nextUpcoming.notes && (
                     <p className="text-sm text-dental-muted-foreground bg-white/50 p-3 rounded-lg">
                       {nextUpcoming.notes}
@@ -474,8 +516,14 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
                           <Clock className="h-4 w-4" />
                           <span>{formatTime(apt.appointment_date)}</span>
                         </div>
+                        {apt.dentist?.clinic_address && (
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="h-4 w-4" />
+                            <span>{apt.dentist.clinic_address}</span>
+                          </div>
+                        )}
                       </div>
-                      
+
                       {apt.notes && (
                         <p className="text-sm text-dental-muted-foreground bg-white/50 p-3 rounded-lg">
                           {apt.notes}
@@ -540,6 +588,12 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
                     )}
                   </div>
                 </div>
+                {selectedAppointment.dentist?.clinic_address && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span>{selectedAppointment.dentist.clinic_address}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm">
                   <Badge className={getStatusColor(selectedAppointment.status)}>{selectedAppointment.status}</Badge>
                   <Badge variant="outline" className="capitalize">{selectedAppointment.urgency} priority</Badge>
@@ -554,7 +608,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
               <DialogFooter className="mt-4">
                 {canModifyAppointment(selectedAppointment) && (
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => openReschedule(selectedAppointment)} disabled={processing}>Reschedule</Button>
+                    <Button variant="outline" onClick={() => { setDetailsOpen(false); openReschedule(selectedAppointment); }} disabled={processing}>Reschedule</Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" disabled={processing}>Cancel Appointment</Button>
