@@ -449,7 +449,7 @@ const seoMap: Record<string, { title: string; description: string; structuredDat
   },
 };
 
-function upsertMetaTag(name: string, content: string) {
+export function upsertMetaTag(name: string, content: string) {
   if (!content) return;
   let el = document.querySelector(`meta[name='${name}']`) as HTMLMetaElement | null;
   if (!el) {
@@ -460,7 +460,7 @@ function upsertMetaTag(name: string, content: string) {
   el.setAttribute("content", content);
 }
 
-function setCanonical(url: string) {
+export function setCanonical(url: string) {
   const href = url.replace(/\/$/, "");
   let link = document.querySelector("link[rel='canonical']") as HTMLLinkElement | null;
   if (!link) {
@@ -471,7 +471,7 @@ function setCanonical(url: string) {
   link.setAttribute("href", href);
 }
 
-function setJsonLd(data?: object) {
+export function setJsonLd(data?: object) {
   // Remove previous JSON-LD blocks added by us
   const existing = document.querySelectorAll("script[data-seo-jsonld='true']");
   existing.forEach((n) => n.parentElement?.removeChild(n));
