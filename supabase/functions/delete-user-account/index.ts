@@ -18,7 +18,6 @@ serve(async (req) => {
     if (preflightResponse) return preflightResponse;
 
     try {
-        // Get the authorization header
         const authHeader = req.headers.get('Authorization');
         if (!authHeader) {
             return new Response(
@@ -27,13 +26,11 @@ serve(async (req) => {
             );
         }
 
-        // Create Supabase client with service role for admin operations
         const supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
-        // Create regular client to verify the user
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -44,7 +41,6 @@ serve(async (req) => {
             }
         );
 
-        // Get the authenticated user
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
         if (userError || !user) {
@@ -61,9 +57,9 @@ serve(async (req) => {
           return rateLimitResponse(rateLimitResult, corsHeaders);
         }
 
-        console.log('🗑️ Starting account deletion for user:', user.id, user.email);
+        console.log('🗑️ Starting safe account deletion for user:', user.id, user.email);
 
-        // First get the profile ID since many tables reference profile_id, not user_id
+        // Get profile
         const { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('id')
@@ -73,113 +69,66 @@ serve(async (req) => {
         const profileId = profile?.id;
         console.log('📋 Profile ID:', profileId);
 
-        // Delete user data in order (respecting foreign key constraints)
-        // Use try-catch for each to continue even if table doesn't exist
-
-        // === Tables that reference profile_id (patient_id) ===
         if (profileId) {
-            console.log('🧹 Cleaning up profile-related data...');
+            // Check if user is a dentist/provider
+            const { data: dentistRecord } = await supabaseAdmin
+                .from('dentists')
+                .select('id')
+                .eq('profile_id', profileId)
+                .maybeSingle();
 
-            // Notes
-            try { await supabaseAdmin.from('notes').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('notes cleanup skipped:', (e as Error).message); }
+            if (dentistRecord) {
+                // Provider path: deactivate from all businesses
+                console.log('👨‍⚕️ Provider detected, deactivating from all businesses...');
+                
+                const { data: memberships } = await supabaseAdmin
+                    .from('business_members')
+                    .select('business_id')
+                    .eq('profile_id', profileId);
 
-            // Prescriptions
-            try { await supabaseAdmin.from('prescriptions').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('prescriptions cleanup skipped:', (e as Error).message); }
-
-            // Appointments
-            try { await supabaseAdmin.from('appointments').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('appointments cleanup skipped:', (e as Error).message); }
-
-            // Treatment plans
-            try { await supabaseAdmin.from('treatment_plans').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('treatment_plans cleanup skipped:', (e as Error).message); }
-
-            // Invoices  
-            try { await supabaseAdmin.from('invoices').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('invoices cleanup skipped:', (e as Error).message); }
-
-            // Payment requests
-            try { await supabaseAdmin.from('payment_requests').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('payment_requests cleanup skipped:', (e as Error).message); }
-
-            // Medical records
-            try { await supabaseAdmin.from('medical_records').delete().eq('patient_id', profileId); }
-            catch (e) { console.log('medical_records cleanup skipped:', (e as Error).message); }
-
-            // Business members
-            try { await supabaseAdmin.from('business_members').delete().eq('profile_id', profileId); }
-            catch (e) { console.log('business_members cleanup skipped:', (e as Error).message); }
-
-            // Session business
-            try { await supabaseAdmin.from('session_business').delete().eq('profile_id', profileId); }
-            catch (e) { console.log('session_business cleanup skipped:', (e as Error).message); }
-
-            // Dentist record (if they were a dentist)
-            try { await supabaseAdmin.from('dentists').delete().eq('profile_id', profileId); }
-            catch (e) { console.log('dentists cleanup skipped:', (e as Error).message); }
-        }
-
-        // === Tables that reference user_id directly ===
-        console.log('🧹 Cleaning up user-related data...');
-
-        // Messages
-        try { await supabaseAdmin.from('messages').delete().eq('user_id', user.id); }
-        catch (e) { console.log('messages cleanup skipped:', (e as Error).message); }
-
-        // User roles
-        try { await supabaseAdmin.from('user_roles').delete().eq('user_id', user.id); }
-        catch (e) { console.log('user_roles cleanup skipped:', (e as Error).message); }
-
-        // Session business (also has user_id column)
-        try { await supabaseAdmin.from('session_business').delete().eq('user_id', user.id); }
-        catch (e) { console.log('session_business user cleanup skipped:', (e as Error).message); }
-
-        // Verification codes (by email)
-        try { await supabaseAdmin.from('verification_codes').delete().eq('email', user.email); }
-        catch (e) { console.log('verification_codes cleanup skipped:', (e as Error).message); }
-
-        // Invitation tokens (by email)
-        try { await supabaseAdmin.from('invitation_tokens').delete().eq('email', user.email); }
-        catch (e) { console.log('invitation_tokens cleanup skipped:', (e as Error).message); }
-
-        // Staff members
-        try { await supabaseAdmin.from('staff_members').delete().eq('user_id', user.id); }
-        catch (e) { console.log('staff_members cleanup skipped:', (e as Error).message); }
-
-        // === Finally delete the profile ===
-        if (profileId) {
-            console.log('🧹 Deleting profile...');
-            try {
-                await supabaseAdmin.from('profiles').delete().eq('id', profileId);
-            } catch (e) {
-                console.log('profile deletion skipped:', (e as Error).message);
+                if (memberships) {
+                    for (const membership of memberships) {
+                        await supabaseAdmin.rpc('safe_deactivate_dentist', {
+                            p_dentist_id: dentistRecord.id,
+                            p_business_id: membership.business_id,
+                        });
+                    }
+                }
             }
+
+            // Anonymize patient data (works for both patients and providers)
+            console.log('🔒 Anonymizing patient data...');
+            await supabaseAdmin.rpc('safe_anonymize_patient', {
+                p_profile_id: profileId,
+                p_actor_id: user.id,
+                p_reason: 'account_deletion_request',
+            });
         }
 
-        // === Delete the auth user ===
-        console.log('🔐 Deleting auth user...');
-        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+        // Ban the auth user instead of deleting
+        console.log('🔐 Banning auth user...');
+        const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+            ban_duration: '876000h', // ~100 years
+        });
 
-        if (deleteError) {
-            console.error('Error deleting user from auth:', deleteError);
-            throw deleteError;
+        if (banError) {
+            console.error('Error banning user:', banError);
+            throw banError;
         }
 
-        console.log('✅ Successfully deleted account for user:', user.id);
+        console.log('✅ Successfully processed account deletion for user:', user.id);
 
         return new Response(
             JSON.stringify({
                 success: true,
-                message: 'Account and all associated data have been permanently deleted'
+                message: 'Your account has been deactivated and your personal data anonymized. Historical records are preserved for legal compliance.'
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     } catch (error) {
         console.error('Error in delete-user-account:', error);
         return new Response(
-            JSON.stringify({ error: (error as Error).message || 'Failed to delete account' }),
+            JSON.stringify({ error: (error as Error).message || 'Failed to process account deletion' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }

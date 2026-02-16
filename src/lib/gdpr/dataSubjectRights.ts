@@ -228,56 +228,15 @@ export async function anonymizePatientData(
   reason: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const anonymousId = `ANON-${patientId.substring(0, 8).toUpperCase()}`;
+    const { data, error } = await supabase.rpc('safe_anonymize_patient', {
+      p_profile_id: patientId,
+      p_actor_id: actorId,
+      p_reason: reason,
+    });
 
-    // Anonymize patient record
-    const { error: patientError } = await supabase
-      .from('patients')
-      .update({
-        first_name: 'Anonymous',
-        last_name: anonymousId,
-        email: `${anonymousId.toLowerCase()}@deleted.local`,
-        phone: null,
-        date_of_birth: null,
-        address: null,
-        medical_history: null,
-        emergency_contact: null,
-        profile_picture_url: null,
-        avatar_url: null,
-      })
-      .eq('id', patientId);
-
-    if (patientError) {
-      return { success: false, error: patientError.message };
+    if (error) {
+      return { success: false, error: error.message };
     }
-
-    // Anonymize appointment details but keep dates/status for statistics
-    await supabase
-      .from('appointments')
-      .update({
-        reason: '[REDACTED]',
-        notes: null,
-        consultation_notes: null,
-        ai_summary: null,
-      })
-      .eq('patient_id', patientId);
-
-    // Delete sensitive records
-    await Promise.all([
-      supabase.from('prescriptions').delete().eq('patient_id', patientId),
-      supabase.from('patient_notes').delete().eq('patient_id', patientId),
-      supabase.from('medical_records').delete().eq('patient_id', patientId),
-      supabase.from('patient_documents').delete().eq('patient_id', patientId),
-      supabase.from('communication_logs').delete().eq('patient_id', patientId),
-      supabase.from('patient_allergies').delete().eq('patient_id', patientId),
-    ]);
-
-    // Withdraw all consents
-    await supabase
-      .from('consent_records')
-      .update({ status: 'withdrawn', withdrawn_at: new Date().toISOString() })
-      .eq('patient_id', patientId)
-      .eq('status', 'granted');
 
     await logDeletion(actorId, 'patient', patientId, reason, patientId);
 
