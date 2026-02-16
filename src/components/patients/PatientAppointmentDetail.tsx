@@ -15,6 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RescheduleDialog } from "@/components/RescheduleDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { formatClinicTime } from "@/lib/timezone";
@@ -38,6 +49,7 @@ import {
   Ban,
   Timer,
   AlertCircle,
+  AlertTriangle,
   ChevronRight,
   Loader2,
   FolderOpen,
@@ -137,6 +149,11 @@ export function PatientAppointmentDetail({
   const [loading, setLoading] = useState(false);
   const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null);
   
+  // Cancel confirmation dialog state
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // Reschedule dialog state
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+
   // Imaging viewer state
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerImages, setViewerImages] = useState<Array<{ url: string; filename: string; mimeType: string }>>([]);
@@ -860,21 +877,27 @@ export function PatientAppointmentDetail({
             {/* UPCOMING: Reschedule / Cancel */}
             {appointmentState === 'UPCOMING' && (permissions.canReschedule || permissions.canCancel) && (
               <div className="flex gap-3">
-                {permissions.canReschedule && onReschedule && (
-                  <Button 
-                    variant="outline" 
+                {permissions.canReschedule && (
+                  <Button
+                    variant="outline"
                     className="flex-1 gap-2"
-                    onClick={() => onReschedule(appointment.id)}
+                    onClick={() => {
+                      if (onReschedule) {
+                        onReschedule(appointment.id);
+                      } else {
+                        setShowRescheduleDialog(true);
+                      }
+                    }}
                   >
                     <RefreshCw className="h-4 w-4" />
                     Reschedule
                   </Button>
                 )}
                 {permissions.canCancel && onCancel && (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => onCancel(appointment.id)}
+                    onClick={() => setShowCancelConfirm(true)}
                   >
                     <CalendarX className="h-4 w-4" />
                     Cancel
@@ -930,6 +953,64 @@ export function PatientAppointmentDetail({
     </div>
   );
 
+  const cancelConfirmDialog = (
+    <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Cancel Appointment?
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3">
+              <p>
+                Are you sure you want to cancel this appointment?
+              </p>
+              {appointment && (
+                <div className="bg-muted p-3 rounded-md text-sm space-y-1">
+                  <p className="font-medium text-foreground">
+                    {formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d')} at {formatClinicTime(appointment.appointment_date, 'h:mm a')}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {appointment.service?.name || appointment.reason || 'Appointment'} with {dentistName}
+                  </p>
+                </div>
+              )}
+              <p className="text-muted-foreground text-sm">
+                Please cancel at least 24 hours in advance. Late cancellations may be subject to a fee.
+              </p>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep Appointment</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive hover:bg-destructive/90"
+            onClick={() => {
+              if (appointment && onCancel) {
+                onCancel(appointment.id);
+              }
+              setShowCancelConfirm(false);
+            }}
+          >
+            Cancel Appointment
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
+  const rescheduleDialog = appointment ? (
+    <RescheduleDialog
+      appointmentId={appointment.id}
+      open={showRescheduleDialog}
+      onOpenChange={setShowRescheduleDialog}
+      onSuccess={() => {
+        fetchAppointmentDetails();
+      }}
+    />
+  ) : null;
+
   // Mobile: Sheet from bottom, Desktop: Dialog
   if (isMobile) {
     return (
@@ -939,7 +1020,7 @@ export function PatientAppointmentDetail({
             {content}
           </SheetContent>
         </Sheet>
-        
+
         {/* Imaging Viewer Modal */}
         <ImagingViewer
           isOpen={viewerOpen}
@@ -951,6 +1032,9 @@ export function PatientAppointmentDetail({
           currentIndex={viewerIndex}
           onNavigate={setViewerIndex}
         />
+
+        {cancelConfirmDialog}
+        {rescheduleDialog}
       </>
     );
   }
@@ -962,7 +1046,7 @@ export function PatientAppointmentDetail({
           {content}
         </DialogContent>
       </Dialog>
-      
+
       {/* Imaging Viewer Modal */}
       <ImagingViewer
         isOpen={viewerOpen}
@@ -974,6 +1058,9 @@ export function PatientAppointmentDetail({
         currentIndex={viewerIndex}
         onNavigate={setViewerIndex}
       />
+
+      {cancelConfirmDialog}
+      {rescheduleDialog}
     </>
   );
 }
