@@ -74,6 +74,7 @@ export async function createAppointmentWithNotification(appointmentData: {
   patient_name?: string;
   duration_minutes?: number;
   business_id?: string;
+  service_id?: string;
 }): Promise<Appointment> {
 
 
