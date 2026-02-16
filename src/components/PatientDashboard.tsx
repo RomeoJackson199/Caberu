@@ -349,7 +349,7 @@ const PatientDashboardComponent = ({
       // Fetch dentist data separately (views don't support PostgREST joins)
       const dentistIds = [...new Set((appointmentsData || []).map(a => a.dentist_id).filter(Boolean))];
       const { data: dentists } = dentistIds.length > 0
-        ? await supabase.from('dentists').select('id, specialization, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+        ? await supabase.from('dentists').select('id, specialization, clinic_address, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
         : { data: [] };
       const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
 
@@ -363,7 +363,8 @@ const PatientDashboardComponent = ({
           dentists: dentist ? {
             first_name: (dentist.profiles as any)?.first_name,
             last_name: (dentist.profiles as any)?.last_name,
-            specialization: dentist.specialization
+            specialization: dentist.specialization,
+            clinic_address: (dentist as any).clinic_address
           } : undefined
         };
       });
@@ -539,12 +540,16 @@ const PatientDashboardComponent = ({
       const baseIsVirtual = appointmentDetails.is_virtual ?? appointmentDetails.virtual ?? appointmentDetails.is_online ?? appointmentDetails.telehealth;
       const derivedIsVirtual = normalizedVisitType ? normalizedVisitType.includes('virtual') || normalizedVisitType.includes('tele') || normalizedVisitType.includes('online') || normalizedVisitType.includes('remote') : false;
       const isVirtual = Boolean(baseIsVirtual ?? (derivedIsVirtual || joinUrl));
-      const location = appointmentDetails.location || appointmentDetails.location_description || appointmentDetails.clinic_location || appointmentDetails.address || appointmentDetails.office || appointmentDetails.meeting_location || null;
+      const location = appointmentDetails.location || appointmentDetails.location_description || appointmentDetails.clinic_location || appointmentDetails.address || appointmentDetails.office || appointmentDetails.meeting_location || appointmentDetails.dentists?.clinic_address || null;
+      const dentistInfo = appointmentDetails.dentists;
+      const dentistName = dentistInfo?.first_name && dentistInfo?.last_name
+        ? `${dentistInfo.first_name} ${dentistInfo.last_name}`
+        : null;
       return {
         id: nextAppointment.id,
         date: formatClinicTime(nextAppointment.appointment_date, 'PPP'),
         time: formatClinicTime(nextAppointment.appointment_date, 'HH:mm'),
-        dentistName: undefined,
+        dentistName,
         status: nextAppointment.status,
         isVirtual,
         joinUrl,
