@@ -96,10 +96,22 @@ export default function SelectBusiness() {
 
             setAllBusinessesList(data || []);
             setLoadingBusinesses(false);
+
+            // Auto-select business if coming from a business profile page
+            const prefilledSlug = localStorage.getItem('caberu_prefilled_business');
+            if (prefilledSlug && data) {
+                const matched = data.find(
+                    (b: { slug?: string }) => b.slug?.toLowerCase() === prefilledSlug.toLowerCase()
+                );
+                if (matched) {
+                    localStorage.removeItem('caberu_prefilled_business');
+                    handleSelectBusiness(matched.id);
+                }
+            }
         };
 
         fetchBusinesses();
-    }, [isAuthenticated]);
+    }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Check subscription status via businesses table
     const checkDentistSubscription = async (_dentistId: string, businessId: string): Promise<boolean> => {

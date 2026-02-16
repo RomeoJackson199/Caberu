@@ -39,26 +39,12 @@ interface TeamMember {
   specialization: string | null;
 }
 
-interface HomepageSettings {
-  hero_title: string;
-  hero_subtitle: string;
-  hero_image_url: string | null;
-  show_services: boolean;
-  show_about: boolean;
-  about_title: string;
-  about_content: string;
-  cta_text: string;
-  cta_link: string;
-  is_active: boolean;
-}
-
 export default function BusinessProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<BusinessData | null>(null);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [homepageSettings, setHomepageSettings] = useState<HomepageSettings | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -72,11 +58,13 @@ export default function BusinessProfilePage() {
 
   const loadBusinessProfile = async (businessSlug: string) => {
     try {
-      // Fetch business by slug
+      // Case-insensitive slug lookup
+      const normalizedSlug = businessSlug.toLowerCase();
+
       const { data: businessData, error: businessError } = await supabase
         .from("businesses")
         .select("*")
-        .eq("slug", businessSlug)
+        .ilike("slug", normalizedSlug)
         .single();
 
       if (businessError || !businessData) {
@@ -87,8 +75,8 @@ export default function BusinessProfilePage() {
 
       setBusiness(businessData);
 
-      // Fetch services, team members, and homepage settings in parallel
-      const [servicesResult, teamResult, settingsResult] = await Promise.all([
+      // Fetch services and team members in parallel
+      const [servicesResult, teamResult] = await Promise.all([
         supabase
           .from("business_services")
           .select("*")
@@ -100,11 +88,6 @@ export default function BusinessProfilePage() {
           .select("id, role, profile_id")
           .eq("business_id", businessData.id)
           .in("role", ["dentist", "admin"]),
-        supabase
-          .from("homepage_settings")
-          .select("*")
-          .eq("business_id", businessData.id)
-          .single(),
       ]);
 
       if (servicesResult.data) {
@@ -132,10 +115,6 @@ export default function BusinessProfilePage() {
           });
           setTeam(teamMembers);
         }
-      }
-
-      if (settingsResult.data) {
-        setHomepageSettings(settingsResult.data);
       }
 
       setLoading(false);
@@ -175,7 +154,6 @@ export default function BusinessProfilePage() {
       business={business}
       services={services}
       team={team}
-      homepageSettings={homepageSettings}
     />
   );
 }

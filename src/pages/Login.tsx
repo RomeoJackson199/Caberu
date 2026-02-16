@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,23 @@ import { useDespiaNative, useBiometricAuth, useHaptics, useStorageVault } from '
 const REMEMBERED_EMAIL_KEY = "caberu_remembered_email";
 const REMEMBERED_NAME_KEY = "caberu_remembered_name";
 
+const PREFILLED_BUSINESS_KEY = "caberu_prefilled_business";
+
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // If coming from a business profile page (?business=slug), store it
+  // so the select-business page can auto-select it after login
+  useEffect(() => {
+    const businessSlug = searchParams.get("business");
+    if (businessSlug) {
+      localStorage.setItem(PREFILLED_BUSINESS_KEY, businessSlug.toLowerCase());
+    }
+  }, [searchParams]);
 
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");

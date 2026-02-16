@@ -47,24 +47,10 @@ interface TeamMember {
   specialization: string | null;
 }
 
-interface HomepageSettings {
-  hero_title: string;
-  hero_subtitle: string;
-  hero_image_url: string | null;
-  show_services: boolean;
-  show_about: boolean;
-  about_title: string;
-  about_content: string;
-  cta_text: string;
-  cta_link: string;
-  is_active: boolean;
-}
-
 interface BusinessProfileDefaultProps {
   business: BusinessData;
   services: ServiceData[];
   team: TeamMember[];
-  homepageSettings: HomepageSettings | null;
 }
 
 function formatDuration(minutes: number): string {
@@ -96,25 +82,20 @@ export function BusinessProfileDefault({
   business,
   services,
   team,
-  homepageSettings,
 }: BusinessProfileDefaultProps) {
-  const heroTitle =
-    homepageSettings?.hero_title || `Welcome to ${business.name}`;
+  const heroTitle = `Welcome to ${business.name}`;
   const heroSubtitle =
-    homepageSettings?.hero_subtitle ||
     business.tagline ||
     business.description ||
     "Your trusted dental care provider";
-  const ctaText = homepageSettings?.cta_text || "Book an Appointment";
-  const showServices =
-    homepageSettings?.show_services !== false && services.length > 0;
-  const showAbout = homepageSettings?.show_about !== false;
-  const aboutTitle = homepageSettings?.about_title || `About ${business.name}`;
   const aboutContent =
-    homepageSettings?.about_content ||
     business.description ||
     `${business.name} is committed to providing exceptional dental care in a comfortable and welcoming environment. Our experienced team uses the latest technology to deliver the best results for every patient.`;
-  const heroImage = homepageSettings?.hero_image_url;
+  const showServices = services.length > 0;
+
+  // Login link with business context so the user skips business selection
+  const loginLink = `/login?business=${encodeURIComponent(business.slug)}`;
+
   const scrollToBooking = () => {
     const el = document.getElementById("booking-section");
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -139,9 +120,7 @@ export function BusinessProfileDefault({
                 className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm"
-              >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
                 {getInitials(business.name)}
               </div>
             )}
@@ -164,14 +143,12 @@ export function BusinessProfileDefault({
                 Team
               </a>
             )}
-            {showAbout && (
-              <a
-                href="#about"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                About
-              </a>
-            )}
+            <a
+              href="#about"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              About
+            </a>
             {hasContactInfo && (
               <a
                 href="#contact"
@@ -183,27 +160,14 @@ export function BusinessProfileDefault({
           </nav>
           <Button onClick={scrollToBooking} size="sm">
             <Calendar className="mr-2 h-4 w-4" />
-            {ctaText}
+            Book an Appointment
           </Button>
         </div>
       </header>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {heroImage && (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${heroImage})` }}
-          >
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-          </div>
-        )}
-        <div
-          className={cn(
-            "relative container mx-auto px-4 py-24 md:py-32 lg:py-40",
-            !heroImage && "bg-gradient-to-b from-primary/5 via-background to-background"
-          )}
-        >
+        <div className="relative container mx-auto px-4 py-24 md:py-32 lg:py-40 bg-gradient-to-b from-primary/5 via-background to-background">
           <div className="mx-auto max-w-3xl text-center">
             {business.logo_url && (
               <img
@@ -219,9 +183,11 @@ export function BusinessProfileDefault({
               {heroSubtitle}
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button onClick={scrollToBooking} size="lg" className="text-base px-8">
-                <Calendar className="mr-2 h-5 w-5" />
-                {ctaText}
+              <Button size="lg" className="text-base px-8" asChild>
+                <Link to={loginLink}>
+                  <Calendar className="mr-2 h-5 w-5" />
+                  Book an Appointment
+                </Link>
               </Button>
               {business.phone && (
                 <Button variant="outline" size="lg" className="text-base px-8" asChild>
@@ -370,18 +336,16 @@ export function BusinessProfileDefault({
       )}
 
       {/* About Section */}
-      {showAbout && (
-        <section id="about" className={cn("py-20 px-4", team.length === 0 && "bg-muted/30")}>
-          <div className="container mx-auto max-w-3xl">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold sm:text-4xl">{aboutTitle}</h2>
-            </div>
-            <div className="prose prose-lg mx-auto text-muted-foreground whitespace-pre-line text-center">
-              {aboutContent}
-            </div>
+      <section id="about" className={cn("py-20 px-4", team.length === 0 && "bg-muted/30")}>
+        <div className="container mx-auto max-w-3xl">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold sm:text-4xl">About {business.name}</h2>
           </div>
-        </section>
-      )}
+          <div className="prose prose-lg mx-auto text-muted-foreground whitespace-pre-line text-center">
+            {aboutContent}
+          </div>
+        </div>
+      </section>
 
       {/* Booking / CTA Section */}
       <section
@@ -395,13 +359,13 @@ export function BusinessProfileDefault({
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
             Schedule your appointment with {business.name} today.
-            {business.phone && " Or give us a call — we're happy to help."}
+            {business.phone && " Or give us a call \u2014 we're happy to help."}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="text-base px-8" asChild>
-              <Link to={`/clinic/${business.slug}`}>
+              <Link to={loginLink}>
                 <Calendar className="mr-2 h-5 w-5" />
-                {ctaText}
+                Book an Appointment
               </Link>
             </Button>
             {business.phone && (
