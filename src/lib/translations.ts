@@ -700,6 +700,20 @@ export interface Translations {
     accountDeletedDesc: string;
     deleteFailed: string;
 
+    // Safe deletion
+    deactivateDentist: string;
+    deactivateDentistConfirm: string;
+    deactivateDentistDesc: string;
+    dentistDeactivated: string;
+    dentistDeactivatedDesc: string;
+    archiveBusiness: string;
+    archiveBusinessConfirm: string;
+    archiveBusinessDesc: string;
+    businessArchived: string;
+    businessArchivedDesc: string;
+    anonymizeWarning: string;
+    deletedPatient: string;
+
     // Users page
     teamMembers: string;
     teamMembersDesc: string;
@@ -1857,6 +1871,20 @@ export const translations: Record<Language, TranslationEntry> = {
         accountDeleted: "Account Deleted",
         accountDeletedDesc: "Your account has been permanently deleted.",
         deleteFailed: "Delete Failed",
+
+        // Safe deletion
+        deactivateDentist: "Deactivate Dentist",
+        deactivateDentistConfirm: "Are you sure you want to deactivate this dentist?",
+        deactivateDentistDesc: "This will deactivate the dentist and cancel their future appointments. Past records will be preserved.",
+        dentistDeactivated: "Dentist Deactivated",
+        dentistDeactivatedDesc: "The dentist has been deactivated and removed from this clinic.",
+        archiveBusiness: "Archive Business",
+        archiveBusinessConfirm: "Are you sure you want to archive this business?",
+        archiveBusinessDesc: "This will archive the business, cancel all future appointments, and revoke team access. Historical data is preserved for compliance.",
+        businessArchived: "Business Archived",
+        businessArchivedDesc: "The business has been archived. All historical data is preserved.",
+        anonymizeWarning: "Your personal data will be anonymized. Medical records and appointment history will be retained for legal compliance but your identity will be removed.",
+        deletedPatient: "Deleted Patient",
 
         // Users page
         teamMembers: "Team Members",
@@ -3032,6 +3060,20 @@ export const translations: Record<Language, TranslationEntry> = {
         accountDeleted: "Compte Supprimé",
         accountDeletedDesc: "Votre compte a été définitivement supprimé.",
         deleteFailed: "Échec de la Suppression",
+
+        // Safe deletion
+        deactivateDentist: "Désactiver le Dentiste",
+        deactivateDentistConfirm: "Êtes-vous sûr de vouloir désactiver ce dentiste ?",
+        deactivateDentistDesc: "Cela désactivera le dentiste et annulera ses rendez-vous futurs. Les dossiers passés seront conservés.",
+        dentistDeactivated: "Dentiste Désactivé",
+        dentistDeactivatedDesc: "Le dentiste a été désactivé et retiré de cette clinique.",
+        archiveBusiness: "Archiver l'Entreprise",
+        archiveBusinessConfirm: "Êtes-vous sûr de vouloir archiver cette entreprise ?",
+        archiveBusinessDesc: "Cela archivera l'entreprise, annulera tous les rendez-vous futurs et révoquera l'accès de l'équipe. Les données historiques sont conservées.",
+        businessArchived: "Entreprise Archivée",
+        businessArchivedDesc: "L'entreprise a été archivée. Toutes les données historiques sont conservées.",
+        anonymizeWarning: "Vos données personnelles seront anonymisées. Les dossiers médicaux et l'historique des rendez-vous seront conservés conformément à la loi, mais votre identité sera supprimée.",
+        deletedPatient: "Patient Supprimé",
 
         // Users page
         teamMembers: "Membres de l'Équipe",

@@ -81,7 +81,8 @@ export default function SelectBusiness() {
             // Fetch from businesses table directly to include owner_profile_id for sorting
             let { data, error } = await supabase
                 .from('businesses')
-                .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id')
+                .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id, status')
+                .eq('status', 'active')
                 .order('name');
 
             if (error || !data) {

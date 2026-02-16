@@ -150,9 +150,14 @@ const DialogVariant = ({ open, onOpenChange }: { open?: boolean; onOpenChange?: 
         if (error || !data || data.length === 0) {
           const fallback = await supabase
             .from('businesses')
-            .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id')
+            .select('id, name, slug, logo_url, tagline, template_type, owner_profile_id, status')
+            .eq('status', 'active')
             .order('name');
           data = fallback.data;
+        }
+        // Filter out archived businesses
+        if (data) {
+          data = data.filter((b: any) => !b.status || b.status === 'active');
         }
 
         if (data) {
@@ -352,8 +357,9 @@ export function BusinessSelectionForPatients({ onSelectBusiness, selectedBusines
       try {
         const { data, error } = await supabase
           .from('businesses')
-          .select('id, name, slug, tagline, logo_url, primary_color, template_type')
+          .select('id, name, slug, tagline, logo_url, primary_color, template_type, status')
           .in('template_type', ['healthcare', 'dentist'])
+          .eq('status', 'active')
           .order('name');
 
         if (!error && data) {

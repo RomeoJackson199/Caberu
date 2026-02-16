@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Plus, UserPlus, Mail, User, Trash2, Edit, Eye, Search, Power, CheckSquare, Square } from "lucide-react";
+import { Plus, UserPlus, Mail, User, Edit, Eye, Search, Power, CheckSquare, Square } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -196,32 +196,30 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
     }
   };
 
-  const handleRemoveDentist = async (dentistId: string) => {
+  const handleDeactivateDentist = async (dentistId: string) => {
     if (!businessId) return;
 
     try {
       const dentist = dentists.find(d => d.id === dentistId);
       if (!dentist) return;
 
-      // Remove from business_members
-      const { error } = await supabase
-        .from('business_members')
-        .delete()
-        .eq('business_id', businessId)
-        .eq('profile_id', dentist.profiles.id);
+      const { data, error } = await supabase.rpc('safe_deactivate_dentist', {
+        p_dentist_id: dentistId,
+        p_business_id: businessId,
+      });
 
       if (error) throw error;
 
       toast({
-        title: "Dentist Removed",
-        description: `${dentist.profiles.first_name} ${dentist.profiles.last_name} has been removed from the clinic.`,
+        title: t.dentistDeactivated || "Dentist Deactivated",
+        description: (t.dentistDeactivatedDesc || "The dentist has been deactivated and removed from this clinic."),
       });
 
       fetchDentists();
     } catch (error: unknown) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to remove dentist",
+        title: t.error || "Error",
+        description: error instanceof Error ? error.message : "Failed to deactivate dentist",
         variant: "destructive",
       });
     }
@@ -594,28 +592,30 @@ export const DentistManagement = ({ currentDentistId }: DentistManagementProps) 
                       {!isCurrentUser && (
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
-                              <Trash2 className="h-4 w-4" />
+                            <Button size="sm" variant="outline" className="text-orange-600 border-orange-300 hover:bg-orange-50">
+                              <Power className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle>Remove Dentist</DialogTitle>
+                              <DialogTitle>{t.deactivateDentist || "Deactivate Dentist"}</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
                               <p className="text-muted-foreground">
-                                Are you sure you want to remove {profile.first_name} {profile.last_name} from this clinic?
-                                They will lose access to the dentist dashboard for this business.
+                                {t.deactivateDentistConfirm || `Are you sure you want to deactivate ${profile.first_name} ${profile.last_name}?`}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {t.deactivateDentistDesc || "This will deactivate the dentist and cancel their future appointments. Past records will be preserved."}
                               </p>
                               <div className="flex justify-end space-x-2">
                                 <Button variant="outline">{t.cancel || 'Cancel'}</Button>
                                 <Button
                                   variant="destructive"
                                   onClick={() => {
-                                    handleRemoveDentist(dentist.id);
+                                    handleDeactivateDentist(dentist.id);
                                   }}
                                 >
-                                  Remove
+                                  {t.deactivateDentist || "Deactivate"}
                                 </Button>
                               </div>
                             </div>

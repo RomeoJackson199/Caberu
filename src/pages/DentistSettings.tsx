@@ -360,20 +360,62 @@ export default function DentistSettings() {
                 {t.irreversibleActions || "Irreversible actions that affect your clinic membership"}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button
-                variant="destructive"
-                onClick={() => setShowLeaveDialog(true)}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                {t.leaveClinic || "Leave Clinic"}
-              </Button>
-              <p className="text-sm text-muted-foreground mt-2">
-                {t.loseAccessWarning || "You will lose access to all clinic data and appointments."}
-                <br />
-                <strong>{t.lastMemberWarning || "Warning: If you are the last member, the entire business will be permanently deleted."}</strong>
-              </p>
+            <CardContent className="space-y-4">
+              <div>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowLeaveDialog(true)}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  {t.leaveClinic || "Leave Clinic"}
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {t.loseAccessWarning || "You will lose access to all clinic data and appointments."}
+                  <br />
+                  <strong>{t.lastMemberWarning || "Warning: If you are the last member, the entire business will be permanently deleted."}</strong>
+                </p>
+              </div>
+
+              {isOwner && (
+                <div className="pt-4 border-t">
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      if (!confirm(t.archiveBusinessConfirm || "Are you sure you want to archive this business?")) return;
+                      try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) throw new Error('Not authenticated');
+                        const currentBusinessId = await getCurrentBusinessId();
+                        const { data, error } = await supabase.rpc('safe_archive_business', {
+                          p_business_id: currentBusinessId,
+                          p_actor_id: user.id,
+                        });
+                        if (error) throw error;
+                        toast({
+                          title: t.businessArchived || "Business Archived",
+                          description: t.businessArchivedDesc || "The business has been archived. All historical data is preserved.",
+                        });
+                        navigate('/', { replace: true });
+                        window.location.reload();
+                      } catch (err) {
+                        toast({
+                          title: t.error || "Error",
+                          description: err instanceof Error ? err.message : "Failed to archive business",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    className="gap-2"
+                  >
+                    <Shield className="h-4 w-4" />
+                    {t.archiveBusiness || "Archive Business"}
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {t.archiveBusinessDesc || "This will archive the business, cancel all future appointments, and revoke team access. Historical data is preserved for compliance."}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

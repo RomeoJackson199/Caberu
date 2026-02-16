@@ -723,6 +723,7 @@ export type Database = {
           show_logo_in_chat: boolean
           slug: string
           specialty_type: string
+          status: string
           stripe_account_id: string | null
           stripe_account_status: string | null
           stripe_charges_enabled: boolean | null
@@ -769,6 +770,7 @@ export type Database = {
           show_logo_in_chat?: boolean
           slug: string
           specialty_type?: string
+          status?: string
           stripe_account_id?: string | null
           stripe_account_status?: string | null
           stripe_charges_enabled?: boolean | null
@@ -815,6 +817,7 @@ export type Database = {
           show_logo_in_chat?: boolean
           slug?: string
           specialty_type?: string
+          status?: string
           stripe_account_id?: string | null
           stripe_account_status?: string | null
           stripe_charges_enabled?: boolean | null
@@ -1472,6 +1475,7 @@ export type Database = {
           profile_picture_url: string | null
           require_appointment_approval: boolean | null
           specialization: string | null
+          status: string
           total_ratings: number
           updated_at: string
           wait_time_score: number
@@ -1495,6 +1499,7 @@ export type Database = {
           profile_picture_url?: string | null
           require_appointment_approval?: boolean | null
           specialization?: string | null
+          status?: string
           total_ratings?: number
           updated_at?: string
           wait_time_score?: number
@@ -1518,6 +1523,7 @@ export type Database = {
           profile_picture_url?: string | null
           require_appointment_approval?: boolean | null
           specialization?: string | null
+          status?: string
           total_ratings?: number
           updated_at?: string
           wait_time_score?: number
@@ -6133,6 +6139,18 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
+      }
+      safe_anonymize_patient: {
+        Args: { p_actor_id: string; p_profile_id: string; p_reason?: string }
+        Returns: Json
+      }
+      safe_archive_business: {
+        Args: { p_actor_id: string; p_business_id: string }
+        Returns: Json
+      }
+      safe_deactivate_dentist: {
+        Args: { p_business_id: string; p_dentist_id: string }
+        Returns: Json
       }
       viewer_profile_id: { Args: { _viewer_user_id: string }; Returns: string }
     }
