@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { BusinessProfileDefault } from "@/components/business-profile/BusinessProfileDefault";
+import { upsertMetaTag, setCanonical, setJsonLd } from "@/lib/seo";
 
 interface BusinessData {
   id: string;
@@ -39,6 +40,88 @@ interface TeamMember {
   specialization: string | null;
 }
 
+function applyBusinessSEO(business: BusinessData, services: ServiceData[], team: TeamMember[]) {
+  const title = `${business.name} — ${business.tagline || "Cabinet Dentaire"} | Caberu`;
+  const description =
+    business.description?.slice(0, 155) ||
+    `${business.name}${business.city ? ` à ${business.city}` : ""} — Prenez rendez-vous en ligne. Soins dentaires de qualité pour toute la famille.`;
+
+  document.title = title;
+  upsertMetaTag("description", description);
+  upsertMetaTag("og:title", title);
+  upsertMetaTag("og:description", description);
+  upsertMetaTag("og:type", "business.business");
+  upsertMetaTag("og:url", `${window.location.origin}/${business.slug}`);
+  if (business.logo_url) {
+    upsertMetaTag("og:image", business.logo_url);
+  }
+  upsertMetaTag("og:image:alt", `${business.name} — Cabinet Dentaire`);
+  upsertMetaTag("twitter:title", title);
+  upsertMetaTag("twitter:description", description);
+  if (business.logo_url) {
+    upsertMetaTag("twitter:image", business.logo_url);
+  }
+
+  setCanonical(`${window.location.origin}/${business.slug}`);
+
+  // Build DentalClinic / MedicalBusiness structured data
+  const locationString = [business.address, business.city, business.country].filter(Boolean).join(", ");
+
+  const structuredData: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Dentist",
+    name: business.name,
+    description: business.description || description,
+    url: `${window.location.origin}/${business.slug}`,
+    ...(business.logo_url && { image: business.logo_url }),
+    ...(business.phone && { telephone: business.phone }),
+    ...(business.email && { email: business.email }),
+    ...(business.website && { sameAs: [business.website] }),
+    priceRange: "$$",
+    address: {
+      "@type": "PostalAddress",
+      ...(business.address && { streetAddress: business.address }),
+      ...(business.city && { addressLocality: business.city }),
+      ...(business.country && { addressCountry: business.country }),
+    },
+    ...(locationString && { areaServed: { "@type": "Place", name: locationString } }),
+  };
+
+  // Add services as hasOfferCatalog
+  if (services.length > 0) {
+    structuredData.hasOfferCatalog = {
+      "@type": "OfferCatalog",
+      name: "Services Dentaires",
+      itemListElement: services.map((s) => ({
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "MedicalProcedure",
+          name: s.name,
+          ...(s.description && { description: s.description }),
+        },
+        ...(s.price_cents > 0 && {
+          price: (s.price_cents / 100).toFixed(2),
+          priceCurrency: "EUR",
+        }),
+      })),
+    };
+  }
+
+  // Add team as employees
+  if (team.length > 0) {
+    structuredData.employee = team
+      .filter((m) => m.full_name)
+      .map((m) => ({
+        "@type": "Person",
+        name: m.full_name,
+        ...(m.specialization && { jobTitle: m.specialization }),
+        ...(m.avatar_url && { image: m.avatar_url }),
+      }));
+  }
+
+  setJsonLd(structuredData);
+}
+
 export default function BusinessProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
@@ -58,7 +141,6 @@ export default function BusinessProfilePage() {
 
   const loadBusinessProfile = async (businessSlug: string) => {
     try {
-      // Case-insensitive slug lookup
       const normalizedSlug = businessSlug.toLowerCase();
 
       const { data: businessData, error: businessError } = await supabase
@@ -75,7 +157,6 @@ export default function BusinessProfilePage() {
 
       setBusiness(businessData);
 
-      // Fetch services and team members in parallel
       const [servicesResult, teamResult] = await Promise.all([
         supabase
           .from("business_services")
@@ -90,11 +171,10 @@ export default function BusinessProfilePage() {
           .in("role", ["dentist", "admin"]),
       ]);
 
-      if (servicesResult.data) {
-        setServices(servicesResult.data);
-      }
+      const loadedServices = servicesResult.data || [];
+      setServices(loadedServices);
 
-      // Fetch profile details for team members
+      let loadedTeam: TeamMember[] = [];
       if (teamResult.data && teamResult.data.length > 0) {
         const profileIds = teamResult.data.map((m) => m.profile_id);
         const { data: profiles } = await supabase
@@ -103,7 +183,7 @@ export default function BusinessProfilePage() {
           .in("id", profileIds);
 
         if (profiles) {
-          const teamMembers = teamResult.data.map((member) => {
+          loadedTeam = teamResult.data.map((member) => {
             const profile = profiles.find((p) => p.id === member.profile_id);
             return {
               id: member.id,
@@ -113,9 +193,12 @@ export default function BusinessProfilePage() {
               specialization: profile?.specialization ?? null,
             };
           });
-          setTeam(teamMembers);
+          setTeam(loadedTeam);
         }
       }
+
+      // Apply SEO after all data is loaded
+      applyBusinessSEO(businessData, loadedServices, loadedTeam);
 
       setLoading(false);
     } catch {
