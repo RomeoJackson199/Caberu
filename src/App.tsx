@@ -109,6 +109,7 @@ const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
 const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
 const StatusPage = lazy(() => import("./pages/StatusPage"));
+const BusinessProfilePage = lazy(() => import("./pages/BusinessProfilePage"));
 
 // Admin Dashboard pages
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -499,6 +500,8 @@ const App = () => {
                         <Route path="/clinic/:slug" element={<BusinessPortal />} />
                         {/* Public status page */}
                         <Route path="/status" element={<StatusPage />} />
+                        {/* Public business profile page (caberu.be/business-slug) - must be last before catch-all */}
+                        <Route path="/:slug" element={<BusinessProfilePage />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
