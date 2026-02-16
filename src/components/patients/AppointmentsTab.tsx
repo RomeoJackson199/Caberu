@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmptyState } from "@/components/ui/empty-state";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Calendar,
   ChevronLeft,
@@ -239,25 +240,34 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   
   const { t } = useLanguage();
-  const { businessId, businessName } = useBusinessContext();
-  
+  const { businessId, businessName, loading: businessLoading } = useBusinessContext();
+  const { toast } = useToast();
+
   useEffect(() => {
     if (businessId) {
       fetchAppointments();
+    } else if (!businessLoading) {
+      // Business context loaded but no businessId - stop loading
+      setLoading(false);
     }
-  }, [user.id, businessId]);
+  }, [user.id, businessId, businessLoading]);
   
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      
+
+      if (!businessId) {
+        setAppointments([]);
+        return;
+      }
+
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('secure_profiles_view')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
-      
-      if (!profile || !businessId) {
+
+      if (!profile) {
         setAppointments([]);
         return;
       }
@@ -352,6 +362,37 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
     return { upcoming, completed, cancelled };
   }, [appointments]);
   
+  const handleCancelAppointment = useCallback(async (appointmentId: string) => {
+    try {
+      // Release any held slot
+      await supabase.rpc('release_appointment_slot', { p_appointment_id: appointmentId });
+      // Cancel appointment via RPC
+      const { data, error } = await supabase.rpc('cancel_appointment', {
+        appointment_id: appointmentId,
+        user_id: user.id
+      });
+      if (error) throw error;
+      if (data) {
+        toast({ title: 'Appointment cancelled' });
+      } else {
+        toast({ title: 'Failed to cancel appointment', variant: 'destructive' });
+      }
+    } catch (err) {
+      console.error('Error cancelling appointment:', err);
+      toast({ title: 'Failed to cancel appointment', variant: 'destructive' });
+    }
+    // Update UI regardless (optimistic for success, refetch will correct if failed)
+    setAppointments(prev =>
+      prev.map(apt =>
+        apt.id === appointmentId
+          ? { ...apt, status: 'cancelled' }
+          : apt
+      )
+    );
+    setDetailsDialogOpen(false);
+    setSelectedAppointmentId(null);
+  }, [user.id, toast]);
+
   const openAppointmentDetail = (id: string) => {
     setSelectedAppointmentId(id);
     setDetailsDialogOpen(true);
@@ -505,18 +546,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
             setSelectedAppointmentId(null);
           }
         }}
-        onCancel={(appointmentId) => {
-          // Optimistically update the cancelled appointment
-          setAppointments(prev => 
-            prev.map(apt => 
-              apt.id === appointmentId 
-                ? { ...apt, status: 'cancelled' } 
-                : apt
-            )
-          );
-          setDetailsDialogOpen(false);
-          setSelectedAppointmentId(null);
-        }}
+        onCancel={handleCancelAppointment}
       />
     </div>
   );

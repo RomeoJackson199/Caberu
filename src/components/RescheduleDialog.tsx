@@ -365,7 +365,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md md:max-w-lg p-0 gap-0 overflow-hidden">
         {/* Header with step indicator */}
         <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
           <DialogHeader>
@@ -403,7 +403,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                     )}>
                       {isCompleted ? <CheckCircle className="h-3 w-3" /> : i + 1}
                     </span>
-                    <span className="hidden sm:inline">{s.label}</span>
+                    <span>{s.label}</span>
                   </button>
                   {i < steps.length - 1 && (
                     <div className={cn(
@@ -439,7 +439,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
               <div>
                 <h4 className="text-sm font-medium mb-3">Select a new date</h4>
-                <div className="flex justify-center">
+                <div className="flex justify-center overflow-x-auto">
                   <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -452,7 +452,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                     disabled={isDateDisabled}
                     fromDate={new Date()}
                     toDate={addDays(new Date(), 90)}
-                    className="rounded-md border pointer-events-auto"
+                    className="rounded-md border pointer-events-auto mx-auto"
                     classNames={{
                       day_disabled: "text-muted-foreground opacity-30 line-through cursor-not-allowed",
                     }}
