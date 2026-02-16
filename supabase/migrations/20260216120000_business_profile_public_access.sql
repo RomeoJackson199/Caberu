@@ -8,13 +8,6 @@ CREATE POLICY "businesses_public_profile_read"
   TO anon
   USING (true);
 
--- Allow anon users to read homepage settings for public business pages
-CREATE POLICY "homepage_settings_public_read"
-  ON public.homepage_settings
-  FOR SELECT
-  TO anon
-  USING (is_active = true);
-
 -- Allow anon users to read active services for public business pages
 CREATE POLICY "business_services_public_read"
   ON public.business_services
