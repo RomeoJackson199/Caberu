@@ -83,19 +83,48 @@ class AnalyticsManager {
 
   private initializePerformanceMonitoring() {
     if (typeof window !== 'undefined' && 'performance' in window) {
-      // Monitor page load time
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-          if (navigation) {
-            this.track(ANALYTICS_EVENTS.PAGE_LOAD_TIME, {
-              load_time: navigation.loadEventEnd - navigation.loadEventStart,
-              dom_content_loaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
-              url: window.location.pathname,
-            });
-          }
-        }, 0);
-      });
+      let hasTrackedNavigation = false;
+
+      const trackNavigationTiming = () => {
+        if (hasTrackedNavigation) {
+          return;
+        }
+
+        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+        if (!navigation) {
+          return;
+        }
+
+        hasTrackedNavigation = true;
+
+        this.track(ANALYTICS_EVENTS.PAGE_LOAD_TIME, {
+          load_time: navigation.loadEventEnd,
+          dom_content_loaded: navigation.domContentLoadedEventEnd,
+          ttfb: navigation.responseStart > 0 ? navigation.responseStart : undefined,
+          url: window.location.pathname,
+        });
+      };
+
+      trackNavigationTiming();
+
+      if (!hasTrackedNavigation && 'PerformanceObserver' in window) {
+        try {
+          const navigationObserver = new PerformanceObserver(() => {
+            trackNavigationTiming();
+            if (hasTrackedNavigation) {
+              navigationObserver.disconnect();
+            }
+          });
+
+          navigationObserver.observe({ type: 'navigation', buffered: true });
+        } catch {
+          // Silently fail if observer not supported
+        }
+      }
+
+      if (!hasTrackedNavigation) {
+        window.addEventListener('load', trackNavigationTiming, { once: true });
+      }
 
       // Monitor LCP (Largest Contentful Paint)
       if ('PerformanceObserver' in window) {
@@ -111,7 +140,7 @@ class AnalyticsManager {
           });
 
           observer.observe({ type: 'largest-contentful-paint', buffered: true });
-        } catch (e) {
+        } catch {
           // Silently fail if observer not supported
         }
       }
