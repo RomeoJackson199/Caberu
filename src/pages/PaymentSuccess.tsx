@@ -113,7 +113,7 @@ const PaymentSuccess: React.FC = () => {
     };
 
     handlePaymentSuccess();
-  }, [sessionId, type, navigate]);
+  }, [sessionId, type, isPromo, navigate]);
 
   const handleCloseWindow = () => {
     window.close();
