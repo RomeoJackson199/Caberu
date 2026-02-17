@@ -14,8 +14,8 @@ interface LogContext {
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development';
-  private isTest = process.env.NODE_ENV === 'test';
+  private isDevelopment = import.meta.env.DEV;
+  private isTest = import.meta.env.MODE === 'test';
 
   /**
    * General logging - only in development

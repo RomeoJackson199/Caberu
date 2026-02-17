@@ -69,7 +69,7 @@ export class FormErrorBoundary extends Component<Props, State> {
             <p className="text-sm">
               There was an error loading this form. Please try again.
             </p>
-            {this.state.error && process.env.NODE_ENV === 'development' && (
+            {this.state.error && import.meta.env.DEV && (
               <p className="text-xs font-mono bg-destructive/10 p-2 rounded">
                 {this.state.error.message}
               </p>
