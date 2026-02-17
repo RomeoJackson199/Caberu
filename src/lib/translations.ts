@@ -1069,6 +1069,48 @@ export interface Translations {
     filtersAndSearch: string;
     searchPatients: string;
     clearFilters: string;
+
+    // Business public profile page
+    bp_bookAppointment: string;
+    bp_callUs: string;
+    bp_heroTitlePrefix: string;
+    bp_heroSubtitle: string;
+    bp_valueProp1Title: string;
+    bp_valueProp1Desc: string;
+    bp_valueProp2Title: string;
+    bp_valueProp2Desc: string;
+    bp_valueProp3Title: string;
+    bp_valueProp3Desc: string;
+    bp_navTeam: string;
+    bp_navAbout: string;
+    bp_navContact: string;
+    bp_servicesLabel: string;
+    bp_servicesTitle: string;
+    bp_servicesDesc: string;
+    bp_bookVerb: string;
+    bp_viewAllServices: string;
+    bp_moreServices: (n: number) => string;
+    bp_teamLabel: string;
+    bp_teamTitle: string;
+    bp_teamDesc: string;
+    bp_teamMemberFallback: string;
+    bp_roleDentist: string;
+    bp_roleAdmin: string;
+    bp_roleStaff: string;
+    bp_aboutLabel: string;
+    bp_ctaTitle: string;
+    bp_ctaDesc: (name: string) => string;
+    bp_ctaCallDesc: string;
+    bp_contactTitle: string;
+    bp_contactDesc: string;
+    bp_contactPhone: string;
+    bp_contactAddress: string;
+    bp_contactWebsite: string;
+    bp_contactVisitSite: string;
+    bp_footerRights: string;
+    bp_footerPoweredBy: string;
+    bp_defaultSubtitle: string;
+    bp_defaultAbout: (name: string) => string;
 }
 
 type TranslationEntry = Partial<Translations>;
@@ -2123,6 +2165,48 @@ export const translations: Record<Language, TranslationEntry> = {
         'common.back': "Back",
         'common.loading': "Loading...",
         'common.success': "Success",
+
+        // Business public profile page
+        bp_bookAppointment: "Book Appointment",
+        bp_callUs: "Call Us",
+        bp_heroTitlePrefix: "Welcome to",
+        bp_heroSubtitle: "Your trusted dental practice. Quality care in a warm and welcoming environment.",
+        bp_valueProp1Title: "Attentive Care",
+        bp_valueProp1Desc: "A human and caring approach",
+        bp_valueProp2Title: "Trust",
+        bp_valueProp2Desc: "Qualified and certified professionals",
+        bp_valueProp3Title: "Modern Equipment",
+        bp_valueProp3Desc: "State-of-the-art technology for your comfort",
+        bp_navTeam: "Team",
+        bp_navAbout: "About",
+        bp_navContact: "Contact",
+        bp_servicesLabel: "Our Services",
+        bp_servicesTitle: "Care tailored to your needs",
+        bp_servicesDesc: "Discover our complete range of dental care for the whole family",
+        bp_bookVerb: "Book",
+        bp_viewAllServices: "View all services",
+        bp_moreServices: (n: number) => `+${n} more treatments`,
+        bp_teamLabel: "Our Team",
+        bp_teamTitle: "Meet our dentists",
+        bp_teamDesc: "An experienced and passionate team, dedicated to your smile",
+        bp_teamMemberFallback: "Team Member",
+        bp_roleDentist: "Dentist",
+        bp_roleAdmin: "Manager",
+        bp_roleStaff: "Assistant",
+        bp_aboutLabel: "About",
+        bp_ctaTitle: "Ready to book an appointment?",
+        bp_ctaDesc: (name: string) => `Book your consultation with ${name} in just a few clicks.`,
+        bp_ctaCallDesc: " Or call us directly.",
+        bp_contactTitle: "Contact Us",
+        bp_contactDesc: "Don't hesitate to reach out",
+        bp_contactPhone: "Phone",
+        bp_contactAddress: "Address",
+        bp_contactWebsite: "Website",
+        bp_contactVisitSite: "Visit our website",
+        bp_footerRights: "All rights reserved.",
+        bp_footerPoweredBy: "Powered by",
+        bp_defaultSubtitle: "Your trusted dental practice. Quality care in a warm and welcoming environment.",
+        bp_defaultAbout: (name: string) => `${name} is committed to providing exceptional dental care in a comfortable and welcoming environment. Our experienced team uses the latest technologies to deliver the best results for every patient.`,
     },
     fr: {
         // Error & status messages
@@ -3149,6 +3233,48 @@ export const translations: Record<Language, TranslationEntry> = {
         weekendsOnly: "Week-ends Uniquement (Sam-Dim)",
         availabilitySaved: "Paramètres de disponibilité enregistrés",
         failedToSave: "Échec de l'enregistrement des disponibilités",
+
+        // Business public profile page
+        bp_bookAppointment: "Prendre rendez-vous",
+        bp_callUs: "Appelez-nous",
+        bp_heroTitlePrefix: "Bienvenue chez",
+        bp_heroSubtitle: "Votre cabinet dentaire de confiance. Des soins de qualité dans un cadre chaleureux et accueillant.",
+        bp_valueProp1Title: "Soins attentifs",
+        bp_valueProp1Desc: "Une approche humaine et bienveillante",
+        bp_valueProp2Title: "Confiance",
+        bp_valueProp2Desc: "Professionnels qualifiés et certifiés",
+        bp_valueProp3Title: "Équipement moderne",
+        bp_valueProp3Desc: "Technologies de pointe pour votre confort",
+        bp_navTeam: "Équipe",
+        bp_navAbout: "À propos",
+        bp_navContact: "Contact",
+        bp_servicesLabel: "Nos services",
+        bp_servicesTitle: "Des soins adaptés à vos besoins",
+        bp_servicesDesc: "Découvrez notre gamme complète de soins dentaires pour toute la famille",
+        bp_bookVerb: "Réserver",
+        bp_viewAllServices: "Voir tous les services",
+        bp_moreServices: (n: number) => `+${n} autres soins`,
+        bp_teamLabel: "Notre équipe",
+        bp_teamTitle: "Rencontrez nos dentistes",
+        bp_teamDesc: "Une équipe expérimentée et passionnée, dévouée à votre sourire",
+        bp_teamMemberFallback: "Membre de l'équipe",
+        bp_roleDentist: "Dentiste",
+        bp_roleAdmin: "Responsable",
+        bp_roleStaff: "Assistant(e)",
+        bp_aboutLabel: "À propos",
+        bp_ctaTitle: "Prêt à prendre rendez-vous ?",
+        bp_ctaDesc: (name: string) => `Réservez votre consultation avec ${name} en quelques clics.`,
+        bp_ctaCallDesc: " Ou appelez-nous directement.",
+        bp_contactTitle: "Nous contacter",
+        bp_contactDesc: "N'hésitez pas à nous joindre",
+        bp_contactPhone: "Téléphone",
+        bp_contactAddress: "Adresse",
+        bp_contactWebsite: "Site web",
+        bp_contactVisitSite: "Visitez notre site",
+        bp_footerRights: "Tous droits réservés.",
+        bp_footerPoweredBy: "Propulsé par",
+        bp_defaultSubtitle: "Votre cabinet dentaire de confiance. Des soins de qualité dans un cadre chaleureux et accueillant.",
+        bp_defaultAbout: (name: string) => `${name} s'engage à fournir des soins dentaires exceptionnels dans un environnement confortable et accueillant. Notre équipe expérimentée utilise les dernières technologies pour offrir les meilleurs résultats à chaque patient.`,
     },
     nl: {
         // Error & status messages
@@ -3816,6 +3942,48 @@ export const translations: Record<Language, TranslationEntry> = {
         'common.back': "Terug",
         'common.loading': "Bezig met laden...",
         'common.success': "Gelukt",
+
+        // Business public profile page
+        bp_bookAppointment: "Afspraak maken",
+        bp_callUs: "Bel ons",
+        bp_heroTitlePrefix: "Welkom bij",
+        bp_heroSubtitle: "Uw vertrouwde tandartspraktijk. Kwaliteitszorg in een warme en gastvrije omgeving.",
+        bp_valueProp1Title: "Attente zorg",
+        bp_valueProp1Desc: "Een menselijke en zorgzame aanpak",
+        bp_valueProp2Title: "Vertrouwen",
+        bp_valueProp2Desc: "Gekwalificeerde en gecertificeerde professionals",
+        bp_valueProp3Title: "Moderne apparatuur",
+        bp_valueProp3Desc: "Geavanceerde technologie voor uw comfort",
+        bp_navTeam: "Team",
+        bp_navAbout: "Over ons",
+        bp_navContact: "Contact",
+        bp_servicesLabel: "Onze diensten",
+        bp_servicesTitle: "Zorg op maat van uw behoeften",
+        bp_servicesDesc: "Ontdek ons volledig aanbod tandheelkundige zorg voor het hele gezin",
+        bp_bookVerb: "Boeken",
+        bp_viewAllServices: "Alle diensten bekijken",
+        bp_moreServices: (n: number) => `+${n} andere behandelingen`,
+        bp_teamLabel: "Ons team",
+        bp_teamTitle: "Ontmoet onze tandartsen",
+        bp_teamDesc: "Een ervaren en gepassioneerd team, toegewijd aan uw glimlach",
+        bp_teamMemberFallback: "Teamlid",
+        bp_roleDentist: "Tandarts",
+        bp_roleAdmin: "Beheerder",
+        bp_roleStaff: "Assistent",
+        bp_aboutLabel: "Over ons",
+        bp_ctaTitle: "Klaar om een afspraak te maken?",
+        bp_ctaDesc: (name: string) => `Boek uw consultatie bij ${name} in een paar klikken.`,
+        bp_ctaCallDesc: " Of bel ons rechtstreeks.",
+        bp_contactTitle: "Contacteer ons",
+        bp_contactDesc: "Aarzel niet om contact op te nemen",
+        bp_contactPhone: "Telefoon",
+        bp_contactAddress: "Adres",
+        bp_contactWebsite: "Website",
+        bp_contactVisitSite: "Bezoek onze website",
+        bp_footerRights: "Alle rechten voorbehouden.",
+        bp_footerPoweredBy: "Aangedreven door",
+        bp_defaultSubtitle: "Uw vertrouwde tandartspraktijk. Kwaliteitszorg in een warme en gastvrije omgeving.",
+        bp_defaultAbout: (name: string) => `${name} zet zich in voor uitzonderlijke tandheelkundige zorg in een comfortabele en gastvrije omgeving. Ons ervaren team gebruikt de nieuwste technologieën om de beste resultaten voor elke patiënt te behalen.`,
     },
 };
 

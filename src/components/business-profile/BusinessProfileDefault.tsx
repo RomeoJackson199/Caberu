@@ -21,6 +21,7 @@ import {
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useCallback } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface BusinessData {
   id: string;
@@ -72,8 +73,9 @@ function formatDuration(minutes: number): string {
   return `${mins} min`;
 }
 
-function formatPrice(cents: number): string {
-  return new Intl.NumberFormat("fr-BE", {
+function formatPrice(cents: number, language: string): string {
+  const locale = language === "nl" ? "nl-BE" : language === "fr" ? "fr-BE" : "en-BE";
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -89,37 +91,19 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function translateRole(role: string): string {
-  switch (role) {
-    case "dentist": return "Dentiste";
-    case "admin": return "Responsable";
-    case "staff": return "Assistant(e)";
-    default: return role;
-  }
-}
-
-const VALUE_PROPS = [
-  { icon: Heart, title: "Soins attentifs", desc: "Une approche humaine et bienveillante" },
-  { icon: Shield, title: "Confiance", desc: "Professionnels qualifi\u00e9s et certifi\u00e9s" },
-  { icon: Sparkles, title: "\u00c9quipement moderne", desc: "Technologies de pointe pour votre confort" },
-];
-
 export function BusinessProfileDefault({
   business,
   services,
   team,
 }: BusinessProfileDefaultProps) {
+  const { t, language } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const teamCarouselRef = useRef<HTMLDivElement>(null);
   const servicesCarouselRef = useRef<HTMLDivElement>(null);
 
-  const heroTitle = business.tagline || `Bienvenue chez ${business.name}`;
-  const heroSubtitle =
-    business.description ||
-    "Votre cabinet dentaire de confiance. Des soins de qualit\u00e9 dans un cadre chaleureux et accueillant.";
-  const aboutContent =
-    business.description ||
-    `${business.name} s\u2019engage \u00e0 fournir des soins dentaires exceptionnels dans un environnement confortable et accueillant. Notre \u00e9quipe exp\u00e9riment\u00e9e utilise les derni\u00e8res technologies pour offrir les meilleurs r\u00e9sultats \u00e0 chaque patient.`;
+  const heroTitle = business.tagline || `${t.bp_heroTitlePrefix} ${business.name}`;
+  const heroSubtitle = business.description || t.bp_defaultSubtitle;
+  const aboutContent = business.description || t.bp_defaultAbout(business.name);
   const showServices = services.length > 0;
   const visibleServices = services.slice(0, MAX_VISIBLE_SERVICES);
   const hasMoreServices = services.length > MAX_VISIBLE_SERVICES;
@@ -148,10 +132,25 @@ export function BusinessProfileDefault({
 
   const navLinks = [
     ...(showServices ? [{ href: "#services", label: "Services" }] : []),
-    ...(team.length > 0 ? [{ href: "#equipe", label: "\u00c9quipe" }] : []),
-    { href: "#a-propos", label: "\u00c0 propos" },
-    ...(hasContactInfo ? [{ href: "#contact", label: "Contact" }] : []),
+    ...(team.length > 0 ? [{ href: "#team", label: t.bp_navTeam }] : []),
+    { href: "#about", label: t.bp_navAbout },
+    ...(hasContactInfo ? [{ href: "#contact", label: t.bp_navContact }] : []),
   ];
+
+  const valuePropItems = [
+    { icon: Heart, title: t.bp_valueProp1Title, desc: t.bp_valueProp1Desc },
+    { icon: Shield, title: t.bp_valueProp2Title, desc: t.bp_valueProp2Desc },
+    { icon: Sparkles, title: t.bp_valueProp3Title, desc: t.bp_valueProp3Desc },
+  ];
+
+  function translateRole(role: string): string {
+    switch (role) {
+      case "dentist": return t.bp_roleDentist;
+      case "admin": return t.bp_roleAdmin;
+      case "staff": return t.bp_roleStaff;
+      default: return role;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -189,7 +188,7 @@ export function BusinessProfileDefault({
 
           <div className="flex items-center gap-2">
             <Button onClick={scrollToBooking} size="sm" className="hidden sm:inline-flex">
-              Prendre rendez-vous
+              {t.bp_bookAppointment}
             </Button>
             <Button onClick={scrollToBooking} size="sm" className="sm:hidden">
               <Calendar className="h-4 w-4" />
@@ -249,14 +248,14 @@ export function BusinessProfileDefault({
               <Button size="lg" className="text-base px-8 shadow-lg shadow-primary/20" asChild>
                 <Link to={loginLink}>
                   <Calendar className="mr-2 h-5 w-5" />
-                  Prendre rendez-vous
+                  {t.bp_bookAppointment}
                 </Link>
               </Button>
               {business.phone && (
                 <Button variant="outline" size="lg" className="text-base px-8" asChild>
                   <a href={`tel:${business.phone}`}>
                     <Phone className="mr-2 h-5 w-5" />
-                    Appelez-nous
+                    {t.bp_callUs}
                   </a>
                 </Button>
               )}
@@ -276,7 +275,7 @@ export function BusinessProfileDefault({
       <section className="border-b bg-muted/30">
         <div className="container mx-auto px-4 lg:px-8 py-12 md:py-16">
           <div className="grid gap-8 sm:grid-cols-3">
-            {VALUE_PROPS.map(({ icon: Icon, title, desc }) => (
+            {valuePropItems.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex flex-col items-center text-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                   <Icon className="h-6 w-6 text-primary" />
@@ -297,12 +296,12 @@ export function BusinessProfileDefault({
           <div className="container mx-auto px-4 lg:px-8">
             <div className="flex items-end justify-between mb-14">
               <div>
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Nos services</p>
+                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">{t.bp_servicesLabel}</p>
                 <h2 className="text-3xl font-bold sm:text-4xl">
-                  Des soins adapt{"\u00e9"}s {"\u00e0"} vos besoins
+                  {t.bp_servicesTitle}
                 </h2>
                 <p className="mt-4 text-muted-foreground text-lg max-w-xl">
-                  D{"\u00e9"}couvrez notre gamme compl{"\u00e8"}te de soins dentaires pour toute la famille
+                  {t.bp_servicesDesc}
                 </p>
               </div>
 
@@ -311,14 +310,14 @@ export function BusinessProfileDefault({
                   <button
                     onClick={() => scrollCarousel(servicesCarouselRef, "left")}
                     className="flex h-10 w-10 items-center justify-center rounded-full border bg-background hover:bg-muted transition-colors"
-                    aria-label="Pr\u00e9c\u00e9dent"
+                    aria-label="Previous"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => scrollCarousel(servicesCarouselRef, "right")}
                     className="flex h-10 w-10 items-center justify-center rounded-full border bg-background hover:bg-muted transition-colors"
-                    aria-label="Suivant"
+                    aria-label="Next"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
@@ -354,7 +353,7 @@ export function BusinessProfileDefault({
                         </div>
                         {service.price_cents > 0 && (
                           <span className="shrink-0 font-semibold text-primary text-lg">
-                            {formatPrice(service.price_cents)}
+                            {formatPrice(service.price_cents, language)}
                           </span>
                         )}
                       </div>
@@ -368,7 +367,7 @@ export function BusinessProfileDefault({
                           <span />
                         )}
                         <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                          R{"\u00e9"}server
+                          {t.bp_bookVerb}
                           <ArrowRight className="h-3 w-3" />
                         </span>
                       </div>
@@ -388,10 +387,10 @@ export function BusinessProfileDefault({
                         </div>
                         <div>
                           <p className="font-semibold group-hover:text-primary transition-colors">
-                            Voir tous les services
+                            {t.bp_viewAllServices}
                           </p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            +{services.length - MAX_VISIBLE_SERVICES} autres soins
+                            {t.bp_moreServices(services.length - MAX_VISIBLE_SERVICES)}
                           </p>
                         </div>
                       </div>
@@ -406,16 +405,16 @@ export function BusinessProfileDefault({
 
       {/* Meet Our Dentists — Horizontal Carousel */}
       {team.length > 0 && (
-        <section id="equipe" className="py-20 md:py-24 bg-muted/30 overflow-hidden">
+        <section id="team" className="py-20 md:py-24 bg-muted/30 overflow-hidden">
           <div className="container mx-auto px-4 lg:px-8">
             <div className="flex items-end justify-between mb-14">
               <div>
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Notre {"\u00e9"}quipe</p>
+                <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">{t.bp_teamLabel}</p>
                 <h2 className="text-3xl font-bold sm:text-4xl">
-                  Rencontrez nos dentistes
+                  {t.bp_teamTitle}
                 </h2>
                 <p className="mt-4 text-muted-foreground text-lg max-w-xl">
-                  Une {"\u00e9"}quipe exp{"\u00e9"}riment{"\u00e9"}e et passionn{"\u00e9"}e, d{"\u00e9"}vou{"\u00e9"}e {"\u00e0"} votre sourire
+                  {t.bp_teamDesc}
                 </p>
               </div>
 
@@ -425,14 +424,14 @@ export function BusinessProfileDefault({
                   <button
                     onClick={() => scrollCarousel(teamCarouselRef, "left")}
                     className="flex h-10 w-10 items-center justify-center rounded-full border bg-background hover:bg-muted transition-colors"
-                    aria-label="Pr\u00e9c\u00e9dent"
+                    aria-label="Previous"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => scrollCarousel(teamCarouselRef, "right")}
                     className="flex h-10 w-10 items-center justify-center rounded-full border bg-background hover:bg-muted transition-colors"
-                    aria-label="Suivant"
+                    aria-label="Next"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
@@ -445,7 +444,6 @@ export function BusinessProfileDefault({
               ref={teamCarouselRef}
               className={cn(
                 "flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide",
-                // If 3 or fewer, center them on desktop
                 team.length <= 3 && "md:grid md:overflow-visible",
                 team.length === 1 && "md:grid-cols-1 max-w-sm mx-auto",
                 team.length === 2 && "md:grid-cols-2 max-w-2xl mx-auto",
@@ -464,7 +462,7 @@ export function BusinessProfileDefault({
                       {member.avatar_url ? (
                         <img
                           src={member.avatar_url}
-                          alt={member.full_name || "Membre de l'\u00e9quipe"}
+                          alt={member.full_name || t.bp_teamMemberFallback}
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
@@ -479,7 +477,7 @@ export function BusinessProfileDefault({
                     {/* Info */}
                     <div className="p-5">
                       <h3 className="font-semibold text-lg">
-                        {member.full_name || "Membre de l'\u00e9quipe"}
+                        {member.full_name || t.bp_teamMemberFallback}
                       </h3>
                       {member.specialization && (
                         <p className="text-sm font-medium text-primary mt-1">
@@ -497,7 +495,7 @@ export function BusinessProfileDefault({
                       >
                         <Link to={loginLink}>
                           <Calendar className="mr-2 h-3.5 w-3.5" />
-                          Prendre rendez-vous
+                          {t.bp_bookAppointment}
                         </Link>
                       </Button>
                     </div>
@@ -510,11 +508,11 @@ export function BusinessProfileDefault({
       )}
 
       {/* About Section */}
-      <section id="a-propos" className={cn("py-20 md:py-24 px-4 lg:px-8", team.length === 0 && "bg-muted/30")}>
+      <section id="about" className={cn("py-20 md:py-24 px-4 lg:px-8", team.length === 0 && "bg-muted/30")}>
         <div className="container mx-auto max-w-4xl">
           <div className="grid md:grid-cols-[1fr,1.5fr] gap-12 items-center">
             <div>
-              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">{"\u00c0"} propos</p>
+              <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">{t.bp_aboutLabel}</p>
               <h2 className="text-3xl font-bold sm:text-4xl">
                 {business.name}
               </h2>
@@ -543,17 +541,17 @@ export function BusinessProfileDefault({
             <Calendar className="h-8 w-8 text-primary" />
           </div>
           <h2 className="text-3xl font-bold sm:text-4xl mb-4">
-            Pr{"\u00ea"}t {"\u00e0"} prendre rendez-vous ?
+            {t.bp_ctaTitle}
           </h2>
           <p className="text-lg text-muted-foreground mb-10 max-w-lg mx-auto">
-            R{"\u00e9"}servez votre consultation avec {business.name} en quelques clics.
-            {business.phone && " Ou appelez-nous directement."}
+            {t.bp_ctaDesc(business.name)}
+            {business.phone && t.bp_ctaCallDesc}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="text-base px-8 shadow-lg shadow-primary/20" asChild>
               <Link to={loginLink}>
                 <Calendar className="mr-2 h-5 w-5" />
-                Prendre rendez-vous
+                {t.bp_bookAppointment}
               </Link>
             </Button>
             {business.phone && (
@@ -574,9 +572,9 @@ export function BusinessProfileDefault({
           <div className="container mx-auto max-w-4xl">
             <div className="text-center mb-14">
               <p className="text-sm font-semibold text-primary uppercase tracking-wider mb-3">Contact</p>
-              <h2 className="text-3xl font-bold sm:text-4xl">Nous contacter</h2>
+              <h2 className="text-3xl font-bold sm:text-4xl">{t.bp_contactTitle}</h2>
               <p className="mt-4 text-muted-foreground text-lg">
-                N&apos;h{"\u00e9"}sitez pas {"\u00e0"} nous joindre
+                {t.bp_contactDesc}
               </p>
             </div>
             <div className={cn(
@@ -592,7 +590,7 @@ export function BusinessProfileDefault({
                     <Phone className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold">T{"\u00e9"}l{"\u00e9"}phone</p>
+                    <p className="font-semibold">{t.bp_contactPhone}</p>
                     <p className="text-sm text-muted-foreground mt-1">{business.phone}</p>
                   </div>
                 </a>
@@ -617,7 +615,7 @@ export function BusinessProfileDefault({
                     <MapPin className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold">Adresse</p>
+                    <p className="font-semibold">{t.bp_contactAddress}</p>
                     <p className="text-sm text-muted-foreground mt-1">{locationString}</p>
                   </div>
                 </div>
@@ -633,8 +631,8 @@ export function BusinessProfileDefault({
                     <Globe className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold">Site web</p>
-                    <p className="text-sm text-muted-foreground mt-1">Visitez notre site</p>
+                    <p className="font-semibold">{t.bp_contactWebsite}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{t.bp_contactVisitSite}</p>
                   </div>
                 </a>
               )}
@@ -677,10 +675,10 @@ export function BusinessProfileDefault({
 
           <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p>
-              &copy; {new Date().getFullYear()} {business.name}. Tous droits r{"\u00e9"}serv{"\u00e9"}s.
+              &copy; {new Date().getFullYear()} {business.name}. {t.bp_footerRights}
             </p>
             <p className="text-xs text-muted-foreground/60">
-              Propuls{"\u00e9"} par{" "}
+              {t.bp_footerPoweredBy}{" "}
               <Link to="/" className="hover:text-primary transition-colors font-medium">
                 Caberu
               </Link>
