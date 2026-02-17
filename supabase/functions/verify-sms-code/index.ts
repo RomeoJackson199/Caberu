@@ -34,9 +34,9 @@ serve(async (req) => {
       );
     }
 
-    // Validate code format (4-8 digits - Twilio supports various lengths)
+    // Validate code format (4-6 digits)
     const cleanCode = code.replace(/\s/g, '');
-    if (!cleanCode.match(/^\d{4,8}$/)) {
+    if (!cleanCode.match(/^\d{4,6}$/)) {
       return new Response(
         JSON.stringify({ verified: false, error: 'Invalid code format. Enter the digits from your SMS.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
