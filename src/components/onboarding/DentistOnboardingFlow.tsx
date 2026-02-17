@@ -361,7 +361,6 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         last_name: data.lastName,
         phone: data.practicePhone,
         address: fullAddress,
-        language_preference: data.preferredLanguage,
       };
       
       // Only set date_of_birth if a valid date was provided
