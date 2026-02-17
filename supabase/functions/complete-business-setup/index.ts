@@ -97,8 +97,10 @@ serve(async (req) => {
 
         if (existingMember?.business_id) {
             // Update the auto-created business with the user's actual details
-            const baseSlug = business_data.name
-                ?.toLowerCase()
+            // Normalize diacritics for French/Dutch business names (é→e, ç→c, ë→e, etc.)
+            const baseSlug = (business_data.name || '')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'business';
             const slugSuffix = Math.random().toString(36).substring(2, 6);
@@ -132,9 +134,10 @@ serve(async (req) => {
             );
         }
 
-        // 4. Generate Slug
-        const baseSlug = business_data.name
-            ?.toLowerCase()
+        // 4. Generate Slug (normalize diacritics for French/Dutch business names)
+        const baseSlug = (business_data.name || '')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '') || 'business';
 
