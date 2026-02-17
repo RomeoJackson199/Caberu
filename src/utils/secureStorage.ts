@@ -36,17 +36,33 @@ export function getSecureItem(key: SessionStorageKey): string | null {
     try {
         const value = sessionStorage.getItem(key);
 
-        // Check for expiry on consent data
-        if (value && key.includes('consent')) {
-            try {
-                const parsed = JSON.parse(value);
-                if (parsed.expiresAt && parsed.expiresAt < Date.now()) {
+        if (!value) {
+            return value;
+        }
+
+        try {
+            const parsed: unknown = JSON.parse(value);
+            const isEnvelope =
+                typeof parsed === 'object' &&
+                parsed !== null &&
+                'value' in parsed &&
+                'expiresAt' in parsed;
+
+            if (isEnvelope) {
+                const { value: storedValue, expiresAt } = parsed as {
+                    value: unknown;
+                    expiresAt: unknown;
+                };
+
+                if (typeof expiresAt === 'number' && expiresAt < Date.now()) {
                     sessionStorage.removeItem(key);
                     return null;
                 }
-            } catch {
-                // Not JSON, return as-is
+
+                return String(storedValue);
             }
+        } catch {
+            // Not JSON, return as-is
         }
 
         return value;
