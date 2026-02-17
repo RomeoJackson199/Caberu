@@ -16,6 +16,9 @@ interface LogContext {
 class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
   private isTest = process.env.NODE_ENV === 'test';
+  private lastStorageErrorSignature: string | null = null;
+  private lastStorageErrorTimestamp = 0;
+  private readonly storageErrorThrottleMs = 1000;
 
   /**
    * General logging - only in development
@@ -117,18 +120,51 @@ class Logger {
 
     // Store critical errors in localStorage as fallback for debugging
     if (level === 'error' && typeof window !== 'undefined') {
+      const normalizedData = data.map(d => d instanceof Error ? d.message : d);
+      const errorSignature = this.createErrorSignature(level, normalizedData);
+      const now = Date.now();
+
+      if (this.shouldSkipStorageFallback(errorSignature, now)) {
+        return;
+      }
+
       try {
         const errors = JSON.parse(localStorage.getItem('app_errors') || '[]');
         errors.push({
-          timestamp: new Date().toISOString(),
+          timestamp: new Date(now).toISOString(),
           level,
-          data: data.map(d => d instanceof Error ? d.message : d)
+          data: normalizedData
         });
         // Keep only last 50 errors
         localStorage.setItem('app_errors', JSON.stringify(errors.slice(-50)));
-      } catch (e) {
+        this.lastStorageErrorSignature = errorSignature;
+        this.lastStorageErrorTimestamp = now;
+      } catch {
         // Silently fail if localStorage is unavailable
       }
+    }
+  }
+
+  private shouldSkipStorageFallback(signature: string, now: number): boolean {
+    return (
+      this.lastStorageErrorSignature === signature &&
+      now - this.lastStorageErrorTimestamp < this.storageErrorThrottleMs
+    );
+  }
+
+  private createErrorSignature(level: string, normalizedData: unknown[]): string {
+    return `${level}:${normalizedData.map(item => this.serializeForSignature(item)).join('|')}`;
+  }
+
+  private serializeForSignature(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
     }
   }
 
