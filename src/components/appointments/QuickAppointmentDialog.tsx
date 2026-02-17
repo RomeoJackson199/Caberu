@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, addMinutes, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
 import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
-import { Calendar, Clock, User, Search, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, Search, Loader2, Stethoscope } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,6 +22,21 @@ interface Patient {
   last_name: string;
   email: string;
   phone?: string;
+}
+
+interface DentistService {
+  id: string;
+  service_id: string;
+  custom_duration_minutes: number | null;
+  custom_price_cents: number | null;
+  business_services: {
+    id: string;
+    name: string;
+    duration_minutes: number | null;
+    price_cents: number;
+    category: string | null;
+    description: string | null;
+  };
 }
 
 interface QuickAppointmentDialogProps {
@@ -49,6 +64,7 @@ export function QuickAppointmentDialog({
   const [patientSearch, setPatientSearch] = useState("");
   const [reason, setReason] = useState("");
   const [duration, setDuration] = useState("60");
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [appointmentDate, setAppointmentDate] = useState(format(selectedDate, "yyyy-MM-dd"));
   const [appointmentTime, setAppointmentTime] = useState(selectedTime);
   const { toast } = useToast();
@@ -133,6 +149,25 @@ export function QuickAppointmentDialog({
       return null;
     },
     enabled: open,
+  });
+
+  // Fetch dentist's active services
+  const { data: dentistServices = [] } = useQuery({
+    queryKey: ["dentist-services", dentistId, dentistBusiness],
+    queryFn: async () => {
+      if (!dentistBusiness) return [];
+
+      const { data, error } = await supabase
+        .from("dentist_services")
+        .select("id, service_id, custom_duration_minutes, custom_price_cents, business_services(id, name, duration_minutes, price_cents, category, description)")
+        .eq("dentist_id", dentistId)
+        .eq("business_id", dentistBusiness)
+        .eq("is_active", true);
+
+      if (error) throw error;
+      return (data || []) as unknown as DentistService[];
+    },
+    enabled: open && !!dentistBusiness,
   });
 
   // Fetch all patients for this dentist
@@ -237,6 +272,7 @@ export function QuickAppointmentDialog({
       }
       setReason("");
       setDuration("60");
+      setSelectedServiceId("");
       setPatientSearch("");
     }
   }, [open, patient]);
@@ -251,6 +287,24 @@ export function QuickAppointmentDialog({
         p.email.toLowerCase().includes(search)
     );
   }, [patients, patientSearch]);
+
+  const handleServiceChange = (serviceId: string) => {
+    setSelectedServiceId(serviceId);
+    if (serviceId === "") return;
+
+    const dentistService = dentistServices.find(ds => ds.service_id === serviceId);
+    if (!dentistService) return;
+
+    const service = dentistService.business_services;
+    const effectiveDuration = dentistService.custom_duration_minutes ?? service.duration_minutes;
+    if (effectiveDuration) {
+      setDuration(String(effectiveDuration));
+    }
+
+    if (!reason) {
+      setReason(service.name);
+    }
+  };
 
   const handleCreateAppointment = async () => {
     if (!selectedPatient) {
@@ -294,6 +348,7 @@ export function QuickAppointmentDialog({
         status: "confirmed",
         urgency: "medium",
         reason: reason || "General consultation",
+        ...(selectedServiceId ? { service_id: selectedServiceId } : {}),
       });
 
       toast({
@@ -428,6 +483,47 @@ export function QuickAppointmentDialog({
                   <p className="text-sm text-muted-foreground">{selectedPatient?.email}</p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Service Selector */}
+          {dentistServices.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Stethoscope className="h-4 w-4" />
+                Service
+              </Label>
+              <Select value={selectedServiceId} onValueChange={handleServiceChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a service (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dentistServices.map((ds) => {
+                    const service = ds.business_services;
+                    const effectiveDuration = ds.custom_duration_minutes ?? service.duration_minutes;
+                    const effectivePrice = ds.custom_price_cents ?? service.price_cents;
+                    return (
+                      <SelectItem key={ds.service_id} value={ds.service_id}>
+                        <div className="flex items-center justify-between gap-3 w-full">
+                          <span>{service.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {effectiveDuration ? `${effectiveDuration} min` : ""}
+                            {effectiveDuration && effectivePrice ? " · " : ""}
+                            {effectivePrice ? `€${(effectivePrice / 100).toFixed(2)}` : ""}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {selectedServiceId && (() => {
+                const ds = dentistServices.find(d => d.service_id === selectedServiceId);
+                const desc = ds?.business_services?.description;
+                return desc ? (
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                ) : null;
+              })()}
             </div>
           )}
 
