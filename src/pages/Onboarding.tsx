@@ -269,7 +269,6 @@ const Onboarding = () => {
           date_of_birth: formData.dateOfBirth,
           phone: formData.phone || null,
           address: fullAddress || null,
-          language_preference: formData.preferredLanguage,
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
         })
