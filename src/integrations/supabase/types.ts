@@ -707,6 +707,7 @@ export type Database = {
           custom_features: Json | null
           custom_terminology: Json | null
           customer_count: number | null
+          default_language: string | null
           emails_sent_count: number | null
           id: string
           logo_url: string | null
@@ -754,6 +755,7 @@ export type Database = {
           custom_features?: Json | null
           custom_terminology?: Json | null
           customer_count?: number | null
+          default_language?: string | null
           emails_sent_count?: number | null
           id?: string
           logo_url?: string | null
@@ -801,6 +803,7 @@ export type Database = {
           custom_features?: Json | null
           custom_terminology?: Json | null
           customer_count?: number | null
+          default_language?: string | null
           emails_sent_count?: number | null
           id?: string
           logo_url?: string | null
@@ -5551,9 +5554,12 @@ export type Database = {
           emergency_contact: string | null
           first_name: string | null
           id: string | null
+          import_session_id: string | null
           last_name: string | null
           medical_history: string | null
+          patient_status: string | null
           phone: string | null
+          profile_completion_status: string | null
           profile_picture_url: string | null
           role: string | null
           updated_at: string | null
@@ -5569,9 +5575,12 @@ export type Database = {
           emergency_contact?: string | null
           first_name?: string | null
           id?: string | null
+          import_session_id?: string | null
           last_name?: string | null
           medical_history?: string | null
+          patient_status?: string | null
           phone?: string | null
+          profile_completion_status?: string | null
           profile_picture_url?: string | null
           role?: string | null
           updated_at?: string | null
@@ -5587,9 +5596,12 @@ export type Database = {
           emergency_contact?: string | null
           first_name?: string | null
           id?: string | null
+          import_session_id?: string | null
           last_name?: string | null
           medical_history?: string | null
+          patient_status?: string | null
           phone?: string | null
+          profile_completion_status?: string | null
           profile_picture_url?: string | null
           role?: string | null
           updated_at?: string | null
@@ -6108,7 +6120,7 @@ export type Database = {
         Args: { _business_id: string; _user_id: string }
         Returns: boolean
       }
-      leave_clinic: { Args: { p_business_id?: string }; Returns: Json }
+      leave_clinic: { Args: { p_business_id: string }; Returns: Json }
       log_super_admin_action: {
         Args: {
           p_action: string
