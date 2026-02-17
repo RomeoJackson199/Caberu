@@ -212,17 +212,17 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     setLoading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${businessId}-logo-${Date.now()}.${fileExt}`;
+      const filePath = `${businessId}/logo-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("dental-photos")
-        .upload(fileName, file, { upsert: true });
+        .from("company-logos")
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from("dental-photos")
-        .getPublicUrl(fileName);
+        .from("company-logos")
+        .getPublicUrl(filePath);
 
       setLogoUrl(publicUrl);
 
