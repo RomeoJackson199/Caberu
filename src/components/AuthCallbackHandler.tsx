@@ -105,13 +105,13 @@ export const AuthCallbackHandler = () => {
               }
 
               // Auto-set business context from user's profile if not already set
-              const selectedBusinessId = localStorage.getItem('selected_business_id');
+              const selectedBusinessId = sessionStorage.getItem('selected_business_id');
               if (selectedBusinessId) {
                 // Apply pre-login clinic selection if present
                 await supabase.functions.invoke('set-current-business', {
                   body: { businessId: selectedBusinessId },
                 }).catch(console.warn);
-                localStorage.removeItem('selected_business_id');
+                sessionStorage.removeItem('selected_business_id');
               } else {
                 // No pre-selected business, check if user's profile has a business_id
                 const { data: userProfile } = await supabase
