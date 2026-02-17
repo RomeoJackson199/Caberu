@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WifiOff, Wifi, RefreshCw, Cloud, CloudOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,20 +12,27 @@ interface NetworkStatusProps {
 export function NetworkStatus({ showOnlineStatus = false, className }: NetworkStatusProps) {
   const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [showReconnected, setShowReconnected] = useState(false);
-  const [wasOffline, setWasOffline] = useState(false);
+  const wasOfflineRef = useRef(false);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (wasOffline) {
+      if (wasOfflineRef.current) {
         setShowReconnected(true);
-        setTimeout(() => setShowReconnected(false), 3000);
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        reconnectTimeoutRef.current = setTimeout(() => {
+          setShowReconnected(false);
+        }, 3000);
+        wasOfflineRef.current = false;
       }
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      setWasOffline(true);
+      wasOfflineRef.current = true;
     };
 
     window.addEventListener("online", handleOnline);
@@ -34,8 +41,11 @@ export function NetworkStatus({ showOnlineStatus = false, className }: NetworkSt
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
     };
-  }, [wasOffline]);
+  }, []);
 
   // Show nothing if online and not showing online status
   if (isOnline && !showOnlineStatus && !showReconnected) {
