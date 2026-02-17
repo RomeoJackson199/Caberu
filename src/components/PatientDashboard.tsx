@@ -255,36 +255,57 @@ const PatientDashboardComponent = ({
         return;
       }
       if (!profile) {
-        // No profile exists for this user - create a basic one or handle gracefully
-        console.warn('No profile found for user, creating basic profile...');
-
-        // Try to create a basic profile from user data
-        const {
-          data: newProfile,
-          error: createError
-        } = await supabase.from('profiles').insert({
-          user_id: user.id,
-          email: user.email || '',
-          first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || '',
-          role: 'patient'
-        }).select().single();
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          setError(`Failed to create user profile: ${createError.message}`);
-          return;
-        }
-        const { data: reloadedProfile, error: reloadError } = await supabase
-          .from('secure_profiles_view')
-          .select('*')
+        // Profile might exist in base table but view query failed - retry once from profiles directly
+        console.warn('No profile found in view, checking base table...');
+        
+        const { data: baseProfile } = await supabase
+          .from('profiles')
+          .select('id')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (reloadError) {
-          console.error('Error reloading profile:', reloadError);
-          setError(`Failed to reload user profile: ${reloadError.message}`);
-          return;
+
+        if (baseProfile) {
+          // Profile exists, retry the view query
+          const { data: retryProfile } = await supabase
+            .from('secure_profiles_view')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (retryProfile) {
+            setUserProfile(retryProfile);
+          } else {
+            setError('Profile exists but could not be loaded. Please try refreshing.');
+          }
+        } else {
+          // Truly no profile - create one
+          const { error: createError } = await supabase.from('profiles').insert({
+            user_id: user.id,
+            email: user.email || '',
+            first_name: user.user_metadata?.first_name || '',
+            last_name: user.user_metadata?.last_name || '',
+            role: 'patient'
+          }).select().single();
+          if (createError) {
+            // If insert fails due to conflict, profile was created by trigger - just retry
+            const { data: retryProfile } = await supabase
+              .from('secure_profiles_view')
+              .select('*')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            if (retryProfile) {
+              setUserProfile(retryProfile);
+            } else {
+              setError('Unable to load your profile. Please try refreshing the page.');
+            }
+            return;
+          }
+          const { data: reloadedProfile } = await supabase
+            .from('secure_profiles_view')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          setUserProfile(reloadedProfile);
         }
-        setUserProfile(reloadedProfile || newProfile);
       } else {
         setUserProfile(profile);
       }
