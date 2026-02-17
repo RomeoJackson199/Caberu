@@ -444,6 +444,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
             phone: data.practicePhone,
             address: fullAddress,
             business_hours: businessHours,
+            default_language: data.preferredLanguage,
           })
           .eq('id', businessId);
 
