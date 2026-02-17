@@ -142,17 +142,11 @@ export default function BusinessProfilePage() {
     loadBusinessProfile(slug);
   }, [slug]);
 
-  // Apply the business's default language for all visitors on this page.
-  // Uses setPageLanguage (not changeLanguage) so the visitor's personal
-  // language preference stored in localStorage is never overwritten.
-  // clearPageLanguage on unmount releases the lock so other pages restore
-  // the visitor's own preference.
+  // Release the page-language lock when leaving this page so other pages
+  // can restore the visitor's own language preference.
   useEffect(() => {
-    if (business?.default_language) {
-      setPageLanguage(business.default_language as Language);
-    }
     return () => clearPageLanguage();
-  }, [business?.default_language]);
+  }, []);
 
   const loadBusinessProfile = async (businessSlug: string) => {
     try {
@@ -168,6 +162,14 @@ export default function BusinessProfilePage() {
         setNotFound(true);
         setLoading(false);
         return;
+      }
+
+      // Apply the business's default language NOW, before any content renders.
+      // setPageLanguage dispatches "language:page-override" which updates only
+      // React state — it never touches localStorage, so the visitor's own
+      // language preference is always preserved.
+      if (businessData.default_language) {
+        setPageLanguage(businessData.default_language as Language);
       }
 
       setBusiness(businessData);

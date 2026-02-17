@@ -43,14 +43,18 @@ export const changeLanguage = (lang: Language) => {
 /**
  * Apply a language for the current page only.
  * Unlike `changeLanguage`, this does NOT write to localStorage so the
- * visitor's personal preference is left intact.  Call `clearPageLanguage`
- * when the page unmounts to release the lock.
+ * visitor's personal preference is left intact.  A separate event
+ * ("language:page-override") is used so the LanguageProvider can update
+ * React state without calling persistLanguagePreference.
+ * Call `clearPageLanguage` when the page unmounts to release the lock.
  */
 export const setPageLanguage = (lang: Language) => {
   if (!SUPPORTED_CODES.includes(lang)) return;
   isPageLanguageLocked = true;
   document.documentElement.lang = lang;
-  window.dispatchEvent(new CustomEvent<Language>("language:changed", { detail: lang }));
+  window.dispatchEvent(
+    new CustomEvent<Language>("language:page-override", { detail: lang }),
+  );
 };
 
 /** Release the page-language lock set by `setPageLanguage`. */
@@ -123,15 +127,33 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
+    // Page-level override (e.g. BusinessProfilePage): update state only,
+    // do NOT persist so the visitor's personal preference is untouched.
+    const onPageLanguageOverride = (event: Event) => {
+      const detail = (event as CustomEvent<Language>).detail;
+      if (detail && SUPPORTED_CODES.includes(detail)) {
+        setLanguage(detail);
+        document.documentElement.lang = detail;
+      }
+    };
+
     window.addEventListener(
       "language:changed",
       onExternalLanguageChange as EventListener,
+    );
+    window.addEventListener(
+      "language:page-override",
+      onPageLanguageOverride as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "language:changed",
         onExternalLanguageChange as EventListener,
+      );
+      window.removeEventListener(
+        "language:page-override",
+        onPageLanguageOverride as EventListener,
       );
     };
   }, [handleSetLanguage]);
