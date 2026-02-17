@@ -86,7 +86,7 @@ describe('secureStorage.ts', () => {
       sessionStorageMock['pending_practice_consent'] = validConsent;
 
       const result = getSecureItem('pending_practice_consent');
-      expect(result).toBe(validConsent);
+      expect(result).toBe('accepted');
     });
 
     it('should remove expired consent data', () => {
