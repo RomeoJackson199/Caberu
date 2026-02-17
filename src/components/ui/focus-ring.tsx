@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface FocusRingProps {
   children: React.ReactNode;
@@ -60,8 +61,7 @@ export const focusRingClasses = {
  * Shows visual feedback for keyboard users
  */
 export function useKeyboardNavigation() {
-  // Add class to body when user is navigating with keyboard
-  if (typeof window !== "undefined") {
+  useEffect(() => {
     const handleFirstTab = (e: KeyboardEvent) => {
       if (e.key === "Tab") {
         document.body.classList.add("keyboard-navigation");
@@ -77,5 +77,10 @@ export function useKeyboardNavigation() {
     };
 
     window.addEventListener("keydown", handleFirstTab);
-  }
+
+    return () => {
+      window.removeEventListener("keydown", handleFirstTab);
+      window.removeEventListener("mousedown", handleMouseDown);
+    };
+  }, []);
 }
