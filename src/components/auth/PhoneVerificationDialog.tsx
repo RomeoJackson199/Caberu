@@ -107,7 +107,7 @@ export function PhoneVerificationDialog({
 
       toast({
         title: "Verification Code Sent",
-        description: "Check your phone for the 6-digit SMS code",
+        description: "Check your phone for the 4 to 6-digit SMS code",
       });
     } catch (error: any) {
       logger.error('Error sending SMS code:', error);
@@ -253,13 +253,13 @@ export function PhoneVerificationDialog({
                   id="code"
                   placeholder="Enter code"
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
-                  maxLength={8}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6}
                   className="text-center text-2xl tracking-widest"
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enter the 6-digit code from the SMS
+                  Enter the 4 to 6-digit code from the SMS
                 </p>
               </div>
 
