@@ -298,6 +298,8 @@ export interface LocalNotificationOptions {
   data?: Record<string, unknown>;
 }
 
+const webLocalNotificationTimeoutIds = new Set<number>();
+
 /**
  * Schedule a local push notification
  * @param options - Notification options
@@ -310,9 +312,11 @@ export async function scheduleLocalNotification(options: LocalNotificationOption
     if ('Notification' in window) {
       if (Notification.permission === 'granted') {
         if (delaySeconds > 0) {
-          setTimeout(() => {
+          const timeoutId = window.setTimeout(() => {
+            webLocalNotificationTimeoutIds.delete(timeoutId);
             new Notification(title, { body, badge: '/favicon.ico' });
           }, delaySeconds * 1000);
+          webLocalNotificationTimeoutIds.add(timeoutId);
         } else {
           new Notification(title, { body, badge: '/favicon.ico' });
         }
@@ -344,6 +348,11 @@ export async function scheduleLocalNotification(options: LocalNotificationOption
  * Cancel all pending local notifications
  */
 export function cancelAllLocalNotifications(): void {
+  webLocalNotificationTimeoutIds.forEach((timeoutId) => {
+    clearTimeout(timeoutId);
+  });
+  webLocalNotificationTimeoutIds.clear();
+
   if (isDespiaNative()) {
     despia('cancellocalnotifications://');
   }
