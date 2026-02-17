@@ -1,4 +1,5 @@
 import type { TemplateType } from "@/lib/businessTemplates";
+import type { Language } from "@/lib/translations";
 
 export interface BrandingState {
   clinicName: string;
@@ -13,6 +14,7 @@ export interface BrandingState {
   secondaryColor: string;
   logoUrl: string;
   templateType: TemplateType;
+  defaultLanguage: Language;
   aiSystemBehavior: string;
   aiGreeting: string;
   aiPersonalityTraits: string[];
@@ -30,6 +32,7 @@ export interface BrandingActions {
   setPrimaryColor: (value: string) => void;
   setSecondaryColor: (value: string) => void;
   setLogoUrl: (value: string) => void;
+  setDefaultLanguage: (value: Language) => void;
   setAiSystemBehavior: (value: string) => void;
   setAiGreeting: (value: string) => void;
   setAiPersonalityTraits: (value: string[]) => void;

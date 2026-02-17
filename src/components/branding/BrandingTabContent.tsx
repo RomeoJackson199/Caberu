@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, Image as ImageIcon, Briefcase, Copy, Check, QrCode } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Upload, Image as ImageIcon, Briefcase, Copy, Check, QrCode, Globe } from "lucide-react";
 import { BusinessTemplateSelector } from "@/components/BusinessTemplateSelector";
 import { getTemplateConfig } from "@/lib/businessTemplates";
+import { SUPPORTED_LANGUAGES, Language } from "@/lib/translations";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import type { UseBrandingSettingsReturn } from "./types";
 
@@ -261,6 +263,42 @@ export function BrandingTabContent({ branding }: BrandingTabContentProps) {
               onChange={(val) => branding.setPhone(val || "")}
               placeholder={t.enterPhoneNumber}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Default Language */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            {t.defaultLanguage || "Default Language"}
+          </CardTitle>
+          <CardDescription>
+            {t.defaultLanguageDesc || "The default language for your public business page. Visitors will see your page in this language by default."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="default-language">{t.language}</Label>
+            <Select
+              value={branding.defaultLanguage}
+              onValueChange={(value) => branding.setDefaultLanguage(value as Language)}
+            >
+              <SelectTrigger id="default-language" className="w-full max-w-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    <div className="flex items-center gap-2">
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

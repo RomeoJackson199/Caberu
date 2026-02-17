@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { BusinessProfileDefault } from "@/components/business-profile/BusinessProfileDefault";
 import { upsertMetaTag, setCanonical, setJsonLd } from "@/lib/seo";
+import { changeLanguage } from "@/hooks/useLanguage";
+import type { Language } from "@/lib/translations";
 
 interface BusinessData {
   id: string;
@@ -20,6 +22,7 @@ interface BusinessData {
   logo_url: string | null;
   primary_color: string | null;
   secondary_color: string | null;
+  default_language: string | null;
   created_at: string;
 }
 
@@ -156,6 +159,13 @@ export default function BusinessProfilePage() {
       }
 
       setBusiness(businessData);
+
+      // Apply the business's default language for the public page
+      // Only override if the visitor has no profile-level preference (not logged in)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (businessData.default_language && !user) {
+        changeLanguage(businessData.default_language as Language);
+      }
 
       const [servicesResult, teamResult] = await Promise.all([
         supabase

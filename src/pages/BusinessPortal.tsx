@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2 } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { CustomizableHomepage } from "@/components/business/CustomizableHomepage";
+import { changeLanguage } from "@/hooks/useLanguage";
+import type { Language } from "@/lib/translations";
 
 export default function BusinessPortal() {
   const { slug } = useParams<{ slug: string }>();
@@ -64,6 +66,12 @@ export default function BusinessPortal() {
 
       // Check if user is authenticated
       const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      // Apply the business's default language for the public page
+      // Only override for unauthenticated visitors (logged-in users have their own preference)
+      if (businessData.default_language && !currentUser) {
+        changeLanguage(businessData.default_language as Language);
+      }
       
       if (currentUser) {
         setUser(currentUser);
