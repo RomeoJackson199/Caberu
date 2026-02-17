@@ -16,6 +16,11 @@ interface LogContext {
 class Logger {
   private isDevelopment = import.meta.env.DEV;
   private isTest = import.meta.env.MODE === 'test';
+  private readonly localStorageErrorThrottleMs = 1000;
+  private readonly localStorageDuplicateWindowMs = 10000;
+  private lastLocalStorageErrorWriteAt = 0;
+  private lastLocalStorageErrorSignature = '';
+  private lastLocalStorageErrorSignatureAt = 0;
 
   /**
    * General logging - only in development
@@ -118,15 +123,32 @@ class Logger {
     // Store critical errors in localStorage as fallback for debugging
     if (level === 'error' && typeof window !== 'undefined') {
       try {
+        const now = Date.now();
+        const serializedData = data.map(d => d instanceof Error ? d.message : d);
+        const errorSignature = JSON.stringify(serializedData);
+
+        const isThrottled = now - this.lastLocalStorageErrorWriteAt < this.localStorageErrorThrottleMs;
+        const isDuplicateWithinWindow =
+          errorSignature === this.lastLocalStorageErrorSignature &&
+          now - this.lastLocalStorageErrorSignatureAt < this.localStorageDuplicateWindowMs;
+
+        if (isThrottled || isDuplicateWithinWindow) {
+          return;
+        }
+
         const errors = JSON.parse(localStorage.getItem('app_errors') || '[]');
         errors.push({
           timestamp: new Date().toISOString(),
           level,
-          data: data.map(d => d instanceof Error ? d.message : d)
+          data: serializedData
         });
         // Keep only last 50 errors
         localStorage.setItem('app_errors', JSON.stringify(errors.slice(-50)));
-      } catch (e) {
+
+        this.lastLocalStorageErrorWriteAt = now;
+        this.lastLocalStorageErrorSignature = errorSignature;
+        this.lastLocalStorageErrorSignatureAt = now;
+      } catch {
         // Silently fail if localStorage is unavailable
       }
     }
