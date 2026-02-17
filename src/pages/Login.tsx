@@ -311,7 +311,7 @@ const Login = () => {
 
   // ── Render ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
+    <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
@@ -319,33 +319,35 @@ const Login = () => {
         <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[40%] rounded-full bg-white/5 blur-3xl" />
       </div>
 
-      {/* Logo / heading */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center">
+      {/* Logo / heading — left on desktop, top on mobile */}
+      <div className="relative z-10 flex-1 flex flex-col items-center lg:items-start justify-center px-8 lg:px-16 py-12 text-center lg:text-left">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="space-y-3"
+          className="space-y-4"
         >
           <div className="inline-flex items-center gap-2">
             <Shield className="h-8 w-8 text-white" />
             <span className="text-5xl font-bold text-white tracking-tight">Caberu</span>
           </div>
-          <p className="text-lg text-white/80">
+          <p className="text-lg text-white/80 max-w-sm">
             {isReturningUser && rememberedName
               ? `Welcome back, ${rememberedName}`
-              : loginView === "otp-verify"
-              ? `Enter the code sent to ${phone}`
-              : "Sign in to your workspace"}
+              : "Sign in to your dental workspace"}
           </p>
-          {isReturningUser && rememberedEmail && loginView === "email-form" && (
+          {isReturningUser && rememberedEmail && (
             <p className="text-sm text-white/55">{rememberedEmail}</p>
           )}
+          {/* Desktop tagline */}
+          <p className="hidden lg:block text-sm text-white/60 max-w-xs pt-2">
+            Manage appointments, patient records, and your practice from anywhere.
+          </p>
         </motion.div>
       </div>
 
-      {/* Bottom panel */}
-      <div className="relative z-10 px-5 pb-10">
+      {/* Auth panel — right on desktop, bottom on mobile */}
+      <div className="relative z-10 lg:flex-none lg:w-[440px] flex flex-col justify-end lg:justify-center px-5 pb-10 lg:px-8 lg:py-12">
         <AnimatePresence mode="wait">
 
           {/* ── Main options: Phone (primary) + Other options ── */}
@@ -482,17 +484,17 @@ const Login = () => {
 
               <form onSubmit={handleVerifyOtp} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="otp" className="text-white/80 text-sm">6-digit code</Label>
+                  <Label htmlFor="otp" className="text-white/80 text-sm">4-digit code</Label>
                   <Input
                     id="otp"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    maxLength={6}
-                    placeholder="000000"
+                    maxLength={4}
+                    placeholder="0000"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                    className="h-13 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40 text-2xl tracking-[0.5em] text-center"
+                    className="h-14 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40 text-3xl tracking-[0.75em] text-center"
                     required
                     autoFocus
                     autoComplete="one-time-code"
@@ -507,7 +509,7 @@ const Login = () => {
 
                 <Button
                   type="submit"
-                  disabled={isLoading || otp.length < 6}
+                  disabled={isLoading || otp.length < 4}
                   className="w-full h-12 text-base font-semibold rounded-2xl bg-white text-primary hover:bg-white/95 shadow-lg disabled:opacity-50"
                 >
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & Sign in"}
