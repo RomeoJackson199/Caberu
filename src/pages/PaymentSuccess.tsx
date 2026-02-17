@@ -115,6 +115,14 @@ const PaymentSuccess: React.FC = () => {
     handlePaymentSuccess();
   }, [sessionId, type, navigate]);
 
+  const handleCloseWindow = () => {
+    window.close();
+
+    if (!window.closed) {
+      navigate('/');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
@@ -150,7 +158,7 @@ const PaymentSuccess: React.FC = () => {
 
               {type !== 'business' && (
                 <Button
-                  onClick={() => window.close()}
+                  onClick={handleCloseWindow}
                   className="w-full"
                 >
                   Close Window

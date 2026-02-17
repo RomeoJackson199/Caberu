@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
@@ -6,6 +7,15 @@ import { useLanguage } from '@/hooks/useLanguage';
 
 const PaymentCancelled: React.FC = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  const handleCloseWindow = () => {
+    window.close();
+
+    if (!window.closed) {
+      navigate('/');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -24,7 +34,7 @@ const PaymentCancelled: React.FC = () => {
           </p>
 
           <Button
-            onClick={() => window.close()}
+            onClick={handleCloseWindow}
             className="w-full"
           >
             {t.closeWindow}
