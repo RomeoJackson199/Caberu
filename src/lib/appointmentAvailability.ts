@@ -36,16 +36,31 @@ interface CacheEntry {
 const availabilityCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes - extended for better performance
 const MAX_CACHE_SIZE = 100; // Prevent unbounded cache growth
+let cacheCleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 
 // Automatic cache cleanup to prevent memory leaks
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of availabilityCache.entries()) {
-    if (now - entry.timestamp > CACHE_TTL) {
-      availabilityCache.delete(key);
+function ensureCacheCleanupInterval() {
+  if (cacheCleanupIntervalId) return;
+
+  cacheCleanupIntervalId = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of availabilityCache.entries()) {
+      if (now - entry.timestamp > CACHE_TTL) {
+        availabilityCache.delete(key);
+      }
     }
-  }
-}, 5 * 60 * 1000); // Clean every 5 minutes
+  }, 5 * 60 * 1000); // Clean every 5 minutes
+}
+
+/**
+ * Stop background cache cleanup interval (useful for tests/HMR teardown)
+ */
+export function disposeAvailabilityCacheCleanup() {
+  if (!cacheCleanupIntervalId) return;
+
+  clearInterval(cacheCleanupIntervalId);
+  cacheCleanupIntervalId = null;
+}
 
 /**
  * Fetches available time slots for a dentist on a specific date
@@ -56,6 +71,8 @@ export async function fetchDentistAvailability(
   date: Date,
   skipCache: boolean = false
 ): Promise<TimeSlot[]> {
+  ensureCacheCleanupInterval();
+
   const dateStr = format(date, 'yyyy-MM-dd');
   const cacheKey = `${dentistId}_${dateStr}`;
 
