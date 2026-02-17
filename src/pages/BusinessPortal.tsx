@@ -68,8 +68,8 @@ export default function BusinessPortal() {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
 
       // Apply the business's default language for the public page
-      // Only override for unauthenticated visitors (logged-in users have their own preference)
-      if (businessData.default_language && !currentUser) {
+      // All visitors see the clinic's chosen language on this page
+      if (businessData.default_language) {
         changeLanguage(businessData.default_language as Language);
       }
       

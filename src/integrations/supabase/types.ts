@@ -6074,6 +6074,7 @@ export type Database = {
         Returns: undefined
       }
       increment_promo_usage: { Args: { promo_id: string }; Returns: undefined }
+      initialize_oauth_business_owner: { Args: never; Returns: Json }
       is_active_dentist_profile: {
         Args: { p_profile_id: string }
         Returns: boolean

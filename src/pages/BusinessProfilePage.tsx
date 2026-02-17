@@ -161,9 +161,8 @@ export default function BusinessProfilePage() {
       setBusiness(businessData);
 
       // Apply the business's default language for the public page
-      // Only override if the visitor has no profile-level preference (not logged in)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (businessData.default_language && !user) {
+      // All visitors see the clinic's chosen language on this page
+      if (businessData.default_language) {
         changeLanguage(businessData.default_language as Language);
       }
 

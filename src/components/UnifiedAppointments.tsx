@@ -342,13 +342,40 @@ export function UnifiedAppointments({
       }
 
       const appointmentDateTime = createAppointmentDateTimeFromStrings(quickDate, quickTime).toISOString();
+      const newStart = new Date(appointmentDateTime).getTime();
+      const newEnd = newStart + (quickDuration * 60 * 1000);
+
+      // Check for overlapping appointments for this dentist
+      const { data: existingAppointments } = await supabase
+        .from('appointments')
+        .select('id, appointment_date, duration_minutes')
+        .eq('dentist_id', dentistId)
+        .eq('business_id', businessId)
+        .in('status', ['confirmed', 'pending'])
+        .gte('appointment_date', new Date(newStart - 24 * 60 * 60 * 1000).toISOString())
+        .lte('appointment_date', new Date(newEnd + 24 * 60 * 60 * 1000).toISOString());
+
+      const hasConflict = existingAppointments?.some(appt => {
+        const existStart = new Date(appt.appointment_date).getTime();
+        const existEnd = existStart + ((appt.duration_minutes || 30) * 60 * 1000);
+        return newStart < existEnd && existStart < newEnd;
+      });
+
+      if (hasConflict) {
+        toast({
+          title: "Time Conflict",
+          description: "This time slot overlaps with an existing appointment. Please choose a different time.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { error } = await supabase
         .from('appointments')
         .insert({
           patient_id: quickPatientId,
           dentist_id: dentistId,
-          business_id: businessId,  // Multi-tenant isolation
+          business_id: businessId,
           appointment_date: appointmentDateTime,
           duration_minutes: quickDuration,
           status: 'confirmed',
