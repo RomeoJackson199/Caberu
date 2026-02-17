@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Globe, Building2 } from 'lucide-react';
+import { generateSlug } from '@/lib/slugUtils';
 
 interface BusinessDetailsStepProps {
   businessData: {
@@ -35,14 +36,6 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
       setBio(businessData.bio);
     }
   }, [businessData]);
-
-  // Auto-generate slug from name
-  const generateSlug = (businessName: string): string => {
-    return businessName
-      .toLowerCase()
-      .replace(/[^a-z0-9.]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
 
   const validateSlug = (slug: string): boolean => {
     const dotCount = (slug.match(/\./g) || []).length;
@@ -114,7 +107,7 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Globe className="h-3 w-3" />
               <span>Your page: </span>
-              <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{window.location.host}/clinic/{slug}</span>
+              <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{window.location.host}/{slug}</span>
             </div>
           )}
           {slugError && (
