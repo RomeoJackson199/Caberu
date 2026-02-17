@@ -10,6 +10,7 @@ import type { Language } from "@/lib/translations";
 interface BusinessData {
   id: string;
   name: string;
+  name_translations: Record<string, string> | null;
   slug: string;
   description: string | null;
   tagline: string | null;
@@ -43,11 +44,20 @@ interface TeamMember {
   specialization: string | null;
 }
 
+function getLocalizedName(business: BusinessData): string {
+  const lang = business.default_language;
+  if (lang && business.name_translations && business.name_translations[lang]) {
+    return business.name_translations[lang];
+  }
+  return business.name;
+}
+
 function applyBusinessSEO(business: BusinessData, services: ServiceData[], team: TeamMember[]) {
-  const title = `${business.name} — ${business.tagline || "Cabinet Dentaire"} | Caberu`;
+  const displayName = getLocalizedName(business);
+  const title = `${displayName} — ${business.tagline || "Cabinet Dentaire"} | Caberu`;
   const description =
     business.description?.slice(0, 155) ||
-    `${business.name}${business.city ? ` à ${business.city}` : ""} — Prenez rendez-vous en ligne. Soins dentaires de qualité pour toute la famille.`;
+    `${displayName}${business.city ? ` à ${business.city}` : ""} — Prenez rendez-vous en ligne. Soins dentaires de qualité pour toute la famille.`;
 
   document.title = title;
   upsertMetaTag("description", description);
@@ -58,7 +68,7 @@ function applyBusinessSEO(business: BusinessData, services: ServiceData[], team:
   if (business.logo_url) {
     upsertMetaTag("og:image", business.logo_url);
   }
-  upsertMetaTag("og:image:alt", `${business.name} — Cabinet Dentaire`);
+  upsertMetaTag("og:image:alt", `${displayName} — Cabinet Dentaire`);
   upsertMetaTag("twitter:title", title);
   upsertMetaTag("twitter:description", description);
   if (business.logo_url) {
@@ -73,7 +83,7 @@ function applyBusinessSEO(business: BusinessData, services: ServiceData[], team:
   const structuredData: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Dentist",
-    name: business.name,
+    name: displayName,
     description: business.description || description,
     url: `${window.location.origin}/${business.slug}`,
     ...(business.logo_url && { image: business.logo_url }),

@@ -3,16 +3,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertCircle, Globe, Building2 } from 'lucide-react';
 import { generateSlug } from '@/lib/slugUtils';
+import { SUPPORTED_LANGUAGES, type Language } from '@/lib/translations';
 
 interface BusinessDetailsStepProps {
   businessData: {
     name?: string;
     tagline?: string;
     bio?: string;
+    default_language?: Language;
   };
-  onUpdate: (data: any) => void;
+  onUpdate: (data: Record<string, unknown>) => void;
 }
 
 const TAGLINE_MAX = 120;
@@ -22,6 +25,7 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
   const [name, setName] = useState(businessData.name || '');
   const [tagline, setTagline] = useState(businessData.tagline || '');
   const [bio, setBio] = useState(businessData.bio || '');
+  const [defaultLanguage, setDefaultLanguage] = useState<Language>(businessData.default_language || 'fr');
   const [slugError, setSlugError] = useState('');
 
   // Update local state when businessData changes (from AI suggestions)
@@ -34,6 +38,9 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
     }
     if (businessData.bio && businessData.bio !== bio) {
       setBio(businessData.bio);
+    }
+    if (businessData.default_language && businessData.default_language !== defaultLanguage) {
+      setDefaultLanguage(businessData.default_language);
     }
   }, [businessData]);
 
@@ -57,11 +64,12 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
   }, [name]);
 
   const handleChange = (field: string, value: string) => {
-    const updates: any = { [field]: value };
+    const updates: Record<string, unknown> = { [field]: value };
     if (field === 'name') {
       setName(value);
       const slug = generateSlug(value);
       updates.slug = slug;
+      updates.name_translations = { [defaultLanguage]: value };
       validateSlug(slug);
     }
     if (field === 'tagline') {
@@ -77,6 +85,20 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
     onUpdate(updates);
   };
 
+  const handleLanguageChange = (lang: Language) => {
+    setDefaultLanguage(lang);
+    onUpdate({
+      default_language: lang,
+      name_translations: name ? { [lang]: name } : {},
+    });
+    // Regenerate slug from current name (the name is in this language)
+    if (name) {
+      const slug = generateSlug(name);
+      onUpdate({ slug, default_language: lang, name_translations: { [lang]: name } });
+    }
+  };
+
+  const selectedLang = SUPPORTED_LANGUAGES.find(l => l.code === defaultLanguage);
   const slug = name ? generateSlug(name) : '';
 
   return (
@@ -92,12 +114,46 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
       </div>
 
       <div className="space-y-5">
+        {/* Default Language */}
+        <div className="space-y-2">
+          <Label htmlFor="defaultLanguage">
+            <div className="flex items-center gap-1.5">
+              <Globe className="h-4 w-4" />
+              Business Language *
+            </div>
+          </Label>
+          <Select value={defaultLanguage} onValueChange={(v) => handleLanguageChange(v as Language)}>
+            <SelectTrigger id="defaultLanguage" className="h-12 text-base w-full max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  <div className="flex items-center gap-2">
+                    <span>{lang.flag}</span>
+                    <span>{lang.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Your public page and URL will be in this language
+          </p>
+        </div>
+
         {/* Business Name */}
         <div className="space-y-2">
-          <Label htmlFor="businessName">Business Name *</Label>
+          <Label htmlFor="businessName">
+            Business Name ({selectedLang?.name}) *
+          </Label>
           <Input
             id="businessName"
-            placeholder="e.g., Bright Smiles Dental"
+            placeholder={
+              defaultLanguage === 'fr' ? 'ex. Clinique Dentaire Sourire' :
+              defaultLanguage === 'nl' ? 'bijv. Tandartspraktijk De Glimlach' :
+              'e.g., Bright Smiles Dental'
+            }
             value={name}
             onChange={(e) => handleChange('name', e.target.value)}
             className={`h-12 text-base ${slugError ? "border-destructive" : ""}`}
@@ -128,7 +184,11 @@ export function BusinessDetailsStep({ businessData, onUpdate }: BusinessDetailsS
           </div>
           <Input
             id="tagline"
-            placeholder="e.g., Your smile, our passion"
+            placeholder={
+              defaultLanguage === 'fr' ? 'ex. Votre sourire, notre passion' :
+              defaultLanguage === 'nl' ? 'bijv. Uw glimlach, onze passie' :
+              'e.g., Your smile, our passion'
+            }
             value={tagline}
             onChange={(e) => handleChange('tagline', e.target.value)}
             maxLength={TAGLINE_MAX}

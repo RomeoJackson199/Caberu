@@ -1,8 +1,11 @@
 import type { TemplateType } from "@/lib/businessTemplates";
 import type { Language } from "@/lib/translations";
 
+export type NameTranslations = Partial<Record<Language, string>>;
+
 export interface BrandingState {
   clinicName: string;
+  nameTranslations: NameTranslations;
   slug: string;
   tagline: string;
   addressStreet: string;
@@ -22,6 +25,7 @@ export interface BrandingState {
 
 export interface BrandingActions {
   setClinicName: (value: string) => void;
+  setNameTranslation: (lang: Language, value: string) => void;
   setSlug: (value: string) => void;
   setTagline: (value: string) => void;
   setAddressStreet: (value: string) => void;

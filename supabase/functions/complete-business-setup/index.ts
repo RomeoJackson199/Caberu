@@ -106,6 +106,10 @@ serve(async (req) => {
             const slugSuffix = Math.random().toString(36).substring(2, 6);
             const updateSlug = `${baseSlug}-${slugSuffix}`;
 
+            // Build name_translations from the business name and default language
+            const defaultLang = business_data.default_language || 'en';
+            const nameTranslations = business_data.name_translations || { [defaultLang]: business_data.name };
+
             const { error: updateError } = await supabaseClient
                 .from('businesses')
                 .update({
@@ -114,6 +118,8 @@ serve(async (req) => {
                     tagline: business_data.tagline || null,
                     bio: business_data.bio || null,
                     template_type: business_data.template || 'healthcare',
+                    default_language: defaultLang,
+                    name_translations: nameTranslations,
                     subscription_status: 'active',
                     subscription_plan: promo_code_id ? 'promo' : 'paid',
                     subscription_started_at: new Date().toISOString(),
@@ -147,6 +153,9 @@ serve(async (req) => {
         const finalSlug = `${baseSlug}-${slugSuffix}`;
 
         // 5. Create Business
+        const newDefaultLang = business_data.default_language || 'en';
+        const newNameTranslations = business_data.name_translations || { [newDefaultLang]: business_data.name };
+
         const { data: business, error: businessError } = await supabaseClient
             .from('businesses')
             .insert({
@@ -155,6 +164,8 @@ serve(async (req) => {
                 tagline: business_data.tagline,
                 bio: business_data.bio,
                 template_type: business_data.template || 'generic',
+                default_language: newDefaultLang,
+                name_translations: newNameTranslations,
                 owner_profile_id: profile.id,
             })
             .select()

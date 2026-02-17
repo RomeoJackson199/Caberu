@@ -8,7 +8,8 @@ import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { TemplateType, getTemplateConfig } from "@/lib/businessTemplates";
 import { Language } from "@/lib/translations";
 import { logger } from "@/lib/logger";
-import type { BrandingState, UseBrandingSettingsReturn } from "./types";
+import { generateSlug } from "@/lib/slugUtils";
+import type { BrandingState, NameTranslations, UseBrandingSettingsReturn } from "./types";
 
 export function useBrandingSettings(): UseBrandingSettingsReturn {
   const { businessId, loading: businessLoading } = useBusinessContext();
@@ -21,6 +22,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [clinicName, setClinicName] = useState("");
+  const [nameTranslations, setNameTranslations] = useState<NameTranslations>({});
   const [slug, setSlug] = useState("");
   const [slugError, setSlugError] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
@@ -44,6 +46,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
 
   const [initialState, setInitialState] = useState<BrandingState>({
     clinicName: "",
+    nameTranslations: {},
     slug: "",
     tagline: "",
     addressStreet: "",
@@ -80,6 +83,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   useEffect(() => {
     const currentState: BrandingState = {
       clinicName,
+      nameTranslations,
       slug,
       tagline,
       addressStreet,
@@ -97,7 +101,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
       aiPersonalityTraits,
     };
     setHasChanges(JSON.stringify(currentState) !== JSON.stringify(initialState));
-  }, [clinicName, slug, tagline, addressStreet, addressHouseNumber, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, defaultLanguage, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
+  }, [clinicName, nameTranslations, slug, tagline, addressStreet, addressHouseNumber, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, defaultLanguage, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
 
   useUnsavedChanges({
     when: hasChanges,
@@ -108,7 +112,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     try {
       const { data: business, error } = await supabase
         .from("businesses")
-        .select("name, slug, tagline, address, phone, logo_url, template_type, default_language, ai_system_behavior, ai_greeting, ai_personality_traits, custom_config")
+        .select("name, name_translations, slug, tagline, address, phone, logo_url, template_type, default_language, ai_system_behavior, ai_greeting, ai_personality_traits, custom_config")
         .eq("id", businessId)
         .single();
 
@@ -144,8 +148,16 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
           }
         }
 
+        const loadedTranslations = (business.name_translations as NameTranslations) || {};
+        // If no translations yet, seed with the current name under the default language
+        const lang = (business.default_language as Language) || "en";
+        if (!loadedTranslations[lang] && business.name) {
+          loadedTranslations[lang] = business.name;
+        }
+
         const state: BrandingState = {
           clinicName: business.name || "",
+          nameTranslations: loadedTranslations,
           slug: business.slug || "",
           tagline: business.tagline || "",
           addressStreet: parsedStreet,
@@ -164,6 +176,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         };
 
         setClinicName(state.clinicName);
+        setNameTranslations(state.nameTranslations);
         setSlug(state.slug);
         setTagline(state.tagline);
         setAddressStreet(state.addressStreet);
@@ -305,6 +318,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
 
       setInitialState({
         clinicName,
+        nameTranslations,
         slug,
         tagline,
         addressStreet,
@@ -358,6 +372,35 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   function handleSlugChange(value: string) {
     setSlug(value);
     validateSlug(value);
+  }
+
+  /**
+   * Update the business name for a specific language.
+   * If the language is the current default language, also update clinicName and slug.
+   */
+  function setNameTranslation(lang: Language, value: string) {
+    setNameTranslations((prev) => ({ ...prev, [lang]: value }));
+    if (lang === defaultLanguage) {
+      setClinicName(value);
+      const newSlug = generateSlug(value);
+      setSlug(newSlug);
+      validateSlug(newSlug);
+    }
+  }
+
+  /**
+   * When the default language changes, update clinicName and slug
+   * from the name stored for that language (if available).
+   */
+  function handleDefaultLanguageChange(lang: Language) {
+    setDefaultLanguage(lang);
+    const nameInLang = nameTranslations[lang];
+    if (nameInLang) {
+      setClinicName(nameInLang);
+      const newSlug = generateSlug(nameInLang);
+      setSlug(newSlug);
+      validateSlug(newSlug);
+    }
   }
 
   async function copyBusinessLink() {
@@ -436,8 +479,12 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         [addressPostalCode, addressCity].filter(Boolean).join(" "),
       ].filter(Boolean).join(", ");
 
-      const updateData: any = {
-        name: clinicName,
+      // Ensure the name in the default language is the primary name
+      const primaryName = nameTranslations[defaultLanguage] || clinicName;
+
+      const updateData: Record<string, unknown> = {
+        name: primaryName,
+        name_translations: nameTranslations,
         slug,
         tagline,
         address: combinedAddress,
@@ -472,6 +519,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
 
       setInitialState({
         clinicName,
+        nameTranslations,
         slug,
         tagline,
         addressStreet,
@@ -504,6 +552,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   return {
     // State
     clinicName,
+    nameTranslations,
     slug,
     tagline,
     addressStreet,
@@ -522,6 +571,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
 
     // Actions
     setClinicName,
+    setNameTranslation,
     setSlug,
     setTagline,
     setAddressStreet,
@@ -532,7 +582,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     setPrimaryColor,
     setSecondaryColor,
     setLogoUrl,
-    setDefaultLanguage,
+    setDefaultLanguage: handleDefaultLanguageChange,
     setAiSystemBehavior,
     setAiGreeting,
     setAiPersonalityTraits,

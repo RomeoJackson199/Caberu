@@ -114,6 +114,42 @@ export function BrandingTabContent({ branding }: BrandingTabContentProps) {
         </CardContent>
       </Card>
 
+      {/* Default Language — placed before clinic names so the user picks language first */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            {t.defaultLanguage || "Default Language"}
+          </CardTitle>
+          <CardDescription>
+            {t.defaultLanguageDesc || "Choose the main language for your public page. Your URL slug is generated from the business name in this language."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="default-language">{t.language}</Label>
+            <Select
+              value={branding.defaultLanguage}
+              onValueChange={(value) => branding.setDefaultLanguage(value as Language)}
+            >
+              <SelectTrigger id="default-language" className="w-full max-w-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    <div className="flex items-center gap-2">
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Clinic Information */}
       <Card>
         <CardHeader>
@@ -123,14 +159,42 @@ export function BrandingTabContent({ branding }: BrandingTabContentProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="clinic-name">{t.clinicName}</Label>
-            <Input
-              id="clinic-name"
-              value={branding.clinicName}
-              onChange={(e) => branding.setClinicName(e.target.value)}
-              placeholder={t.clinicName}
-            />
+          {/* Per-language business names */}
+          <div className="space-y-3">
+            <Label>{t.clinicName}</Label>
+            <p className="text-xs text-muted-foreground -mt-1">
+              Enter your business name in each language. The slug is generated from the name in your default language.
+            </p>
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const isDefault = lang.code === branding.defaultLanguage;
+              return (
+                <div key={lang.code} className="space-y-1">
+                  <Label
+                    htmlFor={`clinic-name-${lang.code}`}
+                    className="text-sm text-muted-foreground flex items-center gap-1.5"
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.name}</span>
+                    {isDefault && (
+                      <span className="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        URL slug
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id={`clinic-name-${lang.code}`}
+                    value={branding.nameTranslations[lang.code as Language] || ""}
+                    onChange={(e) => branding.setNameTranslation(lang.code as Language, e.target.value)}
+                    placeholder={
+                      lang.code === "fr" ? "ex. Clinique Dentaire Sourire" :
+                      lang.code === "nl" ? "bijv. Tandartspraktijk De Glimlach" :
+                      "e.g., Bright Smiles Dental"
+                    }
+                    className={isDefault ? "ring-1 ring-primary/30" : ""}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           <div className="space-y-2">
@@ -263,42 +327,6 @@ export function BrandingTabContent({ branding }: BrandingTabContentProps) {
               onChange={(val) => branding.setPhone(val || "")}
               placeholder={t.enterPhoneNumber}
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Default Language */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            {t.defaultLanguage || "Default Language"}
-          </CardTitle>
-          <CardDescription>
-            {t.defaultLanguageDesc || "The default language for your public business page. Visitors will see your page in this language by default."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="default-language">{t.language}</Label>
-            <Select
-              value={branding.defaultLanguage}
-              onValueChange={(value) => branding.setDefaultLanguage(value as Language)}
-            >
-              <SelectTrigger id="default-language" className="w-full max-w-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SUPPORTED_LANGUAGES.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    <div className="flex items-center gap-2">
-                      <span>{lang.flag}</span>
-                      <span>{lang.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </CardContent>
       </Card>

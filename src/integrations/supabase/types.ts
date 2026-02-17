@@ -712,6 +712,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          name_translations: Json | null
           owner_profile_id: string
           pending_plan_change: string | null
           pending_plan_change_date: string | null
@@ -760,6 +761,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          name_translations?: Json | null
           owner_profile_id: string
           pending_plan_change?: string | null
           pending_plan_change_date?: string | null
@@ -808,6 +810,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          name_translations?: Json | null
           owner_profile_id?: string
           pending_plan_change?: string | null
           pending_plan_change_date?: string | null

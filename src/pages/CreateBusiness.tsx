@@ -18,6 +18,8 @@ interface BusinessData {
   tagline?: string;
   bio?: string;
   slug?: string;
+  default_language?: string;
+  name_translations?: Record<string, string>;
 }
 
 const STEPS = [
