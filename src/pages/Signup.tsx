@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormField, validators } from "@/components/ui/form-field";
-import { Loader2, Calendar, MessageSquare, FileText, Sparkles, Mail, CheckCircle2 } from "lucide-react";
+import { FormField } from "@/components/ui/form-field";
+import { Loader2, Shield, Mail, ArrowLeft, ChevronRight, Calendar, Sparkles, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from '@/lib/logger';
+import { motion, AnimatePresence } from "framer-motion";
 import { validatePassword, checkPasswordBreach, getStrengthLabel, type PasswordStrength } from '@/utils/passwordValidation';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -21,289 +22,388 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DentalPracticeConsentDialog, PatientTermsConsentDialog } from "@/components/consent";
 
+type SignupView = "type" | "options" | "otp-verify" | "email-form";
+
 const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [signupView, setSignupView] = useState<SignupView>("type");
   const [userType, setUserType] = useState<"client" | "business" | null>(null);
-  const [showEmailVerificationAlert, setShowEmailVerificationAlert] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [showConsentDialog, setShowConsentDialog] = useState(false);
-  const [consentGiven, setConsentGiven] = useState(false);
+
+  // Phone OTP
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [phoneAuthError, setPhoneAuthError] = useState<string | null>(null);
+
+  // Email form
+  const [emailFormData, setEmailFormData] = useState({ email: "", password: "", confirmPassword: "" });
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
   const [isCheckingBreach, setIsCheckingBreach] = useState(false);
 
-  // Real-time password validation
-  useEffect(() => {
-    if (formData.password) {
-      const strength = validatePassword(formData.password);
-      setPasswordStrength(strength);
-    } else {
-      setPasswordStrength(null);
-    }
-  }, [formData.password]);
+  // Consent / verification
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [showEmailVerificationAlert, setShowEmailVerificationAlert] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
 
   useEffect(() => {
-    // Only redirect if user already has a session when landing on the page.
-    // Don't set up onAuthStateChange redirect here because it would
-    // prematurely redirect business users away from the email verification
-    // dialog after a successful signup.
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate("/auth-redirect");
     });
   }, [navigate]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both passwords are the same.",
-        variant: "destructive",
+  // Password strength
+  useEffect(() => {
+    if (emailFormData.password) {
+      setPasswordStrength(validatePassword(emailFormData.password));
+    } else {
+      setPasswordStrength(null);
+    }
+  }, [emailFormData.password]);
+
+  const selectType = (type: "client" | "business") => {
+    setUserType(type);
+    setSignupView("options");
+  };
+
+  // ── Phone OTP ──────────────────────────────────────────────
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone.trim()) return;
+    setIsLoading(true);
+    setPhoneAuthError(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          data: { role_type: userType === "client" ? "patient" : "owner" },
+        },
       });
+      if (error) throw error;
+      setResendCooldown(60);
+      setSignupView("otp-verify");
+      toast({ title: "Code sent!", description: `We sent a 6-digit code to ${phone}` });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      setPhoneAuthError(
+        msg.includes("rate") ? "Too many attempts. Please wait before trying again." :
+        "Failed to send SMS. Check your phone number and try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim()) return;
+    setIsLoading(true);
+    setPhoneAuthError(null);
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({ phone, token: otp, type: "sms" });
+      if (error) throw error;
+
+      toast({ title: "Welcome to Caberu!", description: "Your account has been created." });
+
+      if (userType === "business") {
+        navigate("/create-business");
+      } else {
+        navigate("/auth-redirect");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : "";
+      setPhoneAuthError(
+        msg.includes("invalid") || msg.includes("expired")
+          ? "Invalid or expired code. Please try again."
+          : "Verification failed. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ── Google OAuth ───────────────────────────────────────────
+  const handleGoogleSignUp = async () => {
+    setIsLoading(true);
+    try {
+      if (userType) {
+        sessionStorage.setItem('pending_signup_user_type', userType === "client" ? "patient" : "owner");
+      }
+      const redirectTo = userType === "business"
+        ? `${window.location.origin}/create-business`
+        : `${window.location.origin}/auth-redirect`;
+
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+      if (error) throw error;
+    } catch {
+      toast({ title: "Google sign up failed", description: "Please try again or use another method.", variant: "destructive" });
+      setIsLoading(false);
+    }
+  };
+
+  // ── Email / Password ───────────────────────────────────────
+  const handleEmailSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailError(null);
+
+    if (emailFormData.password !== emailFormData.confirmPassword) {
+      setEmailError("Passwords don't match.");
       return;
     }
 
-    // Require consent before signup for ALL user types
     if (!consentGiven) {
       setShowConsentDialog(true);
       return;
     }
 
-    // SECURITY: Validate password strength before signup
-    const strength = validatePassword(formData.password);
+    const strength = validatePassword(emailFormData.password);
     if (!strength.isValid) {
-      toast({
-        title: "Password Too Weak",
-        description: strength.feedback.join('. '),
-        variant: "destructive",
-        duration: 8000,
-      });
+      setEmailError(strength.feedback.join('. '));
       return;
     }
 
-    // SECURITY: Check for breached passwords
     setIsCheckingBreach(true);
     try {
-      const isBreached = await checkPasswordBreach(formData.password);
+      const isBreached = await checkPasswordBreach(emailFormData.password);
       if (isBreached) {
-        toast({
-          title: "Compromised Password",
-          description: "This password has been found in a data breach. Please choose a different password.",
-          variant: "destructive",
-          duration: 10000,
-        });
+        setEmailError("This password has been found in a data breach. Please choose a different one.");
         setIsCheckingBreach(false);
         return;
       }
     } catch (breachError) {
-      // Continue if breach check fails (don't block signup)
       logger.error('Breach check failed:', breachError);
     }
     setIsCheckingBreach(false);
-
     setIsLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email: emailFormData.email,
+        password: emailFormData.password,
         options: {
-          // Business owners should be redirected to create-business after email verification
           emailRedirectTo: userType === "business"
             ? `${window.location.origin}/create-business`
             : `${window.location.origin}/auth-redirect`,
-          // Pass role_type so the handle_new_user trigger knows whether to create
-          // a patient profile or a business owner with associated business/dentist records
-          data: {
-            role_type: userType === "client" ? "patient" : "owner",
-          },
+          data: { role_type: userType === "client" ? "patient" : "owner" },
         },
       });
 
       if (error) throw error;
 
-      // Set the business context after successful signup
       const selectedBusinessId = sessionStorage.getItem("selected_business_id");
       if (selectedBusinessId && data.user) {
         try {
-          await supabase.functions.invoke('set-current-business', {
-            body: { businessId: selectedBusinessId }
-          });
+          await supabase.functions.invoke('set-current-business', { body: { businessId: selectedBusinessId } });
           sessionStorage.removeItem('selected_business_id');
         } catch (err) {
           logger.error("Error setting business context:", err);
         }
       }
 
-      // Store email for the alert dialog
-      setUserEmail(formData.email);
-
-      // Show success toast
+      setVerificationEmail(emailFormData.email);
       toast({
-        title: "✅ Account created successfully!",
+        title: "Account created!",
         description: "Please check your email to verify your account.",
         duration: 8000,
-        className: "bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100",
       });
+      setTimeout(() => setShowEmailVerificationAlert(true), 500);
 
-      // Show prominent email verification alert dialog
-      setTimeout(() => {
-        setShowEmailVerificationAlert(true);
-      }, 500);
-
-      // Redirect business owners to create business flow after they close the dialog
-      if (userType === "business") {
-        // They'll be redirected when they close the alert dialog
-        return;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : '';
+      let friendly = "Unable to create account. Please try again.";
+      if (msg.includes("already registered") || msg.includes("already exists")) {
+        friendly = "An account with this email already exists. Please sign in instead.";
+      } else if (msg.includes("invalid email")) {
+        friendly = "The email address doesn't look right. Please check it.";
+      } else if (msg.includes("password")) {
+        friendly = "Your password needs to be stronger (8+ characters, mixed case, numbers, symbols).";
+      } else if (msg.includes("network")) {
+        friendly = "Connection issue. Please check your internet and try again.";
       }
-    } catch (signUpError: unknown) {
-      const errorMessage = signUpError instanceof Error ? signUpError.message.toLowerCase() : '';
-      let userFriendlyMessage = "Unable to create account. Please try again.";
-
-      if (errorMessage.includes("already registered") || errorMessage.includes("already exists")) {
-        userFriendlyMessage = "An account with this email already exists. Please sign in instead.";
-      } else if (errorMessage.includes("invalid email")) {
-        userFriendlyMessage = "The email address you entered doesn't look right. Please check it and try again.";
-      } else if (errorMessage.includes("password")) {
-        userFriendlyMessage = "Your password needs to be stronger. It must be at least 8 characters long and include both uppercase and lowercase letters.";
-      } else if (errorMessage.includes("network")) {
-        userFriendlyMessage = "We're having trouble connecting. Please check your internet connection and try again.";
-      }
-
-      toast({
-        title: "❌ Sign up failed",
-        description: userFriendlyMessage,
-        variant: "destructive",
-        duration: 6000,
-      });
+      setEmailError(friendly);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      // Store the user type in sessionStorage so we can retrieve it after OAuth redirect
-      // This is needed because OAuth doesn't allow us to pass custom metadata directly
-      if (userType) {
-        sessionStorage.setItem('pending_signup_user_type', userType === "client" ? "patient" : "owner");
-      }
-
-      // Determine redirect based on user type
-      const redirectTo = userType === "business"
-        ? `${window.location.origin}/create-business`
-        : `${window.location.origin}/auth-redirect`;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo,
-        },
-      });
-      if (error) throw error;
-    } catch (error) {
-      toast({
-        title: "❌ Google sign up failed",
-        description: "Unable to sign up with Google. Please try again or use email/password.",
-        variant: "destructive",
-        duration: 6000,
-      });
-      setIsLoading(false);
-    }
-  };
-
+  // ── Render ─────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold tracking-tight mb-3">SIGN UP</h1>
-            <p className="text-muted-foreground text-sm">
-              Get instant access to AI-powered dental care management
-            </p>
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
+        <div className="absolute top-[-20%] left-[-30%] w-[80%] h-[60%] rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute bottom-[-10%] right-[-20%] w-[60%] h-[40%] rounded-full bg-white/5 blur-3xl" />
+      </div>
+
+      {/* Logo / heading */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="space-y-3"
+        >
+          <div className="inline-flex items-center gap-2">
+            <Shield className="h-8 w-8 text-white" />
+            <span className="text-5xl font-bold text-white tracking-tight">Caberu</span>
           </div>
+          <p className="text-lg text-white/80">
+            {signupView === "type" ? "Your complete dental care platform" :
+             signupView === "otp-verify" ? `Enter the code sent to ${phone}` :
+             userType === "business" ? "Create your practice account" :
+             "Create your patient account"}
+          </p>
+        </motion.div>
+      </div>
 
-          {/* User Type Selection */}
-          {!userType && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-center mb-6">I am signing up as:</h2>
-              <div className="grid gap-4">
+      {/* Bottom panel */}
+      <div className="relative z-10 px-5 pb-10">
+        <AnimatePresence mode="wait">
+
+          {/* ── Step 1: Account type ── */}
+          {signupView === "type" && (
+            <motion.div
+              key="type"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl space-y-4"
+            >
+              <div className="text-center space-y-1">
+                <h2 className="text-xl font-bold text-white">Create account</h2>
+                <p className="text-sm text-white/65">I am signing up as:</p>
+              </div>
+
+              <div className="space-y-3">
                 <button
-                  onClick={() => setUserType("client")}
-                  className="group relative overflow-hidden rounded-xl border-2 border-muted hover:border-primary transition-all p-6 text-left bg-background hover:bg-accent"
+                  onClick={() => selectType("client")}
+                  className="w-full rounded-2xl bg-white/15 border border-white/20 p-4 text-left hover:bg-white/25 transition-all"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-3">
-                      <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-white/20 p-2.5">
+                      <Calendar className="h-5 w-5 text-white" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-2">A Client</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Book appointments, manage your dental records, and communicate with your dentist
-                      </p>
+                    <div>
+                      <p className="font-semibold text-white">A Client / Patient</p>
+                      <p className="text-xs text-white/60 mt-0.5">Book appointments & manage dental records</p>
                     </div>
                   </div>
                 </button>
 
                 <button
-                  onClick={() => setUserType("business")}
-                  className="group relative overflow-hidden rounded-xl border-2 border-muted hover:border-primary transition-all p-6 text-left bg-background hover:bg-accent"
+                  onClick={() => selectType("business")}
+                  className="w-full rounded-2xl bg-white/15 border border-white/20 p-4 text-left hover:bg-white/25 transition-all"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-full bg-purple-100 dark:bg-purple-900/30 p-3">
-                      <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-white/20 p-2.5">
+                      <Sparkles className="h-5 w-5 text-white" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-2">A Business Owner</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Manage your dental practice, schedule appointments, and grow your business
-                      </p>
+                    <div>
+                      <p className="font-semibold text-white">A Business Owner</p>
+                      <p className="text-xs text-white/60 mt-0.5">Manage your dental practice & grow your business</p>
                     </div>
                   </div>
                 </button>
               </div>
 
-              <div className="text-center pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <Link to="/login" className="text-primary hover:underline font-medium">
-                    Log in
-                  </Link>
-                </p>
-              </div>
-            </div>
+              <p className="text-center text-sm text-white/60">
+                Already have an account?{" "}
+                <Link to="/login" className="text-white font-semibold hover:underline underline-offset-4">
+                  Sign in
+                </Link>
+              </p>
+            </motion.div>
           )}
 
-          {/* Sign Up Form - Only show after user type is selected */}
-          {userType && (
-            <div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setUserType(null)}
-                className="mb-4"
-              >
-                ← Change account type
-              </Button>
-
-              <div className="space-y-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                  className="w-full h-12 border-2 hover:bg-accent"
+          {/* ── Step 2: Auth method — phone primary + other options ── */}
+          {signupView === "options" && (
+            <motion.div
+              key="options"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { setSignupView("type"); setPhoneAuthError(null); }}
+                  className="p-1.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
                 >
-                  <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div>
+                  <h2 className="text-lg font-bold text-white">
+                    {userType === "business" ? "Set up your practice" : "Create your account"}
+                  </h2>
+                  <p className="text-sm text-white/60">Enter your phone number to get started</p>
+                </div>
+              </div>
+
+              {/* Phone form */}
+              <form onSubmit={handleSendOtp} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-white/80 text-sm">Phone number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="h-13 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40 text-base"
+                    required
+                    autoFocus
+                    autoComplete="tel"
+                  />
+                </div>
+
+                {phoneAuthError && (
+                  <div className="p-3 rounded-xl bg-red-500/20 border border-red-400/30">
+                    <p className="text-sm text-white">{phoneAuthError}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || !phone.trim()}
+                  className="w-full h-13 text-base font-semibold rounded-2xl bg-white text-primary hover:bg-white/95 shadow-lg disabled:opacity-50"
+                >
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send Code"}
+                </Button>
+              </form>
+
+              {/* Divider */}
+              <div className="relative py-1">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-white/20" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="px-3 text-white/50 font-medium tracking-wider">Other options</span>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                {/* Google */}
+                <Button
+                  onClick={handleGoogleSignUp}
+                  disabled={isLoading}
+                  className="w-full h-13 text-base font-semibold rounded-2xl bg-white text-gray-800 hover:bg-gray-50 border-0 shadow-lg disabled:opacity-50"
+                >
+                  <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -312,259 +412,265 @@ const Signup = () => {
                   Continue with Google
                 </Button>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">or</span>
-                  </div>
-                </div>
-
-                <form onSubmit={handleSignUp} className="space-y-4" role="form" aria-label="Sign up form">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Your Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="name@email.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="h-12"
-                      required
-                      aria-label="Email address"
-                      aria-required="true"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="password">Create Password</Label>
-                    <FormField
-                      id="password"
-                      type="password"
-                      placeholder="Minimum 12 characters"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="h-12"
-                      required
-                      showPasswordToggle={true}
-                      showCharacterCount={false}
-                      aria-label="Create password"
-                      aria-required="true"
-                    />
-
-                    {/* Password Strength Indicator */}
-                    {passwordStrength && formData.password && (
-                      <div className="space-y-2">
-                        <Progress
-                          value={(passwordStrength.score / 5) * 100}
-                          className="h-2"
-                        />
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-medium ${getStrengthLabel(passwordStrength.score).color}`}>
-                            {getStrengthLabel(passwordStrength.score).label}
-                          </span>
-                          {isCheckingBreach && (
-                            <span className="text-xs text-muted-foreground">Checking security...</span>
-                          )}
-                        </div>
-                        {passwordStrength.feedback.length > 0 && (
-                          <ul className="text-xs text-red-600 space-y-1">
-                            {passwordStrength.feedback.slice(0, 3).map((item, i) => (
-                              <li key={i}>• {item}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-
-                    <p className="text-xs text-muted-foreground">
-                      12+ characters with uppercase, lowercase, number, and special character
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <FormField
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Re-enter your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      className="h-12"
-                      required
-                      showPasswordToggle={true}
-                      showCharacterCount={false}
-                      validate={(value) => {
-                        if (value && formData.password && value !== formData.password) {
-                          return "Passwords don't match";
-                        }
-                        return undefined;
-                      }}
-                      success={!!(formData.confirmPassword && formData.password && formData.confirmPassword === formData.password)}
-                      aria-label="Confirm password"
-                      aria-required="true"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-lg font-semibold"
-                    disabled={isLoading}
-                    aria-label={isLoading ? "Creating your account, please wait" : "Create your account"}
-                    aria-busy={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                        <span className="sr-only">Creating account...</span>
-                      </>
-                    ) : (
-                      "CREATE ACCOUNT"
-                    )}
-                  </Button>
-
-                  <p className="text-center text-sm text-muted-foreground">
-                    Already have an account?{" "}
-                    <Link to="/login" className="text-primary hover:underline font-medium">
-                      Log in
-                    </Link>
-                  </p>
-                </form>
-
-                <p className="text-xs text-center text-muted-foreground pt-4">
-                  I agree to the{" "}
-                  <Link to="/terms" className="underline hover:text-foreground">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link to="/privacy" className="underline hover:text-foreground">
-                    Privacy Policy
-                  </Link>
-                </p>
+                {/* Email */}
+                <Button
+                  onClick={() => { setPhoneAuthError(null); setEmailError(null); setSignupView("email-form"); }}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="w-full h-13 text-base font-semibold rounded-2xl bg-white/15 text-white hover:bg-white/25 border-white/20 backdrop-blur-sm flex items-center justify-between px-5"
+                >
+                  <span className="flex items-center gap-3">
+                    <Mail className="h-5 w-5" />
+                    Continue with Email
+                  </span>
+                  <ChevronRight className="h-4 w-4 opacity-60" />
+                </Button>
               </div>
-            </div>
+
+              <p className="text-center text-sm text-white/60">
+                Already have an account?{" "}
+                <Link to="/login" className="text-white font-semibold hover:underline underline-offset-4">
+                  Sign in
+                </Link>
+              </p>
+            </motion.div>
           )}
-        </div>
-      </div>
 
-      {/* Right Side - Hero */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 via-blue-700/90 to-indigo-800/90" />
+          {/* ── Step 3a: OTP verification ── */}
+          {signupView === "otp-verify" && (
+            <motion.div
+              key="otp-verify"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { setSignupView("options"); setOtp(""); setPhoneAuthError(null); }}
+                  className="p-1.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Verify your number</h2>
+                  <p className="text-sm text-white/60">{phone}</p>
+                </div>
+              </div>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Sparkles className="h-5 w-5" />
-              Join 5,000+ people already managing dental care with AI
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-6xl font-bold leading-tight mb-4">
-                APPOINTMENTS
-                <br />
-                MADE SIMPLE —{" "}
-                <span className="text-white/90">INSTANTLY</span>
-              </h2>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 max-w-md border border-white/20">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <img
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Michael"
-                    alt="User"
-                    className="w-full h-full rounded-full"
+              <form onSubmit={handleVerifyOtp} className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="otp" className="text-white/80 text-sm">6-digit code</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    className="h-13 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40 text-2xl tracking-[0.5em] text-center"
+                    required
+                    autoFocus
+                    autoComplete="one-time-code"
                   />
                 </div>
+
+                {phoneAuthError && (
+                  <div className="p-3 rounded-xl bg-red-500/20 border border-red-400/30">
+                    <p className="text-sm text-white">{phoneAuthError}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || otp.length < 6}
+                  className="w-full h-12 text-base font-semibold rounded-2xl bg-white text-primary hover:bg-white/95 shadow-lg disabled:opacity-50"
+                >
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
+                </Button>
+              </form>
+
+              <div className="text-center">
+                {resendCooldown > 0 ? (
+                  <p className="text-sm text-white/50">Resend code in {resendCooldown}s</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => handleSendOtp(e as unknown as React.FormEvent)}
+                    disabled={isLoading}
+                    className="text-sm text-white/70 hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    Didn't receive a code? <span className="font-semibold text-white">Resend</span>
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Step 3b: Email / password sign up ── */}
+          {signupView === "email-form" && (
+            <motion.div
+              key="email-form"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { setSignupView("options"); setEmailError(null); }}
+                  className="p-1.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
                 <div>
-                  <p className="text-white/95 mb-3 leading-relaxed">
-                    "Finally, something that actually understands my needs. The AI assistant feels like having a real dental coordinator."
-                  </p>
-                  <p className="font-semibold">Michael Chen</p>
-                  <p className="text-sm text-white/70">Verified Patient</p>
+                  <h2 className="text-lg font-bold text-white">Sign up with Email</h2>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <Calendar className="h-6 w-6 mb-2" />
-                <p className="text-sm font-medium">Smart Scheduling</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <MessageSquare className="h-6 w-6 mb-2" />
-                <p className="text-sm font-medium">AI Chat Support</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <FileText className="h-6 w-6 mb-2" />
-                <p className="text-sm font-medium">Health Records</p>
-              </div>
-            </div>
+              <form onSubmit={handleEmailSignUp} className="space-y-3" role="form" aria-label="Sign up form">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-white/80 text-sm">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@email.com"
+                    value={emailFormData.email}
+                    onChange={(e) => setEmailFormData({ ...emailFormData, email: e.target.value })}
+                    className="h-12 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40"
+                    required
+                    autoFocus
+                    autoComplete="email"
+                  />
+                </div>
 
-            <div className="flex justify-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-white"></div>
-              <div className="w-2 h-2 rounded-full bg-white/50"></div>
-              <div className="w-2 h-2 rounded-full bg-white/30"></div>
-              <div className="w-2 h-2 rounded-full bg-white/30"></div>
-              <div className="w-2 h-2 rounded-full bg-white/30"></div>
-            </div>
-          </div>
-        </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="text-white/80 text-sm">Create Password</Label>
+                  <FormField
+                    id="password"
+                    type="password"
+                    placeholder="Minimum 12 characters"
+                    value={emailFormData.password}
+                    onChange={(e) => setEmailFormData({ ...emailFormData, password: e.target.value })}
+                    className="h-12 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40"
+                    required
+                    showPasswordToggle
+                    showCharacterCount={false}
+                  />
+                  {passwordStrength && emailFormData.password && (
+                    <div className="space-y-1">
+                      <Progress value={(passwordStrength.score / 5) * 100} className="h-1.5" />
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-medium ${getStrengthLabel(passwordStrength.score).color}`}>
+                          {getStrengthLabel(passwordStrength.score).label}
+                        </span>
+                        {isCheckingBreach && <span className="text-xs text-white/50">Checking security…</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmPassword" className="text-white/80 text-sm">Confirm Password</Label>
+                  <FormField
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Re-enter your password"
+                    value={emailFormData.confirmPassword}
+                    onChange={(e) => setEmailFormData({ ...emailFormData, confirmPassword: e.target.value })}
+                    className="h-12 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40"
+                    required
+                    showPasswordToggle
+                    showCharacterCount={false}
+                    validate={(value) => {
+                      if (value && emailFormData.password && value !== emailFormData.password) {
+                        return "Passwords don't match";
+                      }
+                      return undefined;
+                    }}
+                    success={!!(emailFormData.confirmPassword && emailFormData.password && emailFormData.confirmPassword === emailFormData.password)}
+                  />
+                </div>
+
+                {emailError && (
+                  <div className="p-3 rounded-xl bg-red-500/20 border border-red-400/30">
+                    <p className="text-sm text-white">{emailError}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-semibold rounded-2xl bg-white text-primary hover:bg-white/95 shadow-lg disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
+                </Button>
+
+                <p className="text-center text-xs text-white/50">
+                  By signing up you agree to our{" "}
+                  <Link to="/terms" className="text-white/80 hover:text-white underline underline-offset-2">Terms</Link>
+                  {" "}and{" "}
+                  <Link to="/privacy" className="text-white/80 hover:text-white underline underline-offset-2">Privacy Policy</Link>
+                </p>
+              </form>
+
+              <p className="text-center text-sm text-white/60">
+                Already have an account?{" "}
+                <Link to="/login" className="text-white font-semibold hover:underline underline-offset-4">
+                  Sign in
+                </Link>
+              </p>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
       </div>
 
-      {/* Email Verification Alert Dialog */}
+      {/* Email Verification Alert */}
       <AlertDialog open={showEmailVerificationAlert} onOpenChange={setShowEmailVerificationAlert}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <div className="flex justify-center mb-4">
               <div className="relative">
-                <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-50 animate-pulse"></div>
-                <div className="relative bg-blue-100 dark:bg-blue-900/30 rounded-full p-4">
-                  <Mail className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+                <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-40 animate-pulse" />
+                <div className="relative bg-primary/10 rounded-full p-4">
+                  <Mail className="h-12 w-12 text-primary" />
                 </div>
               </div>
             </div>
-            <AlertDialogTitle className="text-center text-2xl">
-              📧 Check Your Email!
-            </AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-2xl">Check Your Email</AlertDialogTitle>
             <AlertDialogDescription className="text-center space-y-4">
-              <p className="text-base">
-                We've sent a verification link to:
-              </p>
+              <p className="text-base">We've sent a verification link to:</p>
               <p className="font-semibold text-lg text-foreground bg-muted px-4 py-2 rounded-lg">
-                {userEmail}
+                {verificationEmail}
               </p>
               <div className="space-y-2 text-sm">
                 <div className="flex items-start gap-2 text-left">
                   <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span>Click the verification link in the email to activate your account</span>
+                  <span>Click the link in the email to activate your account</span>
                 </div>
                 <div className="flex items-start gap-2 text-left">
                   <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span>Check your spam/junk folder if you don't see it</span>
+                  <span>Check your spam folder if you don't see it</span>
                 </div>
                 <div className="flex items-start gap-2 text-left">
                   <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <span>The link will expire in 24 hours</span>
+                  <span>The link expires in 24 hours</span>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground pt-2">
-                Didn't receive the email? Check your spam folder or contact support.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction
               onClick={() => {
                 setShowEmailVerificationAlert(false);
-                if (userType === "business") {
-                  setTimeout(() => navigate("/create-business"), 300);
-                }
+                if (userType === "business") setTimeout(() => navigate("/create-business"), 300);
               }}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-primary hover:bg-primary/90"
             >
               Got it, I'll check my email
             </AlertDialogAction>
@@ -572,17 +678,15 @@ const Signup = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* GDPR Consent Dialog - shows different dialog based on user type */}
+      {/* Consent dialogs */}
       {userType === "business" && (
         <DentalPracticeConsentDialog
           open={showConsentDialog}
           onOpenChange={setShowConsentDialog}
           onAccept={(consentData) => {
             setConsentGiven(true);
-            // Store consent data in sessionStorage temporarily - will be saved to DB after signup
             sessionStorage.setItem('pending_practice_consent', JSON.stringify(consentData));
-            // Now trigger the actual signup
-            handleSignUp(new Event('submit') as unknown as React.FormEvent);
+            handleEmailSignUp(new Event('submit') as unknown as React.FormEvent);
           }}
         />
       )}
@@ -592,10 +696,8 @@ const Signup = () => {
           onOpenChange={setShowConsentDialog}
           onAccept={(consentData) => {
             setConsentGiven(true);
-            // Store consent data in sessionStorage temporarily
             sessionStorage.setItem('pending_patient_terms_consent', JSON.stringify(consentData));
-            // Now trigger the actual signup
-            handleSignUp(new Event('submit') as unknown as React.FormEvent);
+            handleEmailSignUp(new Event('submit') as unknown as React.FormEvent);
           }}
         />
       )}
