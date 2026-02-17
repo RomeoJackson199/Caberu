@@ -42,11 +42,6 @@ export default function BusinessPortal() {
 
       setBusiness(businessData);
 
-      // Apply the business's default language for the public page
-      if (businessData.default_language && !localStorage.getItem("preferred-language")) {
-        changeLanguage(businessData.default_language as Language);
-      }
-
       // Load homepage settings
       const { data: homepageData } = await supabase
         .from("homepage_settings")
@@ -71,6 +66,12 @@ export default function BusinessPortal() {
 
       // Check if user is authenticated
       const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      // Apply the business's default language for the public page
+      // Only override for unauthenticated visitors (logged-in users have their own preference)
+      if (businessData.default_language && !currentUser) {
+        changeLanguage(businessData.default_language as Language);
+      }
       
       if (currentUser) {
         setUser(currentUser);

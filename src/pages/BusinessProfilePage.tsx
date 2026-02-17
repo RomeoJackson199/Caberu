@@ -161,8 +161,9 @@ export default function BusinessProfilePage() {
       setBusiness(businessData);
 
       // Apply the business's default language for the public page
-      // Only if the user hasn't set their own preference
-      if (businessData.default_language && !localStorage.getItem("preferred-language")) {
+      // Only override if the visitor has no profile-level preference (not logged in)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (businessData.default_language && !user) {
         changeLanguage(businessData.default_language as Language);
       }
 
