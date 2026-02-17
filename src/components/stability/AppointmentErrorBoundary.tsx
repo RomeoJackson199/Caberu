@@ -110,7 +110,7 @@ export class AppointmentErrorBoundary extends Component<Props, State> {
               <CardTitle className="text-xl">{contextMessage.title}</CardTitle>
               <CardDescription className="text-sm">
                 {contextMessage.description}
-                {this.state.error && process.env.NODE_ENV === 'development' && (
+                {this.state.error && import.meta.env.DEV && (
                   <div className="mt-3 p-2 bg-muted rounded text-xs font-mono text-left">
                     {this.state.error.message}
                   </div>
@@ -134,7 +134,7 @@ export class AppointmentErrorBoundary extends Component<Props, State> {
                 <Home className="w-4 h-4 mr-2" />
                 Go to Home
               </Button>
-              {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+              {import.meta.env.DEV && this.state.errorInfo && (
                 <details className="mt-4 p-3 bg-muted rounded text-xs">
                   <summary className="cursor-pointer font-medium mb-2">
                     Error Details (Development Only)

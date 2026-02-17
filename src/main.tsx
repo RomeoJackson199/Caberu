@@ -17,7 +17,7 @@ const resizeObserverErr = (e: ErrorEvent) => {
 window.addEventListener('error', resizeObserverErr);
 
 // Initialize comprehensive performance monitoring
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.DEV) {
   performanceTracker.monitorMemory();
   initPerformanceMonitoring();
 } else if (import.meta.env.VITE_ENABLE_PERFORMANCE_MONITORING) {

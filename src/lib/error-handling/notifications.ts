@@ -164,7 +164,7 @@ export function showErrorToast(error: unknown, context?: ErrorContext): Detailed
   });
   
   // Log for debugging in development
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.error('Enhanced Error:', {
       error: processedError,
       context,
@@ -325,7 +325,7 @@ export function handleValidationErrors(
     duration: 5000,
   });
   
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.error('Validation errors:', { errors, context });
   }
 }
@@ -349,7 +349,7 @@ export function handleGlobalError(error: Error, errorInfo: any): void {
   });
   
   // In production, you might want to send this to an error tracking service
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.PROD) {
     // Example: sendToErrorTracking(processedError, errorInfo);
   }
 }
