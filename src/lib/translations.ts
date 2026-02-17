@@ -626,6 +626,10 @@ export interface Translations {
     clinicName: string;
     tagline: string;
     businessSlug: string;
+    defaultLanguage: string;
+    defaultLanguageDesc: string;
+    preferredLanguage: string;
+    preferredLanguageDesc: string;
     slugCannotContain: string;
     forwardSlashes: string;
     spaces: string;
@@ -1798,6 +1802,10 @@ export const translations: Record<Language, TranslationEntry> = {
         clinicName: "Clinic Name",
         tagline: "Tagline",
         businessSlug: "Business Slug",
+        defaultLanguage: "Default Language",
+        defaultLanguageDesc: "The default language for your public business page. Visitors will see your page in this language by default.",
+        preferredLanguage: "Preferred Language",
+        preferredLanguageDesc: "This sets the language for your Caberu experience",
         slugCannotContain: "Slug cannot contain",
         forwardSlashes: "forward slashes",
         spaces: "spaces",
@@ -3001,6 +3009,10 @@ export const translations: Record<Language, TranslationEntry> = {
         logoSizeLimit: "Le logo doit faire moins de 2Mo",
         uploadFailed: "Échec du Téléversement",
         businessSlug: "Identifiant Entreprise",
+        defaultLanguage: "Langue par Défaut",
+        defaultLanguageDesc: "La langue par défaut de votre page publique. Les visiteurs verront votre page dans cette langue par défaut.",
+        preferredLanguage: "Langue Préférée",
+        preferredLanguageDesc: "Ceci définit la langue de votre expérience Caberu",
         slugCannotContain: "L'identifiant ne peut pas contenir",
         forwardSlashes: "les barres obliques",
         spaces: "les espaces",
@@ -3359,6 +3371,10 @@ export const translations: Record<Language, TranslationEntry> = {
         // Language selection
         selectPreferredLanguage: "Kies je voorkeurstaal",
         languageSelectionDescription: "Pas de ervaring aan je taalvoorkeur aan.",
+        defaultLanguage: "Standaardtaal",
+        defaultLanguageDesc: "De standaardtaal voor je openbare bedrijfspagina. Bezoekers zien je pagina standaard in deze taal.",
+        preferredLanguage: "Voorkeurstaal",
+        preferredLanguageDesc: "Dit stelt de taal in voor je Caberu-ervaring",
 
         // Personal Info
         firstName: "Voornaam",

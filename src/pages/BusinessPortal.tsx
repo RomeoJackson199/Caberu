@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2 } from "lucide-react";
 import { logger } from '@/lib/logger';
 import { CustomizableHomepage } from "@/components/business/CustomizableHomepage";
+import { changeLanguage } from "@/hooks/useLanguage";
+import type { Language } from "@/lib/translations";
 
 export default function BusinessPortal() {
   const { slug } = useParams<{ slug: string }>();
@@ -39,6 +41,11 @@ export default function BusinessPortal() {
       }
 
       setBusiness(businessData);
+
+      // Apply the business's default language for the public page
+      if (businessData.default_language && !localStorage.getItem("preferred-language")) {
+        changeLanguage(businessData.default_language as Language);
+      }
 
       // Load homepage settings
       const { data: homepageData } = await supabase

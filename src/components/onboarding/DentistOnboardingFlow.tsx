@@ -30,12 +30,14 @@ import {
   MapPin,
   Briefcase,
   Shield,
+  Globe,
   Loader2,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SUPPORTED_LANGUAGES, Language } from "@/lib/translations";
 
 interface DentistOnboardingFlowProps {
   isOpen: boolean;
@@ -94,6 +96,9 @@ interface OnboardingData {
   // Step 7: Security Settings
   enable2FA: boolean;
   requireApproval: boolean;
+
+  // Language preference
+  preferredLanguage: Language;
 }
 
 export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboardingFlowProps) => {
@@ -140,6 +145,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     mainGoals: [],
     enable2FA: false,
     requireApproval: false,
+    preferredLanguage: "en",
   });
 
   // Fetch existing profile and business data on mount
@@ -355,6 +361,7 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         last_name: data.lastName,
         phone: data.practicePhone,
         address: fullAddress,
+        language_preference: data.preferredLanguage,
       };
       
       // Only set date_of_birth if a valid date was provided
@@ -533,6 +540,11 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
         throw new Error('Onboarding update verification failed. Please try again.');
       }
 
+      // Apply language preference immediately
+      localStorage.setItem("preferred-language", data.preferredLanguage);
+      document.documentElement.lang = data.preferredLanguage;
+      window.dispatchEvent(new CustomEvent("language:changed", { detail: data.preferredLanguage }));
+
       toast({
         title: "Welcome to Caberu!",
         description: "Your account has been set up successfully.",
@@ -667,6 +679,31 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
                 <SelectItem value="receptionist">Receptionist</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Preferred Language
+            </Label>
+            <Select value={data.preferredLanguage} onValueChange={(value) => updateData("preferredLanguage", value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    <div className="flex items-center gap-2">
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              This sets the language for your Caberu dashboard
+            </p>
           </div>
         </div>
       ),

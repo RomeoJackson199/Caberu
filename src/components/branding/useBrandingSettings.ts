@@ -6,6 +6,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useTemplate } from "@/contexts/TemplateContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { TemplateType, getTemplateConfig } from "@/lib/businessTemplates";
+import { Language } from "@/lib/translations";
 import { logger } from "@/lib/logger";
 import type { BrandingState, UseBrandingSettingsReturn } from "./types";
 
@@ -34,6 +35,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
   const [secondaryColor, setSecondaryColor] = useState("#10B981");
   const [logoUrl, setLogoUrl] = useState("");
   const [templateType, setTemplateType] = useState<TemplateType>("healthcare");
+  const [defaultLanguage, setDefaultLanguage] = useState<Language>("en");
   const [pendingTemplate, setPendingTemplate] = useState<TemplateType | null>(null);
   const [aiSystemBehavior, setAiSystemBehavior] = useState("");
   const [aiGreeting, setAiGreeting] = useState("");
@@ -53,6 +55,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     secondaryColor: "#10B981",
     logoUrl: "",
     templateType: "healthcare",
+    defaultLanguage: "en",
     aiSystemBehavior: "",
     aiGreeting: "",
     aiPersonalityTraits: [],
@@ -88,12 +91,13 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
       secondaryColor,
       logoUrl,
       templateType,
+      defaultLanguage,
       aiSystemBehavior,
       aiGreeting,
       aiPersonalityTraits,
     };
     setHasChanges(JSON.stringify(currentState) !== JSON.stringify(initialState));
-  }, [clinicName, slug, tagline, addressStreet, addressHouseNumber, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
+  }, [clinicName, slug, tagline, addressStreet, addressHouseNumber, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, defaultLanguage, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
 
   useUnsavedChanges({
     when: hasChanges,
@@ -104,7 +108,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     try {
       const { data: business, error } = await supabase
         .from("businesses")
-        .select("name, slug, tagline, address, phone, logo_url, template_type, ai_system_behavior, ai_greeting, ai_personality_traits, custom_config")
+        .select("name, slug, tagline, address, phone, logo_url, template_type, default_language, ai_system_behavior, ai_greeting, ai_personality_traits, custom_config")
         .eq("id", businessId)
         .single();
 
@@ -153,6 +157,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
           secondaryColor: customConfig.secondaryColor || "#10B981",
           logoUrl: business.logo_url || "",
           templateType: (business.template_type as TemplateType) || "healthcare",
+          defaultLanguage: (business.default_language as Language) || "en",
           aiSystemBehavior: business.ai_system_behavior || aiBehaviorDefaults.systemBehavior,
           aiGreeting: business.ai_greeting || aiBehaviorDefaults.greeting,
           aiPersonalityTraits: (business.ai_personality_traits as string[]) || aiBehaviorDefaults.personalityTraits,
@@ -170,6 +175,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         setSecondaryColor(state.secondaryColor);
         setLogoUrl(state.logoUrl);
         setTemplateType(state.templateType);
+        setDefaultLanguage(state.defaultLanguage);
         setAiSystemBehavior(state.aiSystemBehavior);
         setAiGreeting(state.aiGreeting);
         setAiPersonalityTraits(state.aiPersonalityTraits);
@@ -310,6 +316,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         secondaryColor,
         logoUrl,
         templateType: savedTemplate,
+        defaultLanguage,
         aiSystemBehavior: aiConfig.systemBehavior,
         aiGreeting: aiConfig.greeting,
         aiPersonalityTraits: aiConfig.personalityTraits,
@@ -435,6 +442,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         tagline,
         address: combinedAddress,
         phone,
+        default_language: defaultLanguage,
         custom_config: {
           ...existingConfig,
           primaryColor,
@@ -475,6 +483,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
         secondaryColor,
         logoUrl,
         templateType,
+        defaultLanguage,
         aiSystemBehavior,
         aiGreeting,
         aiPersonalityTraits,
@@ -506,6 +515,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     secondaryColor,
     logoUrl,
     templateType,
+    defaultLanguage,
     aiSystemBehavior,
     aiGreeting,
     aiPersonalityTraits,
@@ -522,6 +532,7 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     setPrimaryColor,
     setSecondaryColor,
     setLogoUrl,
+    setDefaultLanguage,
     setAiSystemBehavior,
     setAiGreeting,
     setAiPersonalityTraits,

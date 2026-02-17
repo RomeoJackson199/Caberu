@@ -8,10 +8,18 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, User, Calendar, ArrowRight, ArrowLeft, MapPin, Shield,
-  Sparkles, Heart, Bell, Phone, CheckCircle2, MessageSquare
+  Sparkles, Heart, Bell, Phone, CheckCircle2, MessageSquare, Globe
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { validateName } from "@/lib/security";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
+import { SUPPORTED_LANGUAGES, Language } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 
 type OnboardingStep = 'personal' | 'phone' | 'address';
@@ -38,6 +46,7 @@ const Onboarding = () => {
     postalCode: "",
     city: "",
     enable2FA: false,
+    preferredLanguage: "en" as Language,
   });
 
   const steps: { id: OnboardingStep; title: string; description: string }[] = [
@@ -260,12 +269,18 @@ const Onboarding = () => {
           date_of_birth: formData.dateOfBirth,
           phone: formData.phone || null,
           address: fullAddress || null,
+          language_preference: formData.preferredLanguage,
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", user.id);
 
       if (error) throw error;
+
+      // Apply language preference immediately
+      localStorage.setItem("preferred-language", formData.preferredLanguage);
+      document.documentElement.lang = formData.preferredLanguage;
+      window.dispatchEvent(new CustomEvent("language:changed", { detail: formData.preferredLanguage }));
 
       toast({
         title: "Welcome to Caberu!",
@@ -430,6 +445,31 @@ const Onboarding = () => {
                     max={new Date().toISOString().split("T")[0]}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="preferredLanguage" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Preferred Language
+                </Label>
+                <Select
+                  value={formData.preferredLanguage}
+                  onValueChange={(value) => setFormData({ ...formData, preferredLanguage: value as Language })}
+                >
+                  <SelectTrigger id="preferredLanguage">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        <div className="flex items-center gap-2">
+                          <span>{lang.flag}</span>
+                          <span>{lang.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button
