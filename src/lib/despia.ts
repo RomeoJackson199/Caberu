@@ -7,6 +7,113 @@
  */
 import despia from 'despia-native';
 
+const DEFAULT_NATIVE_TIMEOUT_MS = 15000;
+
+interface NativeRequestHandlers {
+  resolve: (value?: unknown) => void;
+  reject: (error?: unknown) => void;
+}
+
+const callbackRegistry = new Map<string, NativeRequestHandlers>();
+const pendingOperationRequests = new Map<string, string[]>();
+const installedGlobalCallbacks = new Set<string>();
+
+function generateRequestId(operationKey: string): string {
+  return `${operationKey}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function removePendingOperationRequest(operationKey: string, requestId: string): void {
+  const pending = pendingOperationRequests.get(operationKey);
+  if (!pending) return;
+
+  const nextPending = pending.filter((id) => id !== requestId);
+  if (nextPending.length === 0) {
+    pendingOperationRequests.delete(operationKey);
+    return;
+  }
+  pendingOperationRequests.set(operationKey, nextPending);
+}
+
+function createNativeRequest<T>(
+  operationKey: string,
+  timeoutMs = DEFAULT_NATIVE_TIMEOUT_MS
+): {
+  requestId: string;
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error?: unknown) => void;
+} {
+  const requestId = generateRequestId(operationKey);
+  let settled = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  let resolvePromise!: (value: T) => void;
+  let rejectPromise!: (reason?: unknown) => void;
+
+  const cleanup = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    callbackRegistry.delete(requestId);
+    removePendingOperationRequest(operationKey, requestId);
+  };
+
+  const resolve = (value: T) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    resolvePromise(value);
+  };
+
+  const reject = (error?: unknown) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    rejectPromise(error);
+  };
+
+  const promise = new Promise<T>((resolveFn, rejectFn) => {
+    resolvePromise = resolveFn;
+    rejectPromise = rejectFn;
+  });
+
+  timeoutId = setTimeout(() => {
+    reject(new Error(`${operationKey} timed out`));
+  }, timeoutMs);
+
+  callbackRegistry.set(requestId, { resolve, reject });
+
+  const pending = pendingOperationRequests.get(operationKey) || [];
+  pending.push(requestId);
+  pendingOperationRequests.set(operationKey, pending);
+
+  return { requestId, promise, resolve, reject };
+}
+
+function extractRequestId(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const requestId = (value as { requestId?: unknown }).requestId;
+  return typeof requestId === 'string' ? requestId : undefined;
+}
+
+function getNextPendingRequestId(operationKey: string): string | undefined {
+  return pendingOperationRequests.get(operationKey)?.[0];
+}
+
+function resolveNativeRequest(operationKey: string, payload?: unknown): void {
+  const requestId = extractRequestId(payload) || getNextPendingRequestId(operationKey);
+  if (!requestId) return;
+  callbackRegistry.get(requestId)?.resolve(payload);
+}
+
+
+function registerGlobalCallback(name: string, handler: (...args: unknown[]) => void): void {
+  if (typeof window === 'undefined' || installedGlobalCallbacks.has(name)) return;
+  ((window as unknown) as Record<string, unknown>)[name] = (...args: unknown[]) => handler(...args);
+  installedGlobalCallbacks.add(name);
+}
+
 // Type definitions for despia responses
 export interface DespiaResponse<T = unknown> {
   success: boolean;
@@ -42,7 +149,8 @@ export interface StorageVaultItem {
 // Check if running in Despia Native context
 export function isDespiaNative(): boolean {
   if (typeof window === 'undefined') return false;
-  return !!(window as any).despia || !!(window as any).DespiaRuntime;
+  const nativeWindow = (window as unknown) as Record<string, unknown>;
+  return !!nativeWindow.despia || !!nativeWindow.DespiaRuntime;
 }
 
 // ============================================
@@ -133,17 +241,24 @@ export async function authenticateWithBiometrics(): Promise<BiometricAuthResult>
     return { authenticated: false, error: 'Biometrics not supported on this browser' };
   }
 
-  return new Promise((resolve) => {
-    // Set up global callback for biometric result
-    (window as any).bioAuthSuccess = () => {
-      resolve({ authenticated: true, biometryType: 'faceId' });
-    };
-    (window as any).bioAuthFailure = (error?: string) => {
-      resolve({ authenticated: false, error: error || 'Authentication failed' });
-    };
-
-    despia('bioauth://');
+  registerGlobalCallback('bioAuthSuccess', () => {
+    resolveNativeRequest('biometric', { authenticated: true, biometryType: 'faceId' });
   });
+  registerGlobalCallback('bioAuthFailure', (error?: string | { error?: string; requestId?: string }) => {
+    resolveNativeRequest('biometric', {
+      authenticated: false,
+      error: typeof error === 'string' ? error : error?.error || 'Authentication failed',
+      requestId: typeof error === 'object' ? error?.requestId : undefined,
+    });
+  });
+
+  const { requestId, promise } = createNativeRequest<BiometricAuthResult>('biometric');
+  despia(`bioauth://?requestId=${encodeURIComponent(requestId)}`);
+
+  return promise.catch(() => ({
+    authenticated: false,
+    error: 'Authentication failed',
+  }));
 }
 
 /**
@@ -370,17 +485,23 @@ export async function saveToVault(key: string, value: string, locked = false): P
     }
   }
 
-  return new Promise((resolve) => {
-    (window as any).vaultSaveSuccess = () => resolve(true);
-    (window as any).vaultSaveFailure = () => resolve(false);
-
-    const params = new URLSearchParams({
-      key,
-      value,
-      locked: locked.toString(),
-    });
-    despia(`vault://save?${params.toString()}`);
+  registerGlobalCallback('vaultSaveSuccess', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('vault_save', { success: true, requestId: payload?.requestId });
   });
+  registerGlobalCallback('vaultSaveFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('vault_save', { success: false, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ success: boolean }>('vault_save');
+  const params = new URLSearchParams({
+    key,
+    value,
+    locked: locked.toString(),
+    requestId,
+  });
+  despia(`vault://save?${params.toString()}`);
+
+  return promise.then((result) => result.success).catch(() => false);
 }
 
 /**
@@ -403,12 +524,21 @@ export async function readFromVault(key: string): Promise<string | null> {
     }
   }
 
-  return new Promise((resolve) => {
-    (window as any).vaultReadSuccess = (value: string) => resolve(value);
-    (window as any).vaultReadFailure = () => resolve(null);
-
-    despia(`vault://read?key=${encodeURIComponent(key)}`, ['vaultValue']);
+  registerGlobalCallback('vaultReadSuccess', (value: string | { value?: string; requestId?: string }) => {
+    if (typeof value === 'string') {
+      resolveNativeRequest('vault_read', { value });
+      return;
+    }
+    resolveNativeRequest('vault_read', value ?? { value: null });
   });
+  registerGlobalCallback('vaultReadFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('vault_read', { value: null, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ value?: string | null }>('vault_read');
+  despia(`vault://read?key=${encodeURIComponent(key)}&requestId=${encodeURIComponent(requestId)}`, ['vaultValue']);
+
+  return promise.then((data) => data.value ?? null).catch(() => null);
 }
 
 /**
@@ -425,12 +555,17 @@ export async function deleteFromVault(key: string): Promise<boolean> {
     }
   }
 
-  return new Promise((resolve) => {
-    (window as any).vaultDeleteSuccess = () => resolve(true);
-    (window as any).vaultDeleteFailure = () => resolve(false);
-
-    despia(`vault://delete?key=${encodeURIComponent(key)}`);
+  registerGlobalCallback('vaultDeleteSuccess', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('vault_delete', { success: true, requestId: payload?.requestId });
   });
+  registerGlobalCallback('vaultDeleteFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('vault_delete', { success: false, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ success: boolean }>('vault_delete');
+  despia(`vault://delete?key=${encodeURIComponent(key)}&requestId=${encodeURIComponent(requestId)}`);
+
+  return promise.then((result) => result.success).catch(() => false);
 }
 
 // ============================================
@@ -460,29 +595,42 @@ export async function purchaseProduct(productId: string, userId: string): Promis
     };
   }
 
-  return new Promise((resolve) => {
-    // Set up global callback for purchase result
-    (window as any).iapSuccess = (data: any) => {
-      resolve({
+  registerGlobalCallback('iapSuccess', (data?: { transactionId?: string; requestId?: string }) => {
+    resolveNativeRequest('iap_purchase', data ?? {});
+  });
+  registerGlobalCallback('iapFailure', (error?: string | { error?: string; requestId?: string }) => {
+    resolveNativeRequest('iap_purchase', {
+      requestId: typeof error === 'object' ? error?.requestId : undefined,
+      error: typeof error === 'string' ? error : error?.error,
+    });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ transactionId?: string; error?: string }>('iap_purchase');
+  const params = new URLSearchParams({
+    external_id: userId,
+    product: productId,
+    requestId,
+  });
+  despia(`revenuecat://purchase?${params.toString()}`);
+
+  return promise
+    .then((data) => {
+      const status: PurchaseResult['status'] = data?.error === 'cancelled'
+        ? 'cancelled'
+        : data?.error
+          ? 'failed'
+          : 'success';
+      return {
         productId,
         transactionId: data?.transactionId || '',
-        status: 'success',
-      });
-    };
-    (window as any).iapFailure = (error?: string) => {
-      resolve({
-        productId,
-        transactionId: '',
-        status: error === 'cancelled' ? 'cancelled' : 'failed',
-      });
-    };
-
-    const params = new URLSearchParams({
-      external_id: userId,
-      product: productId,
-    });
-    despia(`revenuecat://purchase?${params.toString()}`);
-  });
+        status,
+      };
+    })
+    .catch(() => ({
+      productId,
+      transactionId: '',
+      status: 'failed',
+    }));
 }
 
 /**
@@ -494,14 +642,17 @@ export async function restorePurchases(): Promise<string[]> {
     return [];
   }
 
-  return new Promise((resolve) => {
-    (window as any).restoreSuccess = (data: { products: string[] }) => {
-      resolve(data?.products || []);
-    };
-    (window as any).restoreFailure = () => resolve([]);
-
-    despia('getpurchasehistory://', ['restoredData']);
+  registerGlobalCallback('restoreSuccess', (data?: { products?: string[]; requestId?: string }) => {
+    resolveNativeRequest('iap_restore', data ?? {});
   });
+  registerGlobalCallback('restoreFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('iap_restore', { products: [], requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ products?: string[] }>('iap_restore');
+  despia(`getpurchasehistory://?requestId=${encodeURIComponent(requestId)}`, ['restoredData']);
+
+  return promise.then((data) => data?.products || []).catch(() => []);
 }
 
 /**
@@ -513,14 +664,17 @@ export async function checkSubscriptionStatus(entitlementId: string): Promise<bo
     return false;
   }
 
-  return new Promise((resolve) => {
-    (window as any).subscriptionCheckSuccess = (data: { active: boolean }) => {
-      resolve(data?.active || false);
-    };
-    (window as any).subscriptionCheckFailure = () => resolve(false);
-
-    despia(`revenuecat://check?entitlement=${encodeURIComponent(entitlementId)}`, ['subscriptionStatus']);
+  registerGlobalCallback('subscriptionCheckSuccess', (data?: { active?: boolean; requestId?: string }) => {
+    resolveNativeRequest('iap_subscription_check', data ?? {});
   });
+  registerGlobalCallback('subscriptionCheckFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('iap_subscription_check', { active: false, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ active?: boolean }>('iap_subscription_check');
+  despia(`revenuecat://check?entitlement=${encodeURIComponent(entitlementId)}&requestId=${encodeURIComponent(requestId)}`, ['subscriptionStatus']);
+
+  return promise.then((data) => data?.active || false).catch(() => false);
 }
 
 // ============================================
@@ -557,15 +711,18 @@ export async function readHealthKitData(
     return null;
   }
 
-  return new Promise((resolve) => {
-    (window as any).healthkitResponse = (data: HealthKitData) => {
-      resolve(data);
-    };
-    (window as any).healthkitError = () => resolve(null);
-
-    const typesParam = types.join(',');
-    despia(`healthkit://read?types=${encodeURIComponent(typesParam)}&days=${days}`, ['healthkitResponse']);
+  registerGlobalCallback('healthkitResponse', (data?: (HealthKitData & { requestId?: string }) | null) => {
+    resolveNativeRequest('healthkit_read', data ?? null);
   });
+  registerGlobalCallback('healthkitError', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('healthkit_read', { requestId: payload?.requestId, value: null });
+  });
+
+  const { requestId, promise } = createNativeRequest<(HealthKitData & { value?: null }) | null>('healthkit_read');
+  const typesParam = types.join(',');
+  despia(`healthkit://read?types=${encodeURIComponent(typesParam)}&days=${days}&requestId=${encodeURIComponent(requestId)}`, ['healthkitResponse']);
+
+  return promise.then((data) => (data && 'value' in data ? null : data)).catch(() => null);
 }
 
 /**
@@ -583,17 +740,23 @@ export async function writeHealthKitData(
     return false;
   }
 
-  return new Promise((resolve) => {
-    (window as any).healthkitWriteSuccess = () => resolve(true);
-    (window as any).healthkitWriteError = () => resolve(false);
-
-    const params = new URLSearchParams({
-      type,
-      value: value.toString(),
-      unit,
-    });
-    despia(`healthkit://write?${params.toString()}`);
+  registerGlobalCallback('healthkitWriteSuccess', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('healthkit_write', { success: true, requestId: payload?.requestId });
   });
+  registerGlobalCallback('healthkitWriteError', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('healthkit_write', { success: false, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ success: boolean }>('healthkit_write');
+  const params = new URLSearchParams({
+    type,
+    value: value.toString(),
+    unit,
+    requestId,
+  });
+  despia(`healthkit://write?${params.toString()}`);
+
+  return promise.then((data) => data.success).catch(() => false);
 }
 
 /**
@@ -609,16 +772,22 @@ export async function requestHealthKitAuth(
     return false;
   }
 
-  return new Promise((resolve) => {
-    (window as any).healthkitAuthSuccess = () => resolve(true);
-    (window as any).healthkitAuthError = () => resolve(false);
-
-    const params = new URLSearchParams({
-      read: readTypes.join(','),
-      write: writeTypes.join(','),
-    });
-    despia(`healthkit://auth?${params.toString()}`);
+  registerGlobalCallback('healthkitAuthSuccess', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('healthkit_auth', { success: true, requestId: payload?.requestId });
   });
+  registerGlobalCallback('healthkitAuthError', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('healthkit_auth', { success: false, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ success: boolean }>('healthkit_auth');
+  const params = new URLSearchParams({
+    read: readTypes.join(','),
+    write: writeTypes.join(','),
+    requestId,
+  });
+  despia(`healthkit://auth?${params.toString()}`);
+
+  return promise.then((data) => data.success).catch(() => false);
 }
 
 // ============================================
@@ -633,12 +802,17 @@ export async function takeScreenshot(): Promise<string | null> {
     return null;
   }
 
-  return new Promise((resolve) => {
-    (window as any).screenshotSuccess = (base64: string) => resolve(base64);
-    (window as any).screenshotFailure = () => resolve(null);
-
-    despia('takescreenshot://');
+  registerGlobalCallback('screenshotSuccess', (base64: string | { base64?: string; requestId?: string }) => {
+    resolveNativeRequest('media_screenshot', typeof base64 === 'string' ? { base64 } : base64 ?? {});
   });
+  registerGlobalCallback('screenshotFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('media_screenshot', { base64: null, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ base64?: string | null }>('media_screenshot');
+  despia(`takescreenshot://?requestId=${encodeURIComponent(requestId)}`);
+
+  return promise.then((data) => data.base64 ?? null).catch(() => null);
 }
 
 /**
@@ -652,12 +826,17 @@ export async function saveImageToPhotos(imageUrl: string): Promise<boolean> {
     return false;
   }
 
-  return new Promise((resolve) => {
-    (window as any).saveImageSuccess = () => resolve(true);
-    (window as any).saveImageFailure = () => resolve(false);
-
-    despia(`savethisimage://?url=${encodeURIComponent(imageUrl)}`);
+  registerGlobalCallback('saveImageSuccess', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('media_save_image', { success: true, requestId: payload?.requestId });
   });
+  registerGlobalCallback('saveImageFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('media_save_image', { success: false, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ success: boolean }>('media_save_image');
+  despia(`savethisimage://?url=${encodeURIComponent(imageUrl)}&requestId=${encodeURIComponent(requestId)}`);
+
+  return promise.then((data) => data.success).catch(() => false);
 }
 
 /**
@@ -668,12 +847,17 @@ export async function openCamera(): Promise<string | null> {
     return null;
   }
 
-  return new Promise((resolve) => {
-    (window as any).cameraSuccess = (base64: string) => resolve(base64);
-    (window as any).cameraFailure = () => resolve(null);
-
-    despia('camera://capture');
+  registerGlobalCallback('cameraSuccess', (base64: string | { base64?: string; requestId?: string }) => {
+    resolveNativeRequest('media_camera', typeof base64 === 'string' ? { base64 } : base64 ?? {});
   });
+  registerGlobalCallback('cameraFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('media_camera', { base64: null, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ base64?: string | null }>('media_camera');
+  despia(`camera://capture?requestId=${encodeURIComponent(requestId)}`);
+
+  return promise.then((data) => data.base64 ?? null).catch(() => null);
 }
 
 /**
@@ -684,12 +868,17 @@ export async function openPhotoLibrary(): Promise<string | null> {
     return null;
   }
 
-  return new Promise((resolve) => {
-    (window as any).photoPickerSuccess = (base64: string) => resolve(base64);
-    (window as any).photoPickerFailure = () => resolve(null);
-
-    despia('photolibrary://pick');
+  registerGlobalCallback('photoPickerSuccess', (base64: string | { base64?: string; requestId?: string }) => {
+    resolveNativeRequest('media_photo_library', typeof base64 === 'string' ? { base64 } : base64 ?? {});
   });
+  registerGlobalCallback('photoPickerFailure', (payload?: { requestId?: string }) => {
+    resolveNativeRequest('media_photo_library', { base64: null, requestId: payload?.requestId });
+  });
+
+  const { requestId, promise } = createNativeRequest<{ base64?: string | null }>('media_photo_library');
+  despia(`photolibrary://pick?requestId=${encodeURIComponent(requestId)}`);
+
+  return promise.then((data) => data.base64 ?? null).catch(() => null);
 }
 
 // ============================================
