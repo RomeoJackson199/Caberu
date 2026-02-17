@@ -107,7 +107,7 @@ export function PhoneVerificationDialog({
 
       toast({
         title: "Verification Code Sent",
-        description: "Check your phone for the 4 to 6-digit SMS code",
+        description: "Check your phone for the 6-digit SMS code",
       });
     } catch (error: any) {
       logger.error('Error sending SMS code:', error);
@@ -122,7 +122,7 @@ export function PhoneVerificationDialog({
   };
 
   const verifyCode = async () => {
-    if (verificationCode.length < 4) {
+    if (verificationCode.length < 6) {
       toast({
         title: "Invalid Code",
         description: "Please enter the code from your SMS",
@@ -259,7 +259,7 @@ export function PhoneVerificationDialog({
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enter the 4 to 6-digit code from the SMS
+                  Enter the 6-digit code from the SMS
                 </p>
               </div>
 
@@ -274,7 +274,7 @@ export function PhoneVerificationDialog({
                 </Button>
                 <Button
                   onClick={verifyCode}
-                  disabled={loading || verificationCode.length < 4}
+                  disabled={loading || verificationCode.length < 6}
                   className="flex-1"
                 >
                   {loading ? (

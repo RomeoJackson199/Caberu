@@ -108,7 +108,7 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
 
       toast({
         title: "Verification Code Sent",
-        description: "Check your phone for the 4 to 6-digit SMS code",
+        description: "Check your phone for the 6-digit SMS code",
       });
     } catch (error: unknown) {
       console.error('Error sending SMS code:', error);
@@ -123,7 +123,7 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
   };
 
   const verifyCode = async () => {
-    if (verificationCode.length < 4) {
+    if (verificationCode.length < 6) {
       toast({
         title: "Invalid Code",
         description: "Please enter the code from your SMS",
@@ -250,7 +250,7 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
                 <Label htmlFor="code">Verification Code</Label>
                 <Input
                   id="code"
-                  placeholder="Enter 4 to 6-digit code"
+                  placeholder="Enter 6-digit code"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   maxLength={6}
@@ -270,7 +270,7 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
                 </Button>
                 <Button
                   onClick={verifyCode}
-                  disabled={loading || verificationCode.length < 4}
+                  disabled={loading || verificationCode.length < 6}
                   className="flex-1"
                 >
                   {loading ? (
