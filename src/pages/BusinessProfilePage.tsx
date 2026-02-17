@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { BusinessProfileDefault } from "@/components/business-profile/BusinessProfileDefault";
 import { upsertMetaTag, setCanonical, setJsonLd } from "@/lib/seo";
-import { changeLanguage } from "@/hooks/useLanguage";
+import { setPageLanguage, clearPageLanguage } from "@/hooks/useLanguage";
 import type { Language } from "@/lib/translations";
 
 interface BusinessData {
@@ -142,6 +142,18 @@ export default function BusinessProfilePage() {
     loadBusinessProfile(slug);
   }, [slug]);
 
+  // Apply the business's default language for all visitors on this page.
+  // Uses setPageLanguage (not changeLanguage) so the visitor's personal
+  // language preference stored in localStorage is never overwritten.
+  // clearPageLanguage on unmount releases the lock so other pages restore
+  // the visitor's own preference.
+  useEffect(() => {
+    if (business?.default_language) {
+      setPageLanguage(business.default_language as Language);
+    }
+    return () => clearPageLanguage();
+  }, [business?.default_language]);
+
   const loadBusinessProfile = async (businessSlug: string) => {
     try {
       const normalizedSlug = businessSlug.toLowerCase();
@@ -159,12 +171,6 @@ export default function BusinessProfilePage() {
       }
 
       setBusiness(businessData);
-
-      // Apply the business's default language for the public page
-      // All visitors see the clinic's chosen language on this page
-      if (businessData.default_language) {
-        changeLanguage(businessData.default_language as Language);
-      }
 
       const [servicesResult, teamResult] = await Promise.all([
         supabase
