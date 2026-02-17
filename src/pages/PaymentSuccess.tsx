@@ -113,7 +113,7 @@ const PaymentSuccess: React.FC = () => {
     };
 
     handlePaymentSuccess();
-  }, [sessionId, type, navigate]);
+  }, [sessionId, type, isPromo, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
