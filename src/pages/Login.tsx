@@ -362,16 +362,22 @@ const Login = () => {
       });
       if (error) throw error;
       if (data?.verified) {
-        // Try to sign in with phone OTP
+        // Try to sign in with phone credentials
         const { error: signInError } = await supabase.auth.signInWithPassword({
           phone: formattedPhone,
           password: formattedPhone,
         });
         if (signInError) {
-          // Fallback: try signUp which auto-signs-in for existing users with phone
-          toast({ title: "Phone sign in", description: "Verifying your account...", });
-          navigate("/auth-redirect");
-          return;
+          // Fallback: try signup which creates an account and signs in
+          const { error: signUpError } = await supabase.auth.signUp({
+            phone: formattedPhone,
+            password: formattedPhone,
+            options: { data: { role_type: 'patient', phone: formattedPhone } },
+          });
+          if (signUpError) {
+            setAuthError("Phone verified but no account found for this number. Please sign in with email or create an account first.");
+            return;
+          }
         }
         await completeLogin();
       } else {
