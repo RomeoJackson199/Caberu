@@ -484,14 +484,14 @@ const Login = () => {
 
               <form onSubmit={handleVerifyOtp} className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="otp" className="text-white/80 text-sm">4-digit code</Label>
+                  <Label htmlFor="otp" className="text-white/80 text-sm">6-digit code</Label>
                   <Input
                     id="otp"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    maxLength={4}
-                    placeholder="0000"
+                    maxLength={6}
+                    placeholder="000000"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                     className="h-14 bg-white/15 border-white/20 text-white placeholder:text-white/40 rounded-xl focus:bg-white/20 focus:border-white/40 text-3xl tracking-[0.75em] text-center"
@@ -509,7 +509,7 @@ const Login = () => {
 
                 <Button
                   type="submit"
-                  disabled={isLoading || otp.length < 4}
+                  disabled={isLoading || otp.length < 6}
                   className="w-full h-12 text-base font-semibold rounded-2xl bg-white text-primary hover:bg-white/95 shadow-lg disabled:opacity-50"
                 >
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Verify & Sign in"}
