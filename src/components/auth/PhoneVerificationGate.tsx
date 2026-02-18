@@ -123,7 +123,7 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
   };
 
   const verifyCode = async () => {
-    if (verificationCode.length < 6) {
+    if (verificationCode.length < 4) {
       toast({
         title: "Invalid Code",
         description: "Please enter the code from your SMS",
@@ -252,8 +252,8 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
                   id="code"
                   placeholder="Enter 6-digit code"
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  maxLength={6}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  maxLength={8}
                   className="text-center text-2xl tracking-widest"
                   autoFocus
                 />
@@ -270,7 +270,7 @@ export function PhoneVerificationGate({ user }: PhoneVerificationGateProps) {
                 </Button>
                 <Button
                   onClick={verifyCode}
-                  disabled={loading || verificationCode.length < 6}
+                  disabled={loading || verificationCode.length < 4}
                   className="flex-1"
                 >
                   {loading ? (

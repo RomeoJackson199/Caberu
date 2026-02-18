@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Loader2, Mail, Lock, ArrowRight, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,22 +139,17 @@ export function ForgotPasswordDialog({
                     {step === 'verify' && (
                         <form onSubmit={handleResetPassword} className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Verification Code</Label>
-                                <div className="flex justify-center">
-                                    <InputOTP
-                                        maxLength={6}
+                                <Label htmlFor="code">Verification Code</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="code"
+                                        placeholder="6-digit code"
                                         value={code}
-                                        onChange={setCode}
-                                    >
-                                        <InputOTPGroup>
-                                            <InputOTPSlot index={0} />
-                                            <InputOTPSlot index={1} />
-                                            <InputOTPSlot index={2} />
-                                            <InputOTPSlot index={3} />
-                                            <InputOTPSlot index={4} />
-                                            <InputOTPSlot index={5} />
-                                        </InputOTPGroup>
-                                    </InputOTP>
+                                        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                        className="text-center tracking-widest text-lg"
+                                        maxLength={6}
+                                        required
+                                    />
                                 </div>
                                 <p className="text-xs text-muted-foreground text-center">
                                     Sent to {email}
