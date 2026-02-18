@@ -85,13 +85,39 @@ const MobileAuthScreen = () => {
       if (data?.verified) {
         if (authMode === 'signup') {
           sessionStorage.setItem('pending_signup_user_type', 'patient');
-          await supabase.auth.signUp({
+          const { error: signUpError } = await supabase.auth.signUp({
             phone: formattedPhone,
             password: formattedPhone,
             options: { data: { role_type: 'patient', phone: formattedPhone } },
           });
+          if (signUpError) {
+            // If signup fails (e.g. user already exists), try signing in instead
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+              phone: formattedPhone,
+              password: formattedPhone,
+            });
+            if (signInError) {
+              toast({ title: "Account Error", description: "Phone verified but could not create or access your account. Try signing in with email instead.", variant: "destructive" });
+              return;
+            }
+          }
         } else {
-          await supabase.auth.signInWithPassword({ phone: formattedPhone, password: formattedPhone });
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            phone: formattedPhone,
+            password: formattedPhone,
+          });
+          if (signInError) {
+            // If sign-in fails (e.g. no account with phone), try signup as fallback
+            const { error: signUpError } = await supabase.auth.signUp({
+              phone: formattedPhone,
+              password: formattedPhone,
+              options: { data: { role_type: 'patient', phone: formattedPhone } },
+            });
+            if (signUpError) {
+              toast({ title: "Account Not Found", description: "No account found for this phone number. Try signing up or use email to sign in.", variant: "destructive" });
+              return;
+            }
+          }
         }
         navigate("/auth-redirect");
       } else {
