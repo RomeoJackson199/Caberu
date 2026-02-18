@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormField, validators } from "@/components/ui/form-field";
-import { Loader2, Calendar, MessageSquare, FileText, Sparkles, Mail, CheckCircle2 } from "lucide-react";
+import { Loader2, Calendar, MessageSquare, FileText, Sparkles, Mail, CheckCircle2, Phone, ArrowLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from '@/lib/logger';
 import { validatePassword, checkPasswordBreach, getStrengthLabel, type PasswordStrength } from '@/utils/passwordValidation';
@@ -21,13 +21,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DentalPracticeConsentDialog, PatientTermsConsentDialog } from "@/components/consent";
 
+type AuthMethod = 'phone' | 'email' | null;
+
 const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<"client" | "business" | null>(null);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(null);
   const [showEmailVerificationAlert, setShowEmailVerificationAlert] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [maskedPhone, setMaskedPhone] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -57,6 +65,94 @@ const Signup = () => {
       if (session) navigate("/auth-redirect");
     });
   }, [navigate]);
+
+  // Phone number formatting
+  const formatPhoneNumber = (value: string) => {
+    let cleaned = value.replace(/[^\d+]/g, '');
+    if (cleaned && !cleaned.startsWith('+')) cleaned = '+' + cleaned;
+    return cleaned;
+  };
+
+  // Send phone verification code
+  const sendPhoneCode = async () => {
+    if (resendCooldown > 0) return;
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    if (!formattedPhone || formattedPhone.length < 8) {
+      toast({ title: "Invalid Phone Number", description: "Enter a valid phone number with country code (e.g., +32467881965)", variant: "destructive" });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-sms-verification', {
+        body: { phoneNumber: formattedPhone, type: 'signup' }
+      });
+      if (error) throw error;
+      setCodeSent(true);
+      setMaskedPhone(data.maskedPhone || formattedPhone);
+      setResendCooldown(60);
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => { if (prev <= 1) { clearInterval(interval); return 0; } return prev - 1; });
+      }, 1000);
+      toast({ title: "Code Sent", description: "Check your phone for the verification code" });
+    } catch (error: unknown) {
+      logger.error('Error sending SMS code:', error);
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to send code", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Verify phone code
+  const verifyPhoneCode = async () => {
+    if (verificationCode.length < 4) {
+      toast({ title: "Invalid Code", description: "Please enter the code from your SMS", variant: "destructive" });
+      return;
+    }
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    setIsLoading(true);
+    try {
+      // Use Supabase phone auth - sign up with phone
+      const { data, error } = await supabase.functions.invoke('verify-sms-code', {
+        body: { phoneNumber: formattedPhone, code: verificationCode }
+      });
+      if (error) throw error;
+      if (data?.verified) {
+        // Store the user type for the auth redirect handler
+        if (userType) {
+          sessionStorage.setItem('pending_signup_user_type', userType === "client" ? "patient" : "owner");
+        }
+        // Now sign up with Supabase phone auth
+        const { error: signUpError } = await supabase.auth.signUp({
+          phone: formattedPhone,
+          password: formattedPhone, // Phone-based auth uses OTP, password is placeholder
+          options: {
+            data: {
+              role_type: userType === "client" ? "patient" : "owner",
+              phone: formattedPhone,
+            },
+          },
+        });
+        if (signUpError) {
+          // If user already exists, try signing in
+          if (signUpError.message.includes('already registered')) {
+            toast({ title: "Account exists", description: "This phone number is already registered. Please sign in instead.", variant: "destructive" });
+            setIsLoading(false);
+            return;
+          }
+          throw signUpError;
+        }
+        toast({ title: "Account Created!", description: "Your account has been created successfully" });
+        navigate("/auth-redirect");
+      } else {
+        toast({ title: "Invalid Code", description: data?.error || "The verification code is incorrect", variant: "destructive" });
+      }
+    } catch (error: unknown) {
+      logger.error('Error verifying code:', error);
+      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to verify code", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,19 +379,100 @@ const Signup = () => {
             </div>
           )}
 
-          {/* Sign Up Form - Only show after user type is selected */}
-          {userType && (
+          {/* Sign Up - Phone first, then other options */}
+          {userType && !authMethod && (
             <div>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setUserType(null)}
+                onClick={() => { setUserType(null); setCodeSent(false); setPhoneNumber(""); setVerificationCode(""); }}
                 className="mb-4"
               >
-                ← Change account type
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
               </Button>
 
+              <div className="space-y-2 mb-6">
+                <h2 className="text-xl font-semibold">Create your account</h2>
+                <p className="text-sm text-muted-foreground">Enter your phone number to get started</p>
+              </div>
+
               <div className="space-y-4">
+                {/* Phone number input & verification */}
+                {!codeSent ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="+32467881965"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                        className="h-12"
+                        autoFocus
+                      />
+                    </div>
+                    <Button
+                      onClick={sendPhoneCode}
+                      disabled={isLoading || !phoneNumber || phoneNumber.length < 8}
+                      className="w-full h-12 text-base font-semibold"
+                    >
+                      {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send Code"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <Phone className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">SMS sent to</p>
+                        <p className="text-sm text-muted-foreground">{maskedPhone}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="code">Verification Code</Label>
+                      <Input
+                        id="code"
+                        placeholder="Enter code"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                        maxLength={8}
+                        className="h-12 text-center text-2xl tracking-widest"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={sendPhoneCode}
+                        disabled={isLoading || resendCooldown > 0}
+                        className="flex-1"
+                      >
+                        {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Code'}
+                      </Button>
+                      <Button
+                        onClick={verifyPhoneCode}
+                        disabled={isLoading || verificationCode.length < 4}
+                        className="flex-1"
+                      >
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Sign Up"}
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {/* OTHER OPTIONS divider */}
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-3 text-muted-foreground font-medium">other options</span>
+                  </div>
+                </div>
+
+                {/* Google */}
                 <Button
                   type="button"
                   variant="outline"
@@ -312,15 +489,45 @@ const Signup = () => {
                   Continue with Google
                 </Button>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">or</span>
-                  </div>
-                </div>
+                {/* Email option */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAuthMethod('email')}
+                  disabled={isLoading}
+                  className="w-full h-12 border-2 hover:bg-accent justify-between"
+                >
+                  <span className="flex items-center">
+                    <Mail className="mr-2 h-5 w-5" />
+                    Continue with Email
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Button>
 
+                <p className="text-center text-sm text-muted-foreground pt-2">
+                  Already have an account?{" "}
+                  <Link to="/login" className="text-primary hover:underline font-medium">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Email sign up form */}
+          {userType && authMethod === 'email' && (
+            <div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAuthMethod(null)}
+                className="mb-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+
+              <div className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4" role="form" aria-label="Sign up form">
                   <div className="space-y-2">
                     <Label htmlFor="email">Your Email</Label>
@@ -332,8 +539,7 @@ const Signup = () => {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="h-12"
                       required
-                      aria-label="Email address"
-                      aria-required="true"
+                      autoFocus
                     />
                   </div>
 
@@ -349,27 +555,18 @@ const Signup = () => {
                       required
                       showPasswordToggle={true}
                       showCharacterCount={false}
-                      aria-label="Create password"
-                      aria-required="true"
                     />
-
-                    {/* Password Strength Indicator */}
                     {passwordStrength && formData.password && (
                       <div className="space-y-2">
-                        <Progress
-                          value={(passwordStrength.score / 5) * 100}
-                          className="h-2"
-                        />
+                        <Progress value={(passwordStrength.score / 5) * 100} className="h-2" />
                         <div className="flex items-center justify-between">
                           <span className={`text-xs font-medium ${getStrengthLabel(passwordStrength.score).color}`}>
                             {getStrengthLabel(passwordStrength.score).label}
                           </span>
-                          {isCheckingBreach && (
-                            <span className="text-xs text-muted-foreground">Checking security...</span>
-                          )}
+                          {isCheckingBreach && <span className="text-xs text-muted-foreground">Checking security...</span>}
                         </div>
                         {passwordStrength.feedback.length > 0 && (
-                          <ul className="text-xs text-red-600 space-y-1">
+                          <ul className="text-xs text-destructive space-y-1">
                             {passwordStrength.feedback.slice(0, 3).map((item, i) => (
                               <li key={i}>• {item}</li>
                             ))}
@@ -377,7 +574,6 @@ const Signup = () => {
                         )}
                       </div>
                     )}
-
                     <p className="text-xs text-muted-foreground">
                       12+ characters with uppercase, lowercase, number, and special character
                     </p>
@@ -396,51 +592,32 @@ const Signup = () => {
                       showPasswordToggle={true}
                       showCharacterCount={false}
                       validate={(value) => {
-                        if (value && formData.password && value !== formData.password) {
-                          return "Passwords don't match";
-                        }
+                        if (value && formData.password && value !== formData.password) return "Passwords don't match";
                         return undefined;
                       }}
                       success={!!(formData.confirmPassword && formData.password && formData.confirmPassword === formData.password)}
-                      aria-label="Confirm password"
-                      aria-required="true"
                     />
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-lg font-semibold"
+                    className="w-full h-12 text-lg font-semibold"
                     disabled={isLoading}
-                    aria-label={isLoading ? "Creating your account, please wait" : "Create your account"}
-                    aria-busy={isLoading}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                        <span className="sr-only">Creating account...</span>
-                      </>
-                    ) : (
-                      "CREATE ACCOUNT"
-                    )}
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "CREATE ACCOUNT"}
                   </Button>
 
                   <p className="text-center text-sm text-muted-foreground">
                     Already have an account?{" "}
-                    <Link to="/login" className="text-primary hover:underline font-medium">
-                      Log in
-                    </Link>
+                    <Link to="/login" className="text-primary hover:underline font-medium">Log in</Link>
                   </p>
                 </form>
 
                 <p className="text-xs text-center text-muted-foreground pt-4">
                   I agree to the{" "}
-                  <Link to="/terms" className="underline hover:text-foreground">
-                    Terms of Service
-                  </Link>{" "}
+                  <Link to="/terms" className="underline hover:text-foreground">Terms of Service</Link>{" "}
                   and{" "}
-                  <Link to="/privacy" className="underline hover:text-foreground">
-                    Privacy Policy
-                  </Link>
+                  <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
                 </p>
               </div>
             </div>
