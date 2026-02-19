@@ -13,11 +13,7 @@ import {
   RefreshCw,
   Clock,
   CheckCircle2,
-  XCircle,
   AlertTriangle,
-  Bot,
-  Users,
-  TrendingUp,
 } from 'lucide-react';
 
 interface PhoneUsageRecord {
@@ -35,13 +31,6 @@ interface PhoneUsageRecord {
   created_at: string;
 }
 
-interface ElevenLabsAgent {
-  id: string;
-  business_id: string;
-  agent_id: string;
-  agent_name: string | null;
-  is_active: boolean;
-}
 
 export function VoiceAIStatusCard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -61,19 +50,6 @@ export function VoiceAIStatusCard() {
     },
   });
 
-  // Fetch configured agents
-  const { data: agents, isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
-    queryKey: ['super-admin-elevenlabs-agents'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('elevenlabs_agents')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as ElevenLabsAgent[];
-    },
-  });
 
   // Calculate stats
   const stats = {
@@ -81,13 +57,11 @@ export function VoiceAIStatusCard() {
     successfulCalls: recentCalls?.filter(c => c.duration_seconds && c.duration_seconds > 30)?.length || 0,
     failedCalls: recentCalls?.filter(c => !c.duration_seconds || c.duration_seconds < 10)?.length || 0,
     totalMinutes: (recentCalls?.reduce((sum, c) => sum + (c.duration_seconds || 0), 0) || 0) / 60,
-    activeAgents: agents?.filter(a => a.is_active)?.length || 0,
-    totalAgents: agents?.length || 0,
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([refetchCalls(), refetchAgents()]);
+    await refetchCalls();
     setIsRefreshing(false);
   };
 
@@ -128,7 +102,7 @@ export function VoiceAIStatusCard() {
               Voice AI Status
             </CardTitle>
             <CardDescription>
-              ElevenLabs phone call monitoring and agent status
+              Voice AI phone call monitoring
             </CardDescription>
           </div>
           <Button
@@ -168,55 +142,6 @@ export function VoiceAIStatusCard() {
             </p>
           </div>
           
-          <div className="p-4 border rounded-lg bg-accent/50">
-            <div className="flex items-center gap-2 mb-2">
-              <Bot className="h-4 w-4 text-purple-500" />
-              <span className="text-sm font-medium">Agents</span>
-            </div>
-            <p className="text-2xl font-bold">{stats.activeAgents}/{stats.totalAgents}</p>
-            <p className="text-xs text-muted-foreground">
-              Active agents
-            </p>
-          </div>
-        </div>
-
-        {/* Configured Agents */}
-        <div>
-          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-            <Bot className="h-4 w-4" />
-            Configured Agents
-          </h4>
-          {agentsLoading ? (
-            <div className="flex justify-center py-4">
-              <LoadingSpinner size="sm" />
-            </div>
-          ) : agents && agents.length > 0 ? (
-            <div className="space-y-2">
-              {agents.map((agent) => (
-                <div
-                  key={agent.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${agent.is_active ? 'bg-green-500/10' : 'bg-gray-500/10'}`}>
-                      <Bot className={`h-4 w-4 ${agent.is_active ? 'text-green-500' : 'text-gray-500'}`} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{agent.agent_name || 'Unnamed Agent'}</p>
-                      <p className="text-xs text-muted-foreground font-mono">{agent.agent_id.slice(0, 20)}...</p>
-                    </div>
-                  </div>
-                  <Badge variant={agent.is_active ? 'default' : 'secondary'}>
-                    {agent.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No ElevenLabs agents configured
-            </p>
-          )}
         </div>
 
         {/* Recent Calls */}

@@ -210,181 +210,178 @@ serve(async (req) => {
       }
     }
     
-    // Check if this is a direct appointment creation call (from voice AI tool)
+    // =====================================================
+    // Action-based routing for external voice AI servers
+    // =====================================================
+    const action = body?.action;
+    
+    if (action) {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      
+      const actionBusinessId = body.business_id || null;
+      const actionPhone = body.phone || body.patient_phone || body.caller_phone || null;
+      
+      switch (action) {
+        case 'lookup_patient':
+        case 'find_patient':
+        case 'get_patient': {
+          // Patient lookup
+          const phone = actionPhone;
+          const name = body.name || null;
+          const dobRaw = body.date_of_birth || body.dob || null;
+          
+          console.log('Action: lookup_patient', { phone, name });
+          
+          const normalizedPhone = phone ? String(phone).replace(/[^0-9]/g, '') : null;
+          const phoneWithPlus = normalizedPhone ? `+${normalizedPhone}` : null;
+          
+          let firstName: string | null = null;
+          let lastName: string | null = null;
+          if (name && typeof name === 'string') {
+            const parts = name.trim().split(/\s+/);
+            firstName = parts[0] || null;
+            lastName = parts.slice(1).join(' ') || null;
+          }
+          
+          let dobISO: string | null = null;
+          if (dobRaw && typeof dobRaw === 'string') {
+            const m = dobRaw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) dobISO = `${m[1]}-${m[2]}-${m[3]}`;
+            else {
+              const d = new Date(dobRaw);
+              if (!isNaN(d.getTime())) {
+                dobISO = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+              }
+            }
+          }
+          
+          let patient: any = null;
+          
+          // Try phone lookups
+          if (!patient && phone) {
+            const r = await supabase.from('secure_profiles_view').select('id, first_name, last_name, email, phone, date_of_birth').eq('phone', phone).maybeSingle();
+            patient = r.data || null;
+          }
+          if (!patient && phoneWithPlus) {
+            const r = await supabase.from('secure_profiles_view').select('id, first_name, last_name, email, phone, date_of_birth').eq('phone', phoneWithPlus).maybeSingle();
+            patient = r.data || null;
+          }
+          if (!patient && normalizedPhone) {
+            const r = await supabase.from('secure_profiles_view').select('id, first_name, last_name, email, phone, date_of_birth').eq('phone', normalizedPhone).maybeSingle();
+            patient = r.data || null;
+          }
+          if (!patient && normalizedPhone && normalizedPhone.length >= 6) {
+            const lastDigits = normalizedPhone.slice(-9);
+            const r = await supabase.from('secure_profiles_view').select('id, first_name, last_name, email, phone, date_of_birth').ilike('phone', `%${lastDigits}`).limit(1).maybeSingle();
+            patient = r.data || null;
+          }
+          // Name + DOB
+          if (!patient && firstName && lastName && dobISO) {
+            const r = await supabase.from('secure_profiles_view').select('id, first_name, last_name, email, phone, date_of_birth').eq('date_of_birth', dobISO).ilike('first_name', `${firstName}%`).ilike('last_name', `${lastName}%`).maybeSingle();
+            patient = r.data || null;
+          }
+          // Name only
+          if (!patient && firstName && lastName) {
+            const r = await supabase.from('secure_profiles_view').select('id, first_name, last_name, email, phone, date_of_birth').ilike('first_name', `${firstName}%`).ilike('last_name', `${lastName}%`).limit(1).maybeSingle();
+            patient = r.data || null;
+          }
+          
+          if (patient) {
+            // Also fetch upcoming appointments
+            let apptQuery = supabase.from('appointments').select('id, appointment_date, reason, status, dentist_id').eq('patient_id', patient.id).gte('appointment_date', new Date().toISOString()).order('appointment_date', { ascending: true }).limit(5);
+            if (actionBusinessId) apptQuery = apptQuery.eq('business_id', actionBusinessId);
+            const { data: appts } = await apptQuery;
+            
+            return new Response(JSON.stringify({
+              patient_id: patient.id,
+              found: true,
+              created: false,
+              profile: { first_name: patient.first_name, last_name: patient.last_name, email: patient.email, phone: patient.phone },
+              upcoming_appointments: appts || []
+            }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+          
+          return new Response(JSON.stringify({ error: 'Patient not found', found: false }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        
+        case 'check_availability': {
+          console.log('Action: check_availability', body);
+          const result = await checkAvailability(supabase, {
+            start_date: body.start_date,
+            end_date: body.end_date,
+            time_preference: body.time_preference || 'any',
+            dentist_id: body.dentist_id || null
+          }, actionBusinessId);
+          return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        
+        case 'book_appointment': {
+          console.log('Action: book_appointment', body);
+          const result = await bookAppointment(supabase, {
+            patient_phone: body.patient_phone || actionPhone,
+            patient_name: body.patient_name || body.name,
+            patient_dob: body.date_of_birth || body.dob || null,
+            dentist_id: body.dentist_id || null,
+            appointment_date: body.appointment_date,
+            appointment_time: body.appointment_time,
+            reason: body.reason || 'General consultation'
+          }, actionPhone, actionBusinessId);
+          
+          if (result.error) {
+            return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+          return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        
+        case 'cancel_appointment': {
+          console.log('Action: cancel_appointment', body);
+          const result = await cancelAppointment(supabase, { appointment_id: body.appointment_id }, actionBusinessId);
+          return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        
+        case 'get_patient_appointments': {
+          console.log('Action: get_patient_appointments', body);
+          const result = await getPatientInfo(supabase, { phone: actionPhone, name: body.name }, actionPhone, actionBusinessId);
+          return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        
+        case 'get_clinic_info': {
+          console.log('Action: get_clinic_info', body);
+          const result = await getClinicInfo(supabase, { info_type: body.info_type || 'general' }, actionBusinessId);
+          return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        
+        default:
+          return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+    }
+
+    // Check if this is a direct appointment creation call (legacy: body.name + body.appointment_date)
     if (body?.name && body?.appointment_date) {
-      console.log('Direct appointment creation:', body);
+      console.log('Direct appointment creation (legacy):', body);
       
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       );
       
-      // Book appointment directly
       const result = await bookAppointment(supabase, {
         patient_name: body.name,
         patient_phone: body.phone,
         patient_dob: body.date_of_birth || body.dob || null,
-        dentist_id: body.dentist_id || null, // Optional, will auto-select if not provided
-        appointment_date: body.appointment_date, // Let parser handle natural language
+        dentist_id: body.dentist_id || null,
+        appointment_date: body.appointment_date,
         appointment_time: null,
         reason: body.symptoms || 'General consultation'
       }, body.phone, body.business_id);
       
       if (result.error) {
-        return new Response(
-          JSON.stringify({ error: result.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ error: result.error }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          message: result.confirmation,
-          appointment_id: result.appointment_id
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // Patient lookup-only mode (no message needed)
-    // Support multiple action names: lookup_patient, find_patient, get_patient
-    const lookupActions = ['lookup_patient', 'find_patient', 'get_patient'];
-    const isPatientLookup = (body?.action && lookupActions.includes(body.action)) || 
-                            ((body?.phone || body?.phoneNumber || body?.caller_phone || body?.name || body?.date_of_birth || body?.dob) && 
-                             !body?.appointment_date && !body?.message);
-    
-    if (isPatientLookup) {
-      try {
-        const phoneRaw = body?.phone || body?.phoneNumber || body?.caller_phone || null;
-        const name = body?.name || null;
-        const dobRaw = body?.date_of_birth || body?.dob || null;
-        
-        console.log('Patient lookup request:', { phoneRaw, name, dob: dobRaw });
-        
-        const supabase = createClient(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-        );
-
-        // Normalize phone: strip all non-digits
-        const normalizedPhone = phoneRaw ? String(phoneRaw).replace(/[^0-9]/g, '') : null;
-        // Also try with + prefix for international format
-        const phoneWithPlus = normalizedPhone ? `+${normalizedPhone}` : null;
-
-        let firstName: string | null = null;
-        let lastName: string | null = null;
-        if (name && typeof name === 'string') {
-          const parts = name.trim().split(/\s+/);
-          firstName = parts[0] || null;
-          lastName = parts.slice(1).join(' ') || null;
-        }
-
-        let dobISO: string | null = null;
-        if (dobRaw && typeof dobRaw === 'string') {
-          const m = dobRaw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-          if (m) {
-            dobISO = `${m[1]}-${m[2]}-${m[3]}`;
-          } else {
-            const d = new Date(dobRaw);
-            if (!isNaN(d.getTime())) {
-              const yyyy = d.getFullYear();
-              const mm = String(d.getMonth() + 1).padStart(2, '0');
-              const dd = String(d.getDate()).padStart(2, '0');
-              dobISO = `${yyyy}-${mm}-${dd}`;
-            }
-          }
-        }
-
-        let patient: any = null;
-
-        // Strategy 1: phone lookup (try multiple formats)
-        if (!patient && (phoneRaw || normalizedPhone || phoneWithPlus)) {
-          console.log('Attempting phone lookup with formats:', { phoneRaw, normalizedPhone, phoneWithPlus });
-          
-          // Try exact match first
-          if (phoneRaw) {
-            const r1 = await supabase
-              .from('secure_profiles_view')
-              .select('id, first_name, last_name, email, phone, date_of_birth')
-              .eq('phone', phoneRaw)
-              .maybeSingle();
-            patient = r1.data || null;
-          }
-          
-          // Try with + prefix (international format)
-          if (!patient && phoneWithPlus) {
-            const r2 = await supabase
-              .from('secure_profiles_view')
-              .select('id, first_name, last_name, email, phone, date_of_birth')
-              .eq('phone', phoneWithPlus)
-              .maybeSingle();
-            patient = r2.data || null;
-          }
-          
-          // Try normalized (digits only)
-          if (!patient && normalizedPhone) {
-            const r3 = await supabase
-              .from('secure_profiles_view')
-              .select('id, first_name, last_name, email, phone, date_of_birth')
-              .eq('phone', normalizedPhone)
-              .maybeSingle();
-            patient = r3.data || null;
-          }
-          
-          // Try ILIKE pattern match as fallback (handles various formats)
-          if (!patient && normalizedPhone && normalizedPhone.length >= 6) {
-            const lastDigits = normalizedPhone.slice(-9); // Last 9 digits for matching
-            const r4 = await supabase
-              .from('secure_profiles_view')
-              .select('id, first_name, last_name, email, phone, date_of_birth')
-              .ilike('phone', `%${lastDigits}`)
-              .limit(1)
-              .maybeSingle();
-            patient = r4.data || null;
-          }
-        }
-
-        // Strategy 2: name + DOB
-        if (!patient && firstName && lastName && dobISO) {
-          const res = await supabase
-            .from('secure_profiles_view')
-            .select('id, first_name, last_name, email, phone, date_of_birth')
-            .eq('date_of_birth', dobISO)
-            .ilike('first_name', `${firstName}%`)
-            .ilike('last_name', `${lastName}%`)
-            .maybeSingle();
-          patient = res.data || null;
-        }
-
-        // Strategy 3: name-only fuzzy
-        if (!patient && firstName && lastName) {
-          const res = await supabase
-            .from('secure_profiles_view')
-            .select('id, first_name, last_name, email, phone, date_of_birth')
-            .ilike('first_name', `${firstName}%`)
-            .ilike('last_name', `${lastName}%`)
-            .limit(1)
-            .maybeSingle();
-          patient = res.data || null;
-        }
-
-        if (patient) {
-          console.log('Resolved patient (lookup-only):', patient.id);
-          return new Response(JSON.stringify({
-            patient_id: patient.id,
-            found: true,
-            created: false,
-            profile: { first_name: patient.first_name, last_name: patient.last_name, email: patient.email, phone: patient.phone }
-          }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        } else {
-          console.log('Patient not found (lookup-only)');
-          return new Response(JSON.stringify({ error: 'Patient not found', found: false }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
-      } catch (e) {
-        console.error('Lookup-only error:', e);
-        return new Response(JSON.stringify({ error: (e as any)?.message || 'Lookup failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
+      return new Response(JSON.stringify({ success: true, message: result.confirmation, appointment_id: result.appointment_id }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     // Original OpenAI conversation flow

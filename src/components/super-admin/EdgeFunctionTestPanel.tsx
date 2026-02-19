@@ -39,7 +39,7 @@ const AVAILABLE_FUNCTIONS = [
   { name: 'health-check', description: 'System health check', requiresBody: false },
   { name: 'voice-call-ai', description: 'Voice AI conversation', requiresBody: true },
   { name: 'send-email-notification', description: 'Send email', requiresBody: true },
-  { name: 'elevenlabs-webhook', description: 'ElevenLabs webhook', requiresBody: true },
+  
   { name: 'make-super-admin', description: 'Grant super admin', requiresBody: true },
   { name: 'get-system-stats', description: 'System statistics', requiresBody: false },
 ];
@@ -56,11 +56,6 @@ const SAMPLE_PAYLOADS: Record<string, string> = {
     subject: "Test Email",
     message: "<p>This is a test email</p>",
     messageType: "system"
-  }, null, 2),
-  'elevenlabs-webhook': JSON.stringify({
-    event_type: "call.started",
-    call_id: "test-call-123",
-    agent_id: "test-agent"
   }, null, 2),
   'make-super-admin': JSON.stringify({
     email: "user@example.com"

@@ -30,7 +30,7 @@ import {
   useAdminAppointments,
   useAdminPhoneCalls,
   useAdminEncryptionKeys,
-  useAdminElevenLabsAgents,
+  
   useAdminChatMessages,
   useToggleBusinessSubscriptionStatus,
 } from '@/hooks/useAdminData';
@@ -50,7 +50,7 @@ export default function AdminBusinessDetail() {
   const { data: allAppointments } = useAdminAppointments({ businessId: businessId || undefined });
   const { data: allPhoneCalls } = useAdminPhoneCalls();
   const { data: encryptionKeys } = useAdminEncryptionKeys();
-  const { data: agents } = useAdminElevenLabsAgents();
+  
   const { data: chatMessages } = useAdminChatMessages();
   const updateSettings = useUpdateBusinessSettings();
   const removeMember = useRemoveBusinessMember();
@@ -63,7 +63,7 @@ export default function AdminBusinessDetail() {
 
   const bizPhoneCalls = allPhoneCalls?.filter((p) => p.business_id === businessId) || [];
   const bizKeys = encryptionKeys?.filter((k) => k.business_id === businessId) || [];
-  const bizAgents = agents?.filter((a) => a.business_id === businessId) || [];
+  
   const bizChat = chatMessages?.filter((c) => c.business_id === businessId) || [];
   const botMessages = bizChat.filter((c) => c.is_bot).length;
   const humanMessages = bizChat.filter((c) => !c.is_bot).length;
@@ -408,23 +408,10 @@ export default function AdminBusinessDetail() {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">ElevenLabs Agents</CardTitle>
+                <CardTitle className="text-base">Voice AI Configuration</CardTitle>
               </CardHeader>
               <CardContent>
-                {bizAgents.length > 0 ? (
-                  <div className="space-y-3">
-                    {bizAgents.map((a) => (
-                      <div key={a.id} className="border rounded-lg p-3 space-y-1 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Agent Name</span><span className="font-medium">{a.agent_name || 'N/A'}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Agent ID</span><span className="font-mono text-xs">{a.agent_id || 'N/A'}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Voice ID</span><span className="font-mono text-xs">{a.voice_id || 'N/A'}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Active</span><Badge variant={a.is_active ? 'default' : 'secondary'}>{a.is_active ? 'Yes' : 'No'}</Badge></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No ElevenLabs agents configured.</p>
-                )}
+                <p className="text-sm text-muted-foreground">Voice AI is managed externally via the Fastify server.</p>
               </CardContent>
             </Card>
 
