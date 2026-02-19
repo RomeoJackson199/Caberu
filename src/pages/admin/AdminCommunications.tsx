@@ -5,14 +5,13 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Phone, MessageSquare, Mail, Bot, Lock } from 'lucide-react';
+import { Phone, MessageSquare, Mail, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   useAdminPhoneCalls,
   useAdminChatMessages,
   useAdminMessages,
   useAdminEmailLogs,
-  useAdminElevenLabsAgents,
 } from '@/hooks/useAdminData';
 
 const formatDuration = (seconds: number | null) => {
@@ -32,7 +31,7 @@ export default function AdminCommunications() {
   const { data: chatMessages, isLoading: chatLoading } = useAdminChatMessages();
   const { data: messages, isLoading: msgLoading } = useAdminMessages();
   const { data: emailLogs, isLoading: emailLoading } = useAdminEmailLogs();
-  const { data: agents, isLoading: agentLoading } = useAdminElevenLabsAgents();
+  
 
   return (
     <div className="space-y-6">
@@ -47,7 +46,7 @@ export default function AdminCommunications() {
           <TabsTrigger value="chat" className="gap-1.5"><MessageSquare className="h-3.5 w-3.5" />Chat</TabsTrigger>
           <TabsTrigger value="messages" className="gap-1.5"><Mail className="h-3.5 w-3.5" />Messages</TabsTrigger>
           <TabsTrigger value="email" className="gap-1.5"><Mail className="h-3.5 w-3.5" />Email Logs</TabsTrigger>
-          <TabsTrigger value="agents" className="gap-1.5"><Bot className="h-3.5 w-3.5" />ElevenLabs</TabsTrigger>
+          
         </TabsList>
 
         {/* Phone Calls */}
@@ -238,50 +237,6 @@ export default function AdminCommunications() {
           </Card>
         </TabsContent>
 
-        {/* ElevenLabs Agents */}
-        <TabsContent value="agents">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">ElevenLabs Agents ({agents?.length || 0})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {agentLoading ? <div className="flex justify-center py-8"><LoadingSpinner /></div> : (
-                <div className="space-y-4">
-                  {agents && agents.length > 0 ? agents.map((agent) => (
-                    <Card key={agent.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-medium">{agent.agent_name || 'Unnamed Agent'}</h4>
-                            <p className="text-sm text-muted-foreground">{agent.business_name || 'No business'}</p>
-                            <div className="mt-2 space-y-1 text-sm">
-                              <div><span className="text-muted-foreground">Agent ID:</span> {agent.agent_id}</div>
-                              <div><span className="text-muted-foreground">Voice ID:</span> {agent.voice_id || 'Default'}</div>
-                              <div><span className="text-muted-foreground">Created:</span> {format(new Date(agent.created_at), 'PP')}</div>
-                            </div>
-                          </div>
-                          <Badge variant={agent.is_active ? 'default' : 'secondary'}>
-                            {agent.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-                        {agent.settings && (
-                          <details className="mt-3">
-                            <summary className="text-sm text-muted-foreground cursor-pointer">Settings</summary>
-                            <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-[200px]">
-                              {JSON.stringify(agent.settings, null, 2)}
-                            </pre>
-                          </details>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )) : (
-                    <p className="text-center py-8 text-muted-foreground">No ElevenLabs agents configured</p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
