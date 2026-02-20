@@ -273,8 +273,7 @@ export function DentistAppointmentDetail({
     toast.success('Appointment cancelled');
 
     try {
-      // Release the slot
-      await supabase.rpc('release_appointment_slots', { p_appointment_id: appointment.id });
+      // No slot release needed - dynamic availability automatically reflects cancellations
 
       const { error } = await supabase
         .from('appointments')

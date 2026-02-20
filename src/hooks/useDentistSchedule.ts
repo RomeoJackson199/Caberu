@@ -95,7 +95,8 @@ export function useDentistDateOverrides(
 }
 
 /**
- * Fetch appointment slots for a date range
+ * Fetch available slots for a date using dynamic availability
+ * (working hours - vacations - booked appointments)
  */
 export function useAppointmentSlots(
   dentistId: string | null | undefined,
@@ -106,22 +107,14 @@ export function useAppointmentSlots(
   
   return useQuery({
     queryKey: ['appointment-slots', dentistId, businessId, dateStr],
-    queryFn: async (): Promise<AppointmentSlot[]> => {
+    queryFn: async () => {
       if (!dentistId || !businessId) return [];
       
-      const { data, error } = await supabase
-        .from('appointment_slots')
-        .select('*')
-        .eq('dentist_id', dentistId)
-        .eq('business_id', businessId)
-        .eq('slot_date', dateStr)
-        .order('slot_time');
-        
-      if (error) throw error;
-      return data || [];
+      const { fetchDentistAvailability } = await import('@/lib/appointmentAvailability');
+      return fetchDentistAvailability(dentistId, date, true);
     },
     enabled: !!dentistId && !!businessId,
-    staleTime: 1 * 60 * 1000, // 1 minute - slots can change frequently
+    staleTime: 1 * 60 * 1000, // 1 minute
   });
 }
 

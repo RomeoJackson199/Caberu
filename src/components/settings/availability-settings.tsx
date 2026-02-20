@@ -452,16 +452,7 @@ export function AvailabilitySettings({ dentistId }: AvailabilitySettingsProps) {
         }
       }
 
-      // Clear old slots so they regenerate with new availability
-      const { error: slotsError } = await supabase
-        .from('appointment_slots')
-        .delete()
-        .eq('dentist_id', dentistId)
-        .is('appointment_id', null);
-
-      if (slotsError) {
-        logger.warn('Error clearing slots (non-fatal):', slotsError);
-      }
+      // No slot clearing needed - dynamic availability is computed on-the-fly
 
       // Clear states
       setValidationErrors([]);

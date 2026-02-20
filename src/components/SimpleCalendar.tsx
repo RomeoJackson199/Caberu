@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,51 +29,13 @@ export const SimpleCalendar = ({ selectedDentist, onDateTimeSelect, isEmergency 
     setSelectedTime("");
     
     try {
-      // Regenerate slots for the selected date (also cleans stale)
-      const dateStr = date.toISOString().split('T')[0];
-      await supabase.rpc('generate_daily_slots', {
-        p_dentist_id: selectedDentist,
-        p_date: dateStr
-      });
+      // Use dynamic availability - working hours minus vacations minus booked
+      const { fetchDentistAvailability } = await import('@/lib/appointmentAvailability');
+      const availabilitySlots = await fetchDentistAvailability(selectedDentist, date, true);
 
-      const businessId = await getCurrentBusinessId();
-
-      // Check schedule; if closed or missing row, return empty
-      try {
-        const dayOfWeek = date.getDay();
-        const { data: availability } = await supabase
-          .from('dentist_availability')
-          .select('is_available')
-          .eq('dentist_id', selectedDentist)
-          .eq('business_id', businessId)
-          .eq('day_of_week', dayOfWeek)
-          .maybeSingle();
-        if (!availability || availability.is_available === false) {
-          setAllSlots([]);
-          setLoadingTimes(false);
-          return;
-        }
-      } catch {}
-
-      // Fetch ALL slots for the date
-      const { data: slots, error } = await supabase
-        .from('appointment_slots')
-        .select('slot_time, is_available, emergency_only')
-        .eq('dentist_id', selectedDentist)
-        .eq('slot_date', dateStr)
-        .eq('business_id', businessId)
-        .order('slot_time');
-
-      if (error) throw error;
-
-      // Filter slots based on emergency status
-      const filteredSlots = slots?.filter(slot => 
-        isEmergency ? slot.emergency_only : !slot.emergency_only
-      ) || [];
-      
-      const slotData = filteredSlots.map(slot => ({
-        time: slot.slot_time.substring(0, 5),
-        available: slot.is_available
+      const slotData = availabilitySlots.map(slot => ({
+        time: slot.time.substring(0, 5),
+        available: slot.available
       }));
       
       setAllSlots(slotData);

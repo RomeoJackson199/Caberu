@@ -87,11 +87,12 @@ export async function fetchDentistAvailability(
   try {
     const businessId = await getCurrentBusinessId();
 
-    // Call the database function that computes availability dynamically
-    const { data, error } = await supabase.rpc('get_dentist_available_slots', {
+    // Call the dynamic availability function (working hours - vacations - booked)
+    const { data, error } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ data: Array<{ slot_start: string; slot_end: string }> | null; error: unknown }> }).rpc('get_available_slots', {
       p_dentist_id: dentistId,
       p_date: dateStr,
-      p_business_id: businessId
+      p_business_id: businessId,
+      p_service_id: null
     });
 
     if (error) {
@@ -100,12 +101,17 @@ export async function fetchDentistAvailability(
     }
 
     // Map database result to TimeSlot format
-    const slots: TimeSlot[] = (data || []).map((slot: { slot_time: string; is_available: boolean; reason?: string; appointment_id?: string }) => ({
-      time: slot.slot_time,
-      available: slot.is_available,
-      reason: slot.reason as TimeSlot['reason'],
-      appointmentId: slot.appointment_id || undefined
-    }));
+    // get_available_slots returns only available slots (slot_start, slot_end)
+    const slots: TimeSlot[] = (data || []).map((slot: { slot_start: string; slot_end: string }) => {
+      // Extract time from slot_start (format: "HH:MM:SS" or full timestamp)
+      const timeStr = typeof slot.slot_start === 'string' && slot.slot_start.includes('T')
+        ? slot.slot_start.split('T')[1]?.substring(0, 8) || slot.slot_start
+        : slot.slot_start;
+      return {
+        time: timeStr,
+        available: true,
+      };
+    });
 
     // Cache the result with size limit enforcement
     if (availabilityCache.size >= MAX_CACHE_SIZE) {

@@ -5865,6 +5865,10 @@ export type Database = {
         Args: { _patient_id: string; _user_id: string }
         Returns: boolean
       }
+      encrypt_for_business: {
+        Args: { p_business_id: string; p_value: string }
+        Returns: string
+      }
       ensure_daily_slots: {
         Args: { p_date: string; p_dentist_id: string }
         Returns: undefined
