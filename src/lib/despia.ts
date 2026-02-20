@@ -9,9 +9,10 @@ import despia from 'despia-native';
 
 const DEFAULT_NATIVE_TIMEOUT_MS = 15000;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface NativeRequestHandlers {
-  resolve: (value?: unknown) => void;
-  reject: (error?: unknown) => void;
+  resolve: (value?: any) => void;
+  reject: (error?: any) => void;
 }
 
 const callbackRegistry = new Map<string, NativeRequestHandlers>();
@@ -108,9 +109,11 @@ function resolveNativeRequest(operationKey: string, payload?: unknown): void {
 }
 
 
-function registerGlobalCallback(name: string, handler: (...args: unknown[]) => void): void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function registerGlobalCallback(name: string, handler: (...args: any[]) => void): void {
   if (typeof window === 'undefined' || installedGlobalCallbacks.has(name)) return;
-  ((window as unknown) as Record<string, unknown>)[name] = (...args: unknown[]) => handler(...args);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ((window as unknown) as Record<string, unknown>)[name] = (...args: any[]) => handler(...args);
   installedGlobalCallbacks.add(name);
 }
 

@@ -162,31 +162,16 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     setAvailableSlots([]);
 
     try {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const businessId = await getCurrentBusinessId();
+      // Use dynamic availability - working hours minus vacations minus booked
+      const { fetchDentistAvailability } = await import('@/lib/appointmentAvailability');
+      const slots = await fetchDentistAvailability(appointment.dentist_id, date, true);
 
-      const { error: generateError } = await supabase.rpc('generate_daily_slots', {
-        p_dentist_id: appointment.dentist_id,
-        p_date: dateStr,
-        p_business_id: businessId
-      });
+      // Map to expected format, filter to available only
+      const available = slots
+        .filter(s => s.available)
+        .map(s => ({ slot_time: s.time, is_available: true }));
 
-      if (generateError) {
-        logger.warn('Slot generation warning:', generateError);
-      }
-
-      const { data: slots, error: slotsError } = await supabase
-        .from('appointment_slots')
-        .select('slot_time, is_available')
-        .eq('dentist_id', appointment.dentist_id)
-        .eq('slot_date', dateStr)
-        .eq('business_id', businessId)
-        .eq('is_available', true)
-        .order('slot_time');
-
-      if (slotsError) throw slotsError;
-
-      setAvailableSlots(slots || []);
+      setAvailableSlots(available);
     } catch (error) {
       logger.error('Error loading slots:', error);
       toast({
@@ -236,26 +221,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
           if (updateError) throw updateError;
 
-          // Try to update slots (non-critical)
-          try {
-            const businessId = await getCurrentBusinessId();
-            // Release old slots
-            await supabase
-              .from('appointment_slots')
-              .update({ is_available: true, appointment_id: null, updated_at: new Date().toISOString() })
-              .eq('appointment_id', appointment.id);
-
-            // Reserve new slot
-            await supabase
-              .from('appointment_slots')
-              .update({ is_available: false, appointment_id: appointment.id, updated_at: new Date().toISOString() })
-              .eq('dentist_id', appointment.dentist_id)
-              .eq('slot_date', dateStr)
-              .eq('slot_time', selectedTime + ':00')
-              .eq('business_id', businessId);
-          } catch (slotErr) {
-            logger.warn('Slot update during reschedule failed (non-critical):', slotErr);
-          }
+          // No slot table updates needed - dynamic availability handles this
         } else {
           throw rpcError;
         }

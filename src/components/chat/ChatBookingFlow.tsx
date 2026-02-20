@@ -60,34 +60,13 @@ export const ChatBookingFlow = ({
       const dateStr = format(date, 'yyyy-MM-dd');
       const businessId = await getCurrentBusinessId();
 
-      // First, ensure slots are generated for this date
-      try {
-        await supabase.rpc('generate_daily_slots', {
-          p_dentist_id: dentistId,
-          p_date: dateStr
-        });
-      } catch (genError) {
-        console.error('Error generating slots:', genError);
-      }
+      // Use dynamic availability - working hours minus vacations minus booked
+      const { fetchDentistAvailability } = await import('@/lib/appointmentAvailability');
+      const availabilitySlots = await fetchDentistAvailability(dentistId, date, true);
 
-      // Fetch available slots
-      const { data, error } = await supabase
-        .from('appointment_slots')
-        .select('slot_time, is_available, emergency_only')
-        .eq('dentist_id', dentistId)
-        .eq('slot_date', dateStr)
-        .eq('is_available', true)
-        .order('slot_time');
-
-      if (error) {
-        console.error("Error fetching slots:", error);
-        throw error;
-      }
-
-      const slots: TimeSlot[] = (data || []).map(slot => ({
-        time: slot.slot_time.substring(0, 5),
-        available: slot.is_available && !slot.emergency_only,
-        emergency_only: slot.emergency_only
+      const slots: TimeSlot[] = availabilitySlots.map(slot => ({
+        time: slot.time.substring(0, 5),
+        available: slot.available,
       }));
 
       const availableNormalSlots = slots.filter(s => s.available);
@@ -201,21 +180,8 @@ export const ChatBookingFlow = ({
 
       if (appointmentError) throw appointmentError;
 
-      // Book all required slots for appointment duration (default 30 min)
-      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
-        p_dentist_id: currentDentist.id,
-        p_slot_date: dateStr,
-        p_start_time: selectedTime,
-        p_duration_minutes: 30, // Default duration for chat bookings
-        p_appointment_id: appointmentData.id
-      });
-
-      if (slotError) {
-        await supabase.from("appointments").delete().eq("id", appointmentData.id);
-        onResponse("That time was just taken. Please pick another time.");
-        setStep('time');
-        return;
-      }
+      // No slot table reservation needed - dynamic availability handles this
+      // The appointment insert itself is the source of truth
 
       toast({
         title: "Appointment Confirmed!",

@@ -479,11 +479,7 @@ export const InteractiveDentalChat = ({
     addBotMessage("Loading available times... ⏳");
     
     try {
-      // Ensure slots exist for this date and dentist
-      await supabase.rpc('ensure_daily_slots', {
-        p_dentist_id: bookingFlow.selectedDentist.id,
-        p_date: dateStr
-      });
+      // Use dynamic availability (working hours - vacations - booked appointments)
       
       // Import the availability function
       const { fetchDentistAvailability } = await import('@/lib/appointmentAvailability');
@@ -645,19 +641,8 @@ export const InteractiveDentalChat = ({
         // Don't throw - appointment was successful, linking is supplementary
       }
 
-      // Book all required slots for appointment duration (default 30 min)
-      const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
-        p_dentist_id: bookingFlow.selectedDentist.id,
-        p_slot_date: format(bookingFlow.selectedDate, 'yyyy-MM-dd'),
-        p_start_time: bookingFlow.selectedTime,
-        p_duration_minutes: 30, // Default duration for chat bookings
-        p_appointment_id: appointmentData.id
-      });
-
-      if (slotError) {
-        await supabase.from("appointments").delete().eq("id", appointmentData.id);
-        throw new Error("This time slot is no longer available");
-      }
+      // No slot table reservation needed - dynamic availability handles double-booking prevention
+      // The appointment insert itself is the source of truth for availability
 
       toast({
         title: "Appointment Confirmed! 🎉",

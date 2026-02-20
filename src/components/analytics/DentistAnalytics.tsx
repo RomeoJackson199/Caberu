@@ -1079,29 +1079,28 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
                   try {
                     const targetStart = new Date(f.dueDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                     const targetEnd = new Date(f.dueDate.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-                    const { data: slots } = await supabase
-                      .from('appointment_slots')
-                      .select('id, slot_date, slot_time')
-                      .eq('dentist_id', dentistId)
-                      .eq('is_available', true)
-                      .gte('slot_date', targetStart)
-                      .lte('slot_date', targetEnd)
-                      .order('slot_date', { ascending: true });
-                    const first = (slots || [])[0];
-                    if (first) {
-                      const dt = new Date(`${first.slot_date}T${first.slot_time}:00`);
-                      const { data: appt, error: apptErr } = await supabase
-                        .from('appointments')
-                        .insert({
-                          dentist_id: dentistId,
-                          patient_id: f.patientId,
-                          appointment_date: dt.toISOString(),
-                          status: 'pending'
-                        })
-                        .select('id')
-                        .single();
-                      if (!apptErr && appt?.id) {
-                        await supabase.from('appointment_slots').update({ is_available: false, appointment_id: appt.id }).eq('id', first.id);
+                    // Use dynamic availability to find next open slot
+                    const { fetchDentistAvailability } = await import('@/lib/appointmentAvailability');
+                    let booked = false;
+                    for (let dayOffset = -3; dayOffset <= 14 && !booked; dayOffset++) {
+                      const checkDate = new Date(f.dueDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+                      const slots = await fetchDentistAvailability(dentistId, checkDate, true);
+                      const firstAvail = slots.find(s => s.available);
+                      if (firstAvail) {
+                        const dt = new Date(`${checkDate.toISOString().split('T')[0]}T${firstAvail.time}`);
+                        const { data: appt, error: apptErr } = await supabase
+                          .from('appointments')
+                          .insert({
+                            dentist_id: dentistId,
+                            patient_id: f.patientId,
+                            appointment_date: dt.toISOString(),
+                            status: 'pending'
+                          })
+                          .select('id')
+                          .single();
+                        if (!apptErr && appt?.id) {
+                          booked = true;
+                        }
                       }
                     }
                   } catch (error) {
