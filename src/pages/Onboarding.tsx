@@ -130,7 +130,12 @@ const Onboarding = () => {
       return;
     }
 
-    setCurrentStep('phone');
+    // Phone-OTP users already have a verified phone — skip the SMS verification step
+    if (formData.phoneVerified) {
+      setCurrentStep('address');
+    } else {
+      setCurrentStep('phone');
+    }
   };
 
   const formatPhoneNumber = (value: string) => {
