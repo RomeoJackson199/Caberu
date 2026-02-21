@@ -4420,6 +4420,60 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_call_logs: {
+        Row: {
+          business_id: string
+          call_sid: string
+          caller_phone: string | null
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          forwarded_from: string | null
+          id: string
+          started_at: string
+          status: string | null
+        }
+        Insert: {
+          business_id: string
+          call_sid: string
+          caller_phone?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          forwarded_from?: string | null
+          id?: string
+          started_at?: string
+          status?: string | null
+        }
+        Update: {
+          business_id?: string
+          call_sid?: string
+          caller_phone?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          forwarded_from?: string | null
+          id?: string
+          started_at?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_call_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_call_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       admin_encryption_key_status: {
