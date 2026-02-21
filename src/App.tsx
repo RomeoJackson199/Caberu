@@ -101,7 +101,7 @@ const PatientAccountPrivacyPage = lazy(() => import("./pages/PatientAccountPriva
 const PatientAccountHelpPage = lazy(() => import("./pages/PatientAccountHelpPage"));
 const PatientSettingsPage = lazy(() => import("./pages/PatientSettingsPage"));
 // SmartBookAppointment removed - unused
-const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
+// SuperAdminDashboard removed - unused (lazy import existed but was never rendered in a Route)
 const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
