@@ -10,17 +10,38 @@ interface BusinessCreationAuthProps {
 export function BusinessCreationAuth({ onComplete }: BusinessCreationAuthProps) {
   const [checking, setChecking] = useState(true);
 
-  // Check if user is already logged in
+  // Check if user is already logged in, and listen for session changes.
+  // This handles the race condition where AuthCallbackHandler is still
+  // exchanging the PKCE code (from email verification) when this component
+  // mounts — the onAuthStateChange listener catches the session once it's ready.
   useEffect(() => {
+    let completed = false;
+
+    const handleSession = () => {
+      if (!completed) {
+        completed = true;
+        onComplete();
+      }
+    };
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        onComplete();
+        handleSession();
       } else {
         setChecking(false);
       }
     };
+
     checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        handleSession();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [onComplete]);
 
   if (checking) {

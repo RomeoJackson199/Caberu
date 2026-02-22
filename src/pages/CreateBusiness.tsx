@@ -59,11 +59,42 @@ export default function CreateBusiness() {
         }
 
         try {
+          // Ensure we have a valid session before calling the edge function.
+          // After an external Stripe redirect the refresh token in localStorage
+          // is used to restore the session; if that also fails the user needs
+          // to re-authenticate.
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+          if (sessionError || !session) {
+            // Session is gone – preserve the Stripe session_id so we can
+            // complete the business setup after the user logs back in.
+            localStorage.setItem('pending_stripe_session_id', sessionId);
+            if (Object.keys(savedBusinessData).length > 0) {
+              localStorage.setItem('pending_business_data_after_login', JSON.stringify(savedBusinessData));
+            }
+            toast.error('Your session expired. Please log in again – your payment was processed and your business will be set up automatically after you sign in.');
+            navigate('/login');
+            return;
+          }
+
           const { data, error } = await supabase.functions.invoke('complete-business-setup', {
             body: { session_id: sessionId, business_data: savedBusinessData },
           });
 
-          if (error) throw error;
+          if (error) {
+            // If the edge function returns an auth error, same recovery path.
+            const msg = (error as Error).message || '';
+            if (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('not authenticated')) {
+              localStorage.setItem('pending_stripe_session_id', sessionId);
+              if (Object.keys(savedBusinessData).length > 0) {
+                localStorage.setItem('pending_business_data_after_login', JSON.stringify(savedBusinessData));
+              }
+              toast.error('Your session expired. Please log in again – your payment was processed and your business will be set up automatically after you sign in.');
+              navigate('/login');
+              return;
+            }
+            throw error;
+          }
 
           // Set flag to auto-start the dashboard tour for new business owners
           localStorage.setItem('should-start-tour', 'true');

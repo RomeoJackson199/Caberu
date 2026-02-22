@@ -130,6 +130,22 @@ export function AuthRedirectHandler() {
           membershipsCount: memberships.length
         });
 
+        // Recover from a Stripe redirect where the session had expired.
+        // If the user had to re-login after returning from Stripe payment,
+        // we stored the session_id so we can complete the business setup now.
+        const pendingStripeSessionId = localStorage.getItem('pending_stripe_session_id');
+        if (pendingStripeSessionId) {
+          localStorage.removeItem('pending_stripe_session_id');
+          const pendingBusinessData = localStorage.getItem('pending_business_data_after_login');
+          if (pendingBusinessData) {
+            localStorage.removeItem('pending_business_data_after_login');
+            sessionStorage.setItem('pending_business_data', pendingBusinessData);
+          }
+          sessionStorage.removeItem(REDIRECT_KEY);
+          navigate(`/create-business?subscription=success&session_id=${pendingStripeSessionId}`, { replace: true });
+          return;
+        }
+
         // Check for pending signup user type from OAuth flow
         // If user signed up as business owner via OAuth, we need to initialize their business owner data
         const pendingUserType = sessionStorage.getItem('pending_signup_user_type');
