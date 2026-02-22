@@ -109,13 +109,18 @@ export function PhoneVerificationDialog({
         title: "Verification Code Sent",
         description: "Check your phone for the 6-digit SMS code",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Error sending SMS code:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send verification code",
-        variant: "destructive",
-      });
+      let message = "Failed to send verification code";
+      if (error && typeof error === 'object' && 'context' in error) {
+        try {
+          const body = await (error as { context: Response }).context.json();
+          message = body.error || body.message || message;
+        } catch { /* ignore */ }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -158,13 +163,18 @@ export function PhoneVerificationDialog({
           variant: "destructive",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('Error verifying SMS code:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to verify code",
-        variant: "destructive",
-      });
+      let message = "Failed to verify code";
+      if (error && typeof error === 'object' && 'context' in error) {
+        try {
+          const body = await (error as { context: Response }).context.json();
+          message = body.error || body.message || message;
+        } catch { /* ignore */ }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

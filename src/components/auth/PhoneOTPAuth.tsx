@@ -74,14 +74,17 @@ export function PhoneOTPAuth({
     }
   };
 
-  const handleVerifyOTP = async () => {
-    if (otpCode.length < 6) return;
+  // Accept the completed code directly from onComplete to avoid stale state.
+  // When called from the button click, fall back to the otpCode state value.
+  const handleVerifyOTP = async (completedCode?: string) => {
+    const code = completedCode ?? otpCode;
+    if (code.length < 6) return;
 
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.verifyOtp({
         phone: phone!,
-        token: otpCode,
+        token: code,
         type: "sms",
       });
 
@@ -209,7 +212,7 @@ export function PhoneOTPAuth({
           </div>
 
           <Button
-            onClick={handleVerifyOTP}
+            onClick={() => handleVerifyOTP()}
             disabled={isLoading || otpCode.length < 6}
             className={
               isGlass
