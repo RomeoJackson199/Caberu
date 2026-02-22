@@ -90,6 +90,12 @@ export function PhoneOTPAuth({
       // Remember that user has signed in before
       localStorage.setItem("caberu_remembered_email", phone!);
 
+      // If this is an owner signup via phone, set the pending user type
+      // so AuthRedirectHandler routes to /create-business
+      if (signupMetadata?.role_type === 'owner') {
+        sessionStorage.setItem('pending_signup_user_type', 'owner');
+      }
+
       toast({
         title: "Welcome!",
         description: "You've been signed in successfully.",
