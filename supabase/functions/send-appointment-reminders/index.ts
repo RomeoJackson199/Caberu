@@ -205,7 +205,7 @@ serve(async (req) => {
           if (patient.phone) {
             try {
               const smsBody = `Appointment Reminder: Your dental appointment with Dr. ${dentist.first_name} ${dentist.last_name} is ${reminderText} on ${formattedDate} at ${formattedTime}. Please arrive 10 minutes early.`;
-              const smsResult = await sendSms({ to: patient.phone, message: smsBody });
+              const smsResult = await sendSms({ to: patient.phone, message: smsBody, messageType: 'appointment_reminder' });
               if (smsResult.success) {
                 console.log(`📱 SMS reminder sent for reminder ${reminder.id}`);
               } else {

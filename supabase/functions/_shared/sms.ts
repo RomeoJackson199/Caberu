@@ -53,8 +53,12 @@ function cleanPhoneNumber(phone: string): string | null {
   
   // Ensure it starts with +
   if (!cleaned.startsWith('+')) {
-    // Assume Belgian number if starts with 0
-    if (cleaned.startsWith('0')) {
+    // Handle international dialing prefix (00 + country code, e.g. 0032, 0044, 0033)
+    if (cleaned.startsWith('00')) {
+      cleaned = '+' + cleaned.substring(2);
+    // Assume Belgian number only if a single leading zero (local format, e.g. 0467...)
+    } else if (cleaned.startsWith('0')) {
+      console.log(`📱 Assuming Belgian country code (+32) for local number: ${cleaned.substring(0, 5)}...`);
       cleaned = '+32' + cleaned.substring(1);
     } else if (cleaned.length >= 10) {
       cleaned = '+' + cleaned;
@@ -162,15 +166,31 @@ export async function sendSms({ to, message, messageType = 'notification', busin
 
     if (!response.ok) {
       console.error('❌ Twilio SMS error:', data);
+      // Map common Twilio error codes to actionable messages
+      const TWILIO_ERROR_MESSAGES: Record<number, string> = {
+        21211: 'Invalid phone number',
+        21408: 'Geographic permission not enabled for this destination',
+        21612: 'Phone number not currently reachable',
+        21614: 'Not an SMS-capable number (likely a landline)',
+        30003: 'Handset unreachable',
+        30004: 'Message blocked by carrier',
+        30005: 'Unknown destination handset',
+        30006: 'Landline or unreachable number',
+        30007: 'Carrier violation',
+        30008: 'Unknown error from carrier',
+      };
+      const friendlyError = (data.code && TWILIO_ERROR_MESSAGES[data.code])
+        ? TWILIO_ERROR_MESSAGES[data.code]
+        : data.message || `Twilio error ${data.code}`;
       await logSms({
         recipientPhone: cleanedTo,
         messageBody: smsMessage,
         messageType,
         businessId,
         status: 'failed',
-        errorMessage: data.message || `Twilio error ${data.code}`,
+        errorMessage: friendlyError,
       });
-      return { success: false, error: data.message || `Twilio error ${data.code}` };
+      return { success: false, error: friendlyError };
     }
 
     console.log(`✅ SMS sent to ${cleanedTo}, SID: ${data.sid}`);
