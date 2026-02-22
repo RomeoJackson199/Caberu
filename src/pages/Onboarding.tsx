@@ -23,6 +23,7 @@ import { SUPPORTED_LANGUAGES, Language } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 
 type OnboardingStep = 'personal' | 'phone' | 'address';
+type AuthProvider = 'phone' | 'email' | 'google' | 'unknown';
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -72,6 +73,15 @@ const Onboarding = () => {
 
       setUserId(user.id);
 
+      // Detect auth provider — if phone, skip phone verification step
+      const authProvider: AuthProvider = user.app_metadata?.provider === 'phone' 
+        ? 'phone' 
+        : user.app_metadata?.provider === 'google' 
+          ? 'google' 
+          : user.app_metadata?.provider === 'email' 
+            ? 'email' 
+            : 'unknown';
+
       // Check if profile is already complete
       const { data: profile } = await supabase
         .from("secure_profiles_view")
@@ -86,15 +96,30 @@ const Onboarding = () => {
 
       // Pre-fill form if some data exists
       if (profile) {
+        // If user signed up via phone, their phone is already verified
+        const isPhoneAlreadyVerified = profile.phone_verified || authProvider === 'phone';
+        
         setFormData(prev => ({
           ...prev,
           firstName: profile.first_name || "",
           lastName: profile.last_name || "",
           dateOfBirth: profile.date_of_birth || "",
-          phone: profile.phone || "",
-          phoneVerified: profile.phone_verified || false,
+          phone: profile.phone || user.phone || "",
+          phoneVerified: isPhoneAlreadyVerified,
           address: profile.address || "",
         }));
+
+        // If phone is already verified (e.g. phone signup), mark it in DB if not already
+        if (authProvider === 'phone' && !profile.phone_verified && user.phone) {
+          await supabase
+            .from("profiles")
+            .update({ 
+              phone: user.phone, 
+              phone_verified: true, 
+              phone_verified_at: new Date().toISOString() 
+            })
+            .eq("user_id", user.id);
+        }
       }
     } catch (error) {
       console.error("Error checking user:", error);
@@ -130,7 +155,12 @@ const Onboarding = () => {
       return;
     }
 
-    setCurrentStep('phone');
+    // Skip phone step if phone is already verified (e.g. signed up via phone)
+    if (formData.phoneVerified) {
+      setCurrentStep('address');
+    } else {
+      setCurrentStep('phone');
+    }
   };
 
   const formatPhoneNumber = (value: string) => {
