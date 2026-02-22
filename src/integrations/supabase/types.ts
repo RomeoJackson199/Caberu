@@ -5611,8 +5611,10 @@ export type Database = {
           import_session_id: string | null
           last_name: string | null
           medical_history: string | null
+          onboarding_completed: boolean | null
           patient_status: string | null
           phone: string | null
+          phone_verified: boolean | null
           profile_completion_status: string | null
           profile_picture_url: string | null
           role: string | null
@@ -5632,8 +5634,10 @@ export type Database = {
           import_session_id?: string | null
           last_name?: string | null
           medical_history?: string | null
+          onboarding_completed?: boolean | null
           patient_status?: string | null
           phone?: string | null
+          phone_verified?: boolean | null
           profile_completion_status?: string | null
           profile_picture_url?: string | null
           role?: string | null
@@ -5653,8 +5657,10 @@ export type Database = {
           import_session_id?: string | null
           last_name?: string | null
           medical_history?: string | null
+          onboarding_completed?: boolean | null
           patient_status?: string | null
           phone?: string | null
+          phone_verified?: boolean | null
           profile_completion_status?: string | null
           profile_picture_url?: string | null
           role?: string | null
