@@ -309,8 +309,6 @@ const Login = () => {
   };
 
   const handleGoogleSignIn = async () => {
-
-
     setIsLoading(true);
     setAuthError(null);
     try {
@@ -329,6 +327,29 @@ const Login = () => {
         duration: 6000,
       });
       setAuthError("Unable to sign in with Google. Please try again or use email/password.");
+      setIsLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: {
+          redirectTo: `${window.location.origin}/auth-redirect`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      toast({
+        title: "Apple sign in failed",
+        description: "Unable to sign in with Apple. Please try again or use another method.",
+        variant: "destructive",
+        duration: 6000,
+      });
+      setAuthError("Unable to sign in with Apple. Please try again or use another method.");
       setIsLoading(false);
     }
   };
@@ -462,6 +483,7 @@ const Login = () => {
                   isReturningUser={isReturningUser}
                   isLoading={isLoading}
                   handleGoogleSignIn={handleGoogleSignIn}
+                  handleAppleSignIn={handleAppleSignIn}
                   formData={formData}
                   setFormData={(d: { email: string; password: string }) => setFormData(d)}
                   handleSignIn={handleSignIn}

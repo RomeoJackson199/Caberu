@@ -222,6 +222,35 @@ const Signup = () => {
     }
   };
 
+  const handleAppleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      if (userType) {
+        sessionStorage.setItem('pending_signup_user_type', userType === "client" ? "patient" : "owner");
+      }
+
+      const redirectTo = userType === "business"
+        ? `${window.location.origin}/create-business`
+        : `${window.location.origin}/auth-redirect`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      toast({
+        title: "❌ Apple sign up failed",
+        description: "Unable to sign up with Apple. Please try again or use another method.",
+        variant: "destructive",
+        duration: 6000,
+      });
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Form */}
@@ -291,6 +320,7 @@ const Signup = () => {
               userType={userType}
               setUserType={setUserType}
               handleGoogleSignIn={handleGoogleSignIn}
+              handleAppleSignIn={handleAppleSignIn}
               handleSignUp={handleSignUp}
               formData={formData}
               setFormData={setFormData}
