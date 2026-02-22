@@ -221,11 +221,16 @@ const Onboarding = () => {
       });
     } catch (error: unknown) {
       console.error('Error sending SMS code:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send verification code",
-        variant: "destructive",
-      });
+      let message = "Failed to send verification code";
+      if (error && typeof error === 'object' && 'context' in error) {
+        try {
+          const body = await (error as { context: Response }).context.json();
+          message = body.error || body.message || message;
+        } catch { /* ignore */ }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setIsVerifying(false);
     }
@@ -268,11 +273,16 @@ const Onboarding = () => {
       }
     } catch (error: unknown) {
       console.error('Error verifying SMS code:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to verify code",
-        variant: "destructive",
-      });
+      let message = "Failed to verify code";
+      if (error && typeof error === 'object' && 'context' in error) {
+        try {
+          const body = await (error as { context: Response }).context.json();
+          message = body.error || body.message || message;
+        } catch { /* ignore */ }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setIsVerifying(false);
     }
