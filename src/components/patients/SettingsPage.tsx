@@ -12,6 +12,7 @@ import { saveProfileData, loadProfileData, ProfileData } from "@/lib/profileUtil
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySettings";
+import { AccountLinkingSection } from "@/components/auth/AccountLinkingSection";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { PhoneVerificationDialog } from "@/components/auth/PhoneVerificationDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,7 @@ export interface SettingsPageProps {
 const SECTIONS = [
   'Profile & Personal Info',
   'Preferences',
+  'Linked Accounts',
   'Security',
   'Legal & Support',
 ] as const;
@@ -104,6 +106,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="security">
+        <AccordionTrigger>Linked Accounts</AccordionTrigger>
+        <AccordionContent>
+          <AccountLinkingSection />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="security-settings">
         <AccordionTrigger>Security</AccordionTrigger>
         <AccordionContent>
           <Security />
@@ -133,6 +141,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
         )}
         {active === 'Preferences' && (
           <Preferences theme={theme} setTheme={setTheme} />
+        )}
+        {active === 'Linked Accounts' && (
+          <AccountLinkingSection />
         )}
         {active === 'Security' && <Security />}
         {active === 'Legal & Support' && <LegalSupport />}
