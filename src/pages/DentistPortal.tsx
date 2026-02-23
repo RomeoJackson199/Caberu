@@ -28,6 +28,7 @@ import DentistSettings from "./DentistSettings";
 import DentistAdminAnalytics from "./DentistAdminAnalytics";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import DentistAppointmentsManagement from "./DentistAppointmentsManagement";
+import { AppointmentReminderMap } from "@/components/appointments/AppointmentReminderMap";
 import { InviteDentistDialog } from "@/components/InviteDentistDialog";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 // Lazy load Messages component for better code splitting
@@ -104,7 +105,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         'dashboard', 'patients', 'appointments', 'employees', 'messages', 'clinical',
         'schedule', 'payments', 'analytics', 'reports',
         'imports', 'users', 'team', 'branding', 'security', 'settings', 'services',
-        'admin-analytics'
+        'admin-analytics', 'reminders'
       ];
 
       if (validSections.includes(sectionFromUrl as DentistSection)) {
@@ -327,6 +328,8 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         return <ServiceManager />;
       case 'admin-analytics':
         return <DentistAdminAnalytics />;
+      case 'reminders':
+        return <AppointmentReminderMap dentistId={dentistId} />;
       default:
         return <div className="p-4">{t.sectionNotFound || "Section not found"}</div>;
     }

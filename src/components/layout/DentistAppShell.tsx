@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, MessageSquare, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, MessageSquare, ChevronDown, Bell } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
-export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services' | 'admin-analytics';
+export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services' | 'admin-analytics' | 'reminders';
 interface DentistAppShellProps {
   activeSection: DentistSection;
   onChangeSection: (section: DentistSection) => void;
@@ -61,6 +61,11 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
     label: t.appointments || 'Appointments',
     icon: Calendar,
     path: '/dentist/appointments'
+  }, {
+    id: 'reminders' as DentistSection,
+    label: 'Reminders',
+    icon: Bell,
+    path: '/dentist/reminders'
   }, {
     id: 'messages' as DentistSection,
     label: 'Messages',
