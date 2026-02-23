@@ -16,7 +16,6 @@ import { SeoManager } from "./lib/seo";
 import AuthCallbackHandler from "./components/AuthCallbackHandler";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DentistPortal } from "@/pages/DentistPortal";
-import { PatientPortalNav } from "@/components/patients/PatientPortalNav";
 import { RoleBasedRouter } from "@/components/RoleBasedRouter";
 import { DentistInvitationDialog } from "@/components/DentistInvitationDialog";
 import { SubscriptionGuard } from "@/components/auth/SubscriptionGuard";
@@ -93,13 +92,6 @@ const BookAppointmentAI = lazy(() => import("./pages/BookAppointmentAI"));
 const BusinessPortal = lazy(() => import("./pages/BusinessPortal"));
 import { BookingRouteHandler } from "./components/booking/BookingRouteHandler";
 import { logger } from '@/lib/logger';
-const PatientBillingPage = lazy(() => import("./pages/PatientBillingPage"));
-const PatientDocumentsPage = lazy(() => import("./pages/PatientDocumentsPage"));
-const PatientAccountProfilePage = lazy(() => import("./pages/PatientAccountProfilePage"));
-const PatientAccountInsurancePage = lazy(() => import("./pages/PatientAccountInsurancePage"));
-const PatientAccountPrivacyPage = lazy(() => import("./pages/PatientAccountPrivacyPage"));
-const PatientAccountHelpPage = lazy(() => import("./pages/PatientAccountHelpPage"));
-const PatientSettingsPage = lazy(() => import("./pages/PatientSettingsPage"));
 // SmartBookAppointment removed - unused
 // SuperAdminDashboard removed - unused (lazy import existed but was never rendered in a Route)
 const AuthRedirect = lazy(() => import("./pages/AuthRedirect"));
@@ -423,7 +415,6 @@ const App = () => {
                         <Route path="/select-business" element={<SelectBusiness />} />
                         {/* Role-based dashboard routing */}
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/patient/*" element={<Dashboard />} />
                         {/* Dentist routes with tab-based navigation and subscription guard */}
                         <Route path="/dentist/*" element={
                           <RoleBasedRouter requiredRole='dentist'>
@@ -439,16 +430,15 @@ const App = () => {
                             </SubscriptionGuard>
                           </RoleBasedRouter>
                         } />
-                        {/* Patient portal routes with patient nav */}
-                        <Route element={<PatientPortalNav><></></PatientPortalNav>}>
-                          <Route path="/billing" element={<PatientBillingPage />} />
-                          <Route path="/docs" element={<PatientDocumentsPage />} />
-                          <Route path="/account/profile" element={<PatientAccountProfilePage />} />
-                          <Route path="/account/insurance" element={<PatientAccountInsurancePage />} />
-                          <Route path="/account/privacy" element={<PatientAccountPrivacyPage />} />
-                          <Route path="/account/help" element={<PatientAccountHelpPage />} />
-                          <Route path="/account/settings" element={<PatientSettingsPage />} />
-                        </Route>
+                        {/* Legacy patient portal routes removed; keep backward-compatible redirects */}
+                        <Route path="/patient/*" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/billing" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/docs" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/account/profile" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/account/insurance" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/account/privacy" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/account/help" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/account/settings" element={<Navigate to="/dashboard" replace />} />
                         {/* Public routes */}
                         <Route path="/dentists" element={<DentistProfiles />} />
                         <Route path="/terms" element={<Terms />} />
