@@ -169,6 +169,16 @@ export function AccountLinkingSection() {
     }
   };
 
+  const handleManualSetup = (provider: "email" | "phone") => {
+    toast({
+      title: `${providerConfig[provider].label} setup`,
+      description:
+        provider === "email"
+          ? "Add an email/password sign-in method from Security by setting a password for your account."
+          : "Add a phone sign-in method by saving and verifying your phone number in Profile & Personal Info.",
+    });
+  };
+
   if (loading) {
     return (
       <GlassCard variant="interactive">
@@ -228,8 +238,8 @@ export function AccountLinkingSection() {
               </div>
 
               <div className="pointer-events-auto min-w-[70px] flex justify-end">
-                {(provider === "google" || provider === "apple") && (
-                  linked ? (
+                {(provider === "google" || provider === "apple") &&
+                  (linked ? (
                     canUnlink ? (
                       <Button
                         variant="ghost"
@@ -246,9 +256,9 @@ export function AccountLinkingSection() {
                         {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Unlink"}
                       </Button>
                     ) : (
-                      <span className="text-xs text-muted-foreground px-2 py-1 rounded-md bg-muted">
-                        Only sign-in method
-                      </span>
+                      <Button variant="outline" size="sm" disabled>
+                        Linked
+                      </Button>
                     )
                   ) : (
                     <Button
@@ -262,7 +272,19 @@ export function AccountLinkingSection() {
                     >
                       {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link"}
                     </Button>
-                  )
+                  ))}
+
+                {(provider === "email" || provider === "phone") && !linked && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleManualSetup(provider);
+                    }}
+                  >
+                    Setup
+                  </Button>
                 )}
               </div>
 
