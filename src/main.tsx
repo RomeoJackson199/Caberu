@@ -12,8 +12,8 @@ const showConsoleSafetyWarning = () => {
     return;
   }
 
-  console.log('%cStop!', 'font-size: 48px; font-weight: 800; color: #e11d48;');
-  console.log(
+  console.warn('%cStop!', 'font-size: 48px; font-weight: 800; color: #e11d48;');
+  console.warn(
     '%cThis area is for developers. If someone asks you to paste code here to unlock features, fix your account, or do anything else, do not do it. They could steal your Caberu account and all of your personal information.',
     'font-size: 16px; color: #0f172a;'
   );
@@ -27,7 +27,9 @@ const resizeObserverErr = (e: ErrorEvent) => {
   }
 };
 window.addEventListener('error', resizeObserverErr);
-showConsoleSafetyWarning();
+
+// Run after boot so the warning is easy to notice in browser devtools.
+window.addEventListener('load', showConsoleSafetyWarning, { once: true });
 
 // Initialize comprehensive performance monitoring
 if (import.meta.env.DEV) {
