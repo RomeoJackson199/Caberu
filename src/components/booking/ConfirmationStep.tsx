@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { formatTimeSlot } from "@/lib/timezone";
 import { useRef } from "react";
 import type { Dentist, Service } from "./types";
+import ClinicMap from "@/components/Map";
 
 interface ConfirmationStepProps {
   dentist: Dentist;
@@ -82,10 +83,15 @@ export function ConfirmationStep({
               </span>
             </div>
             {businessAddress && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Location</span>
-                <span className="font-medium text-right">{businessAddress}</span>
-              </div>
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Location</span>
+                  <span className="font-medium text-right">{businessAddress}</span>
+                </div>
+                <div className="h-48 w-full rounded overflow-hidden">
+                  <ClinicMap address={businessAddress} />
+                </div>
+              </>
             )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Date</span>
