@@ -7,6 +7,18 @@ import { logger } from '@/lib/logger';
 import { initPerformanceMonitoring } from '@/lib/performance';
 import { initializeAnalyticsFromConsent } from '@/lib/googleAnalytics';
 
+const showConsoleSafetyWarning = () => {
+  if (typeof window === 'undefined' || typeof console === 'undefined') {
+    return;
+  }
+
+  console.log('%cStop!', 'font-size: 48px; font-weight: 800; color: #e11d48;');
+  console.log(
+    '%cThis area is for developers. If someone asks you to paste code here to unlock features, fix your account, or do anything else, do not do it. They could steal your Caberu account and all of your personal information.',
+    'font-size: 16px; color: #0f172a;'
+  );
+};
+
 // Suppress ResizeObserver loop errors (benign browser warning)
 const resizeObserverErr = (e: ErrorEvent) => {
   if (e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
@@ -15,6 +27,7 @@ const resizeObserverErr = (e: ErrorEvent) => {
   }
 };
 window.addEventListener('error', resizeObserverErr);
+showConsoleSafetyWarning();
 
 // Initialize comprehensive performance monitoring
 if (import.meta.env.DEV) {
