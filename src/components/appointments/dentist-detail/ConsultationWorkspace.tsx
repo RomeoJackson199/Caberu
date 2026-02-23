@@ -3,9 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   FileText, Upload, Calendar,
-  Plus, Loader2, Check, Package, Stethoscope
+  Plus, Loader2, Check, Package, Stethoscope,
+  Phone, Mail, MessageSquare, User, CheckCircle2, XCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -26,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
 
 interface ChargeItem {
   id: string;
@@ -41,6 +45,16 @@ interface Service {
   currency: string;
   duration_minutes: number | null;
   category: string | null;
+}
+
+interface FollowUp {
+  id: string;
+  appointment_id: string;
+  follow_up_type: 'phone_call' | 'email' | 'sms' | 'in_person';
+  status: 'pending' | 'completed' | 'cancelled';
+  scheduled_date?: string | null;
+  notes?: string | null;
+  created_at: string;
 }
 
 interface ConsultationWorkspaceProps {
@@ -270,6 +284,96 @@ export function ConsultationWorkspace({
     onChargesChange?.(updatedCharges);
   }, [charges, onChargesChange]);
 
+  // Follow-up state
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [loadingFollowUps, setLoadingFollowUps] = useState(false);
+  const [showFollowUpForm, setShowFollowUpForm] = useState(false);
+  const [savingFollowUp, setSavingFollowUp] = useState(false);
+  const [newFollowUpType, setNewFollowUpType] = useState<FollowUp['follow_up_type']>('phone_call');
+  const [newFollowUpDate, setNewFollowUpDate] = useState('');
+  const [newFollowUpNotes, setNewFollowUpNotes] = useState('');
+
+  // Load existing follow-ups for this appointment
+  useEffect(() => {
+    const loadFollowUps = async () => {
+      setLoadingFollowUps(true);
+      try {
+        const { data, error } = await supabase
+          .from('appointment_follow_ups' as any)
+          .select('*')
+          .eq('appointment_id', appointmentId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setFollowUps((data as FollowUp[]) || []);
+      } catch {
+        // Silently ignore — follow-ups are non-critical
+      } finally {
+        setLoadingFollowUps(false);
+      }
+    };
+
+    loadFollowUps();
+  }, [appointmentId]);
+
+  const handleSaveFollowUp = useCallback(async () => {
+    setSavingFollowUp(true);
+    try {
+      const { data, error } = await supabase
+        .from('appointment_follow_ups' as any)
+        .insert({
+          appointment_id: appointmentId,
+          follow_up_type: newFollowUpType,
+          status: 'pending',
+          scheduled_date: newFollowUpDate ? new Date(newFollowUpDate).toISOString() : null,
+          notes: newFollowUpNotes.trim() || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setFollowUps(prev => [data as FollowUp, ...prev]);
+      setShowFollowUpForm(false);
+      setNewFollowUpDate('');
+      setNewFollowUpNotes('');
+      setNewFollowUpType('phone_call');
+      toast({ title: "Follow-up scheduled", description: "The follow-up has been saved." });
+    } catch {
+      toast({ title: "Failed to save follow-up", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setSavingFollowUp(false);
+    }
+  }, [appointmentId, newFollowUpType, newFollowUpDate, newFollowUpNotes, toast]);
+
+  const handleMarkFollowUpComplete = useCallback(async (followUpId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointment_follow_ups' as any)
+        .update({ status: 'completed', completed_date: new Date().toISOString() })
+        .eq('id', followUpId);
+
+      if (error) throw error;
+      setFollowUps(prev => prev.map(f => f.id === followUpId ? { ...f, status: 'completed' } : f));
+    } catch {
+      toast({ title: "Failed to update follow-up", description: "Please try again.", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const handleCancelFollowUp = useCallback(async (followUpId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointment_follow_ups' as any)
+        .update({ status: 'cancelled' })
+        .eq('id', followUpId);
+
+      if (error) throw error;
+      setFollowUps(prev => prev.map(f => f.id === followUpId ? { ...f, status: 'cancelled' } : f));
+    } catch {
+      toast({ title: "Failed to cancel follow-up", description: "Please try again.", variant: "destructive" });
+    }
+  }, [toast]);
+
   // New service creation state
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
   const [newServiceName, setNewServiceName] = useState("");
@@ -471,22 +575,164 @@ export function ConsultationWorkspace({
 
       {/* Charges section removed - service prices define costs */}
 
-      {/* Follow-up placeholder - to be implemented with scheduling */}
+      {/* Follow-up */}
       <Card className="border-muted/60">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary/70" />
             Follow-up
+            {isEditable && !showFollowUpForm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto h-7 text-xs"
+                onClick={() => setShowFollowUpForm(true)}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Schedule
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {isEditable ? (
-            <Button variant="outline" className="w-full" disabled>
-              <Plus className="h-4 w-4 mr-2" />
-              Schedule Follow-up (Coming soon)
-            </Button>
+        <CardContent className="space-y-3">
+          {/* Inline form */}
+          {showFollowUpForm && (
+            <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
+              <div className="space-y-1">
+                <Label className="text-xs">Type</Label>
+                <Select
+                  value={newFollowUpType}
+                  onValueChange={(v) => setNewFollowUpType(v as FollowUp['follow_up_type'])}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="phone_call">Phone Call</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="sms">SMS</SelectItem>
+                    <SelectItem value="in_person">In-Person</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Scheduled Date (optional)</Label>
+                <Input
+                  type="datetime-local"
+                  className="h-8 text-sm"
+                  value={newFollowUpDate}
+                  onChange={(e) => setNewFollowUpDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Notes (optional)</Label>
+                <Textarea
+                  className="text-sm min-h-[60px] resize-none"
+                  placeholder="What to follow up on..."
+                  value={newFollowUpNotes}
+                  onChange={(e) => setNewFollowUpNotes(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSaveFollowUp}
+                  disabled={savingFollowUp}
+                  className="flex-1"
+                >
+                  {savingFollowUp ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Check className="h-3 w-3 mr-1" />}
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowFollowUpForm(false);
+                    setNewFollowUpDate('');
+                    setNewFollowUpNotes('');
+                    setNewFollowUpType('phone_call');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Existing follow-ups */}
+          {loadingFollowUps ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Loading...
+            </div>
+          ) : followUps.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No follow-ups scheduled.</p>
           ) : (
-            <p className="text-sm text-muted-foreground">No follow-up scheduled.</p>
+            <div className="space-y-2">
+              {followUps.map((fu) => {
+                const typeIcons: Record<FollowUp['follow_up_type'], React.ReactNode> = {
+                  phone_call: <Phone className="h-3.5 w-3.5" />,
+                  email: <Mail className="h-3.5 w-3.5" />,
+                  sms: <MessageSquare className="h-3.5 w-3.5" />,
+                  in_person: <User className="h-3.5 w-3.5" />,
+                };
+                const typeLabels: Record<FollowUp['follow_up_type'], string> = {
+                  phone_call: 'Phone Call',
+                  email: 'Email',
+                  sms: 'SMS',
+                  in_person: 'In-Person',
+                };
+                const statusVariants: Record<FollowUp['status'], 'default' | 'secondary' | 'destructive' | 'outline'> = {
+                  pending: 'default',
+                  completed: 'secondary',
+                  cancelled: 'outline',
+                };
+
+                return (
+                  <div key={fu.id} className="flex items-start gap-2 p-2 rounded-md border bg-background text-sm">
+                    <span className="mt-0.5 text-muted-foreground">{typeIcons[fu.follow_up_type]}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">{typeLabels[fu.follow_up_type]}</span>
+                        <Badge variant={statusVariants[fu.status]} className="text-xs h-4 px-1.5">
+                          {fu.status}
+                        </Badge>
+                      </div>
+                      {fu.scheduled_date && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {format(new Date(fu.scheduled_date), 'PPp')}
+                        </p>
+                      )}
+                      {fu.notes && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{fu.notes}</p>
+                      )}
+                    </div>
+                    {isEditable && fu.status === 'pending' && (
+                      <div className="flex gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          title="Mark complete"
+                          onClick={() => handleMarkFollowUpComplete(fu.id)}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          title="Cancel"
+                          onClick={() => handleCancelFollowUp(fu.id)}
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </CardContent>
       </Card>
