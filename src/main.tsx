@@ -21,10 +21,10 @@ const showConsoleSafetyWarning = () => {
   (window as typeof window & { __caberuConsoleSafetyWarningShown?: boolean }).__caberuConsoleSafetyWarningShown = true;
 
   // Use bracket access so this survives Vite/esbuild's production `drop: ['console']` optimization.
-  consoleRef.warn('%cStop!', 'font-size: 48px; font-weight: 800; color: #e11d48;');
-  consoleRef.warn(
+  consoleRef.log('%cStop!', 'font-size: 48px; font-weight: 800; color: #e11d48; background: transparent;');
+  consoleRef.log(
     '%cThis area is for developers. If someone asks you to paste code here to unlock features, fix your account, or do anything else, do not do it. They could steal your Caberu account and all of your personal information.',
-    'font-size: 16px; color: #0f172a;'
+    'font-size: 16px; color: #0f172a; background: transparent;'
   );
 };
 
