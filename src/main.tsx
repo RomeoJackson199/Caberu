@@ -12,6 +12,12 @@ const showConsoleSafetyWarning = () => {
     return;
   }
 
+  if ((window as typeof window & { __caberuConsoleSafetyWarningShown?: boolean }).__caberuConsoleSafetyWarningShown) {
+    return;
+  }
+
+  (window as typeof window & { __caberuConsoleSafetyWarningShown?: boolean }).__caberuConsoleSafetyWarningShown = true;
+
   console.warn('%cStop!', 'font-size: 48px; font-weight: 800; color: #e11d48;');
   console.warn(
     '%cThis area is for developers. If someone asks you to paste code here to unlock features, fix your account, or do anything else, do not do it. They could steal your Caberu account and all of your personal information.',
@@ -28,7 +34,8 @@ const resizeObserverErr = (e: ErrorEvent) => {
 };
 window.addEventListener('error', resizeObserverErr);
 
-// Run after boot so the warning is easy to notice in browser devtools.
+// Show this as soon as possible and also when the page fully loads (fallback).
+showConsoleSafetyWarning();
 window.addEventListener('load', showConsoleSafetyWarning, { once: true });
 
 // Initialize comprehensive performance monitoring
