@@ -203,6 +203,7 @@ export function AccountLinkingSection() {
           const identity = identities.find((id) => id.provider === provider);
           const Icon = config?.icon || Mail;
           const isProcessing = linkingProvider === provider;
+          const canUnlink = linked && identities.length > 1;
 
           return (
             <motion.div
@@ -229,20 +230,26 @@ export function AccountLinkingSection() {
               <div className="pointer-events-auto min-w-[70px] flex justify-end">
                 {(provider === "google" || provider === "apple") && (
                   linked ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (identity) {
-                          handleUnlink(provider, identity.identity_id);
-                        }
-                      }}
-                      disabled={isProcessing || identities.length <= 1}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Unlink"}
-                    </Button>
+                    canUnlink ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (identity) {
+                            handleUnlink(provider, identity.identity_id);
+                          }
+                        }}
+                        disabled={isProcessing}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Unlink"}
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground px-2 py-1 rounded-md bg-muted">
+                        Only sign-in method
+                      </span>
+                    )
                   ) : (
                     <Button
                       variant="outline"
