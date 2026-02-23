@@ -28,6 +28,35 @@ export function AccountLinkingSection() {
     loadIdentities();
   }, []);
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const linkedProvider = url.searchParams.get("linked");
+    const authError = url.searchParams.get("error_description") || url.searchParams.get("error");
+
+    if (linkedProvider) {
+      toast({
+        title: "Account linked",
+        description: `${providerConfig[linkedProvider]?.label || linkedProvider} is now connected to your account.`,
+      });
+      setLinkingProvider(null);
+      loadIdentities();
+      url.searchParams.delete("linked");
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    if (authError) {
+      toast({
+        title: "Linking failed",
+        description: decodeURIComponent(authError),
+        variant: "destructive",
+      });
+      setLinkingProvider(null);
+      url.searchParams.delete("error");
+      url.searchParams.delete("error_description");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [toast]);
+
   const loadIdentities = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -53,10 +82,13 @@ export function AccountLinkingSection() {
   const handleLinkGoogle = async () => {
     setLinkingProvider("google");
     try {
+      const redirectUrl = new URL(window.location.href);
+      redirectUrl.searchParams.set("linked", "google");
+
       const { error } = await supabase.auth.linkIdentity({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/account/settings?linked=google`,
+          redirectTo: redirectUrl.toString(),
         },
       });
       if (error) throw error;
