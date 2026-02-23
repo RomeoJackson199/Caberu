@@ -93,9 +93,10 @@ export function PhoneOTPAuth({
       // Remember that user has signed in before
       localStorage.setItem("caberu_remembered_email", phone!);
 
-      // If this is an owner signup via phone, set the pending user type
-      // so AuthRedirectHandler routes to /create-business
-      if (signupMetadata?.role_type === 'owner') {
+      // If this is an owner signup via phone AND there's no onSuccess handler,
+      // set the pending user type so AuthRedirectHandler routes to /create-business.
+      // When onSuccess is provided (e.g., inside /create-business), the parent handles routing.
+      if (signupMetadata?.role_type === 'owner' && !onSuccess) {
         sessionStorage.setItem('pending_signup_user_type', 'owner');
       }
 
