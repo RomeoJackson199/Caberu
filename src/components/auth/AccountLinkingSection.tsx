@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle, GlassCardDescription } from "@/components/ui/glass-card";
-import { Loader2, Link2, CheckCircle2, Phone, Mail, Chrome } from "lucide-react";
+import { Loader2, Link2, CheckCircle2, Phone, Mail, Chrome, Apple } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface LinkedIdentity {
@@ -16,6 +16,7 @@ const providerConfig: Record<string, { label: string; icon: React.ElementType; c
   email: { label: "Email & Password", icon: Mail, color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400" },
   phone: { label: "Phone (SMS)", icon: Phone, color: "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400" },
   google: { label: "Google", icon: Chrome, color: "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400" },
+  apple: { label: "Apple", icon: Apple, color: "text-zinc-700 bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-200" },
 };
 
 export function AccountLinkingSection() {
@@ -79,21 +80,21 @@ export function AccountLinkingSection() {
   const isLinked = (provider: string) =>
     identities.some((id) => id.provider === provider);
 
-  const handleLinkGoogle = async () => {
-    setLinkingProvider("google");
+  const handleLinkProvider = async (provider: "google" | "apple") => {
+    setLinkingProvider(provider);
     try {
       const redirectUrl = new URL(window.location.href);
-      redirectUrl.searchParams.set("linked", "google");
+      redirectUrl.searchParams.set("linked", provider);
 
       const { error } = await supabase.auth.linkIdentity({
-        provider: "google",
+        provider,
         options: {
           redirectTo: redirectUrl.toString(),
         },
       });
       if (error) throw error;
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Failed to link Google";
+      const msg = error instanceof Error ? error.message : `Failed to link ${providerConfig[provider]?.label || provider}`;
       toast({
         title: "Linking failed",
         description: msg,
@@ -148,7 +149,7 @@ export function AccountLinkingSection() {
     );
   }
 
-  const availableProviders = ["email", "phone", "google"];
+  const availableProviders = ["email", "phone", "google", "apple"];
 
   return (
     <GlassCard variant="interactive">
@@ -195,13 +196,18 @@ export function AccountLinkingSection() {
                 </div>
               </div>
 
-              {provider === "google" && (
-                <div>
+              {(provider === "google" || provider === "apple") && (
+                <div className="pointer-events-auto">
                   {linked ? (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => identity && handleUnlink(provider, identity.identity_id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (identity) {
+                          handleUnlink(provider, identity.identity_id);
+                        }
+                      }}
                       disabled={isProcessing || identities.length <= 1}
                       className="text-destructive hover:text-destructive"
                     >
@@ -211,7 +217,10 @@ export function AccountLinkingSection() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleLinkGoogle}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleLinkProvider(provider);
+                      }}
                       disabled={isProcessing}
                     >
                       {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Link"}
