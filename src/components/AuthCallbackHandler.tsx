@@ -79,28 +79,12 @@ export const AuthCallbackHandler = () => {
                   .maybeSingle();
 
                 if (existingProfile) {
-                  // Link the auth user to the existing imported profile
-                  const { error: linkError } = await supabase
-                    .from('profiles')
-                    .update({ 
-                      user_id: session.user.id,
-                      profile_completion_status: 'incomplete'
-                    })
-                    .eq('id', existingProfile.id);
-
-                  if (!linkError) {
-                    // Remove any auto-created profile to avoid duplicates
-                    await supabase
-                      .from('profiles')
-                      .delete()
-                      .eq('user_id', session.user.id)
-                      .neq('id', existingProfile.id);
-
-                    toast({
-                      title: "Profile Linked",
-                      description: "Your imported clinic profile has been linked to your account.",
-                    });
-                  }
+                  // Don't auto-link silently — inform the user and let them link in settings
+                  toast({
+                    title: "Existing profile found",
+                    description: "An imported profile with your email was found. Go to Settings → Linked Accounts to connect it.",
+                    duration: 8000,
+                  });
                 }
               }
 

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, User, Shield, Globe } from 'lucide-react';
+import { Bell, User, Shield, Globe, Link2 } from 'lucide-react';
 import { ReminderPreferences } from '@/components/patients/ReminderPreferences';
 import { PatientSecuritySettings } from '@/components/patients/PatientSecuritySettings';
+import { AccountLinkingSection } from '@/components/auth/AccountLinkingSection';
 import { AnimatedBackground, SectionHeader } from '@/components/ui/polished-components';
 import { LanguageSettings } from '@/components/shared/LanguagePicker';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -29,7 +30,7 @@ export default function PatientSettingsPage() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="notifications" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
             <span className="hidden sm:inline">{t.appointments}</span>
@@ -41,6 +42,10 @@ export default function PatientSettingsPage() {
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">{t.myProfile}</span>
+          </TabsTrigger>
+          <TabsTrigger value="linked" className="gap-2">
+            <Link2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Linked</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="gap-2">
             <Shield className="h-4 w-4" />
@@ -77,6 +82,10 @@ export default function PatientSettingsPage() {
           <div className="text-center py-12 text-muted-foreground">
             {t.myProfile} - {t.loading}
           </div>
+        </TabsContent>
+
+        <TabsContent value="linked">
+          <AccountLinkingSection />
         </TabsContent>
 
         <TabsContent value="security">

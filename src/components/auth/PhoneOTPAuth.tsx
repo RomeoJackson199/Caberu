@@ -63,9 +63,11 @@ export function PhoneOTPAuth({
         description: `We sent a verification code to ${phone}`,
       });
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Failed to send code";
+      const { getDuplicateAccountMessage } = await import("@/lib/authErrorUtils");
+      const dupMsg = getDuplicateAccountMessage(error);
+      const msg = dupMsg || (error instanceof Error ? error.message : "Failed to send code");
       toast({
-        title: "Could not send code",
+        title: dupMsg ? "Account already exists" : "Could not send code",
         description: msg,
         variant: "destructive",
       });

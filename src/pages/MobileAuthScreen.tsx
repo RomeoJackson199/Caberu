@@ -49,10 +49,12 @@ const MobileAuthScreen = () => {
         options: { redirectTo: `${window.location.origin}/auth-redirect` },
       });
       if (error) throw error;
-    } catch {
+    } catch (error) {
+      const { getDuplicateAccountMessage } = await import("@/lib/authErrorUtils");
+      const dupMsg = getDuplicateAccountMessage(error);
       toast({
-        title: "Google sign in failed",
-        description: "Unable to continue with Google. Please try again.",
+        title: dupMsg ? "Account already exists" : "Google sign in failed",
+        description: dupMsg || "Unable to continue with Google. Please try again.",
         variant: "destructive",
       });
       setIsLoading(false);
