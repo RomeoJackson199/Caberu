@@ -219,13 +219,15 @@ const Login = () => {
       let userFriendlyMessage = "Unable to sign in. Please try again.";
 
       if (errorMessage.includes("invalid") || errorMessage.includes("credentials") || errorMessage.includes("password")) {
-        userFriendlyMessage = "The email or password you entered is incorrect. Please double-check and try again.";
+        userFriendlyMessage = "The email or password you entered is incorrect. If you originally used Google or Apple, sign in with that provider first and then link email/password in Account Settings.";
       } else if (errorMessage.includes("email not confirmed")) {
         userFriendlyMessage = "Your email address hasn't been verified yet. Please check your inbox for the confirmation link.";
       } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
         userFriendlyMessage = "We're having trouble connecting. Please check your internet connection and try again.";
       } else if (errorMessage.includes("rate") || errorMessage.includes("limit")) {
         userFriendlyMessage = "Too many login attempts. Please wait a moment and try again.";
+      } else if (errorMessage.includes("already registered") || errorMessage.includes("already exists") || errorMessage.includes("provider")) {
+        userFriendlyMessage = "This email may already be connected to another sign-in provider. Sign in with your original provider (Google/Apple/phone), then link additional methods from Account Settings.";
       }
 
       setAuthError(userFriendlyMessage);

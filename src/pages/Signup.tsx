@@ -170,7 +170,7 @@ const Signup = () => {
       let userFriendlyMessage = "Unable to create account. Please try again.";
 
       if (errorMessage.includes("already registered") || errorMessage.includes("already exists")) {
-        userFriendlyMessage = "An account with this email already exists. Please sign in instead.";
+        userFriendlyMessage = "An account with this email already exists. If you originally used Google or Apple, sign in with that provider and then link your email/password in Account Settings.";
       } else if (errorMessage.includes("invalid email")) {
         userFriendlyMessage = "The email address you entered doesn't look right. Please check it and try again.";
       } else if (errorMessage.includes("password")) {
