@@ -179,13 +179,10 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
           promo_id: validPromo.id,
         });
 
-        // Set flag to auto-start the dashboard tour for new business owners
-        localStorage.setItem('should-start-tour', 'true');
-        localStorage.removeItem('dentist-tour-completed');
-        localStorage.removeItem('tour_completed_dentist');
+        // Tour flags are set by the parent's onComplete handler
 
         toast.success('Business created successfully!');
-        window.location.href = '/auth-redirect';
+        onComplete();
       } catch (error: any) {
         console.error('Error creating business:', error);
         toast.error(error.message || 'Failed to create business');

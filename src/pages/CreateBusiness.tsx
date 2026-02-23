@@ -117,7 +117,15 @@ export default function CreateBusiness() {
   };
 
   const handlePaymentComplete = () => {
-    // Payment complete - user will be redirected by Stripe, then edge function handles the rest
+    // For free promo: business already created, navigate to auth-redirect
+    // For Stripe: user will be redirected by Stripe, then edge function handles the rest
+    // Set flag to auto-start the dashboard tour for new business owners
+    localStorage.setItem('should-start-tour', 'true');
+    localStorage.removeItem('dentist-tour-completed');
+    localStorage.removeItem('tour_completed_dentist');
+    // Clear any pending signup flags to prevent AuthRedirectHandler from looping back
+    sessionStorage.removeItem('pending_signup_user_type');
+    navigate('/auth-redirect');
   };
 
   return (
