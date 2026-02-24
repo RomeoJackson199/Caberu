@@ -9,42 +9,47 @@ import { formatDistanceToNow } from 'date-fns';
 import {
   Phone,
   MessageSquare,
-  Radio,
   RefreshCw,
   CheckCircle2,
   XCircle,
   Clock,
-  Bot,
-  Send,
-  Eye,
   BarChart3,
+  DollarSign,
+  CalendarCheck,
 } from 'lucide-react';
 
-interface CallRecord {
+interface CallLogRecord {
   id: string;
-  business_id: string;
-  call_id: string;
-  caller_phone: string | null;
+  business_id: string | null;
+  call_sid: string;
+  status: string | null;
+  patient_phone: string | null;
   duration_seconds: number | null;
-  call_started_at: string;
-  call_type: string | null;
-  is_billable: boolean;
+  started_at: string | null;
+  ended_at: string | null;
+  appointment_booked: boolean | null;
+  total_cost_eur: number | null;
+  openai_cost_eur: number | null;
+  twilio_cost_eur: number | null;
+  tools_used: any;
+  errors: any;
+  created_at: string | null;
 }
 
 export function CommsMonitorTab() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Recent calls
+  // Recent calls from call_logs
   const { data: calls, isLoading: callsLoading, refetch: refetchCalls } = useQuery({
-    queryKey: ['admin-comms-calls'],
+    queryKey: ['admin-comms-call-logs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('phone_usage')
-        .select('id, business_id, call_id, caller_phone, duration_seconds, call_started_at, call_type, is_billable')
-        .order('call_started_at', { ascending: false })
-        .limit(20);
+        .from('call_logs')
+        .select('id, business_id, call_sid, status, patient_phone, duration_seconds, started_at, ended_at, appointment_booked, total_cost_eur, openai_cost_eur, twilio_cost_eur, tools_used, errors, created_at')
+        .order('created_at', { ascending: false })
+        .limit(30);
       if (error) throw error;
-      return data as CallRecord[];
+      return data as CallLogRecord[];
     },
   });
 
@@ -65,15 +70,11 @@ export function CommsMonitorTab() {
   // Stats
   const callStats = {
     total: calls?.length || 0,
-    completed: calls?.filter((c) => c.duration_seconds && c.duration_seconds > 30).length || 0,
-    failed: calls?.filter((c) => !c.duration_seconds || c.duration_seconds < 10).length || 0,
+    completed: calls?.filter((c) => c.status === 'completed').length || 0,
+    failed: calls?.filter((c) => c.status !== 'completed').length || 0,
     totalMinutes: ((calls || []).reduce((s, c) => s + (c.duration_seconds || 0), 0) / 60).toFixed(1),
-  };
-
-  const whatsappStats = {
-    total: commLogs?.filter((c) => c.channel === 'whatsapp').length || 0,
-    delivered: commLogs?.filter((c) => c.channel === 'whatsapp' && c.status === 'delivered').length || 0,
-    failed: commLogs?.filter((c) => c.channel === 'whatsapp' && c.status === 'failed').length || 0,
+    totalCost: (calls || []).reduce((s, c) => s + (c.total_cost_eur || 0), 0),
+    appointmentsBooked: calls?.filter((c) => c.appointment_booked).length || 0,
   };
 
   const handleRefresh = async () => {
@@ -127,10 +128,10 @@ export function CommsMonitorTab() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-green-500" />
+              <CalendarCheck className="h-5 w-5 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">{whatsappStats.total}</p>
-                <p className="text-xs text-muted-foreground">WhatsApp Messages</p>
+                <p className="text-2xl font-bold">{callStats.appointmentsBooked}</p>
+                <p className="text-xs text-muted-foreground">Appointments Booked</p>
               </div>
             </div>
           </CardContent>
@@ -138,12 +139,10 @@ export function CommsMonitorTab() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-orange-500" />
+              <DollarSign className="h-5 w-5 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">
-                  {callStats.total > 0 ? Math.round((callStats.completed / callStats.total) * 100) : 0}%
-                </p>
-                <p className="text-xs text-muted-foreground">Call Success Rate</p>
+                <p className="text-2xl font-bold">€{callStats.totalCost.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">Total Cost</p>
               </div>
             </div>
           </CardContent>
@@ -167,16 +166,18 @@ export function CommsMonitorTab() {
                 <div key={call.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${
-                      call.duration_seconds && call.duration_seconds > 30 ? 'bg-green-500/10' : 'bg-red-500/10'
+                      call.status === 'completed' ? 'bg-green-500/10' : 'bg-red-500/10'
                     }`}>
-                      {call.duration_seconds && call.duration_seconds > 30
+                      {call.status === 'completed'
                         ? <CheckCircle2 className="h-4 w-4 text-green-500" />
                         : <XCircle className="h-4 w-4 text-red-500" />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{maskPhone(call.caller_phone)}</p>
+                      <p className="text-sm font-medium">{maskPhone(call.patient_phone)}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(call.call_started_at), { addSuffix: true })}
+                        {call.started_at
+                          ? formatDistanceToNow(new Date(call.started_at), { addSuffix: true })
+                          : 'Unknown'}
                       </p>
                     </div>
                   </div>
@@ -184,8 +185,14 @@ export function CommsMonitorTab() {
                     <span className="text-sm font-mono">
                       {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m${call.duration_seconds % 60}s` : '0s'}
                     </span>
-                    <Badge variant={call.duration_seconds && call.duration_seconds > 30 ? 'default' : 'destructive'} className="text-xs">
-                      {call.duration_seconds && call.duration_seconds > 30 ? 'OK' : 'Failed'}
+                    {call.appointment_booked && (
+                      <Badge variant="default" className="text-xs">Booked</Badge>
+                    )}
+                    {call.total_cost_eur != null && (
+                      <Badge variant="outline" className="text-xs">€{call.total_cost_eur.toFixed(4)}</Badge>
+                    )}
+                    <Badge variant={call.status === 'completed' ? 'secondary' : 'destructive'} className="text-xs">
+                      {call.status || 'unknown'}
                     </Badge>
                   </div>
                 </div>
