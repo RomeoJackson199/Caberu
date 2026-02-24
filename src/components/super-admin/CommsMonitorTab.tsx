@@ -51,6 +51,8 @@ export function CommsMonitorTab() {
       if (error) throw error;
       return data as CallLogRecord[];
     },
+    refetchInterval: 15000,
+    staleTime: 0,
   });
 
   // Communication logs (WhatsApp + SMS)
@@ -65,6 +67,8 @@ export function CommsMonitorTab() {
       if (error) throw error;
       return data || [];
     },
+    refetchInterval: 15000,
+    staleTime: 0,
   });
 
   // Stats
