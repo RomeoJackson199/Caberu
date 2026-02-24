@@ -5,7 +5,8 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Phone, MessageSquare, Mail, Lock } from 'lucide-react';
+import { Phone, MessageSquare, Mail, Lock, Bot } from 'lucide-react';
+import { CommsMonitorTab } from '@/components/super-admin/CommsMonitorTab';
 import { format } from 'date-fns';
 import {
   useAdminPhoneCalls,
@@ -40,14 +41,19 @@ export default function AdminCommunications() {
         <p className="text-sm text-muted-foreground">Monitor all communication channels across practices</p>
       </div>
 
-      <Tabs defaultValue="phone" className="space-y-4">
+      <Tabs defaultValue="voiceai" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="voiceai" className="gap-1.5"><Bot className="h-3.5 w-3.5" />Voice AI</TabsTrigger>
           <TabsTrigger value="phone" className="gap-1.5"><Phone className="h-3.5 w-3.5" />Phone Calls</TabsTrigger>
           <TabsTrigger value="chat" className="gap-1.5"><MessageSquare className="h-3.5 w-3.5" />Chat</TabsTrigger>
           <TabsTrigger value="messages" className="gap-1.5"><Mail className="h-3.5 w-3.5" />Messages</TabsTrigger>
           <TabsTrigger value="email" className="gap-1.5"><Mail className="h-3.5 w-3.5" />Email Logs</TabsTrigger>
-          
         </TabsList>
+
+        {/* Voice AI Monitor */}
+        <TabsContent value="voiceai">
+          <CommsMonitorTab />
+        </TabsContent>
 
         {/* Phone Calls */}
         <TabsContent value="phone">
