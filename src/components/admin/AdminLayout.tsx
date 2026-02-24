@@ -26,6 +26,7 @@ import {
   ScrollText,
   Bot,
   MessageSquareText,
+  Bell,
   Menu,
   X,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ const navItems: NavItem[] = [
   { id: 'users', label: 'Users', path: '/admin/users', icon: Users, section: 'main' },
   { id: 'appointments', label: 'Appointments', path: '/admin/appointments', icon: Calendar, section: 'main' },
   { id: 'communications', label: 'Communications', path: '/admin/communications', icon: Phone, section: 'main' },
+  { id: 'reminders', label: 'Reminders', path: '/admin/reminders', icon: Bell, section: 'main' },
   { id: 'system', label: 'System Health', path: '/admin/system', icon: Server, section: 'system' },
   { id: 'compliance', label: 'GDPR & Compliance', path: '/admin/compliance', icon: ShieldCheck, section: 'system' },
   { id: 'ai-prompts', label: 'AI Prompts', path: '/admin/ai-prompts', icon: Bot, section: 'tools' },

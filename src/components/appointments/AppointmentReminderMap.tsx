@@ -8,7 +8,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useAppointmentReminders, AppointmentReminder, AppointmentWithReminders } from '@/hooks/useAppointmentReminders';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
-import { useCurrentDentist } from '@/hooks/useCurrentDentist';
 
 const REMINDER_TYPES = ['24h', '2h', '1h'] as const;
 type ReminderType = (typeof REMINDER_TYPES)[number];
@@ -136,7 +135,7 @@ function SummaryStats({ appointments }: { appointments: AppointmentWithReminders
 }
 
 interface AppointmentReminderMapProps {
-  dentistId: string;
+  dentistId?: string | null;
 }
 
 export function AppointmentReminderMap({ dentistId }: AppointmentReminderMapProps) {

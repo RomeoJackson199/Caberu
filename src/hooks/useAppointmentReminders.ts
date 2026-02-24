@@ -32,7 +32,7 @@ export interface AppointmentWithReminders {
 }
 
 interface UseAppointmentRemindersParams {
-  dentistId: string | null;
+  dentistId?: string | null;
   businessId: string | null;
   daysAhead?: number;
 }
@@ -43,23 +43,28 @@ export function useAppointmentReminders({
   daysAhead = 7,
 }: UseAppointmentRemindersParams) {
   return useQuery({
-    queryKey: ['appointment-reminders-map', dentistId, businessId, daysAhead],
+    queryKey: ['appointment-reminders-map', dentistId ?? null, businessId, daysAhead],
     queryFn: async (): Promise<AppointmentWithReminders[]> => {
-      if (!dentistId || !businessId) return [];
+      if (!businessId) return [];
 
       const from = startOfDay(new Date()).toISOString();
       const to = addDays(new Date(), daysAhead).toISOString();
 
       // Fetch upcoming appointments
-      const { data: appointments, error: aptError } = await supabase
+      let query = supabase
         .from('appointments_decrypted')
         .select('id, patient_id, dentist_id, appointment_date, reason, status, duration_minutes')
-        .eq('dentist_id', dentistId)
         .eq('business_id', businessId)
         .gte('appointment_date', from)
         .lte('appointment_date', to)
         .not('status', 'eq', 'cancelled')
         .order('appointment_date', { ascending: true });
+
+      if (dentistId) {
+        query = query.eq('dentist_id', dentistId);
+      }
+
+      const { data: appointments, error: aptError } = await query;
 
       if (aptError) throw aptError;
       if (!appointments?.length) return [];
@@ -105,7 +110,7 @@ export function useAppointmentReminders({
         reminders: remindersMap.get(apt.id) ?? [],
       }));
     },
-    enabled: !!dentistId && !!businessId,
+    enabled: !!businessId,
     staleTime: 60_000,
   });
 }
