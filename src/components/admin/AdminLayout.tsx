@@ -26,6 +26,7 @@ import {
   ScrollText,
   Bot,
   MessageSquareText,
+  Bell,
   Menu,
   X,
 } from 'lucide-react';
@@ -51,6 +52,7 @@ const navItems: NavItem[] = [
   { id: 'revenue', label: 'Revenue & Billing', path: '/admin/revenue', icon: DollarSign, section: 'tools' },
   { id: 'audit', label: 'Audit Log', path: '/admin/audit', icon: ScrollText, section: 'tools' },
   { id: 'sms', label: 'SMS Management', path: '/admin/sms', icon: MessageSquareText, section: 'tools' },
+  { id: 'reminders', label: 'Reminders', path: '/admin/reminders', icon: Bell, section: 'main' },
 ];
 
 const sectionLabels: Record<string, string> = {
