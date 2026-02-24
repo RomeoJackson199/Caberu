@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard, Bot } from "lucide-react";
 import { AvailabilitySettings } from "@/components/settings/availability-settings";
 import DentistAdminBranding from "./DentistAdminBranding";
 import DentistAdminSecurity from "./DentistAdminSecurity";
@@ -21,7 +21,7 @@ import { getCurrentBusinessId } from "@/lib/businessUtils";
 import { logger } from '@/lib/logger';
 import { Switch } from "@/components/ui/switch";
 import { CancelSubscriptionSection } from "@/components/settings/CancelSubscriptionSection";
-import { PhoneUsageCard } from "@/components/settings/PhoneUsageCard";
+import { VoiceAICard } from "@/components/settings/VoiceAICard";
 import { PhoneBookingFlowCard } from "@/components/settings/PhoneBookingFlowCard";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -43,7 +43,7 @@ export default function DentistSettings() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['profile', 'services', 'appointments', 'schedule', 'branding', 'security', 'staff', 'support'].includes(tabParam)) {
+    if (tabParam && ['profile', 'services', 'appointments', 'schedule', 'branding', 'security', 'staff', 'support', 'voice', 'billing'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -240,6 +240,12 @@ export default function DentistSettings() {
               </TabsTrigger>
             )}
             {isOwner && (
+              <TabsTrigger value="voice" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
+                <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {"Voice AI"}
+              </TabsTrigger>
+            )}
+            {isOwner && (
               <TabsTrigger value="billing" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
                 <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {t.billing || "Billing"}
@@ -345,9 +351,14 @@ export default function DentistSettings() {
         )}
 
         {isOwner && (
-          <TabsContent value="billing" className="space-y-6">
-            <PhoneUsageCard />
+          <TabsContent value="voice" className="space-y-6">
+            <VoiceAICard />
             <PhoneBookingFlowCard />
+          </TabsContent>
+        )}
+
+        {isOwner && (
+          <TabsContent value="billing" className="space-y-6">
             <CancelSubscriptionSection />
           </TabsContent>
         )}

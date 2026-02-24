@@ -852,6 +852,110 @@ export type Database = {
           },
         ]
       }
+      call_logs: {
+        Row: {
+          appointment_booked: boolean | null
+          appointment_id: string | null
+          business_id: string | null
+          call_sid: string
+          created_at: string | null
+          duration_seconds: number | null
+          ended_at: string | null
+          errors: Json | null
+          id: string
+          openai_audio_input_tokens: number | null
+          openai_audio_output_tokens: number | null
+          openai_cost_eur: number | null
+          openai_cost_usd: number | null
+          openai_text_input_tokens: number | null
+          openai_text_output_tokens: number | null
+          patient_phone: string | null
+          started_at: string | null
+          status: string | null
+          tools_used: Json | null
+          total_cost_eur: number | null
+          transcript: Json | null
+          twilio_cost_eur: number | null
+        }
+        Insert: {
+          appointment_booked?: boolean | null
+          appointment_id?: string | null
+          business_id?: string | null
+          call_sid: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          errors?: Json | null
+          id?: string
+          openai_audio_input_tokens?: number | null
+          openai_audio_output_tokens?: number | null
+          openai_cost_eur?: number | null
+          openai_cost_usd?: number | null
+          openai_text_input_tokens?: number | null
+          openai_text_output_tokens?: number | null
+          patient_phone?: string | null
+          started_at?: string | null
+          status?: string | null
+          tools_used?: Json | null
+          total_cost_eur?: number | null
+          transcript?: Json | null
+          twilio_cost_eur?: number | null
+        }
+        Update: {
+          appointment_booked?: boolean | null
+          appointment_id?: string | null
+          business_id?: string | null
+          call_sid?: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          errors?: Json | null
+          id?: string
+          openai_audio_input_tokens?: number | null
+          openai_audio_output_tokens?: number | null
+          openai_cost_eur?: number | null
+          openai_cost_usd?: number | null
+          openai_text_input_tokens?: number | null
+          openai_text_output_tokens?: number | null
+          patient_phone?: string | null
+          started_at?: string | null
+          status?: string | null
+          tools_used?: Json | null
+          total_cost_eur?: number | null
+          transcript?: Json | null
+          twilio_cost_eur?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           appointment_id: string | null
@@ -4716,6 +4820,65 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_logs_summary: {
+        Row: {
+          appointment_booked: boolean | null
+          appointment_id: string | null
+          business_id: string | null
+          business_name: string | null
+          call_sid: string | null
+          cost_per_minute_eur: number | null
+          created_at: string | null
+          duration_minutes: number | null
+          duration_seconds: number | null
+          ended_at: string | null
+          errors: Json | null
+          id: string | null
+          openai_audio_input_tokens: number | null
+          openai_audio_output_tokens: number | null
+          openai_cost_eur: number | null
+          openai_cost_usd: number | null
+          openai_text_input_tokens: number | null
+          openai_text_output_tokens: number | null
+          patient_phone: string | null
+          started_at: string | null
+          status: string | null
+          tools_used: Json | null
+          total_cost_eur: number | null
+          transcript: Json | null
+          twilio_cost_eur: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_decrypted"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
             referencedColumns: ["id"]
           },
         ]
