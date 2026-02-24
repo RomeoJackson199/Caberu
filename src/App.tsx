@@ -119,6 +119,7 @@ const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
 const AdminBusinessDetail = lazy(() => import("./pages/admin/AdminBusinessDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminSmsManagement = lazy(() => import("./pages/admin/AdminSmsManagement"));
+const AdminReminders = lazy(() => import("./pages/admin/AdminReminders"));
 
 
 const Dashboard = () => {
@@ -479,6 +480,7 @@ const App = () => {
                           <Route path="revenue" element={<AdminRevenue />} />
                           <Route path="audit" element={<AdminAuditLog />} />
                           <Route path="sms" element={<AdminSmsManagement />} />
+                          <Route path="reminders" element={<AdminReminders />} />
                         </Route>
                         {/* Main booking route */}
                         <Route path="/book-appointment" element={<BookingRouteHandler><BookAppointmentAI /></BookingRouteHandler>} />
