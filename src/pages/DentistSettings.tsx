@@ -22,6 +22,7 @@ import { logger } from '@/lib/logger';
 import { Switch } from "@/components/ui/switch";
 import { CancelSubscriptionSection } from "@/components/settings/CancelSubscriptionSection";
 import { PhoneUsageCard } from "@/components/settings/PhoneUsageCard";
+import { PhoneBookingFlowCard } from "@/components/settings/PhoneBookingFlowCard";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export default function DentistSettings() {
@@ -346,6 +347,7 @@ export default function DentistSettings() {
         {isOwner && (
           <TabsContent value="billing" className="space-y-6">
             <PhoneUsageCard />
+            <PhoneBookingFlowCard />
             <CancelSubscriptionSection />
           </TabsContent>
         )}
