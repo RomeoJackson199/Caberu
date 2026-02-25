@@ -88,9 +88,9 @@ const FloatingFeatureCard = ({
 // Trust badges component
 const TrustBadges = ({ isMobile }: { isMobile: boolean }) => {
   const badges = [
-    { text: "HIPAA Compliant", icon: "🔒" },
-    { text: "SOC 2 Certified", icon: "✓" },
-    { text: "GDPR Ready", icon: "🇪🇺" },
+    { text: "GDPR Compliant", icon: "🇪🇺" },
+    { text: "EU Data Storage", icon: "🔒" },
+    { text: "End-to-End Encrypted", icon: "✓" },
   ];
 
   return (

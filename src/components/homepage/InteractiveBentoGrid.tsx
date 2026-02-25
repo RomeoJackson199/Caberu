@@ -180,7 +180,7 @@ export const InteractiveBentoGrid = () => {
                     {/* Patient Management */}
                     <BentoCard
                         title="Patient Records"
-                        description="Complete digital health records, treatment history, prescriptions, insurance, and documents - all HIPAA compliant."
+                        description="Complete digital health records, treatment history, prescriptions, insurance, and documents - all GDPR compliant."
                         icon={Users}
                         gradient="bg-purple-600"
                         delay={0.5}
