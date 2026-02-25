@@ -9,6 +9,7 @@ import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, ScanFace, User, Che
 import { useToast } from "@/hooks/use-toast";
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
 import { LoginMoreOptions } from "@/components/auth/LoginMoreOptions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
@@ -17,6 +18,7 @@ import { registerWebAuthnBiometric, WEBAUTHN_CREDENTIAL_KEY } from '@/lib/despia
 
 const REMEMBERED_EMAIL_KEY = "caberu_remembered_email";
 const REMEMBERED_NAME_KEY = "caberu_remembered_name";
+const WEBAUTHN_SETUP_SKIPPED_KEY = "webauthn_setup_skipped";
 
 const PREFILLED_BUSINESS_KEY = "caberu_prefilled_business";
 
@@ -45,6 +47,8 @@ const Login = () => {
   }, [navigate, searchParams]);
 
   const [show2FADialog, setShow2FADialog] = useState(false);
+  const [showBiometricSetup, setShowBiometricSetup] = useState(false);
+  const [isRegisteringBiometric, setIsRegisteringBiometric] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [is2FAPending, setIs2FAPending] = useState(false); // FIXED: Use state instead of ref for proper reactivity
   const [isProcessingAuth, setIsProcessingAuth] = useState(false); // Prevent concurrent auth checks
@@ -246,23 +250,14 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      // Save session token + register WebAuthn credential for biometric login
+      // Save refresh token so biometric welcome screen can restore the session later
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.refresh_token && session.user?.email) {
-          // Always save the refresh token for session restore after biometric auth
           await saveCredentials({ email: session.user.email, token: session.refresh_token }, true);
-
-          // Register a WebAuthn platform credential (Face ID / fingerprint) the first time.
-          // This triggers the biometric prompt once so future visits skip password entirely.
-          const alreadyRegistered = !!localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
-          if (!alreadyRegistered) {
-            await registerWebAuthnBiometric(session.user.email);
-          }
         }
       } catch (err) {
-        // Non-critical — don't fail login if biometric setup fails
-        logger.error("Failed to set up biometric login:", err);
+        logger.error("Failed to save credentials:", err);
       }
 
       // Remember user email for returning user experience
@@ -284,11 +279,40 @@ const Login = () => {
         description: "You've successfully signed in.",
       });
 
+      // Prompt to enable biometric login if not yet set up and not skipped
+      const alreadyRegistered = !!localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
+      const setupSkipped = !!localStorage.getItem(WEBAUTHN_SETUP_SKIPPED_KEY);
+      if (!alreadyRegistered && !setupSkipped && biometrics.isAvailable) {
+        setShowBiometricSetup(true);
+        return;
+      }
+
       // Navigate to auth-redirect which handles role-based routing and onboarding checks
       navigate("/auth-redirect");
     } catch (error) {
       logger.error("Error completing login:", error);
     }
+  };
+
+  const handleEnableBiometric = async () => {
+    setIsRegisteringBiometric(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const email = session?.user?.email || formData.email;
+      await registerWebAuthnBiometric(email);
+    } catch {
+      // registration failed / dismissed — ignore, just navigate
+    } finally {
+      setIsRegisteringBiometric(false);
+      setShowBiometricSetup(false);
+      navigate("/auth-redirect");
+    }
+  };
+
+  const handleSkipBiometric = () => {
+    localStorage.setItem(WEBAUTHN_SETUP_SKIPPED_KEY, "1");
+    setShowBiometricSetup(false);
+    navigate("/auth-redirect");
   };
 
   const handle2FASuccess = async () => {
@@ -544,6 +568,41 @@ const Login = () => {
         onSuccess={handle2FASuccess}
         mode="login"
       />
+
+      {/* Biometric Setup Dialog — shown once after first successful login */}
+      <Dialog open={showBiometricSetup} onOpenChange={() => handleSkipBiometric()}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex justify-center mb-3">
+              {biometrics.biometricType === 'face' ? (
+                <ScanFace className="h-12 w-12 text-primary" />
+              ) : (
+                <Fingerprint className="h-12 w-12 text-primary" />
+              )}
+            </div>
+            <DialogTitle className="text-center">Enable {biometrics.label}?</DialogTitle>
+            <DialogDescription className="text-center">
+              Skip the password on your next visit. Your browser will ask you to save a passkey
+              — just tap Continue when it appears.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-2">
+            <Button onClick={handleEnableBiometric} disabled={isRegisteringBiometric} className="w-full">
+              {isRegisteringBiometric ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (biometrics.biometricType === 'face' ? (
+                <ScanFace className="mr-2 h-4 w-4" />
+              ) : (
+                <Fingerprint className="mr-2 h-4 w-4" />
+              ))}
+              Set up {biometrics.label}
+            </Button>
+            <Button variant="ghost" onClick={handleSkipBiometric} disabled={isRegisteringBiometric} className="w-full">
+              Not now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
