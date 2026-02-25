@@ -1,16 +1,14 @@
 import {
-    Bot,
     Zap,
     Clock,
-    Activity,
     LayoutDashboard,
     Phone,
     Users,
     CreditCard,
-    BarChart,
     Bell,
     Calendar,
-    MessageCircle
+    MessageCircle,
+    ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -113,6 +111,9 @@ export const InteractiveBentoGrid = () => {
                                 <span className="text-gray-600 font-medium">AI Backup 24/7</span>
                             </div>
                         </div>
+                        <a href="#how-it-works" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                            See how it works <ArrowRight className="w-3.5 h-3.5" />
+                        </a>
                     </BentoCard>
 
                     {/* Smart Scheduling - Interactive Calendar Effect */}
@@ -147,12 +148,15 @@ export const InteractiveBentoGrid = () => {
                                 <span className="text-gray-600 font-medium">Auto SMS & Email</span>
                             </div>
                         </div>
+                        <a href="#how-it-works" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                            See how it works <ArrowRight className="w-3.5 h-3.5" />
+                        </a>
                     </BentoCard>
 
                     {/* SMS Communications */}
                     <BentoCard
-                        title="SMS Patient Communications"
-                        description="Send appointment reminders, confirmations, post-visit follow-ups, and payment links via SMS. Patients reply to confirm or reschedule — reducing no-shows and keeping everyone informed."
+                        title="SMS Reminders"
+                        description="Automated outbound SMS reminders go out at 48h, 24h, and 2h before each appointment — plus post-visit follow-ups. No manual effort, fewer no-shows."
                         icon={MessageCircle}
                         className="bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/50 border-indigo-100"
                         gradient="bg-gradient-to-r from-indigo-600 to-blue-600"
@@ -161,13 +165,16 @@ export const InteractiveBentoGrid = () => {
                         <div className="mt-4 flex gap-4 text-sm flex-wrap">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                                <span className="text-gray-600 font-medium">Two-Way Messaging</span>
+                                <span className="text-gray-600 font-medium">Fully Automated</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <MessageCircle className="w-4 h-4 text-indigo-600" />
                                 <span className="text-gray-600 font-medium">98% Open Rate</span>
                             </div>
                         </div>
+                        <a href="#how-it-works" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                            See how it works <ArrowRight className="w-3.5 h-3.5" />
+                        </a>
                     </BentoCard>
 
                     {/* Patient Management */}
@@ -187,22 +194,6 @@ export const InteractiveBentoGrid = () => {
                         gradient="bg-emerald-600"
                         delay={0.6}
                     />
-
-                    {/* Analytics - Interactive Graph Effect */}
-                    <BentoCard
-                        title="Practice Analytics"
-                        description="Real-time insights on appointments, revenue, patient trends, and staff performance."
-                        icon={BarChart}
-                        gradient="bg-orange-600"
-                        delay={0.7}
-                    >
-                        <div className="absolute right-4 bottom-4 flex items-end gap-1 h-16 opacity-20 group-hover:opacity-40 transition-opacity">
-                            <motion.div className="w-2 bg-orange-500 rounded-t" animate={{ height: [20, 40, 20] }} transition={{ duration: 2, repeat: Infinity }} />
-                            <motion.div className="w-2 bg-orange-500 rounded-t" animate={{ height: [30, 50, 30] }} transition={{ duration: 2.2, repeat: Infinity, delay: 0.2 }} />
-                            <motion.div className="w-2 bg-orange-500 rounded-t" animate={{ height: [40, 60, 40] }} transition={{ duration: 1.8, repeat: Infinity, delay: 0.4 }} />
-                            <motion.div className="w-2 bg-orange-500 rounded-t" animate={{ height: [25, 45, 25] }} transition={{ duration: 2.5, repeat: Infinity, delay: 0.1 }} />
-                        </div>
-                    </BentoCard>
 
                     {/* Patient Portal */}
                     <BentoCard

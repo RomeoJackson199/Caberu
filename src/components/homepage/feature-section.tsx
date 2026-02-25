@@ -94,12 +94,17 @@ const FeatureCard = ({
         </ul>
 
         <motion.div
-          className="mt-6 flex items-center gap-2 text-blue-600 font-medium text-sm"
+          className="mt-6"
           initial={{ opacity: 0 }}
           animate={isActive ? { opacity: 1 } : { opacity: 0 }}
         >
-          Learn more
-          <ArrowRight className="w-4 h-4" />
+          <a
+            href="#how-it-works"
+            className="inline-flex items-center gap-2 text-blue-600 font-medium text-sm hover:text-blue-700 transition-colors"
+          >
+            Learn more
+            <ArrowRight className="w-4 h-4" />
+          </a>
         </motion.div>
       </div>
     </motion.div>
@@ -172,12 +177,12 @@ export function FeatureSection() {
       iconBg: "bg-indigo-100",
       iconColor: "text-indigo-600",
       title: "SMS Reminders — Fewer No-Shows",
-      description: "Automated SMS reminders go out at the right time before each appointment. Patients confirm with a simple reply, and your schedule stays full. Two-way messaging keeps everyone informed.",
+      description: "Automated SMS reminders go out at 48h, 24h, and 2h before each appointment — no manual effort needed. Post-visit follow-up messages and instructions go out automatically too.",
       benefits: [
-        "Automated appointment reminders via SMS",
-        "Patients confirm with a single reply",
+        "Automated reminders at 48h, 24h, and 2h before",
+        "Post-visit follow-ups sent automatically",
         "Reduce no-shows by up to 35%",
-        "Two-way patient communication",
+        "Outbound SMS, zero manual work",
       ],
     },
     {
