@@ -574,7 +574,7 @@ const Login = () => {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <div className="flex justify-center mb-3">
-              {biometrics.biometricType === 'face' ? (
+              {biometrics.biometricType === 'faceId' ? (
                 <ScanFace className="h-12 w-12 text-primary" />
               ) : (
                 <Fingerprint className="h-12 w-12 text-primary" />
@@ -590,7 +590,7 @@ const Login = () => {
             <Button onClick={handleEnableBiometric} disabled={isRegisteringBiometric} className="w-full">
               {isRegisteringBiometric ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (biometrics.biometricType === 'face' ? (
+              ) : (biometrics.biometricType === 'faceId' ? (
                 <ScanFace className="mr-2 h-4 w-4" />
               ) : (
                 <Fingerprint className="mr-2 h-4 w-4" />
