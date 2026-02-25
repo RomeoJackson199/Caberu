@@ -19,7 +19,6 @@ import { FAQSection } from "@/components/homepage/FAQSection";
 import { ContactForm } from "@/components/homepage/ContactForm";
 import { PremiumHeroSection } from "@/components/homepage/PremiumHeroSection";
 import { FeatureSection } from "@/components/homepage/feature-section";
-import { HowItWorksSection } from "@/components/homepage/HowItWorksSection";
 // import { VideoShowcase } from "@/components/homepage/VideoShowcase";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -99,9 +98,6 @@ const Index = () => {
 
         {/* Enhanced Feature Section */}
         <FeatureSection />
-
-        {/* How It Works — visual deep dive with learn more */}
-        <HowItWorksSection />
 
         {/* Interactive Features Grid */}
         <InteractiveBentoGrid />
