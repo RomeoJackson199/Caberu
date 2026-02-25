@@ -333,15 +333,39 @@ export function useBookingFlow() {
           .gte('end_date', format(new Date(), 'yyyy-MM-dd')),
       ]);
 
-      if (availResult.data && availResult.data.length > 0) {
-        setDentistAvailableDays(availResult.data.map(d => d.day_of_week));
-      } else {
-        setDentistAvailableDays([1, 2, 3, 4, 5]);
-      }
+      const availableDays = availResult.data && availResult.data.length > 0
+        ? availResult.data.map(d => d.day_of_week)
+        : [1, 2, 3, 4, 5];
+      const vacations = vacationResult.data || [];
 
-      setVacationRanges(vacationResult.data || []);
+      setDentistAvailableDays(availableDays);
+      setVacationRanges(vacations);
+
+      // Auto-select the first available date using the freshly fetched data.
+      // We can't rely on state (isDateDisabled) here because React state updates
+      // are asynchronous and the new values won't be visible yet.
+      const isDisabledLocal = (date: Date) => {
+        const today = startOfDay(new Date());
+        if (date < today) return true;
+        if (isPublicHoliday(date)) return true;
+        const dayOfWeek = date.getDay();
+        if (!availableDays.includes(dayOfWeek)) return true;
+        const dateStr = format(date, 'yyyy-MM-dd');
+        return vacations.some(v => dateStr >= v.start_date && dateStr <= v.end_date);
+      };
+
+      let candidate = startOfDay(new Date());
+      for (let i = 0; i < 60; i++) {
+        if (!isDisabledLocal(candidate)) {
+          setSelectedDate(candidate);
+          setCurrentWeekStart(startOfWeek(candidate, { weekStartsOn: 1 }));
+          fetchAvailableSlots(candidate, dentist.id, selectedService?.id);
+          break;
+        }
+        candidate = addDays(candidate, 1);
+      }
     }
-  }, [businessId]);
+  }, [businessId, selectedService, fetchAvailableSlots]);
 
   const handleSymptomsNext = useCallback(() => {
     setBookingStep('service');
