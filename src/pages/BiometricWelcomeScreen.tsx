@@ -68,7 +68,7 @@ const BiometricWelcomeScreen = () => {
   const biometrics = useBiometricAuth();
   const hasWebAuthnCredential = !!localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
   const haptics = useHaptics();
-  const { value: savedCredentials, isLoading: vaultLoading, remove: removeCredentials } =
+  const { value: savedCredentials, isLoading: vaultLoading, save: saveCredentials, remove: removeCredentials } =
     useStorageVault<{ email: string; token: string }>("biometric_credentials");
 
   // Guard: check session and validate we should be here
@@ -98,19 +98,27 @@ const BiometricWelcomeScreen = () => {
         // Restore full session via saved refresh token
         setIsLoading(true);
         try {
-          const { error } = await supabase.auth.refreshSession({
+          const { data, error } = await supabase.auth.refreshSession({
             refresh_token: savedCredentials.token,
           });
           if (error) throw error;
+          // Supabase rotates the refresh token on each use — save the new one
+          // so the next biometric login also works
+          if (data.session?.refresh_token && data.session.user?.email) {
+            await saveCredentials(
+              { email: data.session.user.email, token: data.session.refresh_token },
+              true,
+            );
+          }
           navigate("/auth-redirect", { replace: true });
           return;
         } catch {
-          // Token expired — fall through to login with email pre-filled
+          // Token expired or invalid — fall through to login with email pre-filled
         } finally {
           setIsLoading(false);
         }
       }
-      // No saved token or expired: verified identity, redirect to login
+      // No saved token or expired: identity verified, redirect to login with email pre-filled
       const emailParam = rememberedEmail
         ? `&email=${encodeURIComponent(rememberedEmail)}`
         : "";
@@ -126,14 +134,15 @@ const BiometricWelcomeScreen = () => {
         variant: "destructive",
       });
     }
-  }, [biometrics, savedCredentials, rememberedEmail, haptics, navigate, toast]);
+  }, [biometrics, savedCredentials, saveCredentials, rememberedEmail, haptics, navigate, toast]);
 
-  // Auto-prompt biometric on load if a credential is already registered
+  // Auto-prompt biometric on load only when both credential and session token are ready
   useEffect(() => {
     if (
       !isCheckingSession &&
       biometrics.isAvailable &&
       hasWebAuthnCredential &&
+      savedCredentials?.token &&
       !vaultLoading &&
       !searchParams.get("no-auto-prompt")
     ) {
@@ -144,6 +153,7 @@ const BiometricWelcomeScreen = () => {
     isCheckingSession,
     biometrics.isAvailable,
     hasWebAuthnCredential,
+    savedCredentials,
     vaultLoading,
     searchParams,
     handleBiometricContinue,
@@ -191,8 +201,8 @@ const BiometricWelcomeScreen = () => {
     );
   }
 
-  // Show biometric button only when a credential has already been registered during login
-  const hasBiometrics = biometrics.isAvailable && hasWebAuthnCredential;
+  // Show biometric button only when both the WebAuthn credential AND the saved session token exist
+  const hasBiometrics = biometrics.isAvailable && hasWebAuthnCredential && !!savedCredentials?.token;
   const BiometricIcon =
     biometrics.biometricType === "faceId" ? ScanFace : Fingerprint;
 
