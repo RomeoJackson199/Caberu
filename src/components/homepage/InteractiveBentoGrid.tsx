@@ -63,25 +63,41 @@ export const InteractiveBentoGrid = () => {
         <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50/50 overflow-hidden" id="features">
             <div className="max-w-7xl mx-auto">
                 <div className="text-center max-w-3xl mx-auto mb-16">
+                    <motion.span
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        className="inline-block px-4 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4"
+                    >
+                        All included features
+                    </motion.span>
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 tracking-tight"
                     >
-                        Everything Your Practice Needs, <br />
+                        Everything Caberu Adds <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                            All in One Place
+                            On Top of Your Setup
                         </span>
                     </motion.h2>
+                    <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="text-lg text-gray-500"
+                    >
+                        Every feature below works alongside your existing tools — no switching, no migration.
+                    </motion.p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                    {/* AI Phone Reception */}
+                    {/* AI Phone Forwarding */}
                     <BentoCard
-                        title="AI Phone Reception"
-                        description="Natural AI conversation handles calls 24/7. Answers in under 2 seconds, books appointments instantly, and never misses a patient."
+                        title="AI Phone Forwarding"
+                        description="Keep your existing phone number. When you don't pick up, Caberu's AI answers naturally — capturing symptoms, booking appointments, and sending you a summary. Zero calls missed."
                         icon={Phone}
                         className="col-span-1 md:col-span-2 lg:col-span-2 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 border-blue-100"
                         gradient="bg-gradient-to-r from-blue-600 to-purple-600"
@@ -90,11 +106,11 @@ export const InteractiveBentoGrid = () => {
                         <div className="mt-4 flex gap-4 text-sm flex-wrap">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                                <span className="text-gray-600 font-medium">100% Answer Rate</span>
+                                <span className="text-gray-600 font-medium">Keep Your Number</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-blue-600" />
-                                <span className="text-gray-600 font-medium">24/7 Available</span>
+                                <span className="text-gray-600 font-medium">AI Backup 24/7</span>
                             </div>
                         </div>
                     </BentoCard>
@@ -133,22 +149,22 @@ export const InteractiveBentoGrid = () => {
                         </div>
                     </BentoCard>
 
-                    {/* WhatsApp Integration */}
+                    {/* SMS Communications */}
                     <BentoCard
-                        title="WhatsApp Integration"
-                        description="Connect with patients on their favorite messaging app. Send appointment reminders, confirmations, and follow-ups via WhatsApp."
+                        title="SMS Patient Communications"
+                        description="Send appointment reminders, confirmations, post-visit follow-ups, and payment links via SMS. Patients reply to confirm or reschedule — reducing no-shows and keeping everyone informed."
                         icon={MessageCircle}
-                        className="bg-gradient-to-br from-green-50/50 via-white to-emerald-50/50 border-green-100"
-                        gradient="bg-gradient-to-r from-green-600 to-emerald-600"
+                        className="bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/50 border-indigo-100"
+                        gradient="bg-gradient-to-r from-indigo-600 to-blue-600"
                         delay={0.4}
                     >
                         <div className="mt-4 flex gap-4 text-sm flex-wrap">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                                <span className="text-gray-600 font-medium">2B+ Users Worldwide</span>
+                                <span className="text-gray-600 font-medium">Two-Way Messaging</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <MessageCircle className="w-4 h-4 text-green-600" />
+                                <MessageCircle className="w-4 h-4 text-indigo-600" />
                                 <span className="text-gray-600 font-medium">98% Open Rate</span>
                             </div>
                         </div>
