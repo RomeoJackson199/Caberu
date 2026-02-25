@@ -85,31 +85,34 @@ const BiometricWelcomeScreen = () => {
   }, [navigate, rememberedEmail]);
 
   const handleBiometricContinue = useCallback(async () => {
-    if (!biometrics.isAvailable || !savedCredentials) return;
+    if (!biometrics.isAvailable) return;
 
     haptics.impact();
     const result = await biometrics.authenticate();
 
     if (result.authenticated) {
       haptics.success();
-      setIsLoading(true);
-      try {
-        const { error } = await supabase.auth.refreshSession({
-          refresh_token: savedCredentials.token,
-        });
-        if (error) throw error;
-        navigate("/auth-redirect", { replace: true });
-      } catch {
-        haptics.error();
-        toast({
-          title: "Biometric login failed",
-          description: "Please use another sign-in option",
-          variant: "destructive",
-        });
-        setShowOtherOptions(true);
-      } finally {
-        setIsLoading(false);
+      if (savedCredentials?.token) {
+        // Restore full session via saved refresh token
+        setIsLoading(true);
+        try {
+          const { error } = await supabase.auth.refreshSession({
+            refresh_token: savedCredentials.token,
+          });
+          if (error) throw error;
+          navigate("/auth-redirect", { replace: true });
+          return;
+        } catch {
+          // Token expired — fall through to login with email pre-filled
+        } finally {
+          setIsLoading(false);
+        }
       }
+      // No saved token or expired: verified identity, redirect to login
+      const emailParam = rememberedEmail
+        ? `&email=${encodeURIComponent(rememberedEmail)}`
+        : "";
+      navigate(`/login?skip-welcome=1${emailParam}`, { replace: true });
     } else if (
       result.error &&
       result.error !== "Authentication cancelled by user"
@@ -121,14 +124,13 @@ const BiometricWelcomeScreen = () => {
         variant: "destructive",
       });
     }
-  }, [biometrics, savedCredentials, haptics, navigate, toast]);
+  }, [biometrics, savedCredentials, rememberedEmail, haptics, navigate, toast]);
 
-  // Auto-prompt biometric on load when credentials exist
+  // Auto-prompt biometric on load once availability is confirmed
   useEffect(() => {
     if (
       !isCheckingSession &&
       biometrics.isAvailable &&
-      savedCredentials &&
       !vaultLoading &&
       !searchParams.get("no-auto-prompt")
     ) {
@@ -138,7 +140,6 @@ const BiometricWelcomeScreen = () => {
   }, [
     isCheckingSession,
     biometrics.isAvailable,
-    savedCredentials,
     vaultLoading,
     searchParams,
     handleBiometricContinue,
@@ -178,7 +179,7 @@ const BiometricWelcomeScreen = () => {
     navigate("/login?skip-welcome=1");
   };
 
-  if (isCheckingSession) {
+  if (isCheckingSession || vaultLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary/80">
         <Loader2 className="h-8 w-8 animate-spin text-white/70" />
@@ -186,7 +187,7 @@ const BiometricWelcomeScreen = () => {
     );
   }
 
-  const hasBiometrics = biometrics.isAvailable && savedCredentials;
+  const hasBiometrics = biometrics.isAvailable;
   const BiometricIcon =
     biometrics.biometricType === "faceId" ? ScanFace : Fingerprint;
 

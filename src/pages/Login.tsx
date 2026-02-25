@@ -245,8 +245,8 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      // Save credentials for biometric login (if native app)
-      if (isNative && biometrics.isAvailable) {
+      // Save credentials for biometric login (native app or web with biometrics)
+      if (biometrics.isAvailable) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.refresh_token && session.user?.email) {
