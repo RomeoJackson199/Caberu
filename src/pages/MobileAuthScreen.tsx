@@ -38,7 +38,7 @@ const MobileAuthScreen = () => {
       }
       const hasSignedInBefore = !!localStorage.getItem("caberu_remembered_email");
       if (hasSignedInBefore) {
-        navigate("/login", { replace: true });
+        navigate("/biometric-welcome", { replace: true });
       }
     });
   }, [navigate]);

@@ -99,6 +99,7 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
+const BiometricWelcomeScreen = lazy(() => import("./pages/BiometricWelcomeScreen"));
 const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
 const StatusPage = lazy(() => import("./pages/StatusPage"));
 const BusinessProfilePage = lazy(() => import("./pages/BusinessProfilePage"));
@@ -404,6 +405,7 @@ const App = () => {
                         <Route path="/test-phone" element={<TestPhoneVerification />} />
                         {/* Auth routes */}
                         <Route path="/mobile-auth" element={<MobileAuthScreen />} />
+                        <Route path="/biometric-welcome" element={<BiometricWelcomeScreen />} />
                         <Route path="/welcome" element={<Welcome />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<Signup />} />
