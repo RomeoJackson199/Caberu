@@ -47,35 +47,6 @@ import {
 // Re-export types that components may need
 export type { HapticType } from '@/lib/despia';
 
-export type BiometricType = 'faceId' | 'touchId' | 'fingerprint' | 'windowsHello' | 'biometrics';
-
-/**
- * Detect what biometric method the current platform uses.
- * Native iOS → Face ID (modern devices). Android → Fingerprint.
- * macOS → Touch ID. Windows → Windows Hello. Fallback → Biometrics.
- */
-export function detectBiometricType(): BiometricType {
-  if (typeof navigator === 'undefined') return 'biometrics';
-  const ua = navigator.userAgent;
-  if (isDespiaNative()) return 'faceId';
-  if (/Android/i.test(ua)) return 'fingerprint';
-  if (/iPhone|iPad/i.test(ua)) return 'faceId';
-  if (/Macintosh|Mac OS X/i.test(ua) && !('ontouchstart' in window)) return 'touchId';
-  if (/Windows/i.test(ua)) return 'windowsHello';
-  return 'biometrics';
-}
-
-export function getBiometricLabel(type: BiometricType): string {
-  const labels: Record<BiometricType, string> = {
-    faceId: 'Face ID',
-    touchId: 'Touch ID',
-    fingerprint: 'Fingerprint',
-    windowsHello: 'Windows Hello',
-    biometrics: 'Biometrics',
-  };
-  return labels[type];
-}
-
 // ============================================
 // CORE HOOK - Check if running in native context
 // ============================================
@@ -123,15 +94,13 @@ export function useBiometricAuth() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [lastResult, setLastResult] = useState<BiometricAuthResult | null>(null);
   const [isAvailable, setIsAvailable] = useState(false);
-  const [biometricType, setBiometricType] = useState<BiometricType>('biometrics');
   const isNative = useDespiaNative();
 
-  // Check biometric availability (native or WebAuthn) and detect type
+  // Check biometric availability (native or WebAuthn)
   useEffect(() => {
     const checkAvailability = async () => {
       if (isNative) {
         setIsAvailable(true);
-        setBiometricType(detectBiometricType());
         return;
       }
 
@@ -140,7 +109,6 @@ export function useBiometricAuth() {
         try {
           const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
           setIsAvailable(available);
-          if (available) setBiometricType(detectBiometricType());
         } catch {
           setIsAvailable(false);
         }
@@ -168,8 +136,6 @@ export function useBiometricAuth() {
     isAuthenticating,
     lastResult,
     authenticate,
-    biometricType,
-    label: getBiometricLabel(biometricType),
   };
 }
 

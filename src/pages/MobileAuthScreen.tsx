@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Shield, ChevronDown, Fingerprint, ScanFace } from "lucide-react";
+import { Loader2, Mail, Shield, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
-import { useBiometricAuth, useStorageVault, useHaptics } from "@/hooks/useDespia";
 
 type AuthMode = null | "signup" | "signin";
 
@@ -26,10 +25,6 @@ const MobileAuthScreen = () => {
   const [authMode, setAuthMode] = useState<AuthMode>(null);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
 
-  const biometrics = useBiometricAuth();
-  const haptics = useHaptics();
-  const { value: savedCredentials, isLoading: vaultLoading } = useStorageVault<{ email: string; token: string }>('biometric_credentials');
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -38,44 +33,10 @@ const MobileAuthScreen = () => {
       }
       const hasSignedInBefore = !!localStorage.getItem("caberu_remembered_email");
       if (hasSignedInBefore) {
-        navigate("/biometric-welcome", { replace: true });
+        navigate("/login", { replace: true });
       }
     });
   }, [navigate]);
-
-  const handleBiometricLogin = useCallback(async () => {
-    if (!biometrics.isAvailable || !savedCredentials) return;
-    haptics.impact();
-    const result = await biometrics.authenticate();
-    if (result.authenticated) {
-      haptics.success();
-      setIsLoading(true);
-      try {
-        const { error } = await supabase.auth.refreshSession({ refresh_token: savedCredentials.token });
-        if (error) throw error;
-        navigate("/auth-redirect", { replace: true });
-      } catch {
-        haptics.error();
-        toast({
-          title: "Biometric login failed",
-          description: "Please sign in with your phone or email",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    } else if (!result.authenticated && result.error !== 'Authentication cancelled by user') {
-      haptics.error();
-    }
-  }, [biometrics, savedCredentials, haptics, navigate, toast]);
-
-  // Auto-prompt biometrics when a returning user taps "I have an account"
-  useEffect(() => {
-    if (authMode === 'signin' && biometrics.isAvailable && savedCredentials && !vaultLoading) {
-      const timer = setTimeout(handleBiometricLogin, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [authMode, biometrics.isAvailable, savedCredentials, vaultLoading, handleBiometricLogin]);
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
@@ -183,25 +144,6 @@ const MobileAuthScreen = () => {
                     : "Sign in with your phone number"}
                 </p>
               </div>
-
-              {/* Biometric - shown first for returning users with saved credentials */}
-              {authMode === 'signin' && biometrics.isAvailable && savedCredentials && (
-                <Button
-                  type="button"
-                  onClick={handleBiometricLogin}
-                  disabled={isLoading || biometrics.isAuthenticating}
-                  className="w-full h-14 text-base font-semibold rounded-2xl bg-white text-primary hover:bg-white/95 shadow-lg transition-all hover:scale-[1.02] disabled:opacity-60"
-                >
-                  {biometrics.isAuthenticating || isLoading ? (
-                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                  ) : biometrics.biometricType === 'faceId' ? (
-                    <ScanFace className="mr-3 h-5 w-5" />
-                  ) : (
-                    <Fingerprint className="mr-3 h-5 w-5" />
-                  )}
-                  Continue with {biometrics.label}
-                </Button>
-              )}
 
               {/* Phone OTP - Primary */}
               <PhoneOTPAuth

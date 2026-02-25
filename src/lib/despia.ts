@@ -273,9 +273,9 @@ async function authenticateWithWebAuthn(): Promise<BiometricAuthResult> {
   const storedCredentialId = localStorage.getItem(credentialStorageKey);
 
   try {
-    // No credential registered yet — caller should register first via registerWebAuthnBiometric()
+    // If no credential exists, register a new one
     if (!storedCredentialId) {
-      return { authenticated: false, error: 'No biometric credential registered' };
+      return await registerWebAuthnCredential(credentialStorageKey);
     }
 
     // Authenticate with existing credential
@@ -310,35 +310,16 @@ async function authenticateWithWebAuthn(): Promise<BiometricAuthResult> {
       return { authenticated: false, error: 'Authentication cancelled by user' };
     }
 
-    // Credential invalid — clear it so caller can re-register
+    // Re-register if credential is invalid
     localStorage.removeItem(credentialStorageKey);
-    return { authenticated: false, error: 'Biometric credential expired. Please log in again to re-enable.' };
-  }
-}
-
-export const WEBAUTHN_CREDENTIAL_KEY = 'webauthn_credential_id';
-
-/**
- * Register a WebAuthn platform credential for biometric login.
- * Call this once after a successful password/OAuth login.
- * Subsequent authentication uses authenticateWithBiometrics().
- */
-export async function registerWebAuthnBiometric(email: string): Promise<boolean> {
-  if (!window.PublicKeyCredential) return false;
-  try {
-    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    if (!available) return false;
-    const result = await registerWebAuthnCredential(WEBAUTHN_CREDENTIAL_KEY, email);
-    return result.authenticated;
-  } catch {
-    return false;
+    return await registerWebAuthnCredential(credentialStorageKey);
   }
 }
 
 /**
  * Register a new WebAuthn credential
  */
-async function registerWebAuthnCredential(storageKey: string, email = 'user@caberu.app'): Promise<BiometricAuthResult> {
+async function registerWebAuthnCredential(storageKey: string): Promise<BiometricAuthResult> {
   try {
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const userId = crypto.getRandomValues(new Uint8Array(16));
@@ -351,7 +332,7 @@ async function registerWebAuthnCredential(storageKey: string, email = 'user@cabe
       },
       user: {
         id: userId,
-        name: email,
+        name: 'user@caberu.app',
         displayName: 'Caberu User',
       },
       pubKeyCredParams: [

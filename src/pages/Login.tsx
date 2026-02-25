@@ -5,20 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/ui/form-field";
-import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, ScanFace, User, ChevronDown } from "lucide-react";
+import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, User, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
 import { LoginMoreOptions } from "@/components/auth/LoginMoreOptions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
 import { useDespiaNative, useBiometricAuth, useHaptics, useStorageVault } from '@/hooks/useDespia';
-import { registerWebAuthnBiometric, WEBAUTHN_CREDENTIAL_KEY } from '@/lib/despia';
 
 const REMEMBERED_EMAIL_KEY = "caberu_remembered_email";
 const REMEMBERED_NAME_KEY = "caberu_remembered_name";
-const WEBAUTHN_SETUP_SKIPPED_KEY = "webauthn_setup_skipped";
 
 const PREFILLED_BUSINESS_KEY = "caberu_prefilled_business";
 
@@ -38,17 +35,7 @@ const Login = () => {
     }
   }, [searchParams]);
 
-  // Redirect returning users to biometric welcome screen unless explicitly skipped
-  useEffect(() => {
-    const skipWelcome = searchParams.get("skip-welcome");
-    if (!skipWelcome && localStorage.getItem(REMEMBERED_EMAIL_KEY)) {
-      navigate("/biometric-welcome", { replace: true });
-    }
-  }, [navigate, searchParams]);
-
   const [show2FADialog, setShow2FADialog] = useState(false);
-  const [showBiometricSetup, setShowBiometricSetup] = useState(false);
-  const [isRegisteringBiometric, setIsRegisteringBiometric] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [is2FAPending, setIs2FAPending] = useState(false); // FIXED: Use state instead of ref for proper reactivity
   const [isProcessingAuth, setIsProcessingAuth] = useState(false); // Prevent concurrent auth checks
@@ -250,14 +237,20 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      // Save refresh token so biometric welcome screen can restore the session later
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.refresh_token && session.user?.email) {
-          await saveCredentials({ email: session.user.email, token: session.refresh_token }, true);
+      // Save credentials for biometric login (if native app)
+      if (isNative && biometrics.isAvailable) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.refresh_token && session.user?.email) {
+            await saveCredentials({
+              email: session.user.email,
+              token: session.refresh_token
+            }, true); // locked = true requires biometric to access
+          }
+        } catch (err) {
+          // Don't fail login if credential saving fails
+          logger.error("Failed to save biometric credentials:", err);
         }
-      } catch (err) {
-        logger.error("Failed to save credentials:", err);
       }
 
       // Remember user email for returning user experience
@@ -279,40 +272,11 @@ const Login = () => {
         description: "You've successfully signed in.",
       });
 
-      // Prompt to enable biometric login if not yet set up and not skipped
-      const alreadyRegistered = !!localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
-      const setupSkipped = !!localStorage.getItem(WEBAUTHN_SETUP_SKIPPED_KEY);
-      if (!alreadyRegistered && !setupSkipped && biometrics.isAvailable) {
-        setShowBiometricSetup(true);
-        return;
-      }
-
       // Navigate to auth-redirect which handles role-based routing and onboarding checks
       navigate("/auth-redirect");
     } catch (error) {
       logger.error("Error completing login:", error);
     }
-  };
-
-  const handleEnableBiometric = async () => {
-    setIsRegisteringBiometric(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const email = session?.user?.email || formData.email;
-      await registerWebAuthnBiometric(email);
-    } catch {
-      // registration failed / dismissed — ignore, just navigate
-    } finally {
-      setIsRegisteringBiometric(false);
-      setShowBiometricSetup(false);
-      navigate("/auth-redirect");
-    }
-  };
-
-  const handleSkipBiometric = () => {
-    localStorage.setItem(WEBAUTHN_SETUP_SKIPPED_KEY, "1");
-    setShowBiometricSetup(false);
-    navigate("/auth-redirect");
   };
 
   const handle2FASuccess = async () => {
@@ -499,8 +463,8 @@ const Login = () => {
 
             <div className="rounded-2xl border bg-card p-6 shadow-sm">
               <div className="space-y-4">
-                {/* Biometric Sign In (native iOS + mobile web with platform authenticator) */}
-                {biometrics.isAvailable && savedCredentials && (
+                {/* Biometric Sign In (Native iOS only) */}
+                {isNative && biometrics.isAvailable && savedCredentials && (
                   <Button
                     type="button"
                     variant="outline"
@@ -508,12 +472,8 @@ const Login = () => {
                     disabled={isLoading || biometrics.isAuthenticating}
                     className="w-full h-12 border-2 hover:bg-accent bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200"
                   >
-                    {biometrics.biometricType === 'faceId' ? (
-                      <ScanFace className="mr-2 h-5 w-5 text-blue-600" />
-                    ) : (
-                      <Fingerprint className="mr-2 h-5 w-5 text-blue-600" />
-                    )}
-                    {biometrics.isAuthenticating ? 'Authenticating...' : `Continue with ${biometrics.label}`}
+                    <Fingerprint className="mr-2 h-5 w-5 text-blue-600" />
+                    {biometrics.isAuthenticating ? 'Authenticating...' : 'Sign in with Face ID'}
                   </Button>
                 )}
 
@@ -568,41 +528,6 @@ const Login = () => {
         onSuccess={handle2FASuccess}
         mode="login"
       />
-
-      {/* Biometric Setup Dialog — shown once after first successful login */}
-      <Dialog open={showBiometricSetup} onOpenChange={() => handleSkipBiometric()}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <div className="flex justify-center mb-3">
-              {biometrics.biometricType === 'faceId' ? (
-                <ScanFace className="h-12 w-12 text-primary" />
-              ) : (
-                <Fingerprint className="h-12 w-12 text-primary" />
-              )}
-            </div>
-            <DialogTitle className="text-center">Enable {biometrics.label}?</DialogTitle>
-            <DialogDescription className="text-center">
-              Skip the password on your next visit. Your browser will ask you to save a passkey
-              — just tap Continue when it appears.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 mt-2">
-            <Button onClick={handleEnableBiometric} disabled={isRegisteringBiometric} className="w-full">
-              {isRegisteringBiometric ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (biometrics.biometricType === 'faceId' ? (
-                <ScanFace className="mr-2 h-4 w-4" />
-              ) : (
-                <Fingerprint className="mr-2 h-4 w-4" />
-              ))}
-              Set up {biometrics.label}
-            </Button>
-            <Button variant="ghost" onClick={handleSkipBiometric} disabled={isRegisteringBiometric} className="w-full">
-              Not now
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
