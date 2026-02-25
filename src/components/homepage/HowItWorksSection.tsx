@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 // ── Phone Forwarding Visual ──────────────────────────────────────────────────
 
 const PhoneForwardingDiagram = () => (
-  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-4">
+  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">How it works</p>
     <div className="flex items-stretch gap-2 overflow-x-auto pb-2">
       {[
@@ -81,7 +81,7 @@ const PhoneForwardingDiagram = () => (
 // ── Patient Symptom Summary Visual ──────────────────────────────────────────
 
 const SummaryDiagram = () => (
-  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-4 space-y-3">
+  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-3">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Example summary generated</p>
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
@@ -122,7 +122,7 @@ const SummaryDiagram = () => (
 // ── Payment Flow Visual ──────────────────────────────────────────────────────
 
 const PaymentDiagram = () => (
-  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-4">
+  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Payment flow</p>
     <div className="space-y-2">
       {[
@@ -155,7 +155,7 @@ const PaymentDiagram = () => (
 // ── SMS Reminders Visual ─────────────────────────────────────────────────────
 
 const SmsDiagram = () => (
-  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-4">
+  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">SMS sequence</p>
     <div className="space-y-2">
       {[
@@ -183,7 +183,7 @@ const SmsDiagram = () => (
   </div>
 );
 
-// ── Main component ───────────────────────────────────────────────────────────
+// ── Feature type ─────────────────────────────────────────────────────────────
 
 interface Feature {
   id: string;
@@ -204,7 +204,7 @@ const features: Feature[] = [
     icon: PhoneForwarded,
     iconBg: "bg-blue-100",
     iconColor: "text-blue-600",
-    accentColor: "border-blue-200 bg-blue-50/50",
+    accentColor: "border-blue-200 bg-blue-50/40",
     title: "Phone Forwarding",
     tagline: "Your number. AI backup.",
     description:
@@ -222,7 +222,7 @@ const features: Feature[] = [
     icon: FileText,
     iconBg: "bg-purple-100",
     iconColor: "text-purple-600",
-    accentColor: "border-purple-200 bg-purple-50/50",
+    accentColor: "border-purple-200 bg-purple-50/40",
     title: "Patient Symptom Summaries",
     tagline: "Know before they arrive.",
     description:
@@ -240,7 +240,7 @@ const features: Feature[] = [
     icon: CreditCard,
     iconBg: "bg-green-100",
     iconColor: "text-green-600",
-    accentColor: "border-green-200 bg-green-50/50",
+    accentColor: "border-green-200 bg-green-50/40",
     title: "Payments, Handled",
     tagline: "Get paid without the admin.",
     description:
@@ -258,7 +258,7 @@ const features: Feature[] = [
     icon: MessageSquare,
     iconBg: "bg-indigo-100",
     iconColor: "text-indigo-600",
-    accentColor: "border-indigo-200 bg-indigo-50/50",
+    accentColor: "border-indigo-200 bg-indigo-50/40",
     title: "SMS Reminders & Communications",
     tagline: "Fewer no-shows. Zero manual work.",
     description:
@@ -273,9 +273,21 @@ const features: Feature[] = [
   },
 ];
 
-// Individual feature panel with learn more toggle
-const FeaturePanel = ({ feature, index }: { feature: Feature; index: number }) => {
-  const [expanded, setExpanded] = useState(false);
+// ── Feature panel ─────────────────────────────────────────────────────────────
+
+const FeaturePanel = ({
+  feature,
+  index,
+  isExpanded,
+  onExpand,
+  onCollapse,
+}: {
+  feature: Feature;
+  index: number;
+  isExpanded: boolean;
+  onExpand: () => void;
+  onCollapse: () => void;
+}) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-60px" });
   const Icon = feature.icon;
@@ -287,63 +299,78 @@ const FeaturePanel = ({ feature, index }: { feature: Feature; index: number }) =
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay: index * 0.08 }}
       className={cn(
-        "rounded-2xl border p-6 transition-all duration-300",
-        expanded ? feature.accentColor : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-md"
+        "rounded-2xl border transition-colors duration-300 overflow-hidden",
+        isExpanded
+          ? feature.accentColor
+          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-md"
       )}
     >
-      <div className="flex items-start gap-4">
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0", feature.iconBg)}>
-          <Icon className={cn("w-6 h-6", feature.iconColor)} />
+      {/* Header row — always visible */}
+      <div className="flex items-center gap-4 p-5 sm:p-6">
+        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0", feature.iconBg)}>
+          <Icon className={cn("w-5 h-5", feature.iconColor)} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 leading-snug">{feature.title}</h3>
-              <p className="text-sm text-slate-500 mt-0.5">{feature.tagline}</p>
-            </div>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className={cn(
-                "flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-200",
-                expanded
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-slate-900"
-              )}
-            >
-              {expanded ? "Close" : "Learn more"}
-              <motion.span
-                animate={{ rotate: expanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="inline-flex"
-              >
-                <ChevronDown className="w-3.5 h-3.5" />
-              </motion.span>
-            </button>
-          </div>
-
-          <p className="text-slate-600 text-sm leading-relaxed mt-3">{feature.description}</p>
-
-          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {feature.bullets.map((bullet) => (
-              <li key={bullet} className="flex items-center gap-2 text-sm text-slate-600">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                {bullet}
-              </li>
-            ))}
-          </ul>
+          <h3 className="text-base font-bold text-slate-900 leading-snug">{feature.title}</h3>
+          <p className="text-sm text-slate-500 mt-0.5">{feature.tagline}</p>
         </div>
+        <button
+          onClick={isExpanded ? onCollapse : onExpand}
+          className={cn(
+            "flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-200 whitespace-nowrap",
+            isExpanded
+              ? "bg-slate-900 text-white border-slate-900"
+              : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-slate-900"
+          )}
+        >
+          {isExpanded ? "Hide diagram" : "See how it works"}
+          <motion.span
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="inline-flex"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </motion.span>
+        </button>
       </div>
 
+      {/* Expandable body: description + bullets left, diagram slides in from right */}
       <AnimatePresence>
-        {expanded && (
+        {isExpanded && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{ duration: 0.35, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            {feature.diagram}
+            <div className="px-5 sm:px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start border-t border-slate-100/60 pt-5">
+              {/* Left: description + bullets */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+              >
+                <p className="text-slate-600 text-sm leading-relaxed mb-4">{feature.description}</p>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {feature.bullets.map((bullet) => (
+                    <li key={bullet} className="flex items-start gap-2 text-sm text-slate-600">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+
+              {/* Right: diagram slides in from right */}
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.12, duration: 0.4, ease: "easeOut" }}
+              >
+                {feature.diagram}
+              </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -351,13 +378,15 @@ const FeaturePanel = ({ feature, index }: { feature: Feature; index: number }) =
   );
 };
 
+// ── Section ───────────────────────────────────────────────────────────────────
+
 export function HowItWorksSection() {
+  const [activeId, setActiveId] = useState<string | null>(null);
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
   return (
     <section id="how-it-works" ref={sectionRef} className="py-24 bg-white relative overflow-hidden">
-      {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none"
         style={{
           backgroundImage: `radial-gradient(circle, #0f172a 1px, transparent 1px)`,
@@ -382,13 +411,20 @@ export function HowItWorksSection() {
             </span>
           </h2>
           <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            Click <strong>Learn more</strong> on any feature below to see a visual walkthrough of how it fits into your practice.
+            Click <strong>See how it works</strong> on any feature below to expand a visual walkthrough right beside it.
           </p>
         </motion.div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {features.map((feature, i) => (
-            <FeaturePanel key={feature.id} feature={feature} index={i} />
+            <FeaturePanel
+              key={feature.id}
+              feature={feature}
+              index={i}
+              isExpanded={activeId === feature.id}
+              onExpand={() => setActiveId(feature.id)}
+              onCollapse={() => setActiveId(null)}
+            />
           ))}
         </div>
 

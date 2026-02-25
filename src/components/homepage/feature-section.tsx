@@ -9,21 +9,21 @@ import {
   Clock,
   TrendingUp,
   Users,
-  ChevronDown,
   User,
   Phone,
   Zap,
   FileText,
   DollarSign,
   Bell,
-  Info
+  Info,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Phone Forwarding Diagram ─────────────────────────────────────────────────
 
 const PhoneDiagram = () => (
-  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mt-4">
+  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">How it works</p>
     <div className="flex items-stretch gap-2 overflow-x-auto pb-1">
       {[
@@ -62,7 +62,7 @@ const PhoneDiagram = () => (
 // ── SMS Diagram ──────────────────────────────────────────────────────────────
 
 const SmsDiagram = () => (
-  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mt-4">
+  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">SMS sequence</p>
     <div className="space-y-2">
       {[
@@ -93,7 +93,7 @@ const SmsDiagram = () => (
 // ── Payment Diagram ──────────────────────────────────────────────────────────
 
 const PaymentDiagram = () => (
-  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mt-4">
+  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Payment flow</p>
     <div className="space-y-2">
       {[
@@ -123,9 +123,9 @@ const PaymentDiagram = () => (
   </div>
 );
 
-// ── Feature Card ─────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-interface FeatureCardProps {
+interface FeatureData {
   icon: typeof PhoneForwarded;
   iconBg: string;
   iconColor: string;
@@ -134,27 +134,26 @@ interface FeatureCardProps {
   description: string;
   benefits: string[];
   diagram: React.ReactNode;
-  delay: number;
-  isActive: boolean;
-  onHover: () => void;
 }
 
+// ── Compact grid card ─────────────────────────────────────────────────────────
+
 const FeatureCard = ({
-  icon: Icon,
-  iconBg,
-  iconColor,
-  accentColor,
-  title,
-  description,
-  benefits,
-  diagram,
+  feature,
   delay,
   isActive,
   onHover,
-}: FeatureCardProps) => {
-  const [expanded, setExpanded] = useState(false);
+  onExpand,
+}: {
+  feature: FeatureData;
+  delay: number;
+  isActive: boolean;
+  onHover: () => void;
+  onExpand: () => void;
+}) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const Icon = feature.icon;
 
   return (
     <motion.div
@@ -164,11 +163,8 @@ const FeatureCard = ({
       transition={{ duration: 0.5, delay }}
       onMouseEnter={onHover}
       className={cn(
-        "relative group",
-        "bg-white rounded-2xl p-8 border transition-all duration-500",
-        expanded
-          ? accentColor
-          : isActive
+        "relative group bg-white rounded-2xl p-8 border transition-all duration-500",
+        isActive
           ? "border-blue-200 shadow-xl shadow-blue-100/50 scale-[1.02]"
           : "border-slate-200 hover:border-slate-300 hover:shadow-lg"
       )}
@@ -176,30 +172,25 @@ const FeatureCard = ({
       <div className={cn(
         "absolute inset-0 rounded-2xl transition-opacity duration-500",
         "bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/30",
-        isActive && !expanded ? "opacity-100" : "opacity-0"
+        isActive ? "opacity-100" : "opacity-0"
       )} />
 
       <div className="relative z-10">
         <motion.div
-          className={cn(
-            "w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300",
-            iconBg
-          )}
+          className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300", feature.iconBg)}
           whileHover={{ scale: 1.1, rotate: 5 }}
         >
-          <Icon className={cn("w-8 h-8", iconColor)} />
+          <Icon className={cn("w-8 h-8", feature.iconColor)} />
         </motion.div>
 
         <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">
-          {title}
+          {feature.title}
         </h3>
 
-        <p className="text-slate-600 leading-relaxed mb-6">
-          {description}
-        </p>
+        <p className="text-slate-600 leading-relaxed mb-6">{feature.description}</p>
 
-        <ul className="space-y-3">
-          {benefits.map((benefit, i) => (
+        <ul className="space-y-3 mb-6">
+          {feature.benefits.map((benefit, i) => (
             <motion.li
               key={benefit}
               initial={{ opacity: 0, x: -10 }}
@@ -214,43 +205,129 @@ const FeatureCard = ({
         </ul>
 
         <button
-          onClick={() => setExpanded(!expanded)}
-          className={cn(
-            "mt-6 flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border transition-all duration-200",
-            expanded
-              ? "bg-slate-900 text-white border-slate-900"
-              : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-slate-900"
-          )}
+          onClick={onExpand}
+          className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600 transition-all duration-200"
         >
-          {expanded ? "Hide diagram" : "See how it works"}
-          <motion.span
-            animate={{ rotate: expanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="inline-flex"
-          >
-            <ChevronDown className="w-3.5 h-3.5" />
-          </motion.span>
+          See how it works
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
-
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="overflow-hidden"
-            >
-              {diagram}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </motion.div>
   );
 };
 
-// ── Stats bar ────────────────────────────────────────────────────────────────
+// ── Expanded full-width view ──────────────────────────────────────────────────
+
+const ExpandedFeatureView = ({
+  feature,
+  otherFeatures,
+  onClose,
+  onSwitch,
+}: {
+  feature: FeatureData;
+  otherFeatures: { feature: FeatureData; originalIndex: number }[];
+  onClose: () => void;
+  onSwitch: (index: number) => void;
+}) => {
+  const Icon = feature.icon;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
+      {/* Main expanded card */}
+      <div className={cn("rounded-2xl border shadow-xl overflow-hidden", feature.accentColor)}>
+        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          {/* Left: content */}
+          <div>
+            <div className="flex items-center gap-4 mb-5">
+              <motion.div
+                className={cn("w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0", feature.iconBg)}
+                initial={{ scale: 0.85 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.25 }}
+              >
+                <Icon className={cn("w-7 h-7", feature.iconColor)} />
+              </motion.div>
+              <h3 className="text-2xl font-bold text-slate-900">{feature.title}</h3>
+            </div>
+
+            <p className="text-slate-600 leading-relaxed mb-6">{feature.description}</p>
+
+            <ul className="space-y-2.5 mb-8">
+              {feature.benefits.map((benefit, i) => (
+                <motion.li
+                  key={benefit}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.08 + i * 0.07 }}
+                  className="flex items-center gap-2 text-sm text-slate-700"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  {benefit}
+                </motion.li>
+              ))}
+            </ul>
+
+            <button
+              onClick={onClose}
+              className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full bg-slate-900 text-white hover:bg-slate-700 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Close
+            </button>
+          </div>
+
+          {/* Right: diagram slides in from the right */}
+          <motion.div
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, delay: 0.12, ease: "easeOut" }}
+          >
+            {feature.diagram}
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Mini cards for other features */}
+      {otherFeatures.length > 0 && (
+        <div className={cn(
+          "grid gap-4 mt-4",
+          otherFeatures.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
+        )}>
+          {otherFeatures.map(({ feature: f, originalIndex }, i) => {
+            const OtherIcon = f.icon;
+            return (
+              <motion.button
+                key={f.title}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.06 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onSwitch(originalIndex)}
+                className="text-left bg-white border border-slate-200 hover:border-slate-300 hover:shadow-md rounded-2xl p-4 transition-all duration-200 flex items-center gap-3 group"
+              >
+                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0", f.iconBg)}>
+                  <OtherIcon className={cn("w-5 h-5", f.iconColor)} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">{f.title}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">See how it works →</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors flex-shrink-0" />
+              </motion.button>
+            );
+          })}
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+// ── Stats bar ─────────────────────────────────────────────────────────────────
 
 const StatsBar = () => {
   const ref = useRef(null);
@@ -293,14 +370,15 @@ const StatsBar = () => {
   );
 };
 
-// ── Section ──────────────────────────────────────────────────────────────────
+// ── Section ───────────────────────────────────────────────────────────────────
 
 export function FeatureSection() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
-  const features = [
+  const features: FeatureData[] = [
     {
       icon: PhoneForwarded,
       iconBg: "bg-blue-100",
@@ -348,6 +426,11 @@ export function FeatureSection() {
     },
   ];
 
+  const activeFeature = activeIndex !== null ? features[activeIndex] : null;
+  const otherFeatures = activeIndex !== null
+    ? features.map((f, i) => ({ feature: f, originalIndex: i })).filter(({ originalIndex: i }) => i !== activeIndex)
+    : [];
+
   return (
     <section ref={sectionRef} className="py-24 bg-slate-50 relative overflow-hidden">
       <div className="absolute inset-0 opacity-50">
@@ -380,17 +463,37 @@ export function FeatureSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-          {features.map((feature, index) => (
-            <FeatureCard
-              key={feature.title}
-              {...feature}
-              delay={0.1 * index}
-              isActive={activeIndex === index}
-              onHover={() => setActiveIndex(index)}
+        <AnimatePresence mode="wait">
+          {activeFeature === null ? (
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start"
+            >
+              {features.map((feature, index) => (
+                <FeatureCard
+                  key={feature.title}
+                  feature={feature}
+                  delay={0.1 * index}
+                  isActive={hoverIndex === index}
+                  onHover={() => setHoverIndex(index)}
+                  onExpand={() => setActiveIndex(index)}
+                />
+              ))}
+            </motion.div>
+          ) : (
+            <ExpandedFeatureView
+              key="expanded"
+              feature={activeFeature}
+              otherFeatures={otherFeatures}
+              onClose={() => setActiveIndex(null)}
+              onSwitch={(index) => setActiveIndex(index)}
             />
-          ))}
-        </div>
+          )}
+        </AnimatePresence>
 
         <StatsBar />
       </div>
