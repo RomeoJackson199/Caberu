@@ -71,7 +71,7 @@ const faqs: FAQ[] = [
   {
     question: "What languages does the AI support?",
     answer:
-      "Currently English and Spanish. The AI can detect the caller's language and switch automatically. We're adding more languages based on customer demand.",
+      "Currently English, French, Dutch, and Spanish. The AI can detect the caller's language and switch automatically. We're adding more languages based on customer demand.",
     category: "AI & Technology",
   },
   {
@@ -85,7 +85,7 @@ const faqs: FAQ[] = [
   {
     question: "How much does Caberu cost?",
     answer:
-      "Pricing starts at $249/month for solo practices with unlimited calls and appointments. We offer scaled pricing for multi-location practices. Most practices save $3,000–5,000/month compared to traditional staffing.",
+      "Pricing starts at €249/month for solo practices with unlimited calls and appointments. We offer scaled pricing for multi-location practices. Most practices save €3,000–5,000/month compared to traditional staffing.",
     category: "Billing & Pricing",
   },
   {
@@ -109,9 +109,9 @@ const faqs: FAQ[] = [
     category: "Privacy & Security",
   },
   {
-    question: "Is Caberu HIPAA compliant?",
+    question: "Is Caberu GDPR compliant?",
     answer:
-      "Yes. Caberu is fully HIPAA compliant with enterprise-grade encryption, secure data storage, and comprehensive audit logs. We sign BAAs (Business Associate Agreements) with all customers.",
+      "Yes. Caberu is fully GDPR compliant with enterprise-grade encryption, secure data storage, and comprehensive audit logs. All data is processed and stored within the EU.",
     category: "Privacy & Security",
   },
   {

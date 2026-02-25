@@ -222,7 +222,7 @@ const FeatureCard = ({
               : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-slate-900"
           )}
         >
-          {expanded ? "Close" : "Learn more"}
+          {expanded ? "Hide diagram" : "See how it works"}
           <motion.span
             animate={{ rotate: expanded ? 180 : 0 }}
             transition={{ duration: 0.2 }}

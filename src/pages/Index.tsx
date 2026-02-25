@@ -108,11 +108,11 @@ const Index = () => {
         {/* Results */}
         <ResultsSection />
 
-        {/* FAQ */}
-        <FAQSection />
-
         {/* Pricing */}
         <PricingSection />
+
+        {/* FAQ */}
+        <FAQSection />
 
         {/* CTA Section */}
         <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-900">

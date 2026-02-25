@@ -19,7 +19,7 @@ const benefits = [
   },
   {
     title: "Healthcare Compliant",
-    description: "Built with GDPR and HIPAA considerations from day one."
+    description: "Built with GDPR compliance from day one. All data stays within the EU."
   }
 ];
 
