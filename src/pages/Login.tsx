@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/ui/form-field";
-import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, User, ChevronDown } from "lucide-react";
+import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, ScanFace, User, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
 import { LoginMoreOptions } from "@/components/auth/LoginMoreOptions";
@@ -463,8 +463,8 @@ const Login = () => {
 
             <div className="rounded-2xl border bg-card p-6 shadow-sm">
               <div className="space-y-4">
-                {/* Biometric Sign In (Native iOS only) */}
-                {isNative && biometrics.isAvailable && savedCredentials && (
+                {/* Biometric Sign In (native iOS + mobile web with platform authenticator) */}
+                {biometrics.isAvailable && savedCredentials && (
                   <Button
                     type="button"
                     variant="outline"
@@ -472,8 +472,12 @@ const Login = () => {
                     disabled={isLoading || biometrics.isAuthenticating}
                     className="w-full h-12 border-2 hover:bg-accent bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200"
                   >
-                    <Fingerprint className="mr-2 h-5 w-5 text-blue-600" />
-                    {biometrics.isAuthenticating ? 'Authenticating...' : 'Sign in with Face ID'}
+                    {biometrics.biometricType === 'faceId' ? (
+                      <ScanFace className="mr-2 h-5 w-5 text-blue-600" />
+                    ) : (
+                      <Fingerprint className="mr-2 h-5 w-5 text-blue-600" />
+                    )}
+                    {biometrics.isAuthenticating ? 'Authenticating...' : `Continue with ${biometrics.label}`}
                   </Button>
                 )}
 
