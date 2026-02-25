@@ -203,12 +203,12 @@ export const PricingSection = () => {
             </button>
             {billingCycle === 'yearly' && (
               <span className="absolute -top-2.5 -right-2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow-sm">
-                -17%
+                2 months free
               </span>
             )}
             {billingCycle === 'monthly' && (
               <span className="ml-2 mr-1 px-2 py-0.5 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium rounded-full">
-                Save 17% yearly
+                Get 2 months free yearly
               </span>
             )}
           </div>
