@@ -159,8 +159,8 @@ const SmsDiagram = () => (
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">SMS sequence</p>
     <div className="space-y-2">
       {[
-        { time: "48h before", msg: "Hi Maria! Just a reminder: your dental appointment is on Thursday at 2PM. Reply YES to confirm or CANCEL to reschedule.", sent: true },
-        { time: "24h before", msg: "See you tomorrow at 2PM! Let us know if anything changes 😊", sent: true },
+        { time: "48h before", msg: "Hi Maria! Just a reminder: your dental appointment is on Thursday at 2PM. See you then!", sent: true },
+        { time: "24h before", msg: "See you tomorrow at 2PM! We look forward to your visit 😊", sent: true },
         { time: "2h before", msg: "Your appointment is in 2 hours. We look forward to seeing you!", sent: true },
       ].map((sms) => (
         <div key={sms.time} className="flex gap-3 items-start">
@@ -177,7 +177,7 @@ const SmsDiagram = () => (
     <div className="mt-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex gap-2">
       <Bell className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
       <p className="text-xs text-indigo-700">
-        Practices using SMS reminders see up to <strong>35% fewer no-shows</strong>. Patients can confirm or reschedule by replying to the message.
+        Practices using SMS reminders see up to <strong>35% fewer no-shows</strong>. All messages go out automatically — no manual effort from your team.
       </p>
     </div>
   </div>
@@ -260,14 +260,14 @@ const features: Feature[] = [
     iconColor: "text-indigo-600",
     accentColor: "border-indigo-200 bg-indigo-50/50",
     title: "SMS Reminders & Communications",
-    tagline: "Fewer no-shows. Better relationships.",
+    tagline: "Fewer no-shows. Zero manual work.",
     description:
-      "Caberu sends timed SMS reminders in the days and hours before each appointment. Patients can confirm or reschedule by replying. You can also send post-visit follow-up messages, instructions, or check-ins — all through SMS without any manual effort.",
+      "Caberu sends timed outbound SMS reminders in the days and hours before each appointment — automatically. Post-visit follow-up messages, instructions, and check-ins also go out without any manual effort from your team.",
     bullets: [
       "Automated reminders 48h, 24h, and 2h before",
-      "Patients reply to confirm or reschedule",
       "Post-visit follow-ups and instructions",
-      "Two-way patient communication via SMS",
+      "Outbound SMS via Twilio — no manual effort",
+      "Reduce no-shows by up to 35%",
     ],
     diagram: <SmsDiagram />,
   },
@@ -356,7 +356,7 @@ export function HowItWorksSection() {
   const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
   return (
-    <section ref={sectionRef} className="py-24 bg-white relative overflow-hidden">
+    <section id="how-it-works" ref={sectionRef} className="py-24 bg-white relative overflow-hidden">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none"
         style={{
