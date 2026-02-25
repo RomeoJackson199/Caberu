@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { HowItWorksFeature } from "@/components/homepage/HowItWorksPopup";
 
 interface BentoCardProps {
     title: string;
@@ -56,7 +57,11 @@ const BentoCard = ({ title, description, icon: Icon, className, gradient, childr
     </motion.div>
 );
 
-export const InteractiveBentoGrid = () => {
+interface InteractiveBentoGridProps {
+    onOpenHowItWorks?: (feature: HowItWorksFeature) => void;
+}
+
+export const InteractiveBentoGrid = ({ onOpenHowItWorks }: InteractiveBentoGridProps) => {
     return (
         <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50/50 overflow-hidden" id="features">
             <div className="max-w-7xl mx-auto">
@@ -111,9 +116,9 @@ export const InteractiveBentoGrid = () => {
                                 <span className="text-gray-600 font-medium">AI Backup 24/7</span>
                             </div>
                         </div>
-                        <a href="#how-it-works" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                        <button onClick={() => onOpenHowItWorks?.("phone")} className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                             See how it works <ArrowRight className="w-3.5 h-3.5" />
-                        </a>
+                        </button>
                     </BentoCard>
 
                     {/* Smart Scheduling - Interactive Calendar Effect */}
@@ -148,9 +153,9 @@ export const InteractiveBentoGrid = () => {
                                 <span className="text-gray-600 font-medium">Auto SMS & Email</span>
                             </div>
                         </div>
-                        <a href="#how-it-works" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                        <button onClick={() => onOpenHowItWorks?.("sms")} className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
                             See how it works <ArrowRight className="w-3.5 h-3.5" />
-                        </a>
+                        </button>
                     </BentoCard>
 
                     {/* SMS Communications */}
@@ -172,9 +177,9 @@ export const InteractiveBentoGrid = () => {
                                 <span className="text-gray-600 font-medium">98% Open Rate</span>
                             </div>
                         </div>
-                        <a href="#how-it-works" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+                        <button onClick={() => onOpenHowItWorks?.("sms")} className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
                             See how it works <ArrowRight className="w-3.5 h-3.5" />
-                        </a>
+                        </button>
                     </BentoCard>
 
                     {/* Patient Management */}

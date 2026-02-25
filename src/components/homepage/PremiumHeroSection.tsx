@@ -13,6 +13,7 @@ import {
   FileText
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { HowItWorksFeature } from "@/components/homepage/HowItWorksPopup";
 
 // Floating orb component for visual interest
 const FloatingOrb = ({
@@ -127,7 +128,11 @@ const LayerPill = ({ label, sub, color }: { label: string; sub: string; color: s
   </div>
 );
 
-export function PremiumHeroSection() {
+interface PremiumHeroSectionProps {
+  onOpenHowItWorks?: (feature?: HowItWorksFeature) => void;
+}
+
+export function PremiumHeroSection({ onOpenHowItWorks }: PremiumHeroSectionProps) {
   const navigate = useNavigate();
   const [isHovering, setIsHovering] = useState(false);
   const mouseX = useMotionValue(0);
@@ -219,11 +224,7 @@ export function PremiumHeroSection() {
           >
             <Button
               size="lg"
-              onClick={() => {
-                sessionStorage.setItem('demo_business_name', 'Demo Practice');
-                sessionStorage.setItem('demo_template', 'healthcare');
-                navigate('/demo/dentist');
-              }}
+              onClick={() => onOpenHowItWorks?.("phone")}
               className="w-full h-14 text-base font-semibold bg-blue-600 hover:bg-blue-500 text-white rounded-2xl shadow-lg shadow-blue-500/30"
             >
               <span className="flex items-center gap-2">
@@ -350,11 +351,7 @@ export function PremiumHeroSection() {
             >
               <Button
                 size="lg"
-                onClick={() => {
-                  sessionStorage.setItem('demo_business_name', 'Demo Practice');
-                  sessionStorage.setItem('demo_template', 'healthcare');
-                  navigate('/demo/dentist');
-                }}
+                onClick={() => onOpenHowItWorks?.("phone")}
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
                 className="group relative bg-blue-600 hover:bg-blue-500 text-white border-0 h-14 px-8 text-lg font-semibold overflow-hidden transition-all duration-300 hover:shadow-[0_0_40px_rgba(59,130,246,0.4)]"

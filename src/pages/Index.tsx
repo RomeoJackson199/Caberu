@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Header } from "@/components/homepage/Header";
@@ -19,12 +19,20 @@ import { FAQSection } from "@/components/homepage/FAQSection";
 import { ContactForm } from "@/components/homepage/ContactForm";
 import { PremiumHeroSection } from "@/components/homepage/PremiumHeroSection";
 import { FeatureSection } from "@/components/homepage/feature-section";
+import { HowItWorksPopup, HowItWorksFeature } from "@/components/homepage/HowItWorksPopup";
 // import { VideoShowcase } from "@/components/homepage/VideoShowcase";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDemoTour, setShowDemoTour] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [howItWorksFeature, setHowItWorksFeature] = useState<HowItWorksFeature>("phone");
+
+  const openHowItWorks = useCallback((feature: HowItWorksFeature = "phone") => {
+    setHowItWorksFeature(feature);
+    setShowHowItWorks(true);
+  }, []);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   useEffect(() => {
@@ -91,16 +99,16 @@ const Index = () => {
 
       <main id="main-content" className="overflow-x-hidden">
         {/* Premium Hero Section */}
-        <PremiumHeroSection />
+        <PremiumHeroSection onOpenHowItWorks={openHowItWorks} />
 
         {/* Video Showcase */}
         {/* <VideoShowcase /> */}
 
         {/* Enhanced Feature Section */}
-        <FeatureSection />
+        <FeatureSection onOpenHowItWorks={openHowItWorks} />
 
         {/* Interactive Features Grid */}
-        <InteractiveBentoGrid />
+        <InteractiveBentoGrid onOpenHowItWorks={openHowItWorks} />
 
         {/* Testimonials */}
         <TestimonialsSection />
@@ -147,6 +155,12 @@ const Index = () => {
       <DemoTourFlow isOpen={showDemoTour} onClose={() => setShowDemoTour(false)} />
 
       <ContactForm open={showContactForm} onOpenChange={setShowContactForm} />
+
+      <HowItWorksPopup
+        open={showHowItWorks}
+        onClose={() => setShowHowItWorks(false)}
+        defaultFeature={howItWorksFeature}
+      />
 
       <FloatingChatBubble />
       
