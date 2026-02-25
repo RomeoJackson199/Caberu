@@ -35,6 +35,14 @@ const Login = () => {
     }
   }, [searchParams]);
 
+  // Redirect returning users to biometric welcome screen unless explicitly skipped
+  useEffect(() => {
+    const skipWelcome = searchParams.get("skip-welcome");
+    if (!skipWelcome && localStorage.getItem(REMEMBERED_EMAIL_KEY)) {
+      navigate("/biometric-welcome", { replace: true });
+    }
+  }, [navigate, searchParams]);
+
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [is2FAPending, setIs2FAPending] = useState(false); // FIXED: Use state instead of ref for proper reactivity
