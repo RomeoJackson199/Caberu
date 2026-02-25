@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
 import {
   useBiometricAuth,
+  useDespiaNative,
   useStorageVault,
   useHaptics,
 } from "@/hooks/useDespia";
@@ -64,6 +65,7 @@ const BiometricWelcomeScreen = () => {
     .toUpperCase()
     .slice(0, 2);
 
+  const isNative = useDespiaNative();
   const biometrics = useBiometricAuth();
   const haptics = useHaptics();
   const { value: savedCredentials, isLoading: vaultLoading, remove: removeCredentials } =
@@ -85,7 +87,7 @@ const BiometricWelcomeScreen = () => {
   }, [navigate, rememberedEmail]);
 
   const handleBiometricContinue = useCallback(async () => {
-    if (!biometrics.isAvailable) return;
+    if (!isNative || !biometrics.isAvailable) return;
 
     haptics.impact();
     const result = await biometrics.authenticate();
@@ -126,10 +128,11 @@ const BiometricWelcomeScreen = () => {
     }
   }, [biometrics, savedCredentials, rememberedEmail, haptics, navigate, toast]);
 
-  // Auto-prompt biometric on load once availability is confirmed
+  // Auto-prompt native biometric on load (never WebAuthn)
   useEffect(() => {
     if (
       !isCheckingSession &&
+      isNative &&
       biometrics.isAvailable &&
       !vaultLoading &&
       !searchParams.get("no-auto-prompt")
@@ -139,6 +142,7 @@ const BiometricWelcomeScreen = () => {
     }
   }, [
     isCheckingSession,
+    isNative,
     biometrics.isAvailable,
     vaultLoading,
     searchParams,
@@ -187,7 +191,8 @@ const BiometricWelcomeScreen = () => {
     );
   }
 
-  const hasBiometrics = biometrics.isAvailable;
+  // Only use native biometric auth — WebAuthn/passkey is intentionally excluded
+  const hasBiometrics = isNative && biometrics.isAvailable;
   const BiometricIcon =
     biometrics.biometricType === "faceId" ? ScanFace : Fingerprint;
 
