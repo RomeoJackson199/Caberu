@@ -13,6 +13,7 @@ import { LoginMoreOptions } from "@/components/auth/LoginMoreOptions";
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
 import { useDespiaNative, useBiometricAuth, useHaptics, useStorageVault } from '@/hooks/useDespia';
+import { registerWebAuthnBiometric, WEBAUTHN_CREDENTIAL_KEY } from '@/lib/despia';
 
 const REMEMBERED_EMAIL_KEY = "caberu_remembered_email";
 const REMEMBERED_NAME_KEY = "caberu_remembered_name";
@@ -245,20 +246,23 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      // Save credentials for biometric login (native app or web with biometrics)
-      if (biometrics.isAvailable) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.refresh_token && session.user?.email) {
-            await saveCredentials({
-              email: session.user.email,
-              token: session.refresh_token
-            }, true); // locked = true requires biometric to access
+      // Save session token + register WebAuthn credential for biometric login
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.refresh_token && session.user?.email) {
+          // Always save the refresh token for session restore after biometric auth
+          await saveCredentials({ email: session.user.email, token: session.refresh_token }, true);
+
+          // Register a WebAuthn platform credential (Face ID / fingerprint) the first time.
+          // This triggers the biometric prompt once so future visits skip password entirely.
+          const alreadyRegistered = !!localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
+          if (!alreadyRegistered) {
+            await registerWebAuthnBiometric(session.user.email);
           }
-        } catch (err) {
-          // Don't fail login if credential saving fails
-          logger.error("Failed to save biometric credentials:", err);
         }
+      } catch (err) {
+        // Non-critical — don't fail login if biometric setup fails
+        logger.error("Failed to set up biometric login:", err);
       }
 
       // Remember user email for returning user experience

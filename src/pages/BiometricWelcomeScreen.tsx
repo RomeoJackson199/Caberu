@@ -17,10 +17,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
 import {
   useBiometricAuth,
-  useDespiaNative,
   useStorageVault,
   useHaptics,
 } from "@/hooks/useDespia";
+import { WEBAUTHN_CREDENTIAL_KEY } from "@/lib/despia";
 
 const REMEMBERED_EMAIL_KEY = "caberu_remembered_email";
 const REMEMBERED_NAME_KEY = "caberu_remembered_name";
@@ -65,8 +65,8 @@ const BiometricWelcomeScreen = () => {
     .toUpperCase()
     .slice(0, 2);
 
-  const isNative = useDespiaNative();
   const biometrics = useBiometricAuth();
+  const hasWebAuthnCredential = !!localStorage.getItem(WEBAUTHN_CREDENTIAL_KEY);
   const haptics = useHaptics();
   const { value: savedCredentials, isLoading: vaultLoading, remove: removeCredentials } =
     useStorageVault<{ email: string; token: string }>("biometric_credentials");
@@ -87,7 +87,7 @@ const BiometricWelcomeScreen = () => {
   }, [navigate, rememberedEmail]);
 
   const handleBiometricContinue = useCallback(async () => {
-    if (!isNative || !biometrics.isAvailable) return;
+    if (!biometrics.isAvailable) return;
 
     haptics.impact();
     const result = await biometrics.authenticate();
@@ -128,12 +128,12 @@ const BiometricWelcomeScreen = () => {
     }
   }, [biometrics, savedCredentials, rememberedEmail, haptics, navigate, toast]);
 
-  // Auto-prompt native biometric on load (never WebAuthn)
+  // Auto-prompt biometric on load if a credential is already registered
   useEffect(() => {
     if (
       !isCheckingSession &&
-      isNative &&
       biometrics.isAvailable &&
+      hasWebAuthnCredential &&
       !vaultLoading &&
       !searchParams.get("no-auto-prompt")
     ) {
@@ -142,8 +142,8 @@ const BiometricWelcomeScreen = () => {
     }
   }, [
     isCheckingSession,
-    isNative,
     biometrics.isAvailable,
+    hasWebAuthnCredential,
     vaultLoading,
     searchParams,
     handleBiometricContinue,
@@ -191,8 +191,8 @@ const BiometricWelcomeScreen = () => {
     );
   }
 
-  // Only use native biometric auth — WebAuthn/passkey is intentionally excluded
-  const hasBiometrics = isNative && biometrics.isAvailable;
+  // Show biometric button only when a credential has already been registered during login
+  const hasBiometrics = biometrics.isAvailable && hasWebAuthnCredential;
   const BiometricIcon =
     biometrics.biometricType === "faceId" ? ScanFace : Fingerprint;
 
