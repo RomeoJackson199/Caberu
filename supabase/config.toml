@@ -85,8 +85,6 @@ verify_jwt = true
 [functions.cancel-subscription]
 verify_jwt = true
 
-[functions.elevenlabs-webhook]
-verify_jwt = false
 
 [functions.create-patient-profile]
 verify_jwt = true
