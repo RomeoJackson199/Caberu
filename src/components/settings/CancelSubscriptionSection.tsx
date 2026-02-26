@@ -2,22 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CreditCard, AlertTriangle, Calendar, Users, CheckCircle2 } from 'lucide-react';
+import { Loader2, CreditCard, AlertTriangle, Calendar, Users, CheckCircle2, ExternalLink } from 'lucide-react';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface Subscription {
@@ -60,7 +48,7 @@ export function CancelSubscriptionSection() {
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
     const [pendingChange, setPendingChange] = useState<PendingPlanChange | null>(null);
     const [loading, setLoading] = useState(true);
-    const [cancelling, setCancelling] = useState(false);
+    const [redirecting, setRedirecting] = useState(false);
 
     useEffect(() => {
         loadSubscription();
@@ -192,40 +180,30 @@ export function CancelSubscriptionSection() {
         }
     };
 
-    const handleCancelSubscription = async (immediately: boolean = false) => {
-        if (!businessId) return;
-
+    const handleManageBilling = async () => {
         try {
-            setCancelling(true);
+            setRedirecting(true);
 
-            const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+            const { data, error } = await supabase.functions.invoke('create-portal-session', {
                 body: {
-                    business_id: businessId,
-                    cancel_immediately: immediately,
+                    return_url: window.location.href,
                 },
             });
 
             if (error) throw error;
             if (data?.error) throw new Error(data.error);
 
-            toast({
-                title: immediately ? 'Subscription Cancelled' : 'Subscription Cancellation Scheduled',
-                description: data.message || (immediately
-                    ? 'Your subscription has been cancelled.'
-                    : `Your subscription will end on ${new Date(data.current_period_end).toLocaleDateString()}.`),
-            });
-
-            // Reload subscription data
-            await loadSubscription();
+            if (data?.url) {
+                window.location.href = data.url;
+            }
         } catch (err) {
-            console.error('Cancel error:', err);
+            console.error('Portal session error:', err);
             toast({
                 title: 'Error',
-                description: err instanceof Error ? err.message : 'Failed to cancel subscription',
+                description: err instanceof Error ? err.message : 'Failed to open billing portal',
                 variant: 'destructive',
             });
-        } finally {
-            setCancelling(false);
+            setRedirecting(false);
         }
     };
 
@@ -438,32 +416,19 @@ export function CancelSubscriptionSection() {
                             </div>
                         </div>
                     ) : (
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" disabled={cancelling} className="flex-1">
-                                    {cancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Cancel Subscription
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Your subscription will remain active until {periodEndDate?.toLocaleDateString() || 'the end of your billing period'}.
-                                        After that, you'll lose access to premium features.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={() => handleCancelSubscription(false)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                        Cancel at Period End
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                        <Button
+                            variant="destructive"
+                            disabled={redirecting}
+                            onClick={handleManageBilling}
+                            className="flex-1"
+                        >
+                            {redirecting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                            )}
+                            Cancel Subscription
+                        </Button>
                     )}
                 </div>
             </CardContent>
