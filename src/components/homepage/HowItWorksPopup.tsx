@@ -412,7 +412,7 @@ const modalVariants = {
     opacity: 0,
     y: 24,
     scale: 0.97,
-    transition: { duration: 0.18, ease: "easeIn" },
+    transition: { duration: 0.18, ease: "easeIn" as const },
   },
 };
 
@@ -424,12 +424,12 @@ const contentVariants = {
   center: {
     x: 0,
     opacity: 1,
-    transition: { duration: 0.22, ease: "easeOut" },
+    transition: { duration: 0.22, ease: "easeOut" as const },
   },
   exit: (direction: number) => ({
     x: direction > 0 ? -32 : 32,
     opacity: 0,
-    transition: { duration: 0.15, ease: "easeIn" },
+    transition: { duration: 0.15, ease: "easeIn" as const },
   }),
 };
 

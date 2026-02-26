@@ -11,32 +11,28 @@ serve(async (req) => {
   if (preflightResponse) return preflightResponse;
 
   try {
-    const { planId, billingCycle, businessData } = await req.json();
+    const { planId, billingCycle } = await req.json();
 
     if (!planId || !billingCycle) {
       throw new Error('Plan ID and billing cycle are required');
     }
 
-    // Get auth token from request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       throw new Error('Unauthorized');
     }
 
-    // Get user's profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, email, first_name, last_name')
@@ -47,7 +43,19 @@ serve(async (req) => {
       throw new Error('Profile not found');
     }
 
-    // Get plan details
+    // Get business ID for metadata
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
+    const { data: membership } = await adminClient
+      .from('business_members')
+      .select('business_id')
+      .eq('profile_id', profile.id)
+      .limit(1)
+      .maybeSingle();
+
     const { data: plan } = await supabase
       .from('subscription_plans')
       .select('*')
@@ -58,54 +66,62 @@ serve(async (req) => {
       throw new Error('Plan not found');
     }
 
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
 
-    // Create Stripe customer
-    const customer = await stripe.customers.create({
+    // Find or create Stripe customer
+    const existingCustomers = await stripe.customers.list({
       email: profile.email || user.email,
-      name: `${profile.first_name} ${profile.last_name}`,
-      metadata: {
-        profile_id: profile.id,
-        user_id: user.id,
-      },
+      limit: 1,
     });
 
-    // Determine price
+    let customer;
+    if (existingCustomers.data.length > 0) {
+      customer = existingCustomers.data[0];
+    } else {
+      customer = await stripe.customers.create({
+        email: profile.email || user.email,
+        name: `${profile.first_name} ${profile.last_name}`,
+        metadata: {
+          profile_id: profile.id,
+          user_id: user.id,
+        },
+      });
+    }
+
     const price = billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly;
     const interval = billingCycle === 'yearly' ? 'year' : 'month';
 
-    // Create Stripe checkout session
+    // Create Stripe checkout session with native promotion code support
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       mode: 'subscription',
       payment_method_types: ['card'],
+      allow_promotion_codes: true, // Stripe-native promo codes
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'eur',
             product_data: {
               name: `${plan.name} Plan`,
               description: `${plan.name} subscription - ${plan.customer_limit} customers${plan.email_limit_monthly ? `, ${plan.email_limit_monthly} emails/month` : ''}`,
             },
-            unit_amount: Math.round(price * 100), // Convert to cents
-            recurring: {
-              interval: interval,
-            },
+            unit_amount: Math.round(price * 100),
+            recurring: { interval },
           },
           quantity: 1,
         },
       ],
-      success_url: `${req.headers.get('origin')}/create-business?subscription=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/create-business?cancelled=true`,
+      success_url: `${req.headers.get('origin')}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get('origin')}/pricing?cancelled=true`,
       metadata: {
         profile_id: profile.id,
         user_id: user.id,
         plan_id: planId,
+        plan_name: plan.name,
         billing_cycle: billingCycle,
-        business_data: businessData ? JSON.stringify(businessData) : null,
+        business_id: membership?.business_id || '',
       },
     });
 

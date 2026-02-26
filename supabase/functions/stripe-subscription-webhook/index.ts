@@ -36,15 +36,15 @@ serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const dentistId = session.metadata?.dentist_id;
-        const planId = session.metadata?.plan_id;
-        const billingCycle = session.metadata?.billing_cycle;
+        const metadata = session.metadata || {};
+        const businessId = metadata.business_id;
+        const planName = metadata.plan_name;
+        const billingCycle = metadata.billing_cycle;
 
-        if (!dentistId || !planId) {
-          console.error('Missing metadata in checkout session:', { dentistId, planId });
-          // Return error so Stripe retries - don't silently succeed
+        if (!businessId || !planName) {
+          console.error('Missing metadata in checkout session:', metadata);
           return new Response(
-            JSON.stringify({ error: 'Missing required metadata (dentist_id or plan_id)' }),
+            JSON.stringify({ error: 'Missing required metadata (business_id or plan_name)' }),
             { status: 400, headers: { 'Content-Type': 'application/json' } }
           );
         }
@@ -54,93 +54,121 @@ serve(async (req) => {
           session.subscription as string
         );
 
-        // Create or update subscription in database
+        // Update the businesses table directly (single source of truth)
         const { error } = await supabase
-          .from('subscriptions')
-          .upsert({
-            dentist_id: dentistId,
-            plan_id: planId,
-            billing_cycle: billingCycle || 'monthly',
-            status: 'active',
-            stripe_subscription_id: subscription.id,
-            stripe_customer_id: subscription.customer as string,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: false,
-          });
+          .from('businesses')
+          .update({
+            subscription_status: 'active',
+            subscription_plan: planName,
+            subscription_started_at: new Date(subscription.current_period_start * 1000).toISOString(),
+            subscription_ends_at: new Date(subscription.current_period_end * 1000).toISOString(),
+            pending_plan_change: null,
+            pending_plan_change_date: null,
+          })
+          .eq('id', businessId);
 
         if (error) {
-          console.error('Error creating subscription:', error);
+          console.error('Error updating business subscription:', error);
         } else {
-          console.log('Subscription created successfully');
+          console.log('Business subscription activated:', businessId, planName);
 
-          // Send notification to dentist
-          await supabase.from('notifications').insert({
-            user_id: (await supabase
-              .from('dentists')
-              .select('profile_id')
-              .eq('id', dentistId)
-              .single()).data?.profile_id,
-            type: 'system',
-            category: 'info',
-            title: 'Subscription Active',
-            message: 'Your subscription is now active. Thank you for choosing Caberu!',
-          });
+          // Send notification
+          const profileId = metadata.profile_id;
+          if (profileId) {
+            await supabase.from('notifications').insert({
+              user_id: profileId,
+              type: 'system',
+              category: 'info',
+              title: 'Subscription Active',
+              message: `Your ${planName} subscription is now active. Thank you for choosing Caberu!`,
+            });
+          }
         }
         break;
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
+        
+        // Find the business by matching the customer email
+        const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+        
+        if (customer.email) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', customer.email)
+            .limit(1)
+            .maybeSingle();
 
-        const { error } = await supabase
-          .from('subscriptions')
-          .update({
-            status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
-          })
-          .eq('stripe_subscription_id', subscription.id);
+          if (profile) {
+            const { data: membership } = await supabase
+              .from('business_members')
+              .select('business_id')
+              .eq('profile_id', profile.id)
+              .eq('role', 'owner')
+              .limit(1)
+              .maybeSingle();
 
-        if (error) {
-          console.error('Error updating subscription:', error);
+            if (membership) {
+              const updateData: Record<string, any> = {
+                subscription_ends_at: new Date(subscription.current_period_end * 1000).toISOString(),
+              };
+
+              if (subscription.cancel_at_period_end) {
+                updateData.subscription_status = 'cancelling';
+              } else if (subscription.status === 'active') {
+                updateData.subscription_status = 'active';
+              }
+
+              await supabase
+                .from('businesses')
+                .update(updateData)
+                .eq('id', membership.business_id);
+            }
+          }
         }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
+        const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+        
+        if (customer.email) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', customer.email)
+            .limit(1)
+            .maybeSingle();
 
-        const { error } = await supabase
-          .from('subscriptions')
-          .update({ status: 'cancelled' })
-          .eq('stripe_subscription_id', subscription.id);
+          if (profile) {
+            const { data: membership } = await supabase
+              .from('business_members')
+              .select('business_id')
+              .eq('profile_id', profile.id)
+              .eq('role', 'owner')
+              .limit(1)
+              .maybeSingle();
 
-        if (error) {
-          console.error('Error cancelling subscription:', error);
-        } else {
-          // Get dentist user_id to send notification
-          const { data: subData } = await supabase
-            .from('subscriptions')
-            .select('dentist_id')
-            .eq('stripe_subscription_id', subscription.id)
-            .single();
+            if (membership) {
+              await supabase
+                .from('businesses')
+                .update({
+                  subscription_status: 'cancelled',
+                  pending_plan_change: null,
+                  pending_plan_change_date: null,
+                })
+                .eq('id', membership.business_id);
 
-          if (subData) {
-            const { data: dentist } = await supabase
-              .from('dentists')
-              .select('profile_id')
-              .eq('id', subData.dentist_id)
-              .single();
-
-            if (dentist) {
+              // Send cancellation notification
               await supabase.from('notifications').insert({
-                user_id: dentist.profile_id,
+                user_id: profile.id,
                 type: 'system',
                 category: 'warning',
                 title: 'Subscription Cancelled',
-                message: 'Your subscription has been cancelled. You can reactivate it anytime.',
+                message: 'Your subscription has been cancelled. You can reactivate it anytime from the pricing page.',
               });
             }
           }
@@ -150,38 +178,87 @@ serve(async (req) => {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
+        
+        if (invoice.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(
+            invoice.subscription as string
+          );
 
-        // Check if renewal is coming up (7 days before end)
-        const subscription = await stripe.subscriptions.retrieve(
-          invoice.subscription as string
-        );
+          // Update period end on the business
+          const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+          
+          if (customer.email) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('email', customer.email)
+              .limit(1)
+              .maybeSingle();
 
-        const daysUntilRenewal = Math.floor(
-          (subscription.current_period_end * 1000 - Date.now()) / (1000 * 60 * 60 * 24)
-        );
+            if (profile) {
+              const { data: membership } = await supabase
+                .from('business_members')
+                .select('business_id')
+                .eq('profile_id', profile.id)
+                .eq('role', 'owner')
+                .limit(1)
+                .maybeSingle();
 
-        if (daysUntilRenewal <= 7 && daysUntilRenewal > 0) {
-          const { data: subData } = await supabase
-            .from('subscriptions')
-            .select('dentist_id')
-            .eq('stripe_subscription_id', subscription.id)
-            .single();
+              if (membership) {
+                await supabase
+                  .from('businesses')
+                  .update({
+                    subscription_status: 'active',
+                    subscription_ends_at: new Date(subscription.current_period_end * 1000).toISOString(),
+                  })
+                  .eq('id', membership.business_id);
+              }
+            }
+          }
+        }
+        break;
+      }
 
-          if (subData) {
-            const { data: dentist } = await supabase
-              .from('dentists')
-              .select('profile_id')
-              .eq('id', subData.dentist_id)
-              .single();
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        
+        if (invoice.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(
+            invoice.subscription as string
+          );
+          const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
+          
+          if (customer.email) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('email', customer.email)
+              .limit(1)
+              .maybeSingle();
 
-            if (dentist) {
-              await supabase.from('notifications').insert({
-                user_id: dentist.profile_id,
-                type: 'system',
-                category: 'info',
-                title: 'Subscription Renewal Reminder',
-                message: `Your subscription will renew in ${daysUntilRenewal} days.`,
-              });
+            if (profile) {
+              const { data: membership } = await supabase
+                .from('business_members')
+                .select('business_id')
+                .eq('profile_id', profile.id)
+                .eq('role', 'owner')
+                .limit(1)
+                .maybeSingle();
+
+              if (membership) {
+                await supabase
+                  .from('businesses')
+                  .update({ subscription_status: 'past_due' })
+                  .eq('id', membership.business_id);
+
+                await supabase.from('notifications').insert({
+                  user_id: profile.id,
+                  type: 'system',
+                  category: 'warning',
+                  title: 'Payment Failed',
+                  message: 'Your subscription payment failed. Please update your payment method to avoid service interruption.',
+                });
+              }
             }
           }
         }

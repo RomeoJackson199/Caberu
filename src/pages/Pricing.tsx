@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { Check, Sparkles, Loader2, Tag, CheckCircle2, Zap, Building2, Crown, ArrowRight, Shield, Clock, HeadphonesIcon } from "lucide-react";
+import { Check, Sparkles, Loader2, Zap, Building2, Crown, ArrowRight, Shield, Clock, HeadphonesIcon, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,17 +43,11 @@ const PLAN_META: Record<string, { icon: React.ElementType; description: string; 
 export default function Pricing() {
   const [loading, setLoading] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [promoCode, setPromoCode] = useState('');
-  const [validatingPromo, setValidatingPromo] = useState(false);
-  const [validPromo, setValidPromo] = useState<any>(null);
-  const [applyingPromo, setApplyingPromo] = useState(false);
   const navigate = useNavigate();
 
-  // Get business ID from context (try hook first, fall back to sessionStorage)
   const businessContext = useBusinessContext();
   const businessId = businessContext?.businessId || sessionStorage.getItem('currentBusinessId');
 
-  // Track current subscription to offer plan change scheduling
   const [currentPlan, setCurrentPlan] = useState<{ name: string; status: string; endsAt: string | null } | null>(null);
   const [pendingChange, setPendingChange] = useState<{ planName: string; changeDate: string } | null>(null);
 
@@ -77,7 +70,6 @@ export default function Pricing() {
     },
   });
 
-  // Fetch current subscription status when businessId is available
   useEffect(() => {
     const fetchCurrentSubscription = async () => {
       if (!businessId) return;
@@ -114,7 +106,6 @@ export default function Pricing() {
   const handleSubscribe = async (planId: string, planName: string) => {
     setLoading(planId);
     try {
-      // Check if user is logged in
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -124,7 +115,6 @@ export default function Pricing() {
         return;
       }
 
-      // Check user has a business selected
       if (!businessId) {
         toast.error("Please select a business first");
         navigate("/select-business");
@@ -132,59 +122,16 @@ export default function Pricing() {
         return;
       }
 
-      // If user already has an active subscription and selecting a different plan, schedule the change
-      if (currentPlan && currentPlan.status === 'active' && currentPlan.name.toLowerCase() !== planName.toLowerCase()) {
-        logger.info('Scheduling plan change from', currentPlan.name, 'to', planName);
-        const { data, error } = await supabase.functions.invoke('schedule-plan-change', {
-          body: {
-            business_id: businessId,
-            new_plan_name: planName,
-          },
-        });
-
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-
-        toast.success(data.message || `Your plan will change to ${planName} at the end of your billing period.`);
-        setPendingChange({
-          planName: planName,
-          changeDate: data.change_date || currentPlan.endsAt || '',
-        });
+      // If same plan, do nothing
+      if (currentPlan?.name.toLowerCase() === planName.toLowerCase()) {
+        toast.info("You're already on this plan");
         setLoading(null);
         return;
       }
 
-      // If any promo code is validated, apply it via the edge function
-      if (validPromo) {
-        logger.info('Applying promo code:', validPromo);
-        const { data, error } = await supabase.functions.invoke('apply-promo-code', {
-          body: {
-            promo_code: promoCode.trim(),
-            business_id: businessId,
-            plan_name: planName,
-          },
-        });
-
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-
-        toast.success(`${planName} activated with promo code!`);
-        setPromoCode('');
-        setValidPromo(null);
-        navigate('/dentist');
-        return;
-      }
-
-      // If promo code with percentage discount, include in checkout
-      const promoCodeToSend = validPromo ? promoCode.trim() : undefined;
-
-      // Create Stripe checkout session
+      // Create Stripe checkout session — Stripe handles promo codes natively
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
-        body: {
-          planId,
-          billingCycle,
-          promoCode: promoCodeToSend,
-        },
+        body: { planId, billingCycle },
       });
 
       if (error) throw error;
@@ -199,94 +146,17 @@ export default function Pricing() {
     }
   };
 
-  const validatePromoCode = async () => {
-    if (!promoCode.trim()) {
-      toast.error('Please enter a promo code');
-      return;
-    }
-
-    setValidatingPromo(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('validate-promo-code', {
-        body: { code: promoCode.trim().toUpperCase() },
-      });
-
-      if (error) throw error;
-
-      if (data?.valid) {
-        setValidPromo(data.promoCode);
-        toast.success('Promo code applied successfully!');
-      } else {
-        toast.error('Invalid or expired promo code');
-        setValidPromo(null);
-      }
-    } catch (error: any) {
-      logger.error('Promo validation error:', error);
-      toast.error(error.message || 'Failed to validate promo code');
-      setValidPromo(null);
-    } finally {
-      setValidatingPromo(false);
-    }
-  };
-
-  const applyPromoCode = async () => {
-    if (!validPromo) return;
-
-    setApplyingPromo(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Please sign in to apply promo code");
-        navigate("/sign-in?redirect=/pricing");
-        return;
-      }
-
-      // Get user's business
-      const businessId = sessionStorage.getItem('currentBusinessId');
-      if (!businessId) {
-        toast.error("Please select a business first");
-        navigate("/select-business");
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('apply-promo-code', {
-        body: {
-          promo_code: promoCode.trim(),
-          business_id: businessId,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      toast.success(data.message || 'Promo code applied successfully!');
-      setPromoCode('');
-      setValidPromo(null);
-
-      // Redirect to dashboard
-      navigate('/dentist');
-    } catch (error: any) {
-      logger.error('Apply promo error:', error);
-      toast.error(error.message || 'Failed to apply promo code');
-    } finally {
-      setApplyingPromo(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
         <Header user={null} minimal={false} />
         <div className="container mx-auto px-4 py-16 pt-32">
-          {/* Header skeleton */}
           <div className="text-center mb-16">
             <div className="h-8 w-32 mx-auto bg-muted animate-pulse rounded-full mb-6" />
             <div className="h-14 w-96 mx-auto bg-muted animate-pulse rounded-lg mb-4" />
             <div className="h-5 w-80 mx-auto bg-muted animate-pulse rounded" />
           </div>
-          {/* Toggle skeleton */}
           <div className="h-12 w-72 mx-auto bg-muted animate-pulse rounded-full mb-16" />
-          {/* Cards skeleton */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {[1, 2, 3].map((i) => (
               <div key={i} className="p-8 rounded-2xl border bg-card/50 space-y-6">
@@ -334,7 +204,7 @@ export default function Pricing() {
             </span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Start automating your patient communication today. All plans include free updates and can be cancelled anytime.
+            Start automating your patient communication today. All plans include free updates and can be cancelled anytime. Have a promo code? Enter it at checkout.
           </p>
         </div>
 
@@ -391,11 +261,8 @@ export default function Pricing() {
                     ? "border-2 border-primary/40 shadow-[0_0_40px_rgba(139,92,246,0.15)] lg:scale-[1.03] z-10"
                     : "border border-border/60 hover:border-primary/20 hover:shadow-lg"
                 }`}
-                style={{
-                  animationDelay: `${index * 100}ms`,
-                }}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                {/* Popular banner */}
                 {isPro && (
                   <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-center">
                     <div className="flex items-center justify-center gap-1.5 text-primary-foreground text-sm font-semibold">
@@ -407,12 +274,9 @@ export default function Pricing() {
 
                 <div className={`flex flex-col flex-1 p-8 ${isPro ? '' : 'pt-8'}`}>
                   <div className="space-y-5 flex-1">
-                    {/* Plan icon and name */}
                     <div>
                       <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl mb-4 ${
-                        isPro
-                          ? 'bg-primary/10'
-                          : 'bg-muted'
+                        isPro ? 'bg-primary/10' : 'bg-muted'
                       }`}>
                         <PlanIcon className={`w-5 h-5 ${isPro ? 'text-primary' : meta.color}`} />
                       </div>
@@ -420,7 +284,6 @@ export default function Pricing() {
                       <p className="text-sm text-muted-foreground mt-1">{meta.description}</p>
                     </div>
 
-                    {/* Price */}
                     <div>
                       <div className="flex items-baseline gap-1">
                         <span className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
@@ -437,10 +300,9 @@ export default function Pricing() {
                       )}
                     </div>
 
-                    {/* CTA Button */}
                     <Button
                       onClick={() => handleSubscribe(plan.id, plan.name)}
-                      disabled={loading === plan.id}
+                      disabled={loading === plan.id || pendingChange?.planName.toLowerCase() === plan.name.toLowerCase() || currentPlan?.name.toLowerCase() === plan.name.toLowerCase()}
                       size="lg"
                       className={`w-full rounded-xl h-12 font-semibold transition-all duration-200 ${
                         isPro
@@ -463,16 +325,6 @@ export default function Pricing() {
                           <CheckCircle2 className="mr-2 h-4 w-4" />
                           Current Plan
                         </>
-                      ) : validPromo ? (
-                        <>
-                          <Tag className="mr-2 h-4 w-4" />
-                          Apply Promo & Activate
-                        </>
-                      ) : currentPlan?.status === 'active' ? (
-                        <>
-                          Schedule Change
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
                       ) : (
                         <>
                           Get Started
@@ -481,10 +333,8 @@ export default function Pricing() {
                       )}
                     </Button>
 
-                    {/* Divider */}
                     <div className="border-t border-border/60" />
 
-                    {/* Features */}
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                         What's included
@@ -525,60 +375,10 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* Promo Code Section */}
-        <div className="max-w-lg mx-auto mt-20">
-          <Card className="p-8 rounded-2xl border border-border/60 bg-card/50 backdrop-blur-sm">
-            <div className="space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <Tag className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">Have a promo code?</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Redeem your code for a discount or free access
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                  disabled={validatingPromo || !!validPromo}
-                  className="flex-1 h-11 rounded-xl"
-                />
-                <Button
-                  onClick={validatePromoCode}
-                  disabled={validatingPromo || !promoCode.trim() || !!validPromo}
-                  variant="outline"
-                  className="h-11 rounded-xl px-5"
-                >
-                  {validatingPromo && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {validPromo && <Check className="w-4 h-4 mr-2" />}
-                  {validPromo ? 'Applied' : 'Apply'}
-                </Button>
-              </div>
-
-              {validPromo && (
-                <>
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3 text-sm text-green-700 dark:text-green-400">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                      <span className="font-medium">
-                        {validPromo.discount_type === 'free' ? 'FREE access unlocked!' : `Discount applied: ${validPromo.discount_value}% off`}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-sm font-medium text-primary text-center">
-                    Select a plan above to activate with your promo code
-                  </p>
-                </>
-              )}
-            </div>
-          </Card>
-        </div>
+        {/* Promo code note */}
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          Have a promo code? You can enter it during checkout on the Stripe payment page.
+        </p>
       </div>
 
       <Footer />

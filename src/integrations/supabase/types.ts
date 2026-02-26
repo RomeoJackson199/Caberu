@@ -3504,45 +3504,6 @@ export type Database = {
           },
         ]
       }
-      promo_codes: {
-        Row: {
-          code: string
-          created_at: string
-          discount_type: string
-          discount_value: number | null
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          max_uses: number | null
-          updated_at: string
-          uses_count: number | null
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          discount_type: string
-          discount_value?: number | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_uses?: number | null
-          updated_at?: string
-          uses_count?: number | null
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          discount_type?: string
-          discount_value?: number | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_uses?: number | null
-          updated_at?: string
-          uses_count?: number | null
-        }
-        Relationships: []
-      }
       push_subscriptions: {
         Row: {
           auth_key: string
@@ -6300,7 +6261,6 @@ export type Database = {
         Args: { business_uuid: string }
         Returns: undefined
       }
-      increment_promo_usage: { Args: { promo_id: string }; Returns: undefined }
       initialize_oauth_business_owner: { Args: never; Returns: Json }
       is_active_dentist_profile: {
         Args: { p_profile_id: string }

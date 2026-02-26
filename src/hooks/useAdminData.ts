@@ -1241,87 +1241,8 @@ export function useAdminUpdateSubscriptionPlan() {
   });
 }
 
-export function useAdminPromoCodes() {
-  return useQuery({
-    queryKey: ['admin-promo-codes'],
-    queryFn: async (): Promise<AdminPromoCode[]> => {
-      const { data, error } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return (data || []) as AdminPromoCode[];
-    },
-  });
-}
-
-export function useAdminCreatePromoCode() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const logAction = useLogAction();
-
-  return useMutation({
-    mutationFn: async (params: {
-      code: string;
-      discount_type: string;
-      discount_value: number;
-      max_uses?: number;
-      expires_at?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('promo_codes')
-        .insert({
-          code: params.code,
-          discount_type: params.discount_type,
-          discount_value: params.discount_value,
-          max_uses: params.max_uses || null,
-          expires_at: params.expires_at || null,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      toast({ title: 'Promo code created' });
-      logAction.mutate({
-        action: 'CREATE_PROMO_CODE',
-        resource_type: 'promo_code',
-        resource_id: data?.id,
-      });
-      queryClient.invalidateQueries({ queryKey: ['admin-promo-codes'] });
-    },
-    onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    },
-  });
-}
-
-export function useAdminTogglePromoCode() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (params: { codeId: string; isActive: boolean }) => {
-      const { error } = await supabase
-        .from('promo_codes')
-        .update({ is_active: params.isActive })
-        .eq('id', params.codeId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: 'Promo code updated' });
-      queryClient.invalidateQueries({ queryKey: ['admin-promo-codes'] });
-    },
-    onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    },
-  });
-}
+// Promo codes are now managed via Stripe Dashboard — these hooks are deprecated.
+// See: https://dashboard.stripe.com/coupons
 
 export function useAdminPlatformRevenue() {
   return useQuery({
