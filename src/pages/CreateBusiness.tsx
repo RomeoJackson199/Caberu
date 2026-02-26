@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,14 +9,14 @@ import { BusinessCreationAuth } from '@/components/business-creation/BusinessCre
 import { BusinessDetailsStep } from '@/components/business-creation/BusinessDetailsStep';
 import { BusinessSubscriptionStep } from '@/components/business-creation/BusinessSubscriptionStep';
 import { BusinessCreationTour } from '@/components/business-creation/BusinessCreationTour';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface BusinessData {
   name?: string;
   tagline?: string;
   bio?: string;
   slug?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 const STEPS = [
@@ -27,58 +27,8 @@ const STEPS = [
 
 export default function CreateBusiness() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [businessData, setBusinessData] = useState<BusinessData>({});
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const hasProcessedSubscriptionRef = useRef(false);
-
-  // Handle successful subscription return from Stripe.
-  // Business details were stored in Stripe session metadata by create-subscription-checkout,
-  // so complete-business-subscription can create the business without any local state.
-  // Calling it twice with the same session_id is safe (idempotent).
-  useEffect(() => {
-    const handleSubscriptionSuccess = async () => {
-      const sessionId = searchParams.get('session_id');
-      const subscriptionSuccess = searchParams.get('subscription');
-
-      if (subscriptionSuccess === 'success' && sessionId) {
-        if (hasProcessedSubscriptionRef.current) return;
-        hasProcessedSubscriptionRef.current = true;
-
-        toast.loading('Setting up your practice...');
-
-        try {
-          const { error } = await supabase.functions.invoke(
-            'complete-business-subscription',
-            { body: { sessionId } }
-          );
-
-          if (error) throw error;
-
-          // Clean up any leftover onboarding state
-          sessionStorage.removeItem('pending_business_data');
-          localStorage.removeItem('dentist-tour-completed');
-          localStorage.removeItem('tour_completed_dentist');
-
-          // Flag the dashboard to auto-start the onboarding tour
-          localStorage.setItem('should-start-tour', 'true');
-
-          toast.success('Business created successfully!');
-          navigate('/auth-redirect');
-        } catch (error: unknown) {
-          console.error('Error completing business setup:', error);
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : 'Failed to complete business setup. Please contact support.'
-          );
-        }
-      }
-    };
-
-    handleSubscriptionSuccess();
-  }, [searchParams, navigate]);
 
   // Check for demo data on mount
   useEffect(() => {
@@ -110,7 +60,6 @@ export default function CreateBusiness() {
   };
 
   const handleAuthComplete = () => {
-    setIsAuthenticated(true);
     handleNext();
   };
 

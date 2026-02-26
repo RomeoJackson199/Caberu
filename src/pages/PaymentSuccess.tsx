@@ -1,109 +1,113 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+
+const POLL_INTERVAL_MS = 2000;
+const POLL_TIMEOUT_MS = 30000;
 
 const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const sessionId = searchParams.get('session_id');
   const type = searchParams.get('type');
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-  const [planName, setPlanName] = useState('');
-  const [billingCycle, setBillingCycle] = useState('');
+
+  // Business creation polling state
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Regular subscription state
+  const [subscriptionDone, setSubscriptionDone] = useState(false);
+
+  const stoppedRef = useRef(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handlePaymentSuccess = async () => {
-      if (type === 'business') {
-        // Business creation: complete-business-subscription creates the business
-        // from Stripe session metadata. Calling it twice is safe (idempotent).
-        if (!sessionId) {
-          setError('No session ID found. Please contact support.');
-          return;
-        }
-
-        setProcessing(true);
-        try {
-          const { data, error: fnError } = await supabase.functions.invoke(
-            'complete-business-subscription',
-            { body: { sessionId } }
-          );
-
-          if (fnError) throw fnError;
-          if (data?.error) throw new Error(data.error);
-
-          // Show plan info returned from the edge function
-          if (data.planName) setPlanName(data.planName);
-          if (data.billingCycle) setBillingCycle(data.billingCycle);
-
-          // Clean up any leftover onboarding state
-          sessionStorage.removeItem('pending_business_data');
-          sessionStorage.removeItem('pending_checkout_meta');
-          localStorage.removeItem('tour_completed_dentist');
-          localStorage.removeItem('dentist-tour-completed');
-
-          // Flag the dashboard to auto-start the onboarding tour
-          localStorage.setItem('should-start-tour', 'true');
-
-          const businessSlug: string | undefined = data.businessSlug;
-          const businessUrl = businessSlug
-            ? `${window.location.origin}/${businessSlug}`
-            : null;
-
-          toast.success(
-            businessUrl
-              ? `Practice created! Your URL: ${businessUrl}`
-              : 'Practice created successfully!'
-          );
-
-          if (businessUrl && navigator.clipboard) {
-            navigator.clipboard.writeText(businessUrl).catch(() => {});
-            setTimeout(() => {
-              toast.success('URL copied to clipboard! Share it with your patients.');
-            }, 500);
-          }
-
-          setDone(true);
-          setProcessing(false);
-
-          setTimeout(() => {
-            navigate('/auth-redirect');
-          }, 4000);
-        } catch (err: unknown) {
-          logger.error('Error setting up business after payment:', err);
-          setProcessing(false);
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Something went wrong while setting up your practice.'
-          );
-        }
-      } else {
-        // Regular payment (non-business): update payment record
+    if (type !== 'business') {
+      // Regular subscription update: fire-and-forget, then show success
+      const updateStatus = async () => {
         if (sessionId) {
           try {
-            const { error: fnError } = await supabase.functions.invoke(
-              'update-payment-status',
-              { body: { session_id: sessionId } }
-            );
-
-            if (fnError) {
-              logger.error('Error updating payment status:', fnError);
-            }
+            await supabase.functions.invoke('update-payment-status', {
+              body: { session_id: sessionId },
+            });
           } catch (err) {
             logger.error('Failed to update payment status:', err);
           }
         }
+        setSubscriptionDone(true);
+      };
+      updateStatus();
+      return;
+    }
+
+    // Business creation: poll business_members until the webhook has created the business.
+    // The stripe-subscription-webhook edge function is responsible for creating the business —
+    // this page is a waiting room only and must never create a business itself.
+    stoppedRef.current = false;
+
+    const startPolling = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || stoppedRef.current) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!profile?.id || stoppedRef.current) return;
+
+      const profileId = profile.id;
+
+      const poll = async () => {
+        if (stoppedRef.current) return;
+        try {
+          const { data } = await supabase
+            .from('business_members')
+            .select('business_id')
+            .eq('profile_id', profileId)
+            .maybeSingle();
+
+          if (data?.business_id) {
+            stoppedRef.current = true;
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            navigate('/auth-redirect', { replace: true });
+          }
+        } catch (err) {
+          logger.error('Error polling business_members:', err);
+        }
+      };
+
+      // Poll immediately, then on each interval
+      await poll();
+
+      if (!stoppedRef.current) {
+        intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
       }
+
+      // Stop polling and show a friendly timeout message after 30 seconds
+      timeoutRef.current = setTimeout(() => {
+        if (!stoppedRef.current) {
+          stoppedRef.current = true;
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          setTimedOut(true);
+        }
+      }, POLL_TIMEOUT_MS);
     };
 
-    handlePaymentSuccess();
+    startPolling();
+
+    return () => {
+      stoppedRef.current = true;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, [sessionId, type, navigate]);
 
   const handleCloseWindow = () => {
@@ -113,36 +117,24 @@ const PaymentSuccess: React.FC = () => {
     }
   };
 
-  // ── Error state ──────────────────────────────────────────────────────────────
-  if (error) {
+  // ── Business creation: timeout state ─────────────────────────────────────────
+  if (type === 'business' && timedOut) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <div className="mx-auto mb-4">
-              <AlertCircle className="h-16 w-16 text-destructive" />
+              <AlertCircle className="h-16 w-16 text-muted-foreground" />
             </div>
-            <CardTitle className="text-2xl text-destructive">
-              Setup Failed
-            </CardTitle>
+            <CardTitle className="text-2xl">Taking a moment longer…</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              {error}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Your payment was received. If the issue persists, our team can
-              complete the setup for you.
+              This is taking longer than expected. If you completed payment, your account will be
+              ready shortly — check your email or contact support.
             </p>
             <Button asChild className="w-full">
               <a href="mailto:support@caberu.com">Contact Support</a>
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate('/')}
-            >
-              Go to Homepage
             </Button>
           </CardContent>
         </Card>
@@ -150,66 +142,58 @@ const PaymentSuccess: React.FC = () => {
     );
   }
 
-  // ── Success / processing state ───────────────────────────────────────────────
+  // ── Business creation: waiting room ──────────────────────────────────────────
+  if (type === 'business') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="mx-auto mb-4">
+              <Loader2 className="h-16 w-16 text-primary animate-spin" />
+            </div>
+            <CardTitle className="text-2xl">Setting up your practice…</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              This usually takes a few seconds. Please don't close this tab.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── Regular subscription payment success ──────────────────────────────────────
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <div className="mx-auto mb-4">
-            {processing ? (
-              <Loader2 className="h-16 w-16 text-primary animate-spin" />
-            ) : (
+            {subscriptionDone ? (
               <CheckCircle className="h-16 w-16 text-green-500" />
+            ) : (
+              <Loader2 className="h-16 w-16 text-primary animate-spin" />
             )}
           </div>
           <CardTitle className="text-2xl text-green-600">
-            {processing
-              ? 'Setting up your practice…'
-              : done
-              ? 'Practice Created!'
-              : 'Payment Successful!'}
+            {subscriptionDone ? 'Payment Successful!' : 'Processing…'}
           </CardTitle>
-          {planName && (
-            <div className="flex justify-center gap-2 mt-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                {planName}
-              </span>
-              <span className="inline-flex items-center px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm font-medium capitalize">
-                {billingCycle}
-              </span>
-            </div>
-          )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {processing ? (
-            <p className="text-muted-foreground">
-              Please wait while we create your business account…
+          <p className="text-muted-foreground">
+            {subscriptionDone
+              ? 'Your payment has been processed successfully.'
+              : 'Please wait a moment.'}
+          </p>
+          {sessionId && (
+            <p className="text-sm text-muted-foreground">
+              Transaction ID: {sessionId.slice(0, 20)}…
             </p>
-          ) : (
-            <>
-              <p className="text-muted-foreground">
-                Your payment has been processed successfully.
-                {type === 'business' && done && ' Your practice is now active!'}
-              </p>
-
-              {sessionId && (
-                <p className="text-sm text-muted-foreground">
-                  Transaction ID: {sessionId.slice(0, 20)}…
-                </p>
-              )}
-
-              {type !== 'business' && (
-                <Button onClick={handleCloseWindow} className="w-full">
-                  Close Window
-                </Button>
-              )}
-
-              {type === 'business' && done && (
-                <p className="text-sm text-muted-foreground">
-                  Redirecting you to your dashboard…
-                </p>
-              )}
-            </>
+          )}
+          {subscriptionDone && (
+            <Button onClick={handleCloseWindow} className="w-full">
+              Close Window
+            </Button>
           )}
         </CardContent>
       </Card>
