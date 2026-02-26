@@ -121,7 +121,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
       {/* Plans Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
         {plans?.map((plan) => {
-          const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
           const isSelected = selectedPlan === plan.id;
           const isPopular = plan.slug === 'professional';
           const isPremium = plan.slug === 'enterprise';
@@ -156,12 +155,17 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                 <div className="text-center">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-primary to-purple-600 bg-clip-text text-transparent">
-                      €{price}
+                      €{billingCycle === 'yearly' ? Math.round(plan.price_yearly / 12) : plan.price_monthly}
                     </span>
                     <span className="text-muted-foreground">
-                      /{billingCycle === 'monthly' ? 'month' : 'year'}
+                      /mo
                     </span>
                   </div>
+                  {billingCycle === 'yearly' && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      €{plan.price_yearly} billed annually
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-3 min-h-[300px]">

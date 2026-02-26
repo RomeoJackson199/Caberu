@@ -247,7 +247,6 @@ export default function Pricing() {
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
           {plans?.map((plan, index) => {
-            const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
             const monthlyEquivalent = billingCycle === 'yearly' ? Math.round(plan.price_yearly / 12) : null;
             const isPro = plan.isPopular;
             const meta = PLAN_META[plan.slug] || PLAN_META.starter;
@@ -287,15 +286,15 @@ export default function Pricing() {
                     <div>
                       <div className="flex items-baseline gap-1">
                         <span className="text-4xl sm:text-5xl font-bold text-foreground tracking-tight">
-                          €{price}
+                          €{billingCycle === 'yearly' ? monthlyEquivalent : plan.price_monthly}
                         </span>
                         <span className="text-muted-foreground text-sm font-medium">
-                          /{billingCycle === 'monthly' ? 'mo' : 'yr'}
+                          /mo
                         </span>
                       </div>
-                      {monthlyEquivalent && (
+                      {billingCycle === 'yearly' && (
                         <p className="text-sm text-muted-foreground mt-1">
-                          €{monthlyEquivalent}/mo billed annually
+                          €{plan.price_yearly} billed annually
                         </p>
                       )}
                     </div>
