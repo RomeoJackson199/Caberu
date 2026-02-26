@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Check, Sparkles, Zap, Crown, Building2, ArrowRight } from "lucide-react";
+import { Check, Sparkles, Zap, Crown, Building2, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SubscriptionPlan {
   id: string;
@@ -99,7 +101,35 @@ const PLAN_META: Record<string, { icon: React.ElementType; description: string; 
 
 export const PricingSection = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [loading, setLoading] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleGetStarted = async (planId: string) => {
+    if (!isAuthenticated) {
+      navigate('/signup');
+      return;
+    }
+
+    const businessId = sessionStorage.getItem('currentBusinessId');
+    if (!businessId) {
+      navigate('/create-business');
+      return;
+    }
+
+    setLoading(planId);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
+        body: { planId, billingCycle },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to start checkout');
+    } finally {
+      setLoading(null);
+    }
+  };
 
   const { data: fetchedPlans, isLoading } = useQuery({
     queryKey: ['subscription-plans'],
@@ -273,7 +303,8 @@ export const PricingSection = () => {
 
                     {/* CTA Button */}
                     <Button
-                      onClick={() => navigate('/signup')}
+                      onClick={() => handleGetStarted(plan.id)}
+                      disabled={loading === plan.id}
                       size="lg"
                       className={`w-full h-12 font-semibold rounded-xl transition-all duration-200 ${
                         isPro
@@ -281,8 +312,17 @@ export const PricingSection = () => {
                           : "bg-foreground hover:bg-foreground/90 text-background"
                       }`}
                     >
-                      Get Started
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      {loading === plan.id ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          Get Started
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
                     </Button>
 
                     {/* Divider */}
