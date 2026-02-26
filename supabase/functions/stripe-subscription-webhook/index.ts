@@ -41,12 +41,17 @@ serve(async (req) => {
         const planName = metadata.plan_name;
         const billingCycle = metadata.billing_cycle;
 
-        if (!businessId || !planName) {
-          console.error('Missing metadata in checkout session:', metadata);
-          return new Response(
-            JSON.stringify({ error: 'Missing required metadata (business_id or plan_name)' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          );
+        // New-business checkouts have no business_id yet — the business is
+        // created by complete-business-subscription after the user lands on the
+        // success page. Nothing to do here for those sessions.
+        if (!businessId) {
+          console.log('New-business checkout (no business_id yet), skipping webhook handling');
+          break;
+        }
+
+        if (!planName) {
+          console.error('Missing plan_name in checkout session metadata:', metadata);
+          break;
         }
 
         // Get subscription details from Stripe

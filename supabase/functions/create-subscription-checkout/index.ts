@@ -122,9 +122,9 @@ serve(async (req) => {
         },
       ],
       success_url: businessName
-        ? `${req.headers.get('origin')}/payment-success?type=business&session_id={CHECKOUT_SESSION_ID}`
-        : `${req.headers.get('origin')}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/pricing?cancelled=true`,
+        ? `${Deno.env.get('SITE_URL') || req.headers.get('origin')}/payment-success?type=business&session_id={CHECKOUT_SESSION_ID}`
+        : `${Deno.env.get('SITE_URL') || req.headers.get('origin')}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${Deno.env.get('SITE_URL') || req.headers.get('origin')}/pricing?cancelled=true`,
       metadata: {
         profile_id: profile.id,
         user_id: user.id,
