@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { logger } from "@/lib/logger";
+import { generateSlug } from "@/lib/slugUtils";
 
 interface BusinessSubscriptionStepProps {
   businessData: any;
@@ -56,18 +57,23 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
 
     setLoading(true);
     try {
-      // Persist business data to sessionStorage before Stripe redirect
-      try {
-        sessionStorage.setItem('pending_business_data', JSON.stringify(businessData));
-      } catch {
-        console.error('Failed to persist business data to sessionStorage');
-      }
+      // Build a URL-safe slug from the business name (max 60 chars)
+      const businessSlug = (
+        businessData.slug || generateSlug(businessData.name || '')
+      ).slice(0, 60);
 
-      // Create Stripe checkout — promo codes handled natively by Stripe
+      // Pass business details into Stripe session metadata — no business is created here.
+      // The edge function stores these details in Stripe metadata and creates the business
+      // only after payment succeeds via complete-business-subscription.
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
         body: {
           planId: selectedPlan,
           billingCycle,
+          businessName: businessData.name,
+          businessTagline: businessData.tagline,
+          businessSlug,
+          businessPrimaryColor: businessData.primaryColor,
+          businessSecondaryColor: businessData.secondaryColor,
         },
       });
 
@@ -77,7 +83,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
         window.location.href = data.url;
       }
     } catch (error: any) {
-      console.error('Subscription error:', error);
+      logger.error('Subscription error:', error);
       toast.error(error.message || 'Failed to create subscription');
       setLoading(false);
     }
