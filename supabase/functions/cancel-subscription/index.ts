@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import Stripe from 'https://esm.sh/stripe@14.21.0'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4'
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts'
 
@@ -13,8 +14,9 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
         const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
         const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+        const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
 
-        if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+        if (!supabaseUrl || !anonKey || !serviceRoleKey || !stripeKey) {
             throw new Error('Server configuration error')
         }
 
@@ -22,6 +24,7 @@ serve(async (req) => {
             global: { headers: { Authorization: req.headers.get('Authorization')! } },
         })
         const adminClient = createClient(supabaseUrl, serviceRoleKey)
+        const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' })
 
         const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
         if (authError || !user) {
@@ -36,16 +39,14 @@ serve(async (req) => {
 
         console.log('cancel-subscription for business:', business_id)
 
-        // Verify user is owner/admin of this business
+        // Verify user is owner/admin
         const { data: profile } = await supabaseClient
             .from('profiles')
             .select('id')
             .eq('user_id', user.id)
             .single()
 
-        if (!profile) {
-            throw new Error('Profile not found')
-        }
+        if (!profile) throw new Error('Profile not found')
 
         const { data: member } = await supabaseClient
             .from('business_members')
@@ -58,53 +59,92 @@ serve(async (req) => {
             throw new Error('Only owners or admins can cancel subscriptions')
         }
 
-        // Get current business subscription info
-        const { data: business } = await adminClient
-            .from('businesses')
-            .select('subscription_status, subscription_ends_at')
-            .eq('id', business_id)
-            .single()
+        // Get the Stripe customer for this business owner
+        const customerEmail = user.email
+        if (!customerEmail) throw new Error('User email not found')
 
-        if (!business) {
-            throw new Error('Business not found')
+        const customers = await stripe.customers.list({ email: customerEmail, limit: 1 })
+        
+        if (customers.data.length === 0) {
+            // No Stripe customer — just update DB directly (promo-only subscription)
+            const updateData = cancel_immediately
+                ? { subscription_status: 'cancelled', subscription_plan: null, pending_plan_change: null, pending_plan_change_date: null }
+                : { subscription_status: 'cancelling', pending_plan_change: null, pending_plan_change_date: null }
+
+            await adminClient.from('businesses').update(updateData).eq('id', business_id)
+
+            return new Response(
+                JSON.stringify({ success: true, cancel_immediately, message: 'Subscription cancelled' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
-        // Update business subscription status and clear any pending plan changes
-        const updateData = cancel_immediately
-            ? {
+        const customer = customers.data[0]
+
+        // Find active subscription for this customer
+        const subscriptions = await stripe.subscriptions.list({
+            customer: customer.id,
+            status: 'active',
+            limit: 1,
+        })
+
+        if (subscriptions.data.length === 0) {
+            // No active Stripe subscription — just update DB
+            await adminClient.from('businesses').update({
                 subscription_status: 'cancelled',
-                subscription_plan: 'free',
+                subscription_plan: null,
                 pending_plan_change: null,
                 pending_plan_change_date: null,
-            }
-            : {
-                subscription_status: 'cancelling', // Will be cancelled at period end
-                pending_plan_change: null,
-                pending_plan_change_date: null,
-            }
+            }).eq('id', business_id)
 
-        const { error: updateError } = await adminClient
-            .from('businesses')
-            .update(updateData)
-            .eq('id', business_id)
-
-        if (updateError) {
-            console.error('Update error:', updateError)
-            throw new Error('Failed to cancel subscription')
+            return new Response(
+                JSON.stringify({ success: true, cancel_immediately: true, message: 'Subscription cancelled (no active Stripe subscription)' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
-        return new Response(
-            JSON.stringify({
-                success: true,
-                cancel_immediately,
-                current_period_end: business.subscription_ends_at,
-                message: cancel_immediately
-                    ? 'Subscription cancelled immediately'
-                    : `Subscription will end on ${business.subscription_ends_at ? new Date(business.subscription_ends_at).toLocaleDateString() : 'period end'}`,
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        const subscription = subscriptions.data[0]
 
+        if (cancel_immediately) {
+            // Cancel immediately via Stripe
+            await stripe.subscriptions.cancel(subscription.id)
+            
+            await adminClient.from('businesses').update({
+                subscription_status: 'cancelled',
+                subscription_plan: null,
+                pending_plan_change: null,
+                pending_plan_change_date: null,
+            }).eq('id', business_id)
+
+            return new Response(
+                JSON.stringify({ success: true, cancel_immediately: true, message: 'Subscription cancelled immediately' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        } else {
+            // Cancel at period end via Stripe
+            const updated = await stripe.subscriptions.update(subscription.id, {
+                cancel_at_period_end: true,
+            })
+
+            const periodEnd = new Date(updated.current_period_end * 1000).toISOString()
+
+            await adminClient.from('businesses').update({
+                subscription_status: 'cancelling',
+                subscription_ends_at: periodEnd,
+                pending_plan_change: null,
+                pending_plan_change_date: null,
+            }).eq('id', business_id)
+
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    cancel_immediately: false,
+                    current_period_end: periodEnd,
+                    message: `Subscription will end on ${new Date(periodEnd).toLocaleDateString()}`,
+                }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
     } catch (error) {
         console.error('Cancel subscription error:', error)
         return new Response(

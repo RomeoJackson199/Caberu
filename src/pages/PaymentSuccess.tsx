@@ -36,23 +36,11 @@ const PaymentSuccess: React.FC = () => {
             throw new Error('Invalid business data format');
           }
 
-          // Get promo code if used
-          const promoCodeData = sessionStorage.getItem('promo_code_used');
-          let promoCode = null;
-          if (promoCodeData) {
-            try {
-              promoCode = JSON.parse(promoCodeData);
-            } catch (error) {
-              logger.error('Failed to parse promo code data:', error);
-            }
-          }
-
           // Call Secure Edge Function
           const { data, error } = await supabase.functions.invoke('complete-business-setup', {
             body: {
               session_id: sessionId,
               business_data: businessData,
-              promo_code_id: promoCode?.id
             }
           });
 
@@ -61,7 +49,6 @@ const PaymentSuccess: React.FC = () => {
 
           // Clear pending data
           sessionStorage.removeItem('pending_business_data');
-          sessionStorage.removeItem('promo_code_used');
           localStorage.removeItem('tour_completed_dentist');
           localStorage.removeItem('dentist-tour-completed');
 

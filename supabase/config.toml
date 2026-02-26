@@ -79,12 +79,8 @@ verify_jwt = false
 [functions.database-api]
 verify_jwt = false
 
-[functions.apply-promo-code]
-verify_jwt = true
-
 [functions.cancel-subscription]
 verify_jwt = true
-
 
 [functions.create-patient-profile]
 verify_jwt = true
@@ -131,14 +127,9 @@ verify_jwt = true
 [functions.send-payment-reminder]
 verify_jwt = true
 
-[functions.schedule-plan-change]
-verify_jwt = true
 
 
 [functions.upload-imaging]
-verify_jwt = true
-
-[functions.validate-promo-code]
 verify_jwt = true
 
 [functions.check-login-rate-limit]

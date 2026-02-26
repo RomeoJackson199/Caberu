@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Check, Loader2, Tag, X } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -28,9 +27,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
-  const [promoCode, setPromoCode] = useState('');
-  const [validatingPromo, setValidatingPromo] = useState(false);
-  const [validPromo, setValidPromo] = useState<any>(null);
 
   const { data: plans, isLoading } = useQuery({
     queryKey: ['subscription-plans'],
@@ -45,7 +41,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
 
       logger.debug('Loaded subscription plans:', data);
 
-      // Ensure features is properly parsed as an array
       return (data || []).map(plan => ({
         ...plan,
         features: Array.isArray(plan.features) ? plan.features : []
@@ -53,160 +48,26 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
     },
   });
 
-  const validatePromoCode = async () => {
-    if (!promoCode.trim()) {
-      toast.error('Please enter a promo code');
-      return;
-    }
-
-    setValidatingPromo(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('validate-promo-code', {
-        body: { code: promoCode },
-      });
-
-      if (error) throw error;
-
-      if (data.valid) {
-        setValidPromo(data.promoCode);
-        toast.success('Promo code applied!');
-      } else {
-        toast.error(data.message || 'Invalid promo code');
-        setValidPromo(null);
-      }
-    } catch (error: any) {
-      console.error('Error validating promo code:', error);
-      toast.error('Failed to validate promo code');
-      setValidPromo(null);
-    } finally {
-      setValidatingPromo(false);
-    }
-  };
-
   const handleSubscribe = async () => {
     if (!selectedPlan) {
       toast.error('Please select a plan');
       return;
     }
 
-    // If promo code makes it free, create business directly
-    if (validPromo?.discount_type === 'free') {
-      setLoading(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Not authenticated');
-
-        // Get profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (!profile) throw new Error('Profile not found');
-
-        // Generate unique slug
-        let uniqueSlug = businessData.slug;
-        let slugCounter = 1;
-
-        while (true) {
-          const { data: existingBusiness } = await supabase
-            .from('businesses')
-            .select('id')
-            .eq('slug', uniqueSlug)
-            .maybeSingle();
-
-          if (!existingBusiness) break;
-
-          uniqueSlug = `${businessData.slug}-${slugCounter}`;
-          slugCounter++;
-        }
-
-        // Create business
-        const { data: business, error: businessError } = await supabase
-          .from('businesses')
-          .insert({
-            name: businessData.name,
-            slug: uniqueSlug,
-            tagline: businessData.tagline || null,
-            bio: businessData.bio || null,
-            owner_profile_id: profile.id,
-            template_type: businessData.template || 'dentist',
-          })
-          .select()
-          .single();
-
-        if (businessError) throw businessError;
-
-        // Add owner as business member
-        const { error: memberError } = await supabase
-          .from('business_members')
-          .insert({
-            business_id: business.id,
-            profile_id: profile.id,
-            role: 'owner',
-          });
-
-        if (memberError) throw memberError;
-
-        // Get the selected plan slug for consistent storage
-        const selectedPlanData = plans?.find(p => p.id === selectedPlan);
-        const planSlug = selectedPlanData?.slug || 'free';
-
-        // Update subscription status for promo activation
-        const now = new Date();
-        const oneMonthFromNow = new Date(now);
-        oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
-
-        await supabase
-          .from('businesses')
-          .update({
-            subscription_status: 'active',
-            subscription_plan: planSlug,
-            subscription_started_at: now.toISOString(),
-            subscription_ends_at: oneMonthFromNow.toISOString(),
-            promo_code_used: validPromo.code,
-          })
-          .eq('id', business.id);
-
-        // Set as current business
-        await supabase.functions.invoke('set-current-business', {
-          body: { businessId: business.id },
-        });
-
-        // Increment promo code usage
-        await supabase.rpc('increment_promo_usage', {
-          promo_id: validPromo.id,
-        });
-
-        // Tour flags are set by the parent's onComplete handler
-
-        toast.success('Business created successfully!');
-        onComplete();
-      } catch (error: any) {
-        console.error('Error creating business:', error);
-        toast.error(error.message || 'Failed to create business');
-        setLoading(false);
-      }
-      return;
-    }
-
     setLoading(true);
     try {
       // Persist business data to sessionStorage before Stripe redirect
-      // so it can be restored when the user returns after payment
       try {
         sessionStorage.setItem('pending_business_data', JSON.stringify(businessData));
       } catch {
         console.error('Failed to persist business data to sessionStorage');
       }
 
+      // Create Stripe checkout — promo codes handled natively by Stripe
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
         body: {
           planId: selectedPlan,
           billingCycle,
-          businessData,
-          promoCodeId: validPromo?.id,
         },
       });
 
@@ -235,7 +96,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
       <div className="text-center space-y-3">
         <h2 className="text-3xl md:text-4xl font-bold">Choose Your Plan</h2>
         <p className="text-lg text-muted-foreground">
-          Select a subscription plan to activate your business
+          Select a subscription plan to activate your business. You can apply promo codes at checkout.
         </p>
       </div>
 
@@ -259,7 +120,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-        {plans?.map((plan, index) => {
+        {plans?.map((plan) => {
           const price = billingCycle === 'monthly' ? plan.price_monthly : plan.price_yearly;
           const isSelected = selectedPlan === plan.id;
           const isPopular = plan.slug === 'professional';
@@ -276,7 +137,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                 }`}
               onClick={() => setSelectedPlan(plan.id)}
             >
-              {/* Most Popular Badge */}
               {isPopular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
                   Most Popular
@@ -284,7 +144,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
               )}
 
               <div className="space-y-6">
-                {/* Plan Header */}
                 <div className="text-center space-y-2">
                   <h3 className="text-2xl font-bold">{plan.name}</h3>
                   <p className="text-sm text-muted-foreground min-h-[20px]">
@@ -294,7 +153,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                   </p>
                 </div>
 
-                {/* Pricing */}
                 <div className="text-center">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-primary to-purple-600 bg-clip-text text-transparent">
@@ -306,7 +164,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                   </div>
                 </div>
 
-                {/* Features */}
                 <div className="space-y-3 min-h-[300px]">
                   {Array.isArray(plan.features) && plan.features.map((feature, idx) => (
                     <div key={idx} className="flex items-start gap-3">
@@ -324,7 +181,6 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
                   ))}
                 </div>
 
-                {/* CTA Button */}
                 <Button
                   variant={isPopular ? 'default' : isSelected ? 'default' : 'outline'}
                   className={`w-full h-12 text-base font-semibold ${isPopular ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg' : ''
@@ -342,67 +198,7 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
         })}
       </div>
 
-      {/* Promo Code Section */}
-      <Card className="max-w-md mx-auto p-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <Tag className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">Have a Promo Code?</h3>
-        </div>
-
-        {validPromo ? (
-          <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-            <div className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium text-green-900 dark:text-green-100">
-                  {validPromo.code}
-                </p>
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  {validPromo.discount_type === 'free' && 'Free activation!'}
-                  {validPromo.discount_type === 'percentage' && `${validPromo.discount_value}% off`}
-                  {validPromo.discount_type === 'fixed' && `€${validPromo.discount_value} off`}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setValidPromo(null);
-                setPromoCode('');
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <Input
-              placeholder="Enter promo code"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  validatePromoCode();
-                }
-              }}
-            />
-            <Button
-              onClick={validatePromoCode}
-              disabled={validatingPromo || !promoCode.trim()}
-              variant="outline"
-            >
-              {validatingPromo ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Apply'
-              )}
-            </Button>
-          </div>
-        )}
-      </Card>
-
-      {/* Bottom Info */}
+      {/* Bottom CTA */}
       <div className="text-center space-y-4 pt-6">
         <Button
           size="lg"
@@ -415,12 +211,13 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Processing...
             </>
-          ) : validPromo?.discount_type === 'free' ? (
-            'Create Business Free'
           ) : (
             'Continue to Payment'
           )}
         </Button>
+        <p className="text-sm text-muted-foreground">
+          Have a promo code? You can enter it on the Stripe checkout page.
+        </p>
       </div>
     </div>
   );
