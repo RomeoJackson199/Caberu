@@ -33,7 +33,10 @@ export default function CreateBusiness() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const hasProcessedSubscriptionRef = useRef(false);
 
-  // Handle successful subscription return
+  // Handle successful subscription return from Stripe.
+  // Business details were stored in Stripe session metadata by create-subscription-checkout,
+  // so complete-business-subscription can create the business without any local state.
+  // Calling it twice with the same session_id is safe (idempotent).
   useEffect(() => {
     const handleSubscriptionSuccess = async () => {
       const sessionId = searchParams.get('session_id');
@@ -43,37 +46,33 @@ export default function CreateBusiness() {
         if (hasProcessedSubscriptionRef.current) return;
         hasProcessedSubscriptionRef.current = true;
 
-        toast.loading('Creating your business...');
-
-        // Restore business data from sessionStorage (persisted before Stripe redirect)
-        let savedBusinessData = {};
-        try {
-          const stored = sessionStorage.getItem('pending_business_data');
-          if (stored) {
-            savedBusinessData = JSON.parse(stored);
-            sessionStorage.removeItem('pending_business_data');
-          }
-        } catch {
-          console.error('Failed to restore business data from sessionStorage');
-        }
+        toast.loading('Setting up your practice...');
 
         try {
-          const { data, error } = await supabase.functions.invoke('complete-business-setup', {
-            body: { session_id: sessionId, business_data: savedBusinessData },
-          });
+          const { error } = await supabase.functions.invoke(
+            'complete-business-subscription',
+            { body: { sessionId } }
+          );
 
           if (error) throw error;
 
-          // Set flag to auto-start the dashboard tour for new business owners
-          localStorage.setItem('should-start-tour', 'true');
+          // Clean up any leftover onboarding state
+          sessionStorage.removeItem('pending_business_data');
           localStorage.removeItem('dentist-tour-completed');
           localStorage.removeItem('tour_completed_dentist');
+
+          // Flag the dashboard to auto-start the onboarding tour
+          localStorage.setItem('should-start-tour', 'true');
 
           toast.success('Business created successfully!');
           navigate('/auth-redirect');
         } catch (error: unknown) {
-          console.error('Error completing business:', error);
-          toast.error(error instanceof Error ? error.message : 'Failed to complete business setup');
+          console.error('Error completing business setup:', error);
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : 'Failed to complete business setup. Please contact support.'
+          );
         }
       }
     };
