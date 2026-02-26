@@ -66,7 +66,7 @@ const PaymentSuccess: React.FC = () => {
           setProcessing(false);
 
           setTimeout(() => {
-            navigate('/dashboard');
+            navigate('/auth-redirect');
           }, 4000);
         } catch (err: unknown) {
           logger.error('Error setting up business after payment:', err);

@@ -65,7 +65,7 @@ export default function CreateBusiness() {
           localStorage.setItem('should-start-tour', 'true');
 
           toast.success('Business created successfully!');
-          navigate('/dashboard');
+          navigate('/auth-redirect');
         } catch (error: unknown) {
           console.error('Error completing business setup:', error);
           toast.error(
