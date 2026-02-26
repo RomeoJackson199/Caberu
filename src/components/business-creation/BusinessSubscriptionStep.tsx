@@ -57,6 +57,15 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
 
     setLoading(true);
     try {
+      // Store plan display info in sessionStorage so PaymentSuccess can show it
+      const selectedPlanName = plans?.find(p => p.id === selectedPlan)?.name ?? '';
+      try {
+        sessionStorage.setItem(
+          'pending_checkout_meta',
+          JSON.stringify({ planName: selectedPlanName, billingCycle })
+        );
+      } catch { /* non-critical */ }
+
       // Build a URL-safe slug from the business name (max 60 chars)
       const businessSlug = (
         businessData.slug || generateSlug(businessData.name || '')
