@@ -11,7 +11,6 @@ import { DemoTourFlow } from "@/components/demo/DemoTourFlow";
 import { InteractiveBentoGrid } from "@/components/homepage/InteractiveBentoGrid";
 import { ResultsSection } from "@/components/homepage/ResultsSection";
 import { PricingSection } from "@/components/homepage/PricingSection";
-import { FloatingChatBubble } from "@/components/chat/FloatingChatBubble";
 import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { TestimonialsSection } from "@/components/homepage/TestimonialsSection";
@@ -162,8 +161,6 @@ const Index = () => {
         defaultFeature={howItWorksFeature}
       />
 
-      <FloatingChatBubble />
-      
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav variant="default" />
     </div>;
