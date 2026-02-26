@@ -7,20 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
-interface CheckoutMeta {
-  planName: string;
-  billingCycle: 'monthly' | 'yearly';
-}
-
-function readCheckoutMeta(): CheckoutMeta | null {
-  try {
-    const raw = sessionStorage.getItem('pending_checkout_meta');
-    return raw ? (JSON.parse(raw) as CheckoutMeta) : null;
-  } catch {
-    return null;
-  }
-}
-
 const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -29,7 +15,8 @@ const PaymentSuccess: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [checkoutMeta] = useState<CheckoutMeta | null>(() => readCheckoutMeta());
+  const [planName, setPlanName] = useState('');
+  const [billingCycle, setBillingCycle] = useState('');
 
   useEffect(() => {
     const handlePaymentSuccess = async () => {
@@ -50,6 +37,10 @@ const PaymentSuccess: React.FC = () => {
 
           if (fnError) throw fnError;
           if (data?.error) throw new Error(data.error);
+
+          // Show plan info returned from the edge function
+          if (data.planName) setPlanName(data.planName);
+          if (data.billingCycle) setBillingCycle(data.billingCycle);
 
           // Clean up any leftover onboarding state
           sessionStorage.removeItem('pending_business_data');
@@ -178,13 +169,13 @@ const PaymentSuccess: React.FC = () => {
               ? 'Practice Created!'
               : 'Payment Successful!'}
           </CardTitle>
-          {checkoutMeta?.planName && (
+          {planName && (
             <div className="flex justify-center gap-2 mt-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                {checkoutMeta.planName}
+                {planName}
               </span>
               <span className="inline-flex items-center px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm font-medium capitalize">
-                {checkoutMeta.billingCycle}
+                {billingCycle}
               </span>
             </div>
           )}

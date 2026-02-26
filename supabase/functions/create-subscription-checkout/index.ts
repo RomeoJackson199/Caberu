@@ -11,7 +11,15 @@ serve(async (req) => {
   if (preflightResponse) return preflightResponse;
 
   try {
-    const { planId, billingCycle } = await req.json();
+    const {
+      planId,
+      billingCycle,
+      businessName,
+      businessTagline,
+      businessSlug,
+      businessPrimaryColor,
+      businessSecondaryColor,
+    } = await req.json();
 
     if (!planId || !billingCycle) {
       throw new Error('Plan ID and billing cycle are required');
@@ -113,7 +121,9 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      success_url: `${req.headers.get('origin')}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: businessName
+        ? `${req.headers.get('origin')}/payment-success?type=business&session_id={CHECKOUT_SESSION_ID}`
+        : `${req.headers.get('origin')}/payment-success?type=subscription&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/pricing?cancelled=true`,
       metadata: {
         profile_id: profile.id,
@@ -122,6 +132,16 @@ serve(async (req) => {
         plan_name: plan.name,
         billing_cycle: billingCycle,
         business_id: membership?.business_id || '',
+        // Business creation data (present only for new-business checkouts)
+        ...(businessName && {
+          business_data: JSON.stringify({
+            name: businessName,
+            tagline: businessTagline || '',
+            slug: businessSlug || '',
+            primaryColor: businessPrimaryColor || '#0F3D91',
+            secondaryColor: businessSecondaryColor || '#66D2D6',
+          }),
+        }),
       },
     });
 

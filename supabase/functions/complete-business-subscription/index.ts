@@ -169,10 +169,12 @@ serve(async (req) => {
       .select();
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         businessId: business.id,
         businessSlug: business.slug,
+        planName: metadata.plan_name ?? '',
+        billingCycle: metadata.billing_cycle ?? '',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
