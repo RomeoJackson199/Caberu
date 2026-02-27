@@ -1,93 +1,68 @@
 
-# Phone-First Authentication Flow
 
-## Overview
-Redesign the Signup, Login, and MobileAuth screens so that **phone number + SMS OTP** is the primary entry point. Google and Email options will be tucked behind a "More options" button to keep the initial view clean and focused.
+## Fix: Business Creation After Stripe Payment
 
-## Current State
-- Signup page: user type selection (client/business) then Google + email/password form
-- Login page: email/password form with Google as secondary option
-- MobileAuth: shows Sign Up / Sign In choice, then Google + Email buttons
-- SMS verification already works via Twilio (`send-sms-verification` and `verify-sms-code` edge functions)
-- `PhoneVerificationDialog` exists but is only used for profile verification, not for auth
+### The Problem
 
-## What Changes
+The `/create-business` payment flow is broken because no one actually creates the business after payment:
 
-### 1. New Auth Flow (both Signup and Login)
+- The **webhook** (`stripe-subscription-webhook`) skips `checkout.session.completed` events that have no `business_id` in metadata (which is correct for new businesses since they don't exist yet)
+- The **PaymentSuccess page** just polls `business_members` hoping a business will magically appear, but never calls the `complete-business-subscription` edge function
+- The **`complete-business-subscription`** edge function has all the correct business creation logic but is orphaned -- nothing invokes it
+
+### The Fix
+
+Move the business creation logic INTO the webhook so it happens automatically and reliably when Stripe confirms payment. This is the standard pattern -- webhooks are guaranteed by Stripe, while frontend calls can fail if the user closes the tab.
+
+### Changes
+
+#### 1. Update `stripe-subscription-webhook` (the webhook handler)
+
+In the `checkout.session.completed` case, instead of skipping when there's no `business_id`, check for `business_data` in the metadata and create the business:
+
+- Parse `business_data` JSON from metadata
+- Generate a unique slug (with collision handling)
+- Insert the business into the `businesses` table with subscription fields set (`subscription_status: 'active'`, `subscription_plan`, `subscription_started_at`, `subscription_ends_at`)
+- Insert the owner into `business_members`
+- Assign `admin` and `provider` roles in `user_roles`
+- Set the session business in `session_business`
+- Remove the legacy `subscriptions` table insert (table was already dropped)
+- Remove the `business_usage` insert (table may not exist)
+
+#### 2. Update `PaymentSuccess.tsx`
+
+No logic change needed -- the polling approach is correct. Once the webhook creates the business and inserts into `business_members`, the poll will detect it and redirect the user.
+
+#### 3. Delete `complete-business-subscription` edge function
+
+Since the webhook now handles business creation, this orphaned function can be removed:
+- Delete `supabase/functions/complete-business-subscription/index.ts`
+- Remove the entry from `supabase/config.toml`
+
+### Technical Details
+
+The webhook's `checkout.session.completed` handler will be updated from:
 
 ```text
-+----------------------------------+
-|         Enter Phone Number       |
-|    [  +32 467 88 19 65     ]     |
-|    [ Continue with Phone  ]      |
-|                                  |
-|    ----  MORE OPTIONS  ----      |
-|    (collapsed by default)        |
-|                                  |
-|    [ Continue with Google ]      |
-|    [ Continue with Email  ]      |
-+----------------------------------+
+if (!businessId) {
+  console.log('New-business checkout, skipping');
+  break;
+}
 ```
 
-When "More Options" is tapped, Google and Email buttons slide in. When "Continue with Phone" is tapped, an OTP code input appears inline (reusing the existing Twilio verification flow).
+To:
 
-### 2. Phone OTP Login Flow (New)
+```text
+if (!businessId && metadata.business_data) {
+  // Parse business_data, create business, add member, assign roles
+  // Set subscription fields directly on the new business row
+}
+```
 
-Currently there is no way to **sign in** with just a phone number. We need a new edge function or to extend the existing `verify-sms-code` to handle authentication:
+Key fields set on the new business:
+- `name`, `slug`, `owner_profile_id`, `tagline`, `primary_color`, `secondary_color`
+- `subscription_status: 'active'`
+- `subscription_plan` (from metadata)
+- `subscription_started_at` / `subscription_ends_at` (from Stripe subscription object)
+- `template_type: 'healthcare'`
 
-- **If the phone number matches an existing profile**: send OTP, verify, then create a Supabase session using `supabase.auth.admin.signInWithOtp` or by generating a custom token.
-- **If the phone is new (signup)**: send OTP, verify, create a new user with the phone as the identifier, then redirect to onboarding.
-
-Supabase supports `signInWithOtp({ phone })` natively if the Phone provider is enabled in the Supabase dashboard. This is the cleanest approach.
-
-### 3. Implementation Steps
-
-**Step A - Enable Supabase Phone Auth Provider**
-- The user needs to enable the Phone provider in their Supabase dashboard (Authentication > Providers > Phone) and configure it with their Twilio credentials (Account SID, Auth Token, Messaging Service SID).
-- This allows using `supabase.auth.signInWithOtp({ phone })` and `supabase.auth.verifyOtp({ phone, token, type: 'sms' })` directly without custom edge functions.
-
-**Step B - Redesign MobileAuthScreen**
-- Replace the current Sign Up / Sign In choice screen with a single phone-first screen.
-- Primary: Phone number input + "Continue" button.
-- Below a "MORE OPTIONS" divider (collapsed): Google button, Email button.
-- Tapping Email navigates to `/login` or `/signup` as before.
-
-**Step C - Redesign Login Page**
-- Add phone number input at the top as the primary option.
-- Move email/password form under a "Continue with Email" expandable section.
-- Google stays visible but below the phone input.
-
-**Step D - Redesign Signup Page**
-- Keep user type selection (client/business).
-- After type is selected, show phone-first flow: phone input, then "More Options" for Google/Email.
-- When signing up via phone, pass user type metadata so the `handle_new_user` trigger still works correctly.
-
-**Step E - Phone OTP Handler Component**
-- Create a reusable `PhoneOTPAuth` component that:
-  1. Shows phone input with country selector (reuse existing `PhoneNumberInput` component).
-  2. On submit, calls `supabase.auth.signInWithOtp({ phone })`.
-  3. Shows OTP code input.
-  4. On code submit, calls `supabase.auth.verifyOtp({ phone, token, type: 'sms' })`.
-  5. On success, navigates to `/auth-redirect`.
-
-**Step F - Fix broken test files**
-- Delete or stub the 6 test files referencing missing modules (`useMobileGestures`, `useOptimisticAppointmentStatus`, `usePaginatedAppointments`, `usePatientProfile`, `useRetry`, `validation`).
-
-## Technical Details
-
-### Supabase Phone Provider vs Custom Twilio
-Two options:
-1. **Supabase native phone auth** (recommended): Enable Phone provider in dashboard with Twilio credentials. Uses `signInWithOtp`/`verifyOtp`. Supabase handles session creation automatically.
-2. **Keep custom edge functions**: More control but requires manually creating sessions after verification, which is complex.
-
-Option 1 is recommended. The existing `send-sms-verification` and `verify-sms-code` edge functions can remain for non-auth verification (e.g., verifying phone on profile), while auth uses Supabase's built-in phone auth.
-
-### User Metadata on Phone Signup
-When a user signs up via phone OTP, Supabase creates a user with `phone` as the identifier. The `handle_new_user` trigger will fire. We need to pass `role_type` via `options.data` in the `signInWithOtp` call so the trigger knows whether to create a patient or owner profile.
-
-### Files to Create/Modify
-- **New**: `src/components/auth/PhoneOTPAuth.tsx` - reusable phone OTP component
-- **Modify**: `src/pages/MobileAuthScreen.tsx` - phone-first layout
-- **Modify**: `src/pages/Login.tsx` - add phone as primary, email behind "More options"
-- **Modify**: `src/pages/Signup.tsx` - add phone as primary after user type selection
-- **Delete**: 6 broken test files
