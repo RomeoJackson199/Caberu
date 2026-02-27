@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ExternalLink } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -415,12 +416,24 @@ export function CancelSubscriptionSection() {
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Stripe Customer Portal - manage billing, change plan, update payment */}
+                    {!isCancelled && (
+                        <Button
+                            variant="default"
+                            className="flex-1"
+                            onClick={() => window.open('https://billing.stripe.com/p/login/28E9AU8XA9UqaTt8Yjf7i00', '_blank')}
+                        >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Manage Subscription
+                        </Button>
+                    )}
+
                     <Button
                         variant={isCancelled ? 'default' : 'outline'}
                         onClick={() => navigate('/pricing')}
                         className="flex-1"
                     >
-                        {isCancelled ? 'Reactivate Subscription' : 'Change Plan'}
+                        {isCancelled ? 'Reactivate Subscription' : 'View Plans'}
                     </Button>
 
                     {isCancelled ? (
