@@ -38,28 +38,132 @@ serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = session.metadata || {};
         const businessId = metadata.business_id;
-        const planName = metadata.plan_name;
-        const billingCycle = metadata.billing_cycle;
 
-        // New-business checkouts have no business_id yet — the business is
-        // created by complete-business-subscription after the user lands on the
-        // success page. Nothing to do here for those sessions.
-        if (!businessId) {
-          console.log('New-business checkout (no business_id yet), skipping webhook handling');
+        // ── New-business checkout: create the business from metadata ──
+        if (!businessId && metadata.business_data) {
+          console.log('New-business checkout – creating business from webhook');
+
+          const businessData = JSON.parse(metadata.business_data);
+          const profileId = metadata.profile_id;
+          const userId = metadata.user_id;
+
+          if (!profileId || !userId) {
+            console.error('Missing profile_id or user_id in metadata:', metadata);
+            break;
+          }
+
+          // Generate unique slug with collision handling
+          let baseSlug = (businessData.slug || businessData.name || 'practice')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9.]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+          let uniqueSlug = baseSlug;
+          let slugCounter = 1;
+
+          while (true) {
+            const { data: existing } = await supabase
+              .from('businesses')
+              .select('id')
+              .eq('slug', uniqueSlug)
+              .maybeSingle();
+
+            if (!existing) break;
+            uniqueSlug = `${baseSlug}-${slugCounter}`;
+            slugCounter++;
+          }
+
+          // Get Stripe subscription details
+          const stripeSubscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          );
+
+          // Create business with subscription fields
+          const { data: business, error: businessError } = await supabase
+            .from('businesses')
+            .insert({
+              name: businessData.name,
+              slug: uniqueSlug,
+              owner_profile_id: profileId,
+              tagline: businessData.tagline || 'Your Practice, Your Way',
+              primary_color: businessData.primaryColor || '#0F3D91',
+              secondary_color: businessData.secondaryColor || '#66D2D6',
+              currency: 'USD',
+              template_type: 'healthcare',
+              subscription_status: 'active',
+              subscription_plan: metadata.plan_name || null,
+              subscription_started_at: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+              subscription_ends_at: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+            })
+            .select()
+            .single();
+
+          if (businessError) {
+            console.error('Business creation error:', businessError);
+            break;
+          }
+
+          console.log('Business created:', business.id, business.slug);
+
+          // Add owner as business member
+          await supabase
+            .from('business_members')
+            .insert({
+              profile_id: profileId,
+              business_id: business.id,
+              role: 'owner',
+            });
+
+          // Assign admin and provider roles (ignore duplicates)
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert([
+              { user_id: userId, role: 'admin' },
+              { user_id: userId, role: 'provider' },
+            ]);
+
+          if (roleError && !roleError.message.includes('duplicate') && !roleError.message.includes('unique')) {
+            console.error('Role assignment error:', roleError);
+          }
+
+          // Set as current business
+          await supabase
+            .from('session_business')
+            .upsert(
+              { user_id: userId, business_id: business.id },
+              { onConflict: 'user_id' }
+            );
+
+          // Send welcome notification
+          await supabase.from('notifications').insert({
+            user_id: profileId,
+            type: 'system',
+            category: 'info',
+            title: 'Welcome to Caberu!',
+            message: `Your ${metadata.plan_name || ''} subscription is now active. Your practice "${business.name}" is ready.`,
+          });
+
+          console.log('New-business checkout fully processed:', business.id);
           break;
         }
 
+        // ── Existing-business checkout (plan upgrade/change) ──
+        if (!businessId) {
+          console.log('Checkout session has no business_id and no business_data, skipping');
+          break;
+        }
+
+        const planName = metadata.plan_name;
         if (!planName) {
           console.error('Missing plan_name in checkout session metadata:', metadata);
           break;
         }
 
-        // Get subscription details from Stripe
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         );
 
-        // Update the businesses table directly (single source of truth)
         const { error } = await supabase
           .from('businesses')
           .update({
@@ -77,7 +181,6 @@ serve(async (req) => {
         } else {
           console.log('Business subscription activated:', businessId, planName);
 
-          // Send notification
           const profileId = metadata.profile_id;
           if (profileId) {
             await supabase.from('notifications').insert({
@@ -94,10 +197,8 @@ serve(async (req) => {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        
-        // Find the business by matching the customer email
         const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
-        
+
         if (customer.email) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -139,7 +240,7 @@ serve(async (req) => {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
         const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
-        
+
         if (customer.email) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -167,7 +268,6 @@ serve(async (req) => {
                 })
                 .eq('id', membership.business_id);
 
-              // Send cancellation notification
               await supabase.from('notifications').insert({
                 user_id: profile.id,
                 type: 'system',
@@ -183,15 +283,13 @@ serve(async (req) => {
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        
+
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(
             invoice.subscription as string
           );
-
-          // Update period end on the business
           const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
-          
+
           if (customer.email) {
             const { data: profile } = await supabase
               .from('profiles')
@@ -226,13 +324,13 @@ serve(async (req) => {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        
+
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(
             invoice.subscription as string
           );
           const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
-          
+
           if (customer.email) {
             const { data: profile } = await supabase
               .from('profiles')
