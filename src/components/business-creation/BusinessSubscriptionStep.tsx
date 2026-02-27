@@ -63,8 +63,8 @@ export const BusinessSubscriptionStep = ({ businessData, onComplete }: BusinessS
       ).slice(0, 60);
 
       // Pass business details into Stripe session metadata — no business is created here.
-      // The edge function stores these details in Stripe metadata and creates the business
-      // only after payment succeeds via complete-business-subscription.
+      // The webhook (stripe-subscription-webhook) creates the business automatically
+      // when Stripe confirms payment via checkout.session.completed.
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
         body: {
           planId: selectedPlan,
