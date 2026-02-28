@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, User, Calendar, ArrowRight, ArrowLeft, MapPin, Shield,
-  Sparkles, Heart, Bell, Phone, CheckCircle2, MessageSquare, Globe
+  Sparkles, Heart, Bell, CheckCircle2, Globe, Mail
 } from "lucide-react";
 import {
   Select,
@@ -18,11 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { validateName } from "@/lib/security";
-import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { SUPPORTED_LANGUAGES, Language } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 
-type OnboardingStep = 'personal' | 'phone' | 'address';
+type OnboardingStep = 'personal' | 'email' | 'address';
 type AuthProvider = 'phone' | 'email' | 'google' | 'unknown';
 
 const Onboarding = () => {
@@ -32,17 +31,14 @@ const Onboarding = () => {
   const [isChecking, setIsChecking] = useState(true);
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('personal');
   const [userId, setUserId] = useState<string | null>(null);
-  const [phoneVerificationSent, setPhoneVerificationSent] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [maskedPhone, setMaskedPhone] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [authProvider, setAuthProvider] = useState<AuthProvider>('unknown');
+  const [emailLinkSent, setEmailLinkSent] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     dateOfBirth: "",
-    phone: "",
-    phoneVerified: false,
+    email: "",
+    emailLinked: false,
     address: "",
     postalCode: "",
     city: "",
@@ -52,7 +48,7 @@ const Onboarding = () => {
 
   const steps: { id: OnboardingStep; title: string; description: string }[] = [
     { id: 'personal', title: 'Personal Info', description: 'Tell us about yourself' },
-    { id: 'phone', title: 'Phone Verification', description: 'Verify your phone number' },
+    { id: 'email', title: 'Link Email', description: 'Connect your email address' },
     { id: 'address', title: 'Finish Setup', description: 'Complete your profile' },
   ];
 
@@ -73,19 +69,20 @@ const Onboarding = () => {
 
       setUserId(user.id);
 
-      // Detect auth provider — if phone, skip phone verification step
-      const authProvider: AuthProvider = user.app_metadata?.provider === 'phone' 
-        ? 'phone' 
-        : user.app_metadata?.provider === 'google' 
-          ? 'google' 
-          : user.app_metadata?.provider === 'email' 
-            ? 'email' 
+      // Detect auth provider
+      const provider: AuthProvider = user.app_metadata?.provider === 'phone'
+        ? 'phone'
+        : user.app_metadata?.provider === 'google'
+          ? 'google'
+          : user.app_metadata?.provider === 'email'
+            ? 'email'
             : 'unknown';
+      setAuthProvider(provider);
 
       // Check if profile is already complete
       const { data: profile } = await supabase
         .from("secure_profiles_view")
-        .select("first_name, last_name, date_of_birth, phone, address, phone_verified, onboarding_completed")
+        .select("first_name, last_name, date_of_birth, phone, email, address, phone_verified, onboarding_completed")
         .eq("user_id", user.id)
         .single();
 
@@ -96,30 +93,17 @@ const Onboarding = () => {
 
       // Pre-fill form if some data exists
       if (profile) {
-        // If user signed up via phone, their phone is already verified
-        const isPhoneAlreadyVerified = profile.phone_verified || authProvider === 'phone';
-        
+        const hasEmail = !!user.email || !!profile.email;
+
         setFormData(prev => ({
           ...prev,
           firstName: profile.first_name || "",
           lastName: profile.last_name || "",
           dateOfBirth: profile.date_of_birth || "",
-          phone: profile.phone || user.phone || "",
-          phoneVerified: isPhoneAlreadyVerified,
+          email: user.email || profile.email || "",
+          emailLinked: hasEmail && provider !== 'phone', // If signed up with email/google, email is already linked
           address: profile.address || "",
         }));
-
-        // If phone is already verified (e.g. phone signup), mark it in DB if not already
-        if (authProvider === 'phone' && !profile.phone_verified && user.phone) {
-          await supabase
-            .from("profiles")
-            .update({ 
-              phone: user.phone, 
-              phone_verified: true, 
-              phone_verified_at: new Date().toISOString() 
-            })
-            .eq("user_id", user.id);
-        }
       }
     } catch (error) {
       console.error("Error checking user:", error);
@@ -129,162 +113,53 @@ const Onboarding = () => {
   };
 
   const handlePersonalInfoNext = () => {
-    // Validation
     if (!validateName(formData.firstName)) {
-      toast({
-        title: "Invalid name",
-        description: "First name contains invalid characters",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid name", description: "First name contains invalid characters", variant: "destructive" });
       return;
     }
     if (!validateName(formData.lastName)) {
-      toast({
-        title: "Invalid name",
-        description: "Last name contains invalid characters",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid name", description: "Last name contains invalid characters", variant: "destructive" });
       return;
     }
     if (!formData.dateOfBirth) {
-      toast({
-        title: "Missing information",
-        description: "Date of birth is required",
-        variant: "destructive",
-      });
+      toast({ title: "Missing information", description: "Date of birth is required", variant: "destructive" });
       return;
     }
 
-    // Skip phone step if phone is already verified (e.g. signed up via phone)
-    if (formData.phoneVerified) {
+    // Skip email step if user already has email linked (e.g. signed up via email/google)
+    if (formData.emailLinked || authProvider === 'email' || authProvider === 'google') {
       setCurrentStep('address');
     } else {
-      setCurrentStep('phone');
+      setCurrentStep('email');
     }
   };
 
-  const formatPhoneNumber = (value: string) => {
-    let cleaned = value.replace(/[^\d+]/g, '');
-    if (cleaned && !cleaned.startsWith('+')) {
-      cleaned = '+' + cleaned;
-    }
-    return cleaned;
-  };
-
-  const sendVerificationCode = async () => {
-    if (resendCooldown > 0) {
-      toast({
-        title: "Please Wait",
-        description: `You can resend the code in ${resendCooldown} seconds`,
-        variant: "destructive",
-      });
+  const handleSendEmailLink = async () => {
+    if (!formData.email || !formData.email.includes('@')) {
+      toast({ title: "Invalid email", description: "Please enter a valid email address", variant: "destructive" });
       return;
     }
 
-    const formattedPhone = formatPhoneNumber(formData.phone);
-
-    if (!formattedPhone || formattedPhone.length < 8) {
-      toast({
-        title: "Invalid Phone Number",
-        description: "Please enter a valid phone number with country code (e.g., +32467881965)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsVerifying(true);
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-sms-verification', {
-        body: { phoneNumber: formattedPhone }
+      // Use Supabase's linkIdentity or updateUser to link email
+      const { error } = await supabase.auth.updateUser({
+        email: formData.email,
       });
 
       if (error) throw error;
 
-      setPhoneVerificationSent(true);
-      setMaskedPhone(data.maskedPhone || formattedPhone);
-
-      // Start 60-second cooldown
-      setResendCooldown(60);
-      const interval = setInterval(() => {
-        setResendCooldown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
+      setEmailLinkSent(true);
       toast({
-        title: "Verification Code Sent",
-        description: "Check your phone for the 6-digit SMS code",
+        title: "Verification email sent!",
+        description: `We sent a verification link to ${formData.email}. You can verify it later.`,
       });
     } catch (error: unknown) {
-      console.error('Error sending SMS code:', error);
-      let message = "Failed to send verification code";
-      if (error && typeof error === 'object' && 'context' in error) {
-        try {
-          const body = await (error as { context: Response }).context.json();
-          message = body.error || body.message || message;
-        } catch { /* ignore */ }
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-      toast({ title: "Error", description: message, variant: "destructive" });
+      console.error('Error sending email link:', error);
+      const msg = error instanceof Error ? error.message : "Failed to send verification email";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const verifyCode = async () => {
-    if (verificationCode.length < 4) {
-      toast({
-        title: "Invalid Code",
-        description: "Please enter the code from your SMS",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const formattedPhone = formatPhoneNumber(formData.phone);
-
-    setIsVerifying(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('verify-sms-code', {
-        body: { phoneNumber: formattedPhone, code: verificationCode, userId }
-      });
-
-      if (error) throw error;
-
-      if (data?.verified) {
-        setFormData(prev => ({ ...prev, phoneVerified: true }));
-        toast({
-          title: "Phone Verified!",
-          description: "Your phone number has been verified successfully",
-        });
-        // Move to next step after short delay
-        setTimeout(() => setCurrentStep('address'), 500);
-      } else {
-        toast({
-          title: "Invalid Code",
-          description: data?.error || "The verification code you entered is incorrect",
-          variant: "destructive",
-        });
-      }
-    } catch (error: unknown) {
-      console.error('Error verifying SMS code:', error);
-      let message = "Failed to verify code";
-      if (error && typeof error === 'object' && 'context' in error) {
-        try {
-          const body = await (error as { context: Response }).context.json();
-          message = body.error || body.message || message;
-        } catch { /* ignore */ }
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-      toast({ title: "Error", description: message, variant: "destructive" });
-    } finally {
-      setIsVerifying(false);
+      setIsLoading(false);
     }
   };
 
@@ -296,7 +171,6 @@ const Onboarding = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      // Combine address fields
       const fullAddress = formData.address
         ? `${formData.address}, ${formData.postalCode} ${formData.city}`.trim()
         : "";
@@ -307,7 +181,7 @@ const Onboarding = () => {
           first_name: formData.firstName,
           last_name: formData.lastName,
           date_of_birth: formData.dateOfBirth,
-          phone: formData.phone || null,
+          email: formData.email || null,
           address: fullAddress || null,
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
@@ -316,7 +190,6 @@ const Onboarding = () => {
 
       if (error) throw error;
 
-      // Apply language preference immediately
       localStorage.setItem("preferred-language", formData.preferredLanguage);
       document.documentElement.lang = formData.preferredLanguage;
       window.dispatchEvent(new CustomEvent("language:changed", { detail: formData.preferredLanguage }));
@@ -342,7 +215,6 @@ const Onboarding = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
         <div className="w-full max-w-lg space-y-6">
-          {/* Header skeleton */}
           <div className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-muted animate-pulse rounded-2xl" />
             <div className="space-y-2">
@@ -350,7 +222,6 @@ const Onboarding = () => {
               <div className="h-4 w-80 mx-auto bg-muted animate-pulse rounded" />
             </div>
           </div>
-          {/* Form skeleton */}
           <div className="bg-white border rounded-xl p-6 shadow-lg space-y-5">
             <div className="grid grid-cols-2 gap-4">
               {[1, 2].map((i) => (
@@ -521,122 +392,113 @@ const Onboarding = () => {
             </div>
           )}
 
-          {/* Step 2: Phone Verification */}
-          {currentStep === 'phone' && (
+          {/* Step 2: Email Linking */}
+          {currentStep === 'email' && (
             <div className="space-y-5">
               {/* Info Banner */}
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex gap-3">
-                  <MessageSquare className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <Mail className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-medium text-blue-900">Why verify your phone?</h3>
+                    <h3 className="font-medium text-blue-900">Why link your email?</h3>
                     <p className="text-sm text-blue-700 mt-1">
-                      Your phone number allows you to talk to our AI assistant for booking appointments and getting help.
-                      You can also receive appointment reminders via SMS.
+                      Linking your email lets you sign in with email &amp; password, receive appointment confirmations, and recover your account if needed.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {!phoneVerificationSent ? (
+              {!emailLinkSent ? (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <PhoneNumberInput
-                      value={formData.phone}
-                      onChange={(val) => setFormData({ ...formData, phone: val || "" })}
-                      placeholder="Enter phone number"
-                    />
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="pl-10"
+                        placeholder="name@email.com"
+                      />
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      We'll send a verification code to this number
+                      We'll send a verification link to this email
                     </p>
                   </div>
 
                   <Button
-                    onClick={sendVerificationCode}
-                    disabled={isVerifying || !formData.phone || formData.phone.length < 8}
+                    onClick={handleSendEmailLink}
+                    disabled={isLoading || !formData.email || !formData.email.includes('@')}
                     className="w-full h-12 text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
-                    {isVerifying ? (
+                    {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Sending...
                       </>
                     ) : (
                       <>
-                        <Phone className="mr-2 h-5 w-5" />
-                        Send Verification Code
+                        <Mail className="mr-2 h-5 w-5" />
+                        Send Verification Link
                       </>
                     )}
                   </Button>
                 </>
               ) : (
-                <>
-                  <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-                    <Phone className="h-5 w-5 text-muted-foreground" />
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-100">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium">SMS sent to</p>
-                      <p className="text-sm text-muted-foreground">{maskedPhone}</p>
+                      <p className="text-sm font-medium text-green-800">Verification email sent!</p>
+                      <p className="text-sm text-green-700 mt-0.5">
+                        Check your inbox at <span className="font-medium">{formData.email}</span>
+                      </p>
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="code">Verification Code</Label>
-                    <Input
-                      id="code"
-                      placeholder="Enter 6-digit code"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
-                      maxLength={8}
-                      className="text-center text-2xl tracking-widest h-14"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={sendVerificationCode}
-                      disabled={isVerifying || resendCooldown > 0}
-                      className="flex-1"
-                    >
-                      {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Code'}
-                    </Button>
-                    <Button
-                      onClick={verifyCode}
-                      disabled={isVerifying || verificationCode.length < 4}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      {isVerifying ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        "Verify"
-                      )}
-                    </Button>
-                  </div>
-                </>
+                  <p className="text-sm text-muted-foreground text-center">
+                    You can verify your email later. Let's continue setting up your profile.
+                  </p>
+                  <Button
+                    onClick={() => setCurrentStep('address')}
+                    className="w-full h-12 text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    Continue
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </div>
               )}
 
-              <Button
-                variant="ghost"
-                onClick={() => setCurrentStep('personal')}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setCurrentStep('personal')}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                {!emailLinkSent && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setCurrentStep('address')}
+                    className="ml-auto text-muted-foreground"
+                  >
+                    Skip for now
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 
           {/* Step 3: Address & Finish */}
           {currentStep === 'address' && (
             <form onSubmit={handleSubmit} className="space-y-5">
-              {formData.phoneVerified && (
+              {emailLinkSent && (
                 <div className="p-3 bg-green-50 rounded-lg border border-green-100 flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  <span className="text-sm text-green-700 font-medium">Phone number verified</span>
+                  <span className="text-sm text-green-700 font-medium">Email verification sent to {formData.email}</span>
                 </div>
               )}
 
@@ -696,7 +558,14 @@ const Onboarding = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setCurrentStep('phone')}
+                  onClick={() => {
+                    // Go back to email step if phone user, otherwise personal
+                    if (authProvider === 'phone' && !formData.emailLinked) {
+                      setCurrentStep('email');
+                    } else {
+                      setCurrentStep('personal');
+                    }
+                  }}
                   className="flex-1"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
