@@ -5,19 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormField } from "@/components/ui/form-field";
-import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, User, ChevronDown } from "lucide-react";
+import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, User, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
-import { LoginMoreOptions } from "@/components/auth/LoginMoreOptions";
-
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
 import { useDespiaNative, useBiometricAuth, useHaptics, useStorageVault } from '@/hooks/useDespia';
 
 const REMEMBERED_EMAIL_KEY = "caberu_remembered_email";
 const REMEMBERED_NAME_KEY = "caberu_remembered_name";
-
 const PREFILLED_BUSINESS_KEY = "caberu_prefilled_business";
+
+const GoogleIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+  </svg>
+);
+
+const AppleIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+  </svg>
+);
 
 const Login = () => {
   const navigate = useNavigate();
@@ -27,7 +38,6 @@ const Login = () => {
   const [authError, setAuthError] = useState<string | null>(null);
 
   // If coming from a business profile page (?business=slug), store it
-  // so the select-business page can auto-select it after login
   useEffect(() => {
     const businessSlug = searchParams.get("business");
     if (businessSlug) {
@@ -37,8 +47,8 @@ const Login = () => {
 
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-  const [is2FAPending, setIs2FAPending] = useState(false); // FIXED: Use state instead of ref for proper reactivity
-  const [isProcessingAuth, setIsProcessingAuth] = useState(false); // Prevent concurrent auth checks
+  const [is2FAPending, setIs2FAPending] = useState(false);
+  const [isProcessingAuth, setIsProcessingAuth] = useState(false);
 
   // Returning user detection
   const [rememberedEmail] = useState(() => localStorage.getItem(REMEMBERED_EMAIL_KEY) || "");
@@ -59,109 +69,67 @@ const Login = () => {
   // Biometric login handler
   const handleBiometricLogin = async () => {
     if (!biometrics.isAvailable) return;
-
     haptics.impact();
     const result = await biometrics.authenticate();
-
     if (result.authenticated && savedCredentials) {
       haptics.success();
       setIsLoading(true);
-
       try {
-        // Use stored refresh token to restore session
         const { data, error } = await supabase.auth.refreshSession({
           refresh_token: savedCredentials.token
         });
-
         if (error) throw error;
-
-        toast({
-          title: "Welcome back!",
-          description: "Signed in with Face ID",
-        });
+        toast({ title: "Welcome back!", description: "Signed in with Face ID" });
         navigate("/select-business");
       } catch (error) {
         haptics.error();
-        toast({
-          title: "Biometric login failed",
-          description: "Please sign in with your email and password",
-          variant: "destructive",
-        });
+        toast({ title: "Biometric login failed", description: "Please sign in with your email and password", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     } else if (!result.authenticated) {
       haptics.error();
-      toast({
-        title: "Authentication failed",
-        description: result.error || "Please try again",
-        variant: "destructive",
-      });
+      toast({ title: "Authentication failed", description: result.error || "Please try again", variant: "destructive" });
     } else if (!savedCredentials) {
       haptics.warning();
-      toast({
-        title: "No saved credentials",
-        description: "Sign in once with email to enable biometric login",
-      });
+      toast({ title: "No saved credentials", description: "Sign in once with email to enable biometric login" });
     }
   };
 
   useEffect(() => {
     let isMounted = true;
-
     const checkAuthState = async () => {
       if (isProcessingAuth) return;
-
       try {
         const { data: { session } } = await supabase.auth.getSession();
-
         if (!isMounted || is2FAPending) return;
-
         if (session) {
           const has2FA = session?.user?.user_metadata?.two_factor_enabled === true;
-          if (!has2FA) {
-            navigate("/auth-redirect");
-          }
+          if (!has2FA) navigate("/auth-redirect");
         }
       } catch (error) {
         logger.error("Error checking auth state:", error);
       }
     };
-
     checkAuthState();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted || is2FAPending || isProcessingAuth) return;
-
       if (session) {
         const has2FA = session?.user?.user_metadata?.two_factor_enabled === true;
-        if (!has2FA) {
-          navigate("/auth-redirect");
-        }
+        if (!has2FA) navigate("/auth-redirect");
       }
     });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
+    return () => { isMounted = false; subscription.unsubscribe(); };
   }, [navigate, is2FAPending, isProcessingAuth]);
-
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setIsLoading(true);
     setAuthError(null);
-
     try {
-      // SECURITY: Check rate limit before attempting login
       const rateLimitCheck = await supabase.functions.invoke('check-login-rate-limit', {
         body: { email: formData.email }
       });
-
       if (rateLimitCheck.error || !rateLimitCheck.data?.allowed) {
         const retryAfter = rateLimitCheck.data?.retry_after || 900;
         const minutes = Math.ceil(retryAfter / 60);
@@ -169,55 +137,30 @@ const Login = () => {
         setIsLoading(false);
         return;
       }
-
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
-
       if (error) throw error;
-
-      // SECURITY: Enforce email verification before allowing login
       if (!authData.user?.email_confirmed_at) {
         await supabase.auth.signOut();
-        toast({
-          title: "Email Not Verified",
-          description: "Please verify your email address before signing in. Check your inbox for the verification link.",
-          variant: "destructive",
-          duration: 10000,
-        });
+        toast({ title: "Email Not Verified", description: "Please verify your email address before signing in.", variant: "destructive", duration: 10000 });
         setIsLoading(false);
         return;
       }
-
-      // Check if user has 2FA enabled
       const twoFactorEnabled = authData.user?.user_metadata?.two_factor_enabled === true;
-
-
       if (twoFactorEnabled) {
-        // User has 2FA enabled - show verification dialog
-        // Keep session active during 2FA verification
-        setIs2FAPending(true); // FIXED: Use state setter
+        setIs2FAPending(true);
         setUserEmail(formData.email);
         setShow2FADialog(true);
         setIsLoading(false);
         return;
       }
-
-
-      // No 2FA - proceed with normal login flow
       await completeLogin();
     } catch (error: unknown) {
-      // Log for debugging
       logger.error("Sign in error:", error);
-
-      // Safely get error message
-      const errorMessage = error instanceof Error
-        ? error.message.toLowerCase()
-        : String(error).toLowerCase();
-
+      const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
       let userFriendlyMessage = "Unable to sign in. Please try again.";
-
       if (errorMessage.includes("invalid") || errorMessage.includes("credentials") || errorMessage.includes("password")) {
         userFriendlyMessage = "The email or password you entered is incorrect. If you originally used Google or Apple, sign in with that provider first and then link email/password in Account Settings.";
       } else if (errorMessage.includes("email not confirmed")) {
@@ -229,7 +172,6 @@ const Login = () => {
       } else if (errorMessage.includes("already registered") || errorMessage.includes("already exists") || errorMessage.includes("provider")) {
         userFriendlyMessage = "This email may already be connected to another sign-in provider. Sign in with your original provider (Google/Apple/phone), then link additional methods from Account Settings.";
       }
-
       setAuthError(userFriendlyMessage);
       setIsLoading(false);
     }
@@ -237,23 +179,16 @@ const Login = () => {
 
   const completeLogin = async () => {
     try {
-      // Save credentials for biometric login (if native app)
       if (isNative && biometrics.isAvailable) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.refresh_token && session.user?.email) {
-            await saveCredentials({
-              email: session.user.email,
-              token: session.refresh_token
-            }, true); // locked = true requires biometric to access
+            await saveCredentials({ email: session.user.email, token: session.refresh_token }, true);
           }
         } catch (err) {
-          // Don't fail login if credential saving fails
           logger.error("Failed to save biometric credentials:", err);
         }
       }
-
-      // Remember user email for returning user experience
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.email) {
@@ -262,17 +197,10 @@ const Login = () => {
           localStorage.setItem(REMEMBERED_NAME_KEY, displayName);
         }
       } catch (err) {
-        // Non-critical - don't fail login
         logger.error("Failed to save remembered user:", err);
       }
-
       haptics.success();
-      toast({
-        title: "Welcome back!",
-        description: "You've successfully signed in.",
-      });
-
-      // Navigate to auth-redirect which handles role-based routing and onboarding checks
+      toast({ title: "Welcome back!", description: "You've successfully signed in." });
       navigate("/auth-redirect");
     } catch (error) {
       logger.error("Error completing login:", error);
@@ -281,30 +209,22 @@ const Login = () => {
 
   const handle2FASuccess = async () => {
     setIsLoading(true);
-    setIs2FAPending(false); // FIXED: Use state setter
+    setIs2FAPending(false);
     try {
-      // Log 2FA login event
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase.from('security_audit_logs').insert({
-            user_id: user.id,
-            event_type: '2fa_login',
+            user_id: user.id, event_type: '2fa_login',
             metadata: { timestamp: new Date().toISOString() }
           });
         }
       } catch (logError) {
         console.error('Failed to log 2FA login:', logError);
       }
-
-      // Complete the login process with the active session
       await completeLogin();
     } catch (error) {
-      toast({
-        title: "Sign in failed",
-        description: "Failed to complete sign in after 2FA verification",
-        variant: "destructive",
-      });
+      toast({ title: "Sign in failed", description: "Failed to complete sign in after 2FA verification", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -316,19 +236,12 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth-redirect`,
-        },
+        options: { redirectTo: `${window.location.origin}/auth-redirect` },
       });
       if (error) throw error;
     } catch (error) {
-      toast({
-        title: "Google sign in failed",
-        description: "Unable to sign in with Google. Please try again or use email/password.",
-        variant: "destructive",
-        duration: 6000,
-      });
-      setAuthError("Unable to sign in with Google. Please try again or use email/password.");
+      toast({ title: "Google sign in failed", description: "Unable to sign in with Google. Please try again.", variant: "destructive" });
+      setAuthError("Unable to sign in with Google.");
       setIsLoading(false);
     }
   };
@@ -339,21 +252,18 @@ const Login = () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "apple",
-        options: {
-          redirectTo: `${window.location.origin}/auth-redirect`,
-        },
+        options: { redirectTo: `${window.location.origin}/auth-redirect` },
       });
       if (error) throw error;
     } catch (error) {
-      toast({
-        title: "Apple sign in failed",
-        description: "Unable to sign in with Apple. Please try again or use another method.",
-        variant: "destructive",
-        duration: 6000,
-      });
-      setAuthError("Unable to sign in with Apple. Please try again or use another method.");
+      toast({ title: "Apple sign in failed", description: "Unable to sign in with Apple. Please try again.", variant: "destructive" });
+      setAuthError("Unable to sign in with Apple.");
       setIsLoading(false);
     }
+  };
+
+  const handlePhoneSignIn = () => {
+    navigate("/signup");
   };
 
   return (
@@ -361,7 +271,6 @@ const Login = () => {
       {/* Left Side - Hero Section */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/80">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
-
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div className="space-y-6">
             <div className="flex items-center gap-2">
@@ -369,19 +278,15 @@ const Login = () => {
               <span className="font-semibold text-lg">Caberu</span>
             </div>
           </div>
-
           <div className="space-y-8">
             <div>
               <h2 className="text-5xl font-bold leading-tight mb-4">
-                Welcome back to
-                <br />
-                your workspace
+                Welcome back to<br />your workspace
               </h2>
               <p className="text-lg text-white/90">
                 Access your dental practice dashboard and keep every patient journey on track.
               </p>
             </div>
-
             <div className="space-y-4">
               <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
                 <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -392,7 +297,6 @@ const Login = () => {
                   <p className="text-sm text-white/80">Automate appointment reminders, follow-ups, and patient communications</p>
                 </div>
               </div>
-
               <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
                 <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
                   <Clock className="h-5 w-5" />
@@ -402,7 +306,6 @@ const Login = () => {
                   <p className="text-sm text-white/80">Manage appointments with smart calendar integration</p>
                 </div>
               </div>
-
               <div className="flex items-start gap-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
                 <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
                   <Zap className="h-5 w-5" />
@@ -414,7 +317,6 @@ const Login = () => {
               </div>
             </div>
           </div>
-
           <div className="text-sm text-white/70">
             Need a new workspace?{" "}
             <Link to="/create-business" className="font-semibold text-white underline-offset-4 hover:underline">
@@ -436,7 +338,6 @@ const Login = () => {
 
             {isReturningUser ? (
               <>
-                {/* Returning user avatar */}
                 <div className="flex justify-center mb-4">
                   <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/20 flex items-center justify-center">
                     <User className="h-7 w-7 text-primary" />
@@ -445,9 +346,7 @@ const Login = () => {
                 <h1 className="text-3xl font-bold tracking-tight">
                   Welcome back{rememberedName ? `, ${rememberedName}` : ""}
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  {rememberedEmail}
-                </p>
+                <p className="text-sm text-muted-foreground">{rememberedEmail}</p>
               </>
             ) : (
               <>
@@ -460,7 +359,6 @@ const Login = () => {
           </div>
 
           <div className="space-y-6">
-
             <div className="rounded-2xl border bg-card p-6 shadow-sm">
               <div className="space-y-4">
                 {/* Biometric Sign In (Native iOS only) */}
@@ -477,23 +375,132 @@ const Login = () => {
                   </Button>
                 )}
 
-                {/* Phone OTP - Primary */}
-                <PhoneOTPAuth variant="default" />
+                {/* Email/Password Form - Primary */}
+                <form onSubmit={handleSignIn} className="space-y-4" role="form" aria-label="Sign in form">
+                  {!isReturningUser && (
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="name@email.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="h-12"
+                        required
+                        autoComplete="email"
+                        aria-label="Email"
+                        aria-required="true"
+                      />
+                    </div>
+                  )}
 
-                {/* Other Options Divider */}
-                <LoginMoreOptions
-                  isReturningUser={isReturningUser}
-                  isLoading={isLoading}
-                  handleGoogleSignIn={handleGoogleSignIn}
-                  handleAppleSignIn={handleAppleSignIn}
-                  formData={formData}
-                  setFormData={(d: { email: string; password: string }) => setFormData(d)}
-                  handleSignIn={handleSignIn}
-                  authError={authError}
-                  rememberedName={rememberedName}
-                  rememberedEmail={rememberedEmail}
-                  setIsReturningUser={setIsReturningUser}
-                />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Password</span>
+                      <Link
+                        to="/forgot-password"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <FormField
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="h-12"
+                      required
+                      autoComplete="current-password"
+                      showPasswordToggle={true}
+                      showCharacterCount={false}
+                      error={authError && formData.password ? "Please check your password and try again" : undefined}
+                      aria-label="Password"
+                      aria-required="true"
+                    />
+                  </div>
+
+                  {authError && (
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                      <p className="text-sm text-destructive font-medium">{authError}</p>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className="h-12 w-full text-base font-semibold"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      "Get Started"
+                    )}
+                  </Button>
+                </form>
+
+                {/* Returning user switch */}
+                {isReturningUser && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsReturningUser(false);
+                      setFormData({ email: "", password: "" });
+                    }}
+                    className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Not {rememberedName || rememberedEmail}?{" "}
+                    <span className="text-primary font-medium">Use a different account</span>
+                  </button>
+                )}
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-3 text-muted-foreground">Or sign in with</span>
+                  </div>
+                </div>
+
+                {/* Social Sign In Icons - 3 in a row */}
+                <div className="grid grid-cols-3 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                    className="h-12 border-2 hover:bg-accent"
+                    aria-label="Sign in with Google"
+                  >
+                    <GoogleIcon />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePhoneSignIn}
+                    disabled={isLoading}
+                    className="h-12 border-2 hover:bg-accent"
+                    aria-label="Sign in with Phone"
+                  >
+                    <Phone className="h-5 w-5 text-primary" />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAppleSignIn}
+                    disabled={isLoading}
+                    className="h-12 border-2 hover:bg-accent"
+                    aria-label="Sign in with Apple"
+                  >
+                    <AppleIcon />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -508,13 +515,9 @@ const Login = () => {
             {/* Terms */}
             <p className="text-center text-xs text-muted-foreground">
               By signing in, you agree to our{" "}
-              <Link to="/terms" className="underline hover:text-foreground">
-                Terms
-              </Link>{" "}
+              <Link to="/terms" className="underline hover:text-foreground">Terms</Link>{" "}
               and{" "}
-              <Link to="/privacy" className="underline hover:text-foreground">
-                Privacy Policy
-              </Link>
+              <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
             </p>
           </div>
         </div>
