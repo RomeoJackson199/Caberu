@@ -237,6 +237,11 @@ export function useBookingFlow() {
         },
       }));
 
+      if (typedDentists.length === 0) {
+        await fetchDentists();
+        return;
+      }
+
       setDentists(typedDentists);
     } catch (error) {
       logger.error('Error fetching dentists for service:', error);
