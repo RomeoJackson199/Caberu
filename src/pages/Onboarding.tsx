@@ -10,6 +10,7 @@ import {
   Loader2, User, Calendar, ArrowRight, ArrowLeft, MapPin, Shield,
   Sparkles, Heart, Bell, CheckCircle2, Globe, Mail
 } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,8 @@ const Onboarding = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [authProvider, setAuthProvider] = useState<AuthProvider>('unknown');
   const [emailLinkSent, setEmailLinkSent] = useState(false);
+  const [emailOtpCode, setEmailOtpCode] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -134,7 +137,7 @@ const Onboarding = () => {
     }
   };
 
-  const handleSendEmailLink = async () => {
+  const handleSendEmailCode = async () => {
     if (!formData.email || !formData.email.includes('@')) {
       toast({ title: "Invalid email", description: "Please enter a valid email address", variant: "destructive" });
       return;
@@ -142,22 +145,51 @@ const Onboarding = () => {
 
     setIsLoading(true);
     try {
-      // Use Supabase's linkIdentity or updateUser to link email
-      const { error } = await supabase.auth.updateUser({
+      // First update the user's email
+      const { error: updateError } = await supabase.auth.updateUser({
         email: formData.email,
+      });
+
+      if (updateError) throw updateError;
+
+      setEmailLinkSent(true);
+      toast({
+        title: "Verification code sent!",
+        description: `We sent a 6-digit code to ${formData.email}. Check your inbox.`,
+      });
+    } catch (error: unknown) {
+      console.error('Error sending email code:', error);
+      const msg = error instanceof Error ? error.message : "Failed to send verification code";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyEmailCode = async (completedCode?: string) => {
+    const code = completedCode ?? emailOtpCode;
+    if (code.length < 6) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token: code,
+        type: "email",
       });
 
       if (error) throw error;
 
-      setEmailLinkSent(true);
+      setEmailVerified(true);
       toast({
-        title: "Verification email sent!",
-        description: `We sent a verification link to ${formData.email}. You can verify it later.`,
+        title: "Email verified!",
+        description: "Your email has been linked to your account.",
       });
     } catch (error: unknown) {
-      console.error('Error sending email link:', error);
-      const msg = error instanceof Error ? error.message : "Failed to send verification email";
-      toast({ title: "Error", description: msg, variant: "destructive" });
+      console.error('Error verifying email code:', error);
+      const msg = error instanceof Error ? error.message : "Invalid code. Please try again.";
+      toast({ title: "Verification failed", description: msg, variant: "destructive" });
+      setEmailOtpCode("");
     } finally {
       setIsLoading(false);
     }
@@ -408,7 +440,26 @@ const Onboarding = () => {
                 </div>
               </div>
 
-              {!emailLinkSent ? (
+              {emailVerified ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-100">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-green-800">Email verified!</p>
+                      <p className="text-sm text-green-700 mt-0.5">
+                        <span className="font-medium">{formData.email}</span> is now linked to your account.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setCurrentStep('address')}
+                    className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                  >
+                    Continue
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </div>
+              ) : !emailLinkSent ? (
                 <>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
@@ -424,14 +475,14 @@ const Onboarding = () => {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      We'll send a verification link to this email
+                      We'll send a 6-digit verification code to this email
                     </p>
                   </div>
 
                   <Button
-                    onClick={handleSendEmailLink}
+                    onClick={handleSendEmailCode}
                     disabled={isLoading || !formData.email || !formData.email.includes('@')}
-                    className="w-full h-12 text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                   >
                     {isLoading ? (
                       <>
@@ -441,32 +492,69 @@ const Onboarding = () => {
                     ) : (
                       <>
                         <Mail className="mr-2 h-5 w-5" />
-                        Send Verification Link
+                        Send Verification Code
                       </>
                     )}
                   </Button>
                 </>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-100">
-                    <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-green-800">Verification email sent!</p>
-                      <p className="text-sm text-green-700 mt-0.5">
-                        Check your inbox at <span className="font-medium">{formData.email}</span>
-                      </p>
-                    </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Enter the 6-digit code sent to
+                    </p>
+                    <p className="text-sm font-semibold">{formData.email}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    You can verify your email later. Let's continue setting up your profile.
-                  </p>
+
+                  <div className="flex justify-center">
+                    <InputOTP
+                      value={emailOtpCode}
+                      onChange={setEmailOtpCode}
+                      maxLength={6}
+                      onComplete={handleVerifyEmailCode}
+                    >
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                          <InputOTPSlot key={index} index={index} className="h-12 w-10" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
                   <Button
-                    onClick={() => setCurrentStep('address')}
-                    className="w-full h-12 text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    type="button"
+                    onClick={() => handleVerifyEmailCode()}
+                    disabled={isLoading || emailOtpCode.length < 6}
+                    className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                   >
-                    Continue
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    {isLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      "Verify Email"
+                    )}
                   </Button>
+
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmailLinkSent(false);
+                        setEmailOtpCode("");
+                      }}
+                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      Change email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendEmailCode}
+                      disabled={isLoading}
+                      className="text-sm text-primary hover:underline transition-colors disabled:opacity-50"
+                    >
+                      Resend code
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -478,7 +566,7 @@ const Onboarding = () => {
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
-                {!emailLinkSent && (
+                {!emailLinkSent && !emailVerified && (
                   <Button
                     variant="ghost"
                     onClick={() => setCurrentStep('address')}
@@ -495,10 +583,10 @@ const Onboarding = () => {
           {/* Step 3: Address & Finish */}
           {currentStep === 'address' && (
             <form onSubmit={handleSubmit} className="space-y-5">
-              {emailLinkSent && (
+              {emailVerified && (
                 <div className="p-3 bg-green-50 rounded-lg border border-green-100 flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  <span className="text-sm text-green-700 font-medium">Email verification sent to {formData.email}</span>
+                  <span className="text-sm text-green-700 font-medium">Email verified: {formData.email}</span>
                 </div>
               )}
 
