@@ -292,12 +292,12 @@ export function PatientSecuritySettings() {
                         Security Settings
                     </h1>
                     <p className="text-muted-foreground mt-2 text-lg">
-                        Manage your password, 2FA, and account data
+                        Manage your 2FA and account data
                     </p>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                    {/* Password Change Card */}
+                    {/* Auth Info Card (replaces password card) */}
                     <GlassCard className="md:col-span-1" variant="interactive">
                         <GlassCardHeader>
                             <div className="flex items-center gap-3 mb-2">
@@ -305,65 +305,28 @@ export function PatientSecuritySettings() {
                                     <Key className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <GlassCardTitle>Password</GlassCardTitle>
-                                    <GlassCardDescription>Update your login credentials</GlassCardDescription>
+                                    <GlassCardTitle>Sign-in Method</GlassCardTitle>
+                                    <GlassCardDescription>How you access your account</GlassCardDescription>
                                 </div>
                             </div>
                         </GlassCardHeader>
                         <GlassCardContent>
-                            <form onSubmit={handlePasswordChange} className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="current-password">Current Password</Label>
-                                    <Input
-                                        id="current-password"
-                                        type="password"
-                                        value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        disabled={loading}
-                                        className="bg-white/50 dark:bg-black/20"
-                                    />
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">
+                                    <CheckCircle2 className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">OTP-based authentication</p>
+                                        <p className="text-xs text-blue-700/80 dark:text-blue-400/80 mt-1">
+                                            Your account uses secure one-time codes sent to your email or phone. No password is needed.
+                                        </p>
+                                    </div>
                                 </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="new-password">New Password</Label>
-                                    <Input
-                                        id="new-password"
-                                        type="password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        placeholder="Min 8 characters"
-                                        disabled={loading}
-                                        required
-                                        className="bg-white/50 dark:bg-black/20"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                                    <Input
-                                        id="confirm-password"
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        placeholder="Confirm new password"
-                                        disabled={loading}
-                                        required
-                                        className="bg-white/50 dark:bg-black/20"
-                                    />
-                                </div>
-
-                                <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/20">
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Updating...
-                                        </>
-                                    ) : (
-                                        "Update Password"
-                                    )}
-                                </Button>
-                            </form>
+                                {userEmail && (
+                                    <p className="text-sm text-muted-foreground">
+                                        Signed in as <span className="font-medium text-foreground">{userEmail}</span>
+                                    </p>
+                                )}
+                            </div>
                         </GlassCardContent>
                     </GlassCard>
 

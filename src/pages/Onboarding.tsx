@@ -175,7 +175,7 @@ const Onboarding = () => {
       const { error } = await supabase.auth.verifyOtp({
         email: formData.email,
         token: code,
-        type: "email",
+        type: "email_change",
       });
 
       if (error) throw error;
