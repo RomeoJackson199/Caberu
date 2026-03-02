@@ -1,68 +1,94 @@
 
 
-## Fix: Business Creation After Stripe Payment
+# Bug Fix Plan: Auth Flow and Code Quality Issues
 
-### The Problem
+## Summary
+After thorough exploration, I found several bugs and inconsistencies related to the recent transition to OTP-based (passwordless) authentication, plus some code quality issues.
 
-The `/create-business` payment flow is broken because no one actually creates the business after payment:
+---
 
-- The **webhook** (`stripe-subscription-webhook`) skips `checkout.session.completed` events that have no `business_id` in metadata (which is correct for new businesses since they don't exist yet)
-- The **PaymentSuccess page** just polls `business_members` hoping a business will magically appear, but never calls the `complete-business-subscription` edge function
-- The **`complete-business-subscription`** edge function has all the correct business creation logic but is orphaned -- nothing invokes it
+## Bug 1: ForgotPassword page is now broken (Critical)
 
-### The Fix
+The `/forgot-password` page asks users to set a **new password** -- but passwords no longer exist in the system. This page is completely incompatible with the OTP-only architecture.
 
-Move the business creation logic INTO the webhook so it happens automatically and reliably when Stripe confirms payment. This is the standard pattern -- webhooks are guaranteed by Stripe, while frontend calls can fail if the user closes the tab.
+**Fix:** Replace the ForgotPassword page with a simple "Account Recovery" page that sends an OTP to the user's email to sign them in directly. No password reset needed since auth is OTP-based.
 
-### Changes
+---
 
-#### 1. Update `stripe-subscription-webhook` (the webhook handler)
+## Bug 2: PatientSecuritySettings still has password change logic (Medium)
 
-In the `checkout.session.completed` case, instead of skipping when there's no `business_id`, check for `business_data` in the metadata and create the business:
+While the UI was updated to show an "OTP-based authentication" info card, the component still contains all the password change handler code (`handlePasswordChange`, `currentPassword`, `newPassword`, `confirmPassword` state variables, and the `send-password-change-notification` function call). This dead code bloats the component and could confuse future developers.
 
-- Parse `business_data` JSON from metadata
-- Generate a unique slug (with collision handling)
-- Insert the business into the `businesses` table with subscription fields set (`subscription_status: 'active'`, `subscription_plan`, `subscription_started_at`, `subscription_ends_at`)
-- Insert the owner into `business_members`
-- Assign `admin` and `provider` roles in `user_roles`
-- Set the session business in `session_business`
-- Remove the legacy `subscriptions` table insert (table was already dropped)
-- Remove the `business_usage` insert (table may not exist)
+**Fix:** Remove all password-related state variables and the `handlePasswordChange` function from `PatientSecuritySettings.tsx`.
 
-#### 2. Update `PaymentSuccess.tsx`
+---
 
-No logic change needed -- the polling approach is correct. Once the webhook creates the business and inserts into `business_members`, the poll will detect it and redirect the user.
+## Bug 3: Signup page still uses email+password flow (Medium)
 
-#### 3. Delete `complete-business-subscription` edge function
+The `SignupFormWithPhone` component still contains a full email/password signup form with password validation, breach checking, and confirmation. While it's hidden behind an "Other options" toggle, it's inconsistent with the OTP-only approach and creates accounts with passwords that can never be used for login.
 
-Since the webhook now handles business creation, this orphaned function can be removed:
-- Delete `supabase/functions/complete-business-subscription/index.ts`
-- Remove the entry from `supabase/config.toml`
+**Fix:** Remove the email/password form from `SignupFormWithPhone`. Keep only Phone OTP (primary), Google, and Apple as signup options.
 
-### Technical Details
+---
 
-The webhook's `checkout.session.completed` handler will be updated from:
+## Bug 4: Login.tsx has leftover `password` field in formData (Low)
 
-```text
-if (!businessId) {
-  console.log('New-business checkout, skipping');
-  break;
-}
-```
+The login page's `formData` state still includes a `password` field (`{ email: "", password: "" }`) which is never used since login is now OTP-based. Minor but should be cleaned up.
 
-To:
+**Fix:** Remove `password` from the formData state in Login.tsx.
 
-```text
-if (!businessId && metadata.business_data) {
-  // Parse business_data, create business, add member, assign roles
-  // Set subscription fields directly on the new business row
-}
-```
+---
 
-Key fields set on the new business:
-- `name`, `slug`, `owner_profile_id`, `tagline`, `primary_color`, `secondary_color`
-- `subscription_status: 'active'`
-- `subscription_plan` (from metadata)
-- `subscription_started_at` / `subscription_ends_at` (from Stripe subscription object)
-- `template_type: 'healthcare'`
+## Bug 5: console.error/console.log used instead of logger (Low)
+
+Several files still use `console.error` instead of the project's `logger` utility:
+- `Login.tsx` (line 248)
+- `Onboarding.tsx` (lines 112, 161, 189)
+- `PatientSecuritySettings.tsx` (multiple lines)
+- `Invite.tsx`, `Chat.tsx`, `BusinessPortal.tsx`
+
+**Fix:** Replace `console.error`/`console.log` with `logger.error`/`logger.log` in these files, adding the logger import where missing.
+
+---
+
+## Bug 6: Onboarding email info text is misleading (Low)
+
+The onboarding email step says "sign in with email & password" but the system is passwordless. The text should say "sign in with email" or "sign in with email OTP".
+
+**Fix:** Update the info banner text in Onboarding.tsx from "sign in with email & password" to "sign in with email".
+
+---
+
+## Implementation Order
+
+1. Fix ForgotPassword page (replace with account recovery)
+2. Clean up Signup page (remove email/password form)
+3. Clean up PatientSecuritySettings (remove dead password code)
+4. Fix Login.tsx formData and console.error
+5. Fix Onboarding.tsx text and console.error calls
+6. Fix remaining console.error calls in other files
+
+---
+
+## Technical Details
+
+### ForgotPassword.tsx rewrite
+- Remove password fields and `validatePassword` import
+- Change flow to: Enter email -> Send OTP via `signInWithOtp` -> User is signed in directly
+- Update UI text to "Account Recovery" instead of "Forgot Password"
+
+### SignupFormWithPhone.tsx cleanup
+- Remove the email/password form section (lines 134-227)
+- Remove unused props: `handleSignUp`, `formData`, `setFormData`, `passwordStrength`, `isCheckingBreach`
+- Keep: Phone OTP, Google, Apple buttons
+
+### Signup.tsx cleanup
+- Remove `handleSignUp` function and all password-related state
+- Remove `validatePassword`, `checkPasswordBreach` imports
+- Simplify the component to just pass Google/Apple handlers to `SignupFormWithPhone`
+
+### PatientSecuritySettings.tsx cleanup
+- Remove: `currentPassword`, `newPassword`, `confirmPassword` state
+- Remove: `handlePasswordChange` function
+- Remove: `send-password-change-notification` function call
 
