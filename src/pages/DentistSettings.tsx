@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard, Bot } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard, Bot, Link2 } from "lucide-react";
+import { AccountLinkingSection } from "@/components/auth/AccountLinkingSection";
 import { AvailabilitySettings } from "@/components/settings/availability-settings";
 import DentistAdminBranding from "./DentistAdminBranding";
 import DentistAdminSecurity from "./DentistAdminSecurity";
@@ -227,6 +228,10 @@ export default function DentistSettings() {
                 {t.billing || "Billing"}
               </TabsTrigger>
             )}
+            <TabsTrigger value="linked" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
+              <Link2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {"Linked"}
+            </TabsTrigger>
             <TabsTrigger value="security" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.security || "Security"}
@@ -338,6 +343,10 @@ export default function DentistSettings() {
             <CancelSubscriptionSection />
           </TabsContent>
         )}
+
+        <TabsContent value="linked" className="space-y-6">
+          <AccountLinkingSection />
+        </TabsContent>
 
         <TabsContent value="security" className="space-y-6">
           <DentistAdminSecurity />

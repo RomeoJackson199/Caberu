@@ -3,10 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle, GlassCardDescription } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Loader2, Shield, Key, Lock, FileDown, Trash2, CheckCircle2, ChevronRight } from "lucide-react";
-import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
+import { Loader2, Key, Lock, FileDown, Trash2, CheckCircle2, ChevronRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
     AlertDialog,
@@ -19,14 +16,10 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { AnimatedBackground, StatusBadge } from "@/components/ui/polished-components";
-import { motion } from "framer-motion";
+import { AnimatedBackground } from "@/components/ui/polished-components";
 import { logger } from "@/lib/logger";
 
 export function PatientSecuritySettings() {
-    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-    const [enablingTwoFactor, setEnablingTwoFactor] = useState(false);
-    const [show2FADialog, setShow2FADialog] = useState(false);
     const [userEmail, setUserEmail] = useState("");
     const [exportLoading, setExportLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -35,7 +28,6 @@ export function PatientSecuritySettings() {
 
     useEffect(() => {
         loadUserData();
-        checkTwoFactorStatus();
     }, []);
 
     const loadUserData = async () => {
@@ -46,94 +38,6 @@ export function PatientSecuritySettings() {
             }
         } catch (error) {
             logger.error('Error loading user data:', error);
-        }
-    };
-
-    const checkTwoFactorStatus = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const enabled = user.user_metadata?.two_factor_enabled === true;
-                setTwoFactorEnabled(enabled);
-            }
-        } catch (error) {
-            logger.error('Error checking 2FA status:', error);
-        }
-    };
-
-    const handleTwoFactorToggle = async (enabled: boolean) => {
-        if (!enabled) {
-            setEnablingTwoFactor(true);
-            try {
-                const { error } = await supabase.auth.updateUser({
-                    data: { two_factor_enabled: false }
-                });
-
-                if (error) throw error;
-
-                try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user) {
-                        await supabase.from('security_audit_logs').insert({
-                            user_id: user.id,
-                            event_type: '2fa_disabled',
-                            metadata: { timestamp: new Date().toISOString() }
-                        });
-                    }
-                } catch (logError) {
-                    logger.error('Failed to log 2FA disable:', logError);
-                }
-
-                setTwoFactorEnabled(false);
-                toast({
-                    title: "2FA Disabled",
-                    description: "Two-factor authentication has been disabled",
-                });
-            } catch (error: unknown) {
-                const msg = error instanceof Error ? error.message : "Failed to disable 2FA";
-                toast({
-                    title: "Error",
-                    description: msg,
-                    variant: "destructive",
-                });
-            } finally {
-                setEnablingTwoFactor(false);
-            }
-        } else {
-            setShow2FADialog(true);
-        }
-    };
-
-    const handle2FASuccess = async () => {
-        try {
-            const { error } = await supabase.auth.updateUser({
-                data: { two_factor_enabled: true }
-            });
-
-            if (error) throw error;
-
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    await supabase.from('security_audit_logs').insert({
-                        user_id: user.id,
-                        event_type: '2fa_enabled',
-                        metadata: { timestamp: new Date().toISOString() }
-                    });
-                }
-            } catch (logError) {
-                logger.error('Failed to log 2FA enable:', logError);
-            }
-
-            setTwoFactorEnabled(true);
-            checkTwoFactorStatus();
-        } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : "Failed to enable 2FA";
-            toast({
-                title: "Error",
-                description: msg,
-                variant: "destructive",
-            });
         }
     };
 
@@ -221,7 +125,7 @@ export function PatientSecuritySettings() {
                         Security Settings
                     </h1>
                     <p className="text-muted-foreground mt-2 text-lg">
-                        Manage your 2FA and account data
+                        Manage your account security and data
                     </p>
                 </div>
 
@@ -259,145 +163,85 @@ export function PatientSecuritySettings() {
                         </GlassCardContent>
                     </GlassCard>
 
-                    <div className="space-y-6">
-                        {/* Two-Factor Authentication Card */}
-                        <GlassCard variant="interactive">
-                            <GlassCardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
-                                            <Shield className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <GlassCardTitle>Two-Factor Auth</GlassCardTitle>
-                                            <GlassCardDescription>Add extra security layer</GlassCardDescription>
-                                        </div>
-                                    </div>
-                                    <StatusBadge
-                                        status={twoFactorEnabled ? "success" : "warning"}
-                                        label={twoFactorEnabled ? "Enabled" : "Disabled"}
-                                    />
+                    {/* Data & Privacy Card */}
+                    <GlassCard variant="interactive">
+                        <GlassCardHeader>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                                    <Lock className="h-5 w-5" />
                                 </div>
-                            </GlassCardHeader>
-                            <GlassCardContent className="space-y-4">
-                                <div className="flex items-center justify-between p-4 border rounded-xl bg-white/30 dark:bg-black/10 backdrop-blur-sm">
-                                    <div className="space-y-1">
-                                        <Label htmlFor="two-factor-auth" className="font-medium cursor-pointer">Enable 2FA</Label>
-                                        <p className="text-xs text-muted-foreground">
-                                            Secure your account with email verification
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        id="two-factor-auth"
-                                        checked={twoFactorEnabled}
-                                        onCheckedChange={handleTwoFactorToggle}
-                                        disabled={enablingTwoFactor || !userEmail}
-                                    />
+                                <div>
+                                    <GlassCardTitle>Data & Privacy</GlassCardTitle>
+                                    <GlassCardDescription>Control your personal data</GlassCardDescription>
                                 </div>
-                                {twoFactorEnabled && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/30"
-                                    >
-                                        <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
-                                        <p className="text-sm text-green-700 dark:text-green-400">
-                                            Your account is protected with 2FA. We'll ask for a code when you sign in from a new device.
-                                        </p>
-                                    </motion.div>
-                                )}
-                            </GlassCardContent>
-                        </GlassCard>
-
-                        {/* Data & Privacy Card */}
-                        <GlassCard variant="interactive">
-                            <GlassCardHeader>
+                            </div>
+                        </GlassCardHeader>
+                        <GlassCardContent className="space-y-4">
+                            <div className="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer" onClick={handleExportData}>
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                                        <Lock className="h-5 w-5" />
+                                    <div className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600">
+                                        <FileDown className="h-4 w-4" />
                                     </div>
                                     <div>
-                                        <GlassCardTitle>Data & Privacy</GlassCardTitle>
-                                        <GlassCardDescription>Control your personal data</GlassCardDescription>
+                                        <p className="font-medium text-sm">Export Data</p>
+                                        <p className="text-xs text-muted-foreground">Download a copy of your data</p>
                                     </div>
                                 </div>
-                            </GlassCardHeader>
-                            <GlassCardContent className="space-y-4">
-                                <div className="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer" onClick={handleExportData}>
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600">
-                                            <FileDown className="h-4 w-4" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-sm">Export Data</p>
-                                            <p className="text-xs text-muted-foreground">Download a copy of your data</p>
-                                        </div>
-                                    </div>
-                                    <Button variant="ghost" size="icon" disabled={exportLoading}>
-                                        {exportLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                                    </Button>
-                                </div>
+                                <Button variant="ghost" size="icon" disabled={exportLoading}>
+                                    {exportLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                                </Button>
+                            </div>
 
-                                <Separator className="bg-gray-100 dark:bg-white/10" />
+                            <Separator className="bg-gray-100 dark:bg-white/10" />
 
-                                <div className="flex items-center justify-between p-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600">
-                                            <Trash2 className="h-4 w-4" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-sm text-red-600">Delete Account</p>
-                                            <p className="text-xs text-muted-foreground">Permanently remove your account</p>
-                                        </div>
+                            <div className="flex items-center justify-between p-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600">
+                                        <Trash2 className="h-4 w-4" />
                                     </div>
-                                    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
-                                                Delete
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This action cannot be undone. This will permanently delete your
-                                                    account and remove your data from our servers.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                    onClick={handleDeleteAccount}
-                                                    className="bg-red-600 hover:bg-red-700"
-                                                    disabled={deleteLoading}
-                                                >
-                                                    {deleteLoading ? (
-                                                        <>
-                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                            Deleting...
-                                                        </>
-                                                    ) : (
-                                                        "Delete Account"
-                                                    )}
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <div>
+                                        <p className="font-medium text-sm text-red-600">Delete Account</p>
+                                        <p className="text-xs text-muted-foreground">Permanently remove your account</p>
+                                    </div>
                                 </div>
-                            </GlassCardContent>
-                        </GlassCard>
-                    </div>
+                                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                            Delete
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete your
+                                                account and remove your data from our servers.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={handleDeleteAccount}
+                                                className="bg-red-600 hover:bg-red-700"
+                                                disabled={deleteLoading}
+                                            >
+                                                {deleteLoading ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        Deleting...
+                                                    </>
+                                                ) : (
+                                                    "Delete Account"
+                                                )}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </GlassCardContent>
+                    </GlassCard>
                 </div>
             </div>
-
-            {/* 2FA Verification Dialog */}
-            <TwoFactorVerificationDialog
-                open={show2FADialog}
-                onOpenChange={setShow2FADialog}
-                email={userEmail}
-                onSuccess={handle2FASuccess}
-                mode="setup"
-            />
         </div>
     );
 }

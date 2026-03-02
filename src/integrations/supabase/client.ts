@@ -57,8 +57,8 @@ export const createAbortableQuery = (timeoutMs = 10000) => {
   };
 };
 
-// GDPR-compliant session timeout (15 minutes)
-const SESSION_TIMEOUT_MS = 15 * 60 * 1000;
+// Session timeout: 7 days of inactivity
+const SESSION_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000;
 const ACTIVITY_THROTTLE_MS = 1000; // Throttle activity detection to once per second
 let sessionTimer: ReturnType<typeof setTimeout> | undefined;
 let lastActivityTime = 0;
