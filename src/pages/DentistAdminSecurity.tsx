@@ -6,10 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { Loader2, Shield, Key, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -24,7 +21,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { logger } from '@/lib/logger';
 import { SecuritySettingsSkeleton } from "@/components/ui/page-skeletons";
 
@@ -32,13 +28,6 @@ export default function DentistAdminSecurity() {
   const { businessId } = useBusinessContext();
   const { dentistId, loading: dentistLoading } = useCurrentDentist(businessId);
   const { t } = useLanguage();
-  const [loading, setLoading] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [enablingTwoFactor, setEnablingTwoFactor] = useState(false);
-  const [show2FADialog, setShow2FADialog] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [exportLoading, setExportLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -47,7 +36,6 @@ export default function DentistAdminSecurity() {
 
   useEffect(() => {
     if (dentistId) {
-      checkTwoFactorStatus();
       loadUserEmail();
     }
   }, [dentistId]);
@@ -60,165 +48,6 @@ export default function DentistAdminSecurity() {
       }
     } catch (error) {
       logger.error('Error loading user email:', error);
-    }
-  };
-
-  const checkTwoFactorStatus = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Check if user has 2FA enabled in metadata
-        const enabled = user.user_metadata?.two_factor_enabled === true;
-        setTwoFactorEnabled(enabled);
-      }
-    } catch (error) {
-      logger.error('Error checking 2FA status:', error);
-    }
-  };
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: t.passwordsDontMatch,
-        description: t.passwordsDontMatchDesc,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      toast({
-        title: t.passwordTooShort,
-        description: t.passwordMinLength,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (error) throw error;
-
-      // Send password change notification email
-      try {
-        await supabase.functions.invoke('send-password-change-notification', {
-          body: {
-            email: userEmail,
-            timestamp: new Date().toISOString(),
-          }
-        });
-        logger.info('Password change notification sent');
-      } catch (emailError) {
-        // Don't fail the password change if email fails
-        logger.error('Failed to send password change email:', emailError);
-      }
-
-      toast({
-        title: `✅ ${t.passwordUpdated}`,
-        description: t.passwordUpdatedDesc,
-        duration: 8000,
-        className: "bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100",
-      });
-
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error: any) {
-      logger.error('Error updating password:', error);
-      toast({
-        title: `❌ ${t.error}`,
-        description: error.message || t.error,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTwoFactorToggle = async (enabled: boolean) => {
-    if (!enabled) {
-      // Disable 2FA
-      setEnablingTwoFactor(true);
-      try {
-        // Remove 2FA settings from user metadata
-        const { error } = await supabase.auth.updateUser({
-          data: { two_factor_enabled: false }
-        });
-
-        if (error) throw error;
-
-        // Log 2FA disable event
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await supabase.from('security_audit_logs').insert({
-              user_id: user.id,
-              event_type: '2fa_disabled',
-              metadata: { timestamp: new Date().toISOString() }
-            });
-          }
-        } catch (logError) {
-          logger.error('Failed to log 2FA disable:', logError);
-        }
-
-        setTwoFactorEnabled(false);
-        toast({
-          title: t.twoFaDisabled,
-          description: t.twoFaDisabledDesc,
-        });
-      } catch (error: any) {
-        toast({
-          title: t.error,
-          description: error.message || t.error,
-          variant: "destructive",
-        });
-      } finally {
-        setEnablingTwoFactor(false);
-      }
-    } else {
-      // Enable 2FA - show email verification dialog
-      setShow2FADialog(true);
-    }
-  };
-
-  const handle2FASuccess = async () => {
-    try {
-      // Save 2FA enabled status to user metadata
-      const { error } = await supabase.auth.updateUser({
-        data: { two_factor_enabled: true }
-      });
-
-      if (error) throw error;
-
-      // Log 2FA enable event
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('security_audit_logs').insert({
-            user_id: user.id,
-            event_type: '2fa_enabled',
-            metadata: { timestamp: new Date().toISOString() }
-          });
-        }
-      } catch (logError) {
-        logger.error('Failed to log 2FA enable:', logError);
-      }
-
-      setTwoFactorEnabled(true);
-      checkTwoFactorStatus();
-    } catch (error: any) {
-      toast({
-        title: t.error,
-        description: error.message || t.error,
-        variant: "destructive",
-      });
     }
   };
 
@@ -330,111 +159,34 @@ export default function DentistAdminSecurity() {
 
       <div className="space-y-6 max-w-4xl">
 
+        {/* Auth Info Card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              {t.changePassword}
+              {t.security || "Sign-in Method"}
             </CardTitle>
             <CardDescription>
-              {t.changePasswordDesc}
+              How you access your account
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">{t.currentPassword}</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder={t.enterCurrentPassword}
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="new-password">{t.newPassword}</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={t.enterNewPasswordMin}
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">{t.confirmNewPassword}</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={t.confirmPasswordPlaceholder}
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <Button type="submit" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t.updating}
-                  </>
-                ) : (
-                  t.updatePassword
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              {t.twoFactorAuth}
-            </CardTitle>
-            <CardDescription>
-              {t.twoFactorAuthDesc}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="space-y-1">
-                <Label htmlFor="two-factor-auth" className="font-medium cursor-pointer">{t.enable2fa}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t.require2faCode}
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30">
+              <Shield className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">OTP-based authentication</p>
+                <p className="text-xs text-blue-700/80 dark:text-blue-400/80 mt-1">
+                  Your account uses secure one-time codes sent to your email or phone. No password is needed.
                 </p>
               </div>
-              <Switch
-                id="two-factor-auth"
-                checked={twoFactorEnabled}
-                onCheckedChange={handleTwoFactorToggle}
-                disabled={enablingTwoFactor || !userEmail}
-              />
             </div>
-            {twoFactorEnabled && (
-              <Alert>
-                <AlertDescription>
-                  {t.twoFaEnabled}
-                </AlertDescription>
-              </Alert>
+            {userEmail && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Signed in as <span className="font-medium text-foreground">{userEmail}</span>
+              </p>
             )}
           </CardContent>
         </Card>
-
-        <TwoFactorVerificationDialog
-          open={show2FADialog}
-          onOpenChange={setShow2FADialog}
-          email={userEmail}
-          onSuccess={handle2FASuccess}
-        />
 
         <Card>
           <CardHeader>

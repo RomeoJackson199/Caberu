@@ -46,7 +46,6 @@ const Onboarding = () => {
     address: "",
     postalCode: "",
     city: "",
-    enable2FA: false,
     preferredLanguage: "en" as Language,
   });
 
@@ -626,21 +625,12 @@ const Onboarding = () => {
                 </div>
               </div>
 
-              {/* 2FA Toggle */}
-              <div className="flex items-center justify-between p-4 rounded-lg border bg-blue-50/50">
-                <div className="space-y-0.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-blue-600" />
-                    <Label className="font-medium cursor-pointer">Enable Two-Factor Authentication</Label>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Add extra security to your account
-                  </p>
-                </div>
-                <Switch
-                  checked={formData.enable2FA}
-                  onCheckedChange={(checked) => setFormData({ ...formData, enable2FA: checked })}
-                />
+              {/* Security info */}
+              <div className="flex items-center gap-3 p-4 rounded-lg border bg-blue-50/50">
+                <Shield className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Your account is secured with OTP-based authentication. No password needed.
+                </p>
               </div>
 
               <div className="flex gap-3">

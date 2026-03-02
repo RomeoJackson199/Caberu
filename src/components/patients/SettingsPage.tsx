@@ -317,7 +317,6 @@ const Security: React.FC = () => {
 
 const LegalSupport: React.FC = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
@@ -391,59 +390,17 @@ const LegalSupport: React.FC = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (!deletePassword.trim()) {
-      toast({
-        title: "Password required",
-        description: "Please enter your password to confirm account deletion.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setDeleting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) throw new Error('Not authenticated');
+      const { error } = await supabase.functions.invoke('delete-user-account');
 
-      // Verify password by attempting to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: deletePassword
+      if (error) throw error;
+
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted.",
       });
 
-      if (signInError) {
-        throw new Error('Incorrect password');
-      }
-
-      // Get profile ID first
-      const { data: profile } = await supabase
-        .from('secure_profiles_view')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profile) {
-        // Delete related data in order (respecting foreign keys)
-        await supabase.from('notes').delete().eq('patient_id', profile.id);
-        await supabase.from('prescriptions').delete().eq('patient_id', profile.id);
-        await supabase.from('appointments').delete().eq('patient_id', profile.id);
-        await supabase.from('treatment_plans').delete().eq('patient_id', profile.id);
-        await supabase.from('invoices').delete().eq('patient_id', profile.id);
-        await supabase.from('payment_requests').delete().eq('patient_id', profile.id);
-        await supabase.from('profiles').delete().eq('id', profile.id);
-      }
-
-      // Delete auth user - this will sign them out
-      const { error: deleteError } = await supabase.functions.invoke('delete-user-account', {
-        body: { userId: user.id }
-      });
-
-      if (deleteError) {
-        // If edge function doesn't exist, just sign out
-        console.warn('Could not delete auth user, signing out:', deleteError);
-      }
-
-      // Sign out and redirect
       await supabase.auth.signOut();
       window.location.href = '/';
 
@@ -456,7 +413,6 @@ const LegalSupport: React.FC = () => {
       });
     } finally {
       setDeleting(false);
-      setDeletePassword('');
     }
   };
 
@@ -525,22 +481,11 @@ const LegalSupport: React.FC = () => {
               <p className="text-sm text-muted-foreground">
                 This action is <strong>permanent</strong> and cannot be undone. All your data including appointments, prescriptions, and medical history will be deleted.
               </p>
-              <div>
-                <Label htmlFor="delete-password">Enter your password to confirm</Label>
-                <Input
-                  id="delete-password"
-                  type="password"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Your password"
-                  className="mt-1"
-                />
-              </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => { setShowDeleteDialog(false); setDeletePassword(''); }}>
+                <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
                   Cancel
                 </Button>
-                <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting || !deletePassword.trim()}>
+                <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting}>
                   {deleting ? 'Deleting...' : 'Permanently Delete'}
                 </Button>
               </div>

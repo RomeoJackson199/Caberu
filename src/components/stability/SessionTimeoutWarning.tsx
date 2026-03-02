@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
-const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
-const WARNING_BEFORE_TIMEOUT_MS = 2 * 60 * 1000; // Warn 2 minutes before
+const SESSION_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const WARNING_BEFORE_TIMEOUT_MS = 60 * 60 * 1000; // Warn 1 hour before
 
 export function SessionTimeoutWarning() {
   const [showWarning, setShowWarning] = useState(false);

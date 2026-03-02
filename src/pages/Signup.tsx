@@ -2,14 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MessageSquare, FileText, Sparkles } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { logger } from '@/lib/logger';
 import { SignupFormWithPhone } from "@/components/auth/SignupFormWithPhone";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<"client" | "business" | null>(null);
 
   useEffect(() => {
@@ -17,62 +13,6 @@ const Signup = () => {
       if (session) navigate("/auth-redirect");
     });
   }, [navigate]);
-
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      if (userType) {
-        sessionStorage.setItem('pending_signup_user_type', userType === "client" ? "patient" : "owner");
-      }
-
-      const redirectTo = userType === "business"
-        ? `${window.location.origin}/create-business`
-        : `${window.location.origin}/auth-redirect`;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo },
-      });
-      if (error) throw error;
-    } catch (error) {
-      logger.error("Google sign up error:", error);
-      toast({
-        title: "❌ Google sign up failed",
-        description: "Unable to sign up with Google. Please try again.",
-        variant: "destructive",
-        duration: 6000,
-      });
-      setIsLoading(false);
-    }
-  };
-
-  const handleAppleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      if (userType) {
-        sessionStorage.setItem('pending_signup_user_type', userType === "client" ? "patient" : "owner");
-      }
-
-      const redirectTo = userType === "business"
-        ? `${window.location.origin}/create-business`
-        : `${window.location.origin}/auth-redirect`;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'apple',
-        options: { redirectTo },
-      });
-      if (error) throw error;
-    } catch (error) {
-      logger.error("Apple sign up error:", error);
-      toast({
-        title: "❌ Apple sign up failed",
-        description: "Unable to sign up with Apple. Please try again.",
-        variant: "destructive",
-        duration: 6000,
-      });
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex">
@@ -142,9 +82,6 @@ const Signup = () => {
             <SignupFormWithPhone
               userType={userType}
               setUserType={setUserType}
-              handleGoogleSignIn={handleGoogleSignIn}
-              handleAppleSignIn={handleAppleSignIn}
-              isLoading={isLoading}
             />
           )}
         </div>
