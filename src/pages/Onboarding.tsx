@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { validateName } from "@/lib/security";
 import { SUPPORTED_LANGUAGES, Language } from "@/lib/translations";
+import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
 
 type OnboardingStep = 'personal' | 'email' | 'address';
@@ -109,7 +110,7 @@ const Onboarding = () => {
         }));
       }
     } catch (error) {
-      console.error("Error checking user:", error);
+      logger.error("Error checking user:", error);
     } finally {
       setIsChecking(false);
     }
@@ -158,7 +159,7 @@ const Onboarding = () => {
         description: `We sent a 6-digit code to ${formData.email}. Check your inbox.`,
       });
     } catch (error: unknown) {
-      console.error('Error sending email code:', error);
+      logger.error('Error sending email code:', error);
       const msg = error instanceof Error ? error.message : "Failed to send verification code";
       toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
@@ -186,7 +187,7 @@ const Onboarding = () => {
         description: "Your email has been linked to your account.",
       });
     } catch (error: unknown) {
-      console.error('Error verifying email code:', error);
+      logger.error('Error verifying email code:', error);
       const msg = error instanceof Error ? error.message : "Invalid code. Please try again.";
       toast({ title: "Verification failed", description: msg, variant: "destructive" });
       setEmailOtpCode("");
@@ -434,7 +435,7 @@ const Onboarding = () => {
                   <div>
                     <h3 className="font-medium text-blue-900">Why link your email?</h3>
                     <p className="text-sm text-blue-700 mt-1">
-                      Linking your email lets you sign in with email &amp; password, receive appointment confirmations, and recover your account if needed.
+                      Linking your email lets you sign in with email OTP, receive appointment confirmations, and recover your account if needed.
                     </p>
                   </div>
                 </div>
