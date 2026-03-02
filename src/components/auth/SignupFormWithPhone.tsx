@@ -1,14 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FormField } from "@/components/ui/form-field";
-import { Progress } from "@/components/ui/progress";
-import { Loader2, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
-import { getStrengthLabel, type PasswordStrength } from "@/utils/passwordValidation";
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
@@ -30,12 +25,7 @@ interface Props {
   setUserType: (t: "client" | "business" | null) => void;
   handleGoogleSignIn: () => void;
   handleAppleSignIn: () => void;
-  handleSignUp: (e: React.FormEvent) => void;
-  formData: { email: string; password: string; confirmPassword: string };
-  setFormData: (d: { email: string; password: string; confirmPassword: string }) => void;
   isLoading: boolean;
-  passwordStrength: PasswordStrength | null;
-  isCheckingBreach: boolean;
 }
 
 export function SignupFormWithPhone({
@@ -43,12 +33,7 @@ export function SignupFormWithPhone({
   setUserType,
   handleGoogleSignIn,
   handleAppleSignIn,
-  handleSignUp,
-  formData,
-  setFormData,
   isLoading,
-  passwordStrength,
-  isCheckingBreach,
 }: Props) {
   const [showMore, setShowMore] = useState(false);
 
@@ -122,109 +107,12 @@ export function SignupFormWithPhone({
                 Continue with Apple
               </Button>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">or</span>
-                </div>
-              </div>
-
-              {/* Email/Password Form */}
-              <form onSubmit={handleSignUp} className="space-y-4" role="form" aria-label="Sign up form">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Your Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="h-12"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="password">Create Password</Label>
-                  <FormField
-                    id="password"
-                    type="password"
-                    placeholder="Minimum 12 characters"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="h-12"
-                    required
-                    showPasswordToggle={true}
-                    showCharacterCount={false}
-                  />
-                  {passwordStrength && formData.password && (
-                    <div className="space-y-2">
-                      <Progress value={(passwordStrength.score / 5) * 100} className="h-2" />
-                      <div className="flex items-center justify-between">
-                        <span className={`text-xs font-medium ${getStrengthLabel(passwordStrength.score).color}`}>
-                          {getStrengthLabel(passwordStrength.score).label}
-                        </span>
-                        {isCheckingBreach && (
-                          <span className="text-xs text-muted-foreground">Checking security...</span>
-                        )}
-                      </div>
-                      {passwordStrength.feedback.length > 0 && (
-                        <ul className="text-xs text-destructive space-y-1">
-                          {passwordStrength.feedback.slice(0, 3).map((item, i) => (
-                            <li key={i}>• {item}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    12+ characters with uppercase, lowercase, number, and special character
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <FormField
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Re-enter your password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="h-12"
-                    required
-                    showPasswordToggle={true}
-                    showCharacterCount={false}
-                    validate={(value) => {
-                      if (value && formData.password && value !== formData.password) {
-                        return "Passwords don't match";
-                      }
-                      return undefined;
-                    }}
-                    success={!!(formData.confirmPassword && formData.password && formData.confirmPassword === formData.password)}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-lg font-semibold"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    "CREATE ACCOUNT"
-                  )}
-                </Button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <Link to="/login" className="text-primary hover:underline font-medium">
-                    Log in
-                  </Link>
-                </p>
-              </form>
+              <p className="text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link to="/login" className="text-primary hover:underline font-medium">
+                  Log in
+                </Link>
+              </p>
 
               <p className="text-xs text-center text-muted-foreground pt-4">
                 I agree to the{" "}

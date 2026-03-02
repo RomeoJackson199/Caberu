@@ -38,7 +38,7 @@ export default function Chat() {
         .maybeSingle();
 
       if (error) {
-        console.error('Error loading profile:', error);
+        logger.error('Error loading profile:', error);
         return;
       }
 
@@ -59,14 +59,14 @@ export default function Chat() {
           .single();
 
         if (createError) {
-          console.error('Error creating profile:', createError);
+          logger.error('Error creating profile:', createError);
           return;
         }
 
         setProfile(newProfile);
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      logger.error('Error loading user profile:', error);
     }
   };
 

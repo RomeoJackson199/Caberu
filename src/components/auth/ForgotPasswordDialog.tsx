@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail, Lock, ArrowRight, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Loader2, Mail, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { getErrorMessage } from "@/lib/error-utils";
+import { logger } from "@/lib/logger";
 
 interface ForgotPasswordDialogProps {
     open: boolean;
@@ -19,32 +21,28 @@ export function ForgotPasswordDialog({
     onOpenChange,
     defaultEmail = ""
 }: ForgotPasswordDialogProps) {
-    const [step, setStep] = useState<'email' | 'verify' | 'success'>('email');
+    const [step, setStep] = useState<'email' | 'code' | 'success'>('email');
     const [email, setEmail] = useState(defaultEmail);
-    const [code, setCode] = useState("");
-    const [newPassword, setNewPassword] = useState("");
+    const [otpCode, setOtpCode] = useState("");
     const [loading, setLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
 
-    const handleSendCode = async (e: React.FormEvent) => {
+    const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) return;
 
         setLoading(true);
         try {
-            const { error } = await supabase.functions.invoke('send-2fa-code', {
-                body: { email, type: 'recovery' }
-            });
-
+            const { error } = await supabase.auth.signInWithOtp({ email });
             if (error) throw error;
 
             toast({
                 title: "Code Sent",
-                description: "Please check your email for the reset code",
+                description: `We sent a 6-digit code to ${email}`,
             });
-            setStep('verify');
+            setStep('code');
         } catch (error: unknown) {
+            logger.error("Account recovery OTP error:", error);
             toast({
                 title: "Error",
                 description: getErrorMessage(error),
@@ -55,25 +53,28 @@ export function ForgotPasswordDialog({
         }
     };
 
-    const handleResetPassword = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!code || !newPassword) return;
+    const handleVerifyOTP = async (completedCode?: string) => {
+        const code = completedCode ?? otpCode;
+        if (code.length < 6) return;
 
         setLoading(true);
         try {
-            const { error } = await supabase.functions.invoke('reset-password-with-code', {
-                body: { email, code, newPassword }
+            const { error } = await supabase.auth.verifyOtp({
+                email,
+                token: code,
+                type: "email",
             });
-
             if (error) throw error;
 
             setStep('success');
         } catch (error: unknown) {
+            logger.error("Account recovery verify error:", error);
             toast({
                 title: "Error",
                 description: getErrorMessage(error),
                 variant: "destructive",
             });
+            setOtpCode("");
         } finally {
             setLoading(false);
         }
@@ -81,11 +82,9 @@ export function ForgotPasswordDialog({
 
     const handleClose = () => {
         onOpenChange(false);
-        // Reset state after a delay to allow animation to finish
         setTimeout(() => {
             setStep('email');
-            setCode("");
-            setNewPassword("");
+            setOtpCode("");
             if (!defaultEmail) setEmail("");
         }, 300);
     };
@@ -94,17 +93,17 @@ export function ForgotPasswordDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Reset Password</DialogTitle>
+                    <DialogTitle>Account Recovery</DialogTitle>
                     <DialogDescription>
-                        {step === 'email' && "Enter your email address to receive a reset code."}
-                        {step === 'verify' && "Enter the code sent to your email and your new password."}
-                        {step === 'success' && "Your password has been successfully reset."}
+                        {step === 'email' && "Enter your email to receive a sign-in code."}
+                        {step === 'code' && "Enter the 6-digit code sent to your email."}
+                        {step === 'success' && "You've been signed in successfully."}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-4">
                     {step === 'email' && (
-                        <form onSubmit={handleSendCode} className="space-y-4">
+                        <form onSubmit={handleSendOTP} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="reset-email">Email Address</Label>
                                 <div className="relative">
@@ -128,7 +127,7 @@ export function ForgotPasswordDialog({
                                     </>
                                 ) : (
                                     <>
-                                        Send Reset Code
+                                        Send Sign-in Code
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </>
                                 )}
@@ -136,74 +135,68 @@ export function ForgotPasswordDialog({
                         </form>
                     )}
 
-                    {step === 'verify' && (
-                        <form onSubmit={handleResetPassword} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="code">Verification Code</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="code"
-                                        placeholder="6-digit code"
-                                        value={code}
-                                        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                        className="text-center tracking-widest text-lg"
-                                        maxLength={6}
-                                        required
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground text-center">
-                                    Sent to {email}
+                    {step === 'code' && (
+                        <div className="space-y-4">
+                            <div className="text-center space-y-1">
+                                <p className="text-sm text-muted-foreground">
+                                    Enter the 6-digit code sent to
                                 </p>
+                                <p className="text-sm font-semibold">{email}</p>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="new-password">New Password</Label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="new-password"
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="Enter new password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="pl-10"
-                                        required
-                                        minLength={6}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                        ) : (
-                                            <Eye className="h-4 w-4 text-muted-foreground" />
-                                        )}
-                                    </button>
-                                </div>
+                            <div className="flex justify-center">
+                                <InputOTP
+                                    value={otpCode}
+                                    onChange={setOtpCode}
+                                    maxLength={6}
+                                    onComplete={handleVerifyOTP}
+                                >
+                                    <InputOTPGroup>
+                                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                                            <InputOTPSlot key={index} index={index} className="h-12 w-10" />
+                                        ))}
+                                    </InputOTPGroup>
+                                </InputOTP>
                             </div>
 
-                            <Button type="submit" className="w-full" disabled={loading}>
+                            <Button
+                                type="button"
+                                onClick={() => handleVerifyOTP()}
+                                className="w-full"
+                                disabled={loading || otpCode.length < 6}
+                            >
                                 {loading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Resetting...
+                                        Verifying...
                                     </>
                                 ) : (
-                                    "Reset Password"
+                                    "Verify & Sign In"
                                 )}
                             </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="w-full"
-                                onClick={() => setStep('email')}
-                                disabled={loading}
-                            >
-                                Back
-                            </Button>
-                        </form>
+
+                            <div className="flex items-center justify-between">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStep('email');
+                                        setOtpCode("");
+                                    }}
+                                    className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                                >
+                                    <ArrowLeft className="h-3.5 w-3.5" />
+                                    Change email
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSendOTP({ preventDefault: () => {} } as React.FormEvent)}
+                                    disabled={loading}
+                                    className="text-sm text-primary hover:underline transition-colors disabled:opacity-50"
+                                >
+                                    Resend code
+                                </button>
+                            </div>
+                        </div>
                     )}
 
                     {step === 'success' && (
@@ -212,10 +205,10 @@ export function ForgotPasswordDialog({
                                 <CheckCircle className="h-6 w-6 text-green-600" />
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                You can now log in with your new password.
+                                You're now signed in. You can close this dialog.
                             </p>
                             <Button onClick={handleClose} className="w-full">
-                                Return to Login
+                                Continue
                             </Button>
                         </div>
                     )}

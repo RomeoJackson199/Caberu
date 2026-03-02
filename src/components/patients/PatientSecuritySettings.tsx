@@ -3,11 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle, GlassCardDescription } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Shield, Key, Lock, FileDown, Trash2, CheckCircle2, AlertTriangle, ChevronRight } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Shield, Key, Lock, FileDown, Trash2, CheckCircle2, ChevronRight } from "lucide-react";
 import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -23,12 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AnimatedBackground, StatusBadge } from "@/components/ui/polished-components";
 import { motion } from "framer-motion";
+import { logger } from "@/lib/logger";
 
 export function PatientSecuritySettings() {
-    const [loading, setLoading] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [enablingTwoFactor, setEnablingTwoFactor] = useState(false);
     const [show2FADialog, setShow2FADialog] = useState(false);
@@ -50,7 +45,7 @@ export function PatientSecuritySettings() {
                 setUserEmail(user.email);
             }
         } catch (error) {
-            console.error('Error loading user data:', error);
+            logger.error('Error loading user data:', error);
         }
     };
 
@@ -62,76 +57,12 @@ export function PatientSecuritySettings() {
                 setTwoFactorEnabled(enabled);
             }
         } catch (error) {
-            console.error('Error checking 2FA status:', error);
-        }
-    };
-
-    const handlePasswordChange = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (newPassword !== confirmPassword) {
-            toast({
-                title: "Passwords Don't Match",
-                description: "Please make sure your new passwords match",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        if (newPassword.length < 8) {
-            toast({
-                title: "Password Too Short",
-                description: "Password must be at least 8 characters long",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const { error } = await supabase.auth.updateUser({
-                password: newPassword
-            });
-
-            if (error) throw error;
-
-            // Send password change notification email
-            try {
-                await supabase.functions.invoke('send-password-change-notification', {
-                    body: {
-                        email: userEmail,
-                        timestamp: new Date().toISOString(),
-                    }
-                });
-            } catch (emailError) {
-                console.error('Failed to send password change email:', emailError);
-            }
-
-            toast({
-                title: "✅ Password Updated",
-                description: "Your password has been changed successfully.",
-                className: "bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100",
-            });
-
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-        } catch (error: any) {
-            console.error('Error updating password:', error);
-            toast({
-                title: "❌ Error",
-                description: error.message || "Failed to update password",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
+            logger.error('Error checking 2FA status:', error);
         }
     };
 
     const handleTwoFactorToggle = async (enabled: boolean) => {
         if (!enabled) {
-            // Disable 2FA
             setEnablingTwoFactor(true);
             try {
                 const { error } = await supabase.auth.updateUser({
@@ -140,7 +71,6 @@ export function PatientSecuritySettings() {
 
                 if (error) throw error;
 
-                // Log 2FA disable event
                 try {
                     const { data: { user } } = await supabase.auth.getUser();
                     if (user) {
@@ -151,7 +81,7 @@ export function PatientSecuritySettings() {
                         });
                     }
                 } catch (logError) {
-                    console.error('Failed to log 2FA disable:', logError);
+                    logger.error('Failed to log 2FA disable:', logError);
                 }
 
                 setTwoFactorEnabled(false);
@@ -159,17 +89,17 @@ export function PatientSecuritySettings() {
                     title: "2FA Disabled",
                     description: "Two-factor authentication has been disabled",
                 });
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const msg = error instanceof Error ? error.message : "Failed to disable 2FA";
                 toast({
                     title: "Error",
-                    description: error.message || "Failed to disable 2FA",
+                    description: msg,
                     variant: "destructive",
                 });
             } finally {
                 setEnablingTwoFactor(false);
             }
         } else {
-            // Enable 2FA - show email verification dialog
             setShow2FADialog(true);
         }
     };
@@ -182,7 +112,6 @@ export function PatientSecuritySettings() {
 
             if (error) throw error;
 
-            // Log 2FA enable event
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
@@ -193,15 +122,16 @@ export function PatientSecuritySettings() {
                     });
                 }
             } catch (logError) {
-                console.error('Failed to log 2FA enable:', logError);
+                logger.error('Failed to log 2FA enable:', logError);
             }
 
             setTwoFactorEnabled(true);
             checkTwoFactorStatus();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Failed to enable 2FA";
             toast({
                 title: "Error",
-                description: error.message || "Failed to enable 2FA",
+                description: msg,
                 variant: "destructive",
             });
         }
@@ -213,7 +143,6 @@ export function PatientSecuritySettings() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // Create a new export bundle
             const { data: bundle, error: bundleError } = await supabase
                 .from('gdpr_export_bundles')
                 .insert({
@@ -226,7 +155,6 @@ export function PatientSecuritySettings() {
 
             if (bundleError) throw bundleError;
 
-            // Trigger the edge function
             const { error } = await supabase.functions.invoke('generate-data-export', {
                 body: {
                     bundleId: bundle.id,
@@ -241,11 +169,12 @@ export function PatientSecuritySettings() {
                 description: "Your data export has been started. You will receive an email when it is ready.",
             });
 
-        } catch (error: any) {
-            console.error('Export error:', error);
+        } catch (error: unknown) {
+            logger.error('Export error:', error);
+            const msg = error instanceof Error ? error.message : "Failed to start data export";
             toast({
                 title: "Export Failed",
-                description: error.message || "Failed to start data export",
+                description: msg,
                 variant: "destructive",
             });
         } finally {
@@ -265,15 +194,15 @@ export function PatientSecuritySettings() {
                 description: "Your account has been permanently deleted.",
             });
 
-            // Sign out and redirect
             await supabase.auth.signOut();
             window.location.href = '/';
 
-        } catch (error: any) {
-            console.error('Delete error:', error);
+        } catch (error: unknown) {
+            logger.error('Delete error:', error);
+            const msg = error instanceof Error ? error.message : "Failed to delete account";
             toast({
                 title: "Delete Failed",
-                description: error.message || "Failed to delete account",
+                description: msg,
                 variant: "destructive",
             });
             setShowDeleteDialog(false);
@@ -297,7 +226,7 @@ export function PatientSecuritySettings() {
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                    {/* Auth Info Card (replaces password card) */}
+                    {/* Auth Info Card */}
                     <GlassCard className="md:col-span-1" variant="interactive">
                         <GlassCardHeader>
                             <div className="flex items-center gap-3 mb-2">

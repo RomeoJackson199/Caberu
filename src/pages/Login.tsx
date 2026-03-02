@@ -58,7 +58,6 @@ const Login = () => {
 
   const [formData, setFormData] = useState({
     email: localStorage.getItem(REMEMBERED_EMAIL_KEY) || "",
-    password: "",
   });
 
   // Email OTP state
@@ -245,7 +244,7 @@ const Login = () => {
           });
         }
       } catch (logError) {
-        console.error('Failed to log 2FA login:', logError);
+        logger.error('Failed to log 2FA login:', logError);
       }
       await completeLogin();
     } catch (error) {
@@ -532,7 +531,7 @@ const Login = () => {
                     type="button"
                     onClick={() => {
                       setIsReturningUser(false);
-                      setFormData({ email: "", password: "" });
+                      setFormData({ email: "" });
                     }}
                     className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >

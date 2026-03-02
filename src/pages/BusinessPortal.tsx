@@ -106,7 +106,7 @@ export default function BusinessPortal() {
 
       setLoading(false);
     } catch (err) {
-      console.error("Error checking business:", err);
+      logger.error("Error checking business:", err);
       setError("An error occurred");
       setLoading(false);
     }

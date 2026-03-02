@@ -49,7 +49,7 @@ export default function Invite() {
       setInvitation(invitationData);
       setIsLoading(false);
     } catch (error) {
-      console.error("Error validating invitation:", error);
+      logger.error("Error validating invitation:", error);
       setError("Failed to validate invitation");
       setIsLoading(false);
     }
@@ -107,7 +107,7 @@ export default function Invite() {
         });
         if (rpcError) linkError = rpcError;
         const { error: markError } = await supabase.rpc('mark_invitation_used', { invitation_token: token });
-        if (markError) console.error('Error marking invitation used (RPC):', markError);
+        if (markError) logger.error('Error marking invitation used (RPC):', markError);
       } catch (rpcCatch) {
         linkError = rpcCatch;
       }
@@ -118,13 +118,13 @@ export default function Invite() {
           .from('profiles')
           .update({ user_id: authData.user?.id })
           .eq('id', invitation.profile_id);
-        if (updateError) console.error('Error linking profile (fallback):', updateError);
+        if (updateError) logger.error('Error linking profile (fallback):', updateError);
 
         const { error: tokenError } = await supabase
           .from('invitation_tokens')
           .update({ used: true, used_at: new Date().toISOString() })
           .eq('token', token);
-        if (tokenError) console.error('Error marking invitation as used (fallback):', tokenError);
+        if (tokenError) logger.error('Error marking invitation as used (fallback):', tokenError);
       }
 
       toast({
@@ -137,7 +137,7 @@ export default function Invite() {
       }, 3000);
 
     } catch (error: any) {
-      console.error('Error setting up account:', error);
+      logger.error('Error setting up account:', error);
       toast({
         title: "Error Setting Up Account",
         description: error.message,
