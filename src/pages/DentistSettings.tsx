@@ -38,7 +38,7 @@ export default function DentistSettings() {
   const [appointmentLoading, setAppointmentLoading] = useState(true);
   const [savingAppointments, setSavingAppointments] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [leavePassword, setLeavePassword] = useState('');
+  // Password no longer needed for leave confirmation (OTP-based auth)
   const [leavingClinic, setLeavingClinic] = useState(false);
 
   useEffect(() => {
@@ -78,31 +78,9 @@ export default function DentistSettings() {
   }, [dentistId, toast]);
 
   const handleLeaveClinic = async () => {
-    if (!leavePassword.trim()) {
-      toast({
-        title: t.passwordRequired || "Password required",
-        description: t.enterPasswordLeave || "Please enter your password to confirm leaving the clinic.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLeavingClinic(true);
     try {
-      // Verify password first
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) throw new Error('Not authenticated');
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: leavePassword
-      });
-
-      if (signInError) {
-        throw new Error('Incorrect password');
-      }
-
-      // Password verified, now leave the clinic
+      // No password verification needed — auth is OTP-based
       const currentBusinessId = await getCurrentBusinessId();
       const { data, error } = await supabase.rpc('leave_clinic', { p_business_id: currentBusinessId });
       if (error) throw error;
@@ -117,7 +95,6 @@ export default function DentistSettings() {
           variant: "destructive",
         });
         setShowLeaveDialog(false);
-        setLeavePassword('');
         return;
       }
 
@@ -126,7 +103,6 @@ export default function DentistSettings() {
       const ownershipTransferred = result?.ownership_transferred ?? false;
 
       setShowLeaveDialog(false);
-      setLeavePassword('');
 
       if (businessDeleted) {
         toast({
@@ -449,22 +425,11 @@ export default function DentistSettings() {
               <p className="text-sm text-destructive font-medium">
                 ⚠️ {t.lastMemberWarning || "If you are the last member, the entire business will be permanently deleted."}
               </p>
-              <div>
-                <Label htmlFor="leave-password">{t.enterPasswordConfirm || "Enter your password to confirm"}</Label>
-                <Input
-                  id="leave-password"
-                  type="password"
-                  value={leavePassword}
-                  onChange={(e) => setLeavePassword(e.target.value)}
-                  placeholder={t.yourPassword || "Your password"}
-                  className="mt-1"
-                />
-              </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => { setShowLeaveDialog(false); setLeavePassword(''); }}>
+                <Button variant="outline" onClick={() => setShowLeaveDialog(false)}>
                   {t.cancel}
                 </Button>
-                <Button variant="destructive" onClick={handleLeaveClinic} disabled={leavingClinic || !leavePassword.trim()}>
+                <Button variant="destructive" onClick={handleLeaveClinic} disabled={leavingClinic}>
                   {leavingClinic ? (t.leaving || 'Leaving...') : (t.leaveClinic || 'Leave Clinic')}
                 </Button>
               </div>
