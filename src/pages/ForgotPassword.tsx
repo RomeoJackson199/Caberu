@@ -1,40 +1,36 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FormField, validators } from "@/components/ui/form-field";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Loader2, Shield, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorUtils";
-import { validatePassword } from "@/utils/passwordValidation";
 
 const ForgotPassword = () => {
   const { toast } = useToast();
-  const [step, setStep] = useState<'email' | 'verify' | 'success'>('email');
+  const navigate = useNavigate();
+  const [step, setStep] = useState<'email' | 'code' | 'success'>('email');
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
 
-  const handleSendCode = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-2fa-code', {
-        body: { email, type: 'recovery' }
-      });
-
+      const { error } = await supabase.auth.signInWithOtp({ email });
       if (error) throw error;
 
       toast({
         title: "Code Sent",
-        description: "Please check your email for the reset code",
+        description: "Please check your email for the 6-digit code",
       });
-      setStep('verify');
+      setStep('code');
     } catch (error) {
       toast({
         title: "Error",
@@ -46,40 +42,34 @@ const ForgotPassword = () => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!code || !newPassword) return;
-
-    // SECURITY: Validate password strength before reset
-    const passwordResult = validatePassword(newPassword);
-    if (!passwordResult.isValid) {
-      toast({
-        title: "Weak Password",
-        description: passwordResult.feedback.join(". "),
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleVerifyOTP = async (completedCode?: string) => {
+    const code = completedCode ?? otpCode;
+    if (code.length < 6) return;
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('reset-password-with-code', {
-        body: { email, code, newPassword }
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email",
       });
-
       if (error) throw error;
 
       setStep('success');
       toast({
-        title: "Password Reset",
-        description: "Your password has been successfully updated.",
+        title: "Account Recovered",
+        description: "You've been signed in successfully.",
       });
+
+      // Auto-redirect after a short delay
+      setTimeout(() => navigate("/auth-redirect"), 2000);
     } catch (error) {
       toast({
         title: "Error",
         description: getErrorMessage(error),
         variant: "destructive",
       });
+      setOtpCode("");
     } finally {
       setIsLoading(false);
     }
@@ -97,14 +87,14 @@ const ForgotPassword = () => {
               <Shield className="h-10 w-10" />
             </div>
             <h2 className="text-4xl font-bold leading-tight">
-              {step === 'email' && "Forgot your password?"}
-              {step === 'verify' && "Verify & Reset"}
+              {step === 'email' && "Account Recovery"}
+              {step === 'code' && "Verify Your Identity"}
               {step === 'success' && "All Set!"}
             </h2>
             <p className="text-lg text-white/90">
-              {step === 'email' && "Enter your email address and we'll send you a code to reset your password."}
-              {step === 'verify' && "Enter the verification code sent to your email and choose a new password."}
-              {step === 'success' && "Your password has been securely updated. You can now log in."}
+              {step === 'email' && "Enter your email address and we'll send you a code to recover your account."}
+              {step === 'code' && "Enter the 6-digit code sent to your email to sign in."}
+              {step === 'success' && "You've been signed in successfully. Redirecting..."}
             </p>
           </div>
         </div>
@@ -116,12 +106,12 @@ const ForgotPassword = () => {
           {step === 'email' && (
             <div className="space-y-6">
               <div className="lg:hidden text-center space-y-2">
-                <h1 className="text-2xl font-bold">Forgot password?</h1>
-                <p className="text-muted-foreground">Enter your email to receive a reset code</p>
+                <h1 className="text-2xl font-bold">Account Recovery</h1>
+                <p className="text-muted-foreground">Enter your email to receive a sign-in code</p>
               </div>
 
               <div className="rounded-2xl border bg-card p-6 shadow-sm">
-                <form onSubmit={handleSendCode} className="space-y-4" role="form" aria-label="Password reset request form">
+                <form onSubmit={handleSendOTP} className="space-y-4" role="form" aria-label="Account recovery form">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email address</Label>
                     <div className="relative">
@@ -146,7 +136,7 @@ const ForgotPassword = () => {
                     type="submit"
                     className="h-12 w-full text-base font-semibold"
                     disabled={isLoading}
-                    aria-label={isLoading ? "Sending reset code, please wait" : "Send password reset code"}
+                    aria-label={isLoading ? "Sending code, please wait" : "Send recovery code"}
                     aria-busy={isLoading}
                   >
                     {isLoading ? (
@@ -155,7 +145,7 @@ const ForgotPassword = () => {
                         <span className="sr-only">Sending code...</span>
                       </>
                     ) : (
-                      "Send Reset Code"
+                      "Send Recovery Code"
                     )}
                   </Button>
                 </form>
@@ -163,81 +153,78 @@ const ForgotPassword = () => {
             </div>
           )}
 
-          {step === 'verify' && (
+          {step === 'code' && (
             <div className="space-y-6">
               <div className="lg:hidden text-center space-y-2">
-                <h1 className="text-2xl font-bold">Verify & Reset</h1>
+                <h1 className="text-2xl font-bold">Verify Your Identity</h1>
                 <p className="text-muted-foreground">Check your email for the code</p>
               </div>
 
               <div className="rounded-2xl border bg-card p-6 shadow-sm">
-                <form onSubmit={handleResetPassword} className="space-y-4" role="form" aria-label="Password reset verification form">
-                  <div className="space-y-2">
-                    <Label htmlFor="code">Verification Code</Label>
-                    <Input
-                      id="code"
-                      placeholder="6-digit code"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      className="text-center tracking-widest text-lg h-12"
-                      maxLength={6}
-                      required
-                      autoFocus
-                      aria-label="6-digit verification code"
-                      aria-required="true"
-                      aria-describedby="code-hint"
-                    />
-                    <p id="code-hint" className="text-xs text-muted-foreground text-center">
-                      Sent to {email}
+                <div className="space-y-4">
+                  <div className="text-center space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Enter the 6-digit code sent to
                     </p>
+                    <p className="text-sm font-semibold">{email}</p>
                   </div>
 
-                  <div>
-                    <Label htmlFor="new-password">New Password</Label>
-                    <FormField
-                      id="new-password"
-                      type="password"
-                      placeholder="Enter new password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="h-12"
-                      required
-                      showPasswordToggle={true}
-                      showCharacterCount={false}
-                      hint="Minimum 12 characters with uppercase, lowercase, number, and special character"
-                      aria-label="New password"
-                      aria-required="true"
-                    />
+                  <div className="flex justify-center">
+                    <InputOTP
+                      value={otpCode}
+                      onChange={setOtpCode}
+                      maxLength={6}
+                      onComplete={handleVerifyOTP}
+                    >
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                          <InputOTPSlot key={index} index={index} className="h-12 w-10" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
                   </div>
 
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={() => handleVerifyOTP()}
                     className="h-12 w-full text-base font-semibold"
-                    disabled={isLoading}
-                    aria-label={isLoading ? "Resetting password, please wait" : "Reset your password"}
+                    disabled={isLoading || otpCode.length < 6}
+                    aria-label={isLoading ? "Verifying code, please wait" : "Verify and sign in"}
                     aria-busy={isLoading}
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                        <span className="sr-only">Resetting password...</span>
+                        <span className="sr-only">Verifying...</span>
                       </>
                     ) : (
-                      "Reset Password"
+                      "Verify & Sign In"
                     )}
                   </Button>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="w-full"
-                    onClick={() => setStep('email')}
-                    disabled={isLoading}
-                    aria-label="Go back to email entry"
-                  >
-                    Back to Email
-                  </Button>
-                </form>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep('email');
+                        setOtpCode("");
+                      }}
+                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                      aria-label="Go back to email entry"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      Change email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSendOTP({ preventDefault: () => {} } as React.FormEvent)}
+                      disabled={isLoading}
+                      className="text-sm text-primary hover:underline transition-colors disabled:opacity-50"
+                    >
+                      Resend code
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -249,14 +236,14 @@ const ForgotPassword = () => {
                   <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-semibold">Password Reset!</h2>
+                  <h2 className="text-2xl font-semibold">Account Recovered!</h2>
                   <p className="text-muted-foreground">
-                    Your password has been successfully updated. You can now access your account.
+                    You've been signed in successfully. Redirecting to your dashboard...
                   </p>
                 </div>
-                <Link to="/login">
+                <Link to="/auth-redirect">
                   <Button className="w-full h-12 text-base font-semibold">
-                    Return to Sign In
+                    Go to Dashboard
                   </Button>
                 </Link>
               </div>
