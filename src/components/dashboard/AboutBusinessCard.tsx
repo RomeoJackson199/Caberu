@@ -72,12 +72,17 @@ export function AboutBusinessCard({ className }: AboutBusinessCardProps) {
               <span>Business Hours</span>
             </div>
             <div className="grid grid-cols-1 gap-0.5 text-xs text-muted-foreground">
-              {Object.entries(business.business_hours).map(([day, hours]) => (
-                <div key={day} className="flex justify-between">
-                  <span className="capitalize">{day}</span>
-                  <span>{typeof hours === 'string' ? hours : hours && typeof hours === 'object' && 'open' in hours && 'close' in hours ? `${(hours as { open: string; close: string }).open} - ${(hours as { open: string; close: string }).close}` : 'Closed'}</span>
-                </div>
-              ))}
+              {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
+                const hours = (business.business_hours as Record<string, any>)[day];
+                if (!hours) return null;
+                const isOpen = hours.isOpen !== false;
+                return (
+                  <div key={day} className="flex justify-between">
+                    <span className="capitalize">{day}</span>
+                    <span>{isOpen && hours.open && hours.close ? `${hours.open} - ${hours.close}` : 'Closed'}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
