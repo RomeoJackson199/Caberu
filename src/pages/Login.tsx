@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Loader2, Shield, Sparkles, Zap, Clock, Fingerprint, User, Phone, ArrowLeft, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { TwoFactorVerificationDialog } from "@/components/auth/TwoFactorVerificationDialog";
+
 import { PhoneOTPAuth } from "@/components/auth/PhoneOTPAuth";
 import { logger } from '@/lib/logger';
 import { useDespiaNative, useBiometricAuth, useHaptics, useStorageVault } from '@/hooks/useDespia';
@@ -46,9 +46,6 @@ const Login = () => {
     }
   }, [searchParams]);
 
-  const [show2FADialog, setShow2FADialog] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [is2FAPending, setIs2FAPending] = useState(false);
   const [isProcessingAuth, setIsProcessingAuth] = useState(false);
 
   // Returning user detection
@@ -89,7 +86,7 @@ const Login = () => {
         navigate("/select-business");
       } catch (error) {
         haptics.error();
-        toast({ title: "Biometric login failed", description: "Please sign in with your email and password", variant: "destructive" });
+        toast({ title: "Biometric login failed", description: "Please sign in with your phone number or email", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
@@ -108,10 +105,9 @@ const Login = () => {
       if (isProcessingAuth) return;
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!isMounted || is2FAPending) return;
+        if (!isMounted) return;
         if (session) {
-          const has2FA = session?.user?.user_metadata?.two_factor_enabled === true;
-          if (!has2FA) navigate("/auth-redirect");
+          navigate("/auth-redirect");
         }
       } catch (error) {
         logger.error("Error checking auth state:", error);
@@ -119,14 +115,13 @@ const Login = () => {
     };
     checkAuthState();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted || is2FAPending || isProcessingAuth) return;
+      if (!isMounted || isProcessingAuth) return;
       if (session) {
-        const has2FA = session?.user?.user_metadata?.two_factor_enabled === true;
-        if (!has2FA) navigate("/auth-redirect");
+        navigate("/auth-redirect");
       }
     });
     return () => { isMounted = false; subscription.unsubscribe(); };
-  }, [navigate, is2FAPending, isProcessingAuth]);
+  }, [navigate, isProcessingAuth]);
 
   const handleSendEmailOTP = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -180,16 +175,6 @@ const Login = () => {
         type: "email",
       });
       if (error) throw error;
-      if (authData.user) {
-        const twoFactorEnabled = authData.user?.user_metadata?.two_factor_enabled === true;
-        if (twoFactorEnabled) {
-          setIs2FAPending(true);
-          setUserEmail(formData.email);
-          setShow2FADialog(true);
-          setIsLoading(false);
-          return;
-        }
-      }
       await completeLogin();
     } catch (error: unknown) {
       logger.error("Email OTP verify error:", error);
@@ -231,28 +216,6 @@ const Login = () => {
     }
   };
 
-  const handle2FASuccess = async () => {
-    setIsLoading(true);
-    setIs2FAPending(false);
-    try {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('security_audit_logs').insert({
-            user_id: user.id, event_type: '2fa_login',
-            metadata: { timestamp: new Date().toISOString() }
-          });
-        }
-      } catch (logError) {
-        logger.error('Failed to log 2FA login:', logError);
-      }
-      await completeLogin();
-    } catch (error) {
-      toast({ title: "Sign in failed", description: "Failed to complete sign in after 2FA verification", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -611,14 +574,6 @@ const Login = () => {
         </div>
       </div>
 
-      {/* 2FA Verification Dialog */}
-      <TwoFactorVerificationDialog
-        open={show2FADialog}
-        onOpenChange={setShow2FADialog}
-        email={userEmail}
-        onSuccess={handle2FASuccess}
-        mode="login"
-      />
     </div>
   );
 };

@@ -94,7 +94,6 @@ interface OnboardingData {
   mainGoals: string[];
 
   // Step 7: Security Settings
-  enable2FA: boolean;
   requireApproval: boolean;
 
   // Language preference
@@ -143,7 +142,6 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
     sundayEnabled: false,
     primaryServices: [],
     mainGoals: [],
-    enable2FA: false,
     requireApproval: false,
     preferredLanguage: "en",
   });
@@ -967,22 +965,6 @@ export const DentistOnboardingFlow = ({ isOpen, onClose, userId }: DentistOnboar
       icon: Shield,
       content: (
         <div className="space-y-4 py-4">
-          <div className="flex items-center justify-between p-4 rounded-lg border bg-blue-50">
-            <div className="space-y-0.5 flex-1">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-blue-600" />
-                <Label className="font-medium cursor-pointer">Enable Two-Factor Authentication</Label>
-              </div>
-              <p className="text-xs text-gray-600">
-                Add extra security to your account (recommended)
-              </p>
-            </div>
-            <Switch
-              checked={data.enable2FA}
-              onCheckedChange={(checked) => updateData("enable2FA", checked)}
-            />
-          </div>
-
           <div className="flex items-center justify-between p-4 rounded-lg border">
             <div className="space-y-0.5 flex-1">
               <div className="flex items-center gap-2">
