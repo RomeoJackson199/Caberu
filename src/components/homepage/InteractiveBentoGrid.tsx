@@ -121,14 +121,24 @@ export const InteractiveBentoGrid = ({ onOpenHowItWorks }: InteractiveBentoGridP
                         </button>
                     </BentoCard>
 
-                    {/* Smart Scheduling - Interactive Calendar Effect */}
+                    {/* Google Calendar 2-Way Sync */}
                     <BentoCard
-                        title="Smart Scheduling"
-                        description="Calendar integration, automated booking, SMS reminders, and intelligent conflict resolution."
+                        title="Google Calendar Sync"
+                        description="2-way sync with Google Calendar — appointments booked in Caberu appear instantly in Google Calendar, and changes there flow straight back."
                         icon={Calendar}
                         gradient="bg-blue-600"
                         delay={0.2}
                     >
+                        <div className="mt-4 flex gap-3 text-sm flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                                <span className="text-gray-600 font-medium">2-Way Sync</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-blue-600" />
+                                <span className="text-gray-600 font-medium">Real-Time</span>
+                            </div>
+                        </div>
                         <div className="absolute right-4 bottom-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
                             <Calendar className="w-24 h-24 text-blue-600" />
                         </div>

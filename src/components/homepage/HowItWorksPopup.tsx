@@ -4,21 +4,21 @@ import {
   X,
   PhoneForwarded,
   FileText,
-  CreditCard,
+  Calendar,
   MessageSquare,
   ArrowRight,
   CheckCircle2,
   User,
   Phone,
   Zap,
-  DollarSign,
+  RefreshCw,
   Bell,
   Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
-export type HowItWorksFeature = "phone" | "summaries" | "payments" | "sms";
+export type HowItWorksFeature = "phone" | "summaries" | "calendar" | "sms";
 
 interface HowItWorksPopupProps {
   open: boolean;
@@ -29,7 +29,7 @@ interface HowItWorksPopupProps {
 const TABS: { id: HowItWorksFeature; label: string; icon: React.ElementType }[] = [
   { id: "phone", label: "Phone", icon: PhoneForwarded },
   { id: "summaries", label: "Summaries", icon: FileText },
-  { id: "payments", label: "Payments", icon: CreditCard },
+  { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "sms", label: "SMS", icon: MessageSquare },
 ];
 
@@ -152,36 +152,36 @@ const SummaryCard = () => (
   </div>
 );
 
-const PaymentFlow = () => (
+const CalendarSyncFlow = () => (
   <div className="mt-5 bg-slate-50 border border-slate-200 rounded-2xl p-5">
     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-      Automated payment flow
+      2-way Google Calendar sync
     </p>
     <div className="space-y-2">
       {[
         {
           step: "1",
           icon: <CheckCircle2 className="w-4 h-4 text-green-500" />,
-          label: "Appointment completes",
-          sub: "No action needed from staff",
+          label: "Connect your Google Calendar",
+          sub: "One-click OAuth — no passwords shared",
         },
         {
           step: "2",
-          icon: <DollarSign className="w-4 h-4 text-blue-500" />,
-          label: "Payment link sent to patient",
-          sub: "Via SMS within minutes",
+          icon: <RefreshCw className="w-4 h-4 text-blue-500" />,
+          label: "Caberu syncs in real time",
+          sub: "New bookings appear instantly in Google Calendar",
         },
         {
           step: "3",
-          icon: <CreditCard className="w-4 h-4 text-indigo-500" />,
-          label: "Patient pays securely",
-          sub: "Stripe-powered checkout",
+          icon: <Calendar className="w-4 h-4 text-indigo-500" />,
+          label: "Changes flow both ways",
+          sub: "Edit in Google Calendar or Caberu — both stay in sync",
         },
         {
           step: "4",
           icon: <FileText className="w-4 h-4 text-purple-500" />,
-          label: "Receipt + records updated",
-          sub: "Automatically — no manual entry",
+          label: "Conflicts resolved automatically",
+          sub: "No double-bookings, no manual checks needed",
         },
       ].map((row) => (
         <div
@@ -202,9 +202,9 @@ const PaymentFlow = () => (
     <div className="mt-4 bg-green-50 border border-green-100 rounded-xl p-3 flex gap-2">
       <Info className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
       <p className="text-xs text-green-700 leading-relaxed">
-        No manual invoicing. No chasing overdue payments. Caberu handles the{" "}
-        <strong>entire payment cycle</strong> — from appointment completion to
-        receipt.
+        Your Google Calendar stays up to date automatically.{" "}
+        <strong>No manual entry, no switching tabs</strong> — Caberu keeps both
+        sides in perfect sync at all times.
       </p>
     </div>
   </div>
@@ -315,22 +315,22 @@ const FEATURE_CONTENT: Record<
     ],
     diagram: <SummaryCard />,
   },
-  payments: {
-    icon: CreditCard,
+  calendar: {
+    icon: Calendar,
     iconBg: "bg-green-100",
     iconColor: "text-green-600",
     accentColor: "text-green-600",
-    title: "Payments, Handled",
-    tagline: "Get paid faster. Without the admin.",
+    title: "Google Calendar — 2-Way Sync",
+    tagline: "Your calendar and Caberu, always in sync.",
     description:
-      "When an appointment wraps up, Caberu automatically sends the patient a secure Stripe-powered payment link via SMS. No manual invoicing, no chasing outstanding balances. Receipts are issued and records are updated automatically — your team focuses on patients, not paperwork.",
+      "Connect your Google Calendar once and Caberu keeps both sides up to date in real time. New appointments booked through Caberu appear instantly in Google Calendar, and changes made in Google Calendar flow straight back — no double-booking, no manual copy-paste, no gaps.",
     bullets: [
-      "Payment link sent automatically after every appointment",
-      "Stripe-powered, fully secure checkout for patients",
-      "Receipts and records updated without manual entry",
-      "Outstanding balance tracking built in from day one",
+      "One-click Google Calendar connection via OAuth",
+      "New bookings appear in Google Calendar instantly",
+      "Changes in either tool sync both ways automatically",
+      "Conflict detection prevents double-bookings",
     ],
-    diagram: <PaymentFlow />,
+    diagram: <CalendarSyncFlow />,
   },
   sms: {
     icon: MessageSquare,
