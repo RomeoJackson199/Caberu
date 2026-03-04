@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, Building2, ChevronRight } from "lucide-react";
+import { Calendar, Clock, User, Building2, ChevronRight, Stethoscope } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatClinicTime } from "@/lib/timezone";
 import { 
@@ -20,6 +20,7 @@ interface AppointmentIndexCardProps {
     payment_status?: string | null;
     completed_at?: string | null;
     reason?: string;
+    serviceName?: string;
     dentist?: {
       first_name: string;
       last_name: string;
@@ -80,8 +81,14 @@ export const AppointmentIndexCard = memo(function AppointmentIndexCard({
               </div>
             </div>
             
-            {/* Dentist and clinic */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {/* Service, Dentist and clinic */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+              {(appointment.serviceName || appointment.reason) && (
+                <div className="flex items-center gap-1.5">
+                  <Stethoscope className="h-3.5 w-3.5" />
+                  <span>{appointment.serviceName || appointment.reason}</span>
+                </div>
+              )}
               {appointment.dentist && (
                 <div className="flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5" />

@@ -78,16 +78,25 @@ export function DayCalendarView({
 
       const appointments = data || [];
       const patientIds = Array.from(new Set(appointments.map((a: any) => a.patient_id).filter(Boolean)));
+      const serviceIds = Array.from(new Set(appointments.map((a: any) => a.service_id).filter(Boolean)));
 
-      if (patientIds.length) {
-        const { data: profiles } = await supabase
-          .from("secure_profiles_view")
-          .select("id, first_name, last_name, email")
-          .in("id", patientIds);
-        const map = new Map((profiles || []).map((p: any) => [p.id, p]));
-        return appointments.map((a: any) => ({ ...a, patient: map.get(a.patient_id) || null }));
-      }
-      return appointments;
+      const [profilesResult, servicesResult] = await Promise.all([
+        patientIds.length > 0
+          ? supabase.from("secure_profiles_view").select("id, first_name, last_name, email").in("id", patientIds)
+          : { data: [] },
+        serviceIds.length > 0
+          ? supabase.from("business_services").select("id, name").in("id", serviceIds)
+          : { data: [] },
+      ]);
+
+      const profileMap = new Map((profilesResult.data || []).map((p: any) => [p.id, p]));
+      const serviceMap = new Map((servicesResult.data || []).map((s: any) => [s.id, s.name]));
+
+      return appointments.map((a: any) => ({
+        ...a,
+        patient: profileMap.get(a.patient_id) || null,
+        service_name: serviceMap.get(a.service_id) || null,
+      }));
     }
   });
 
@@ -293,9 +302,9 @@ export function DayCalendarView({
                           <Clock className="h-3 w-3 flex-shrink-0" />
                           {format(parseISO(event.appointment_date), "h:mm a")} - {format(addHours(parseISO(event.appointment_date), (event.duration_minutes || 30) / 60), "h:mm a")}
                         </div>
-                        {event.reason && !isOverlapping && (
+                        {(event.service_name || event.reason) && !isOverlapping && (
                           <div className="text-xs opacity-70 truncate mt-1 italic">
-                            "{event.reason}"
+                            "{event.service_name || event.reason}"
                           </div>
                         )}
                       </div>
@@ -325,10 +334,16 @@ export function DayCalendarView({
                               <span className="text-muted-foreground">Time</span>
                               <span className="font-medium">{format(parseISO(event.appointment_date), "h:mm a")} - {format(addHours(parseISO(event.appointment_date), (event.duration_minutes || 30) / 60), "h:mm a")}</span>
                             </div>
-                            <div className="pt-2">
-                              <span className="text-muted-foreground text-xs block mb-1">Reason</span>
-                              <p className="font-medium bg-muted/50 p-2 rounded-md text-xs">{event.reason || "No reason provided"}</p>
-                            </div>
+                            {(event.service_name || event.reason) && (
+                              <div className="pt-2">
+                                <span className="text-muted-foreground text-xs block mb-1">
+                                  {event.service_name ? 'Service' : 'Reason'}
+                                </span>
+                                <p className="font-medium bg-muted/50 p-2 rounded-md text-xs">
+                                  {event.service_name || event.reason}
+                                </p>
+                              </div>
+                            )}
                           </div>
 
                           {!['google-calendar'].includes(event.status) && (
