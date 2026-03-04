@@ -548,6 +548,17 @@ export function useBookingFlow() {
         serviceDuration,
       });
 
+      // Sync to Google Calendar (fire-and-forget, don't block the success flow)
+      supabase.functions.invoke('google-calendar-create-event', {
+        body: { appointmentId: appointmentData.id, action: 'create' }
+      }).then(({ error: gcalError }) => {
+        if (gcalError) {
+          logger.warn("Google Calendar sync failed (non-blocking):", gcalError);
+        } else {
+          logger.info("Appointment synced to Google Calendar");
+        }
+      });
+
       setSuccessDetails({
         date: format(selectedDate, 'yyyy-MM-dd'),
         time: selectedTime,
