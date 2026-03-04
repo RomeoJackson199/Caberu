@@ -49,6 +49,7 @@ interface Appointment {
   payment_status?: string | null;
   completed_at?: string | null;
   reason?: string;
+  serviceName?: string;
   dentist?: {
     first_name: string;
     last_name: string;
@@ -274,19 +275,28 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
       
       const { data, error } = await supabase
         .from('appointments_decrypted')
-        .select('id, appointment_date, status, payment_status, completed_at, reason, dentist_id')
+        .select('id, appointment_date, status, payment_status, completed_at, reason, dentist_id, service_id')
         .eq('patient_id', profile.id)
         .eq('business_id', businessId)
         .order('appointment_date', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch dentist profiles separately (views don't support PostgREST joins)
+      // Fetch dentist profiles and services separately (views don't support PostgREST joins)
       const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter(Boolean))];
-      const { data: dentists } = dentistIds.length > 0
-        ? await supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
-        : { data: [] };
-      const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
+      const serviceIds = [...new Set((data || []).map(a => a.service_id).filter(Boolean))];
+
+      const [dentistsResult, servicesResult] = await Promise.all([
+        dentistIds.length > 0
+          ? supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+          : { data: [] },
+        serviceIds.length > 0
+          ? supabase.from('business_services').select('id, name').in('id', serviceIds)
+          : { data: [] },
+      ]);
+
+      const dentistsMap = new Map((dentistsResult.data || []).map(d => [d.id, d]));
+      const servicesMap = new Map((servicesResult.data || []).map((s: any) => [s.id, s.name]));
 
       const transformedData: Appointment[] = (data || []).map(apt => {
         const dentistData = dentistsMap.get(apt.dentist_id) as any;
@@ -299,6 +309,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
           payment_status: apt.payment_status,
           completed_at: apt.completed_at,
           reason: apt.reason,
+          serviceName: servicesMap.get(apt.service_id) || undefined,
           dentist: dentistProfile ? {
             first_name: dentistProfile.first_name,
             last_name: dentistProfile.last_name

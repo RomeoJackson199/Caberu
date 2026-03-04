@@ -31,6 +31,7 @@ interface TodayAppointment {
 	status: string;
 	urgency: string | null;
 	duration_minutes?: number | null;
+	service_name?: string | null;
 	profiles: {
 		first_name: string;
 		last_name: string;
@@ -66,7 +67,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				// Build queries scoped to current business (no joins on decrypted views)
 				let todayQuery = supabase
 					.from('appointments_decrypted')
-					.select('id, appointment_date, patient_id, patient_name, reason, status, urgency, duration_minutes')
+					.select('id, appointment_date, patient_id, patient_name, reason, status, urgency, duration_minutes, service_id')
 					.eq('dentist_id', dentistId)
 					.gte('appointment_date', startOfDay.toISOString())
 					.lt('appointment_date', endOfDay.toISOString())
@@ -94,7 +95,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 
 				let nextQuery = supabase
 					.from('appointments_decrypted')
-					.select('id, appointment_date, patient_id, patient_name, reason, status, urgency, duration_minutes')
+					.select('id, appointment_date, patient_id, patient_name, reason, status, urgency, duration_minutes, service_id')
 					.eq('dentist_id', dentistId)
 					.gte('appointment_date', new Date().toISOString())
 					.neq('status', 'cancelled')
@@ -131,22 +132,34 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 					logger.error('Error fetching today appointments:', { code: todayError.code, message: todayError.message, details: (todayError as any)?.details });
 				}
 
-				// Fetch patient profiles separately (views don't support PostgREST joins)
+			// Fetch patient profiles and services separately (views don't support PostgREST joins)
 				const allPatientIds = [...new Set([
 					...(todayAppts || []).map(a => a.patient_id),
 					...(nextApt || []).map(a => a.patient_id),
 				].filter(Boolean))];
+				const allServiceIds = [...new Set([
+					...(todayAppts || []).map((a: any) => a.service_id),
+					...(nextApt || []).map((a: any) => a.service_id),
+				].filter(Boolean))];
 
-			const { data: profilesData } = allPatientIds.length > 0
-				? await supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', allPatientIds)
-				: { data: [] };
-				const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
+				const [profilesResult, servicesResult] = await Promise.all([
+					allPatientIds.length > 0
+						? supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', allPatientIds)
+						: { data: [] },
+					allServiceIds.length > 0
+						? supabase.from('business_services').select('id, name').in('id', allServiceIds)
+						: { data: [] },
+				]);
 
-				// Attach profiles to appointments
+				const profilesMap = new Map((profilesResult.data || []).map(p => [p.id, p]));
+				const servicesMap = new Map((servicesResult.data || []).map((s: any) => [s.id, s.name]));
+
+				// Attach profiles and service names to appointments
 				const validAppts = (todayAppts || [])
 					.map(apt => ({
 						...apt,
 						profiles: profilesMap.get(apt.patient_id) || null,
+						service_name: servicesMap.get((apt as any).service_id) || null,
 					}))
 					.filter(apt => apt.profiles) as TodayAppointment[];
 
@@ -155,6 +168,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 					? {
 						...nextApt[0],
 						profiles: profilesMap.get(nextApt[0].patient_id) || null,
+						service_name: servicesMap.get((nextApt[0] as any).service_id) || null,
 					} as TodayAppointment
 					: null;
 
