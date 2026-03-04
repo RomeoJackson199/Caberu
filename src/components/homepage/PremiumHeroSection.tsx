@@ -9,7 +9,7 @@ import {
   Sparkles,
   PhoneForwarded,
   MessageSquare,
-  CreditCard,
+  Calendar,
   FileText
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -150,7 +150,7 @@ export function PremiumHeroSection({ onOpenHowItWorks }: PremiumHeroSectionProps
   const floatingCards = [
     { icon: PhoneForwarded, label: "AI Answered Call", position: { top: '20%', right: '10%' } },
     { icon: FileText, label: "Symptom Summary Ready", position: { top: '38%', right: '5%' } },
-    { icon: CreditCard, label: "Payment Sent", position: { bottom: '30%', right: '15%' } },
+    { icon: Calendar, label: "Calendar Synced", position: { bottom: '30%', right: '15%' } },
     { icon: MessageSquare, label: "SMS Reminder Sent", position: { bottom: '15%', right: '8%' } },
   ];
 
@@ -201,7 +201,7 @@ export function PremiumHeroSection({ onOpenHowItWorks }: PremiumHeroSectionProps
             className="text-base text-slate-300 leading-relaxed max-w-sm mx-auto text-center mt-4"
           >
             Keep your phone number. Keep your software.
-            <span className="block text-slate-400 mt-1 text-sm">Caberu sits on top and handles calls, summaries, payments, and SMS reminders.</span>
+            <span className="block text-slate-400 mt-1 text-sm">Caberu sits on top and handles calls, summaries, Google Calendar sync, and SMS reminders.</span>
           </motion.p>
 
           <motion.div
@@ -212,7 +212,7 @@ export function PremiumHeroSection({ onOpenHowItWorks }: PremiumHeroSectionProps
           >
             <LayerPill label="Phone Forwarding" sub="AI picks up for you" color="border-blue-500/30 text-blue-300 bg-blue-500/10" />
             <LayerPill label="Patient Summaries" sub="Symptoms captured" color="border-purple-500/30 text-purple-300 bg-purple-500/10" />
-            <LayerPill label="Payments Handled" sub="Auto invoicing" color="border-green-500/30 text-green-300 bg-green-500/10" />
+            <LayerPill label="Google Calendar" sub="2-way sync" color="border-green-500/30 text-green-300 bg-green-500/10" />
             <LayerPill label="SMS Reminders" sub="Reduce no-shows" color="border-cyan-500/30 text-cyan-300 bg-cyan-500/10" />
           </motion.div>
 
@@ -339,7 +339,7 @@ export function PremiumHeroSection({ onOpenHowItWorks }: PremiumHeroSectionProps
             >
               Keep your phone number. Keep your software.
               <span className="block text-slate-400 mt-2 text-lg">
-                Caberu sits on top — handling calls, patient summaries, payments, and SMS reminders automatically.
+                Caberu sits on top — handling calls, patient summaries, Google Calendar sync, and SMS reminders automatically.
               </span>
             </motion.p>
 
@@ -415,7 +415,7 @@ export function PremiumHeroSection({ onOpenHowItWorks }: PremiumHeroSectionProps
                       </div>
                       <div>
                         <div className="text-white text-sm font-semibold">Caberu AI Layer</div>
-                        <div className="text-blue-300 text-xs">Calls · Summaries · Payments · SMS</div>
+                        <div className="text-blue-300 text-xs">Calls · Summaries · Calendar · SMS</div>
                       </div>
                       <div className="ml-auto">
                         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -438,7 +438,7 @@ export function PremiumHeroSection({ onOpenHowItWorks }: PremiumHeroSectionProps
                     {[
                       { label: "Your phone number", icon: "📞" },
                       { label: "Your practice software", icon: "🖥️" },
-                      { label: "Your payment setup", icon: "💳" },
+                      { label: "Your Google Calendar", icon: "📅" },
                     ].map((tool) => (
                       <div key={tool.label} className="flex items-center gap-2 text-slate-300 text-sm">
                         <span>{tool.icon}</span>

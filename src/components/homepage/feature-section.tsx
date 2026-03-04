@@ -3,12 +3,12 @@ import { motion, useInView } from "framer-motion";
 import {
   PhoneForwarded,
   MessageSquare,
-  CreditCard,
+  Calendar,
   ArrowRight,
   CheckCircle2,
   Clock,
   TrendingUp,
-  Users,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HowItWorksFeature } from "@/components/homepage/HowItWorksPopup";
@@ -122,7 +122,7 @@ const StatsBar = () => {
   const stats = [
     { icon: Clock, value: "2hrs", label: "Saved per day" },
     { icon: TrendingUp, value: "35%", label: "Fewer no-shows" },
-    { icon: Users, value: "45%", label: "Faster payments" },
+    { icon: RefreshCw, value: "100%", label: "Calendar in sync" },
   ];
 
   return (
@@ -208,18 +208,18 @@ export function FeatureSection({ onOpenHowItWorks }: FeatureSectionProps) {
       ],
     },
     {
-      icon: CreditCard,
+      icon: Calendar,
       iconBg: "bg-green-100",
       iconColor: "text-green-600",
       accentColor: "border-green-200 bg-green-50/50",
-      featureId: "payments",
-      title: "Payments Handled Automatically",
-      description: "After every appointment, a payment link goes out to the patient. No chasing, no invoicing delays. Stripe-powered payments, automatic receipts, and outstanding balance tracking — all without manual work.",
+      featureId: "calendar",
+      title: "Google Calendar — 2-Way Sync",
+      description: "Connect your Google Calendar once and Caberu keeps both sides up to date in real time. Appointments booked in Caberu appear in Google Calendar instantly, and changes made there sync straight back.",
       benefits: [
-        "Payment link sent after every visit",
-        "Stripe-powered secure processing",
-        "Automatic receipts and records",
-        "Outstanding balance visibility",
+        "One-click Google Calendar connection",
+        "New bookings sync to Google Calendar instantly",
+        "Changes in either tool flow both ways",
+        "Conflict detection prevents double-bookings",
       ],
     },
   ];
@@ -252,7 +252,7 @@ export function FeatureSection({ onOpenHowItWorks }: FeatureSectionProps) {
             </span>
           </h2>
           <p className="text-xl text-slate-600">
-            No switching tools, no disruption. Caberu plugs in as the layer that catches missed calls, sends reminders, and collects payments — automatically.
+            No switching tools, no disruption. Caberu plugs in as the layer that catches missed calls, sends reminders, and keeps your Google Calendar in sync — automatically.
           </p>
         </motion.div>
 
