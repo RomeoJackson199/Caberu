@@ -30,13 +30,14 @@ serve(async (req) => {
       throw new Error('User not authenticated');
     }
 
-    // Get appointment details
+    // Get appointment details with service info
     const { data: appointment, error: aptError } = await supabase
       .from('appointments_decrypted')
       .select(`
         *,
         dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected),
-        profiles!appointments_patient_id_fkey(first_name, last_name, email)
+        profiles!appointments_patient_id_fkey(first_name, last_name, email),
+        business_services(name)
       `)
       .eq('id', appointmentId)
       .single();
@@ -47,6 +48,7 @@ serve(async (req) => {
 
     const dentist = appointment.dentists;
     const patient = appointment.profiles;
+    const serviceName = appointment.business_services?.name || null;
     
     if (!dentist.google_calendar_connected || !dentist.google_calendar_refresh_token) {
       return new Response(
@@ -78,9 +80,22 @@ serve(async (req) => {
       const startTime = new Date(appointment.appointment_date);
       const endTime = new Date(startTime.getTime() + (appointment.duration_minutes || 60) * 60000);
       
+      // Build summary parts: patient name + service/reason
+      const detailParts = [serviceName, appointment.reason].filter(Boolean);
+      const detailLabel = detailParts.length > 0 ? detailParts.join(' — ') : 'Appointment';
+      
+      const descriptionLines = [
+        `Patient: ${patient.first_name} ${patient.last_name}`,
+        `Email: ${patient.email}`,
+        serviceName ? `Service: ${serviceName}` : null,
+        appointment.reason ? `Reason: ${appointment.reason}` : null,
+        `Status: ${appointment.status}`,
+        appointment.notes ? `Notes: ${appointment.notes}` : null,
+      ].filter(Boolean).join('\n');
+
       const event = {
-        summary: `${patient.first_name} ${patient.last_name} - ${appointment.reason}`,
-        description: `Patient: ${patient.first_name} ${patient.last_name}\nEmail: ${patient.email}\nReason: ${appointment.reason}\nStatus: ${appointment.status}${appointment.notes ? `\nNotes: ${appointment.notes}` : ''}`,
+        summary: `${patient.first_name} ${patient.last_name} - ${detailLabel}`,
+        description: descriptionLines,
         start: {
           dateTime: startTime.toISOString(),
           timeZone: 'UTC',
