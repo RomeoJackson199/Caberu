@@ -36,7 +36,7 @@ serve(async (req) => {
       .select(`
         *,
         dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected),
-        profiles!appointments_patient_id_fkey(first_name, last_name, email),
+        profiles!appointments_patient_id_fkey(first_name, last_name, email, phone),
         business_services(name)
       `)
       .eq('id', appointmentId)
@@ -84,9 +84,13 @@ serve(async (req) => {
       const detailParts = [serviceName, appointment.reason].filter(Boolean);
       const detailLabel = detailParts.length > 0 ? detailParts.join(' — ') : 'Appointment';
       
+      const contactInfo = patient.phone 
+        ? `Phone: ${patient.phone}` 
+        : `Email: ${patient.email}`;
+      
       const descriptionLines = [
         `Patient: ${patient.first_name} ${patient.last_name}`,
-        `Email: ${patient.email}`,
+        contactInfo,
         serviceName ? `Service: ${serviceName}` : null,
         appointment.reason ? `Reason: ${appointment.reason}` : null,
         `Status: ${appointment.status}`,
