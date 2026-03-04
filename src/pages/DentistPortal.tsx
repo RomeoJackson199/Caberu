@@ -15,7 +15,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { ClinicalToday } from "@/components/ClinicalToday";
 import { DentistPatientManagement } from "@/components/dentist-patients";
 import { AvailabilitySettings } from "@/components/settings/availability-settings";
-import { PaymentRequestManager } from "@/components/PaymentRequestManager";
+import { GoogleCalendarSettings } from "@/components/settings/GoogleCalendarSettings";
 // Lazy load analytics (includes heavy chart library ~400KB)
 const DentistAnalytics = lazy(() => import("@/components/analytics/DentistAnalytics").then(m => ({ default: m.DentistAnalytics })));
 // Inventory removed
@@ -103,7 +103,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
 
       const validSections: DentistSection[] = [
         'dashboard', 'patients', 'appointments', 'employees', 'messages', 'clinical',
-        'schedule', 'payments', 'analytics', 'reports',
+        'schedule', 'google-calendar', 'analytics', 'reports',
         'imports', 'users', 'team', 'branding', 'security', 'settings', 'services',
         'admin-analytics'
       ];
@@ -217,16 +217,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
 
       setDentistId(dentist.id);
 
-      // Fetch badge counts
-      const { data: payments } = await supabase
-        .from('payment_requests')
-        .select('id')
-        .eq('dentist_id', dentist.id)
-        .eq('status', 'overdue');
-
-      setBadges({
-        payments: (payments || []).length,
-      });
+      setBadges({});
     } catch (error: unknown) {
       toast({
         title: "Error",
@@ -297,8 +288,8 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         return <div className="p-4">{t.clinicalNotAvailable || "Clinical features not available for this business type"}</div>;
       case 'schedule':
         return <AvailabilitySettings dentistId={dentistId} />;
-      case 'payments':
-        return hasFeature('paymentRequests') ? <PaymentRequestManager dentistId={dentistId} /> : <div className="p-4">{t.paymentNotAvailable || "Payment features not available"}</div>;
+      case 'google-calendar':
+        return <div className="p-6"><GoogleCalendarSettings /></div>;
       case 'analytics':
         return (
           <Suspense fallback={<LoadingSpinner />}>
@@ -306,7 +297,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
               dentistId={dentistId}
               onOpenPatientsTab={() => navigateToSection('patients')}
               onOpenClinicalTab={() => navigateToSection('clinical')}
-              onOpenPaymentsTab={() => navigateToSection('payments')}
+              onOpenGoogleCalendarTab={() => navigateToSection('google-calendar')}
             />
           </Suspense>
         );
