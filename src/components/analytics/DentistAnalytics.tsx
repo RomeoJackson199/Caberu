@@ -42,7 +42,7 @@ interface DentistAnalyticsProps {
   dentistId: string;
   onOpenPatientsTab?: () => void;
   onOpenClinicalTab?: () => void;
-  onOpenGoogleCalendarTab?: () => void;
+  onOpenPaymentsTab?: () => void;
 }
 
 interface AnalyticsData {
@@ -60,7 +60,7 @@ interface AnalyticsData {
   patientRetention: number;
 }
 
-export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalTab, onOpenGoogleCalendarTab }: DentistAnalyticsProps) => {
+export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalTab, onOpenPaymentsTab }: DentistAnalyticsProps) => {
   const { businessId } = useBusinessContext();
   const [loading, setLoading] = useState(true);
 
@@ -790,7 +790,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
         </Card>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4">
-        <Card onClick={() => onOpenGoogleCalendarTab?.()} className="cursor-pointer">
+        <Card onClick={() => onOpenPaymentsTab?.()} className="cursor-pointer">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue — {rangeLabel(range)}</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -853,7 +853,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
                         <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} />
                         <Tooltip formatter={(v) => [`€${Number(v).toLocaleString()}`, 'Revenue']} />
-                        <Bar dataKey="value" fill="#2563eb" onClick={() => onOpenGoogleCalendarTab?.()} />
+                        <Bar dataKey="value" fill="#2563eb" onClick={() => onOpenPaymentsTab?.()} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1246,7 +1246,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
                     <Button size="sm" variant="outline" onClick={() => onOpenPatientsTab?.()}><Mail className="w-4 h-4 mr-1" />Contact</Button>
                   )}
                   {text.includes('unpaid') && (
-                    <Button size="sm" variant="outline" onClick={() => onOpenGoogleCalendarTab?.()}><DollarSign className="w-4 h-4 mr-1" />View</Button>
+                    <Button size="sm" variant="outline" onClick={() => onOpenPaymentsTab?.()}><DollarSign className="w-4 h-4 mr-1" />View</Button>
                   )}
                   {text.includes('follow-up') && (
                     <Button size="sm" variant="outline" onClick={() => onOpenPatientsTab?.()}><UserX className="w-4 h-4 mr-1" />See</Button>
@@ -1290,7 +1290,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
                 {revenueOpportunities.map(r => (
                   <div key={r.id} className="flex items-center justify-between text-sm p-2 rounded border">
                     <span>{r.name}: {r.reason}</span>
-                    <Button size="sm" variant="outline" onClick={() => onOpenGoogleCalendarTab?.()}>Schedule</Button>
+                    <Button size="sm" variant="outline" onClick={() => onOpenPaymentsTab?.()}>Invoice</Button>
                   </div>
                 ))}
               </div>
