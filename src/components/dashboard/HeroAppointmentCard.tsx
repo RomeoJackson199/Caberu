@@ -31,7 +31,6 @@ interface HeroAppointment {
   status: string;
   reason: string | null;
   urgency: string | null;
-  service_name?: string | null;
   profiles: {
     first_name: string;
     last_name: string;
@@ -215,7 +214,7 @@ export function HeroAppointmentCard({ appointment, loading, className }: HeroApp
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-lg truncate">{patientName}</h3>
               <p className="text-sm text-muted-foreground truncate">
-                {appointment.service_name || appointment.reason || t.noReasonSpecified || 'General consultation'}
+                {appointment.reason || t.noReasonSpecified || 'General consultation'}
               </p>
             </div>
           </div>
