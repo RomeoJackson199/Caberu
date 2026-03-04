@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Settings as SettingsIcon, Calendar, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard, Bot, Link2 } from "lucide-react";
+import { Settings as SettingsIcon, Calendar, CalendarSync, Palette, Shield, User, LogOut, Mail, HelpCircle, UserCog, CheckCircle2, Briefcase, CreditCard, Bot, Link2 } from "lucide-react";
+import { GoogleCalendarSettings } from "@/components/settings/GoogleCalendarSettings";
 import { AccountLinkingSection } from "@/components/auth/AccountLinkingSection";
 import { AvailabilitySettings } from "@/components/settings/availability-settings";
 import DentistAdminBranding from "./DentistAdminBranding";
@@ -44,7 +45,7 @@ export default function DentistSettings() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['profile', 'services', 'appointments', 'schedule', 'branding', 'security', 'staff', 'support', 'voice', 'billing'].includes(tabParam)) {
+    if (tabParam && ['profile', 'services', 'appointments', 'schedule', 'calendar', 'branding', 'security', 'staff', 'support', 'voice', 'billing'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -206,6 +207,10 @@ export default function DentistSettings() {
               <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.appts || "Appts"}
             </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
+              <CalendarSync className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {"Calendar"}
+            </TabsTrigger>
             <TabsTrigger value="staff" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
               <UserCog className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.team || "Team"}
@@ -249,6 +254,10 @@ export default function DentistSettings() {
 
         <TabsContent value="schedule" className="space-y-6">
           <AvailabilitySettings dentistId={dentistId} />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="space-y-6">
+          <GoogleCalendarSettings />
         </TabsContent>
 
         <TabsContent value="appointments" className="space-y-6">
