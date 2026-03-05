@@ -71,7 +71,7 @@ serve(async (req) => {
         template_type: 'healthcare',
         primary_color: '#0F3D91',
         secondary_color: '#66D2D6',
-        currency: 'USD',
+        currency: 'EUR',
       })
       .select()
       .single();
