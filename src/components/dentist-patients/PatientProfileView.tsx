@@ -171,18 +171,17 @@ export function PatientProfileView({
                     {age} years
                   </span>
                 )}
-                {patient.phone && (
+                {patient.phone ? (
                   <span className="flex items-center gap-1">
                     <Phone className="h-3.5 w-3.5" />
                     {patient.phone}
                   </span>
-                )}
-                {patient.email && (
+                ) : patient.email ? (
                   <span className="flex items-center gap-1 truncate max-w-[200px]">
                     <Mail className="h-3.5 w-3.5 flex-shrink-0" />
                     {patient.email}
                   </span>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
