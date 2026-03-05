@@ -11,7 +11,6 @@ import { Loader2, Calendar as CalendarIcon, Clock, User, ArrowRight, CheckCircle
 import { format, startOfDay, addDays } from "date-fns";
 import { isPublicHoliday } from "@/lib/belgianHolidays";
 import { cn } from "@/lib/utils";
-import { showAppointmentRescheduled } from "@/lib/successNotifications";
 import { Skeleton } from "@/components/ui/skeleton";
 import { logger } from "@/lib/logger";
 
@@ -227,7 +226,12 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         }
       }
 
-      showAppointmentRescheduled(format(selectedDate, 'MMM d, yyyy') + ' at ' + selectedTime);
+      toast({
+        title: "✅ Appointment rescheduled",
+        description: `Moved to ${format(selectedDate, 'MMM d, yyyy')} at ${selectedTime}`,
+        className: "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100",
+        duration: 4000,
+      });
 
       toast({
         title: "Appointment Rescheduled",

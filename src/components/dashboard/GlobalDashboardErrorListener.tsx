@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
-import { getUserFriendlyErrorMessage } from "@/lib/errorHandling";
+import { getUserFriendlyErrorMessage } from "@/lib/error-handling/formatting";
 import { logger } from "@/lib/logger";
 
 export const GlobalDashboardErrorListener = () => {

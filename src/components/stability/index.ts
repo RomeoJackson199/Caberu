@@ -22,7 +22,6 @@ export type { ConfirmationType } from "./ConfirmationDialogs";
 // Success Dialogs
 export {
   SuccessDialog,
-  AppointmentSuccessDialog,
   PaymentSuccessDialog,
   TreatmentCompleteDialog
 } from "./SuccessDialog";

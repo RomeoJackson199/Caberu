@@ -23,9 +23,9 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { CookieConsent } from "@/components/CookieConsent";
 import { OnboardingOrchestrator } from "@/components/onboarding/OnboardingOrchestrator";
 import { PhoneVerificationGate } from "@/components/auth/PhoneVerificationGate";
-import { initializeErrorReporting } from "@/lib/errorReporting";
+import { initializeErrorReporting } from "@/lib/error-handling/reporting";
 import { GlobalDashboardErrorListener } from "@/components/dashboard/GlobalDashboardErrorListener";
-import { getUserFriendlyErrorMessage } from "@/lib/errorHandling";
+import { getUserFriendlyErrorMessage } from "@/lib/error-handling/formatting";
 import { toast } from "@/hooks/use-toast";
 import { EmailLimitProvider } from "@/hooks/useEmailLimit";
 import { NetworkStatus, SessionTimeoutWarning } from "@/components/stability";
@@ -99,7 +99,6 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 const SelectBusiness = lazy(() => import("./pages/SelectBusiness"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
-const TestPhoneVerification = lazy(() => import("./pages/TestPhoneVerification"));
 const StatusPage = lazy(() => import("./pages/StatusPage"));
 const BusinessProfilePage = lazy(() => import("./pages/BusinessProfilePage"));
 
@@ -401,7 +400,6 @@ const App = () => {
                         {/* Demo routes */}
                         <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
                         <Route path="/demo/undo" element={<UndoDemo />} />
-                        <Route path="/test-phone" element={<TestPhoneVerification />} />
                         {/* Auth routes */}
                         <Route path="/mobile-auth" element={<MobileAuthScreen />} />
                         <Route path="/welcome" element={<Welcome />} />
