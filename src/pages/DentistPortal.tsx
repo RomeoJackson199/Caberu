@@ -34,11 +34,7 @@ import { useBusinessContext } from "@/hooks/useBusinessContext";
 // Lazy load Messages component for better code splitting
 const Messages = lazy(() => import("./Messages"));
 import { ServiceManager } from "@/components/services/ServiceManager";
-import { UserTour, useUserTour } from "@/components/UserTour";
-import { DentistDemoTour } from "@/components/DentistDemoTour";
 import { OnboardingProgressTracker } from "@/components/onboarding/OnboardingProgressTracker";
-import { HelpCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface DentistPortalProps {
   user?: User | null;
@@ -57,17 +53,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
   const [businessInfo, setBusinessInfo] = useState<{ id: string; name: string } | null>(null);
   const { template, hasFeature, loading: templateLoading } = useBusinessTemplate();
   const { isActive: hasActiveSubscription, loading: subscriptionLoading, status: subscriptionStatus, endsAt: subscriptionEndsAt } = useBusinessSubscription();
-  const { showTour, closeTour } = useUserTour("dentist");
-  const [showDemoTour, setShowDemoTour] = useState(false);
-  const [tourCompleted, setTourCompleted] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
-
-  const isTourMarkedCompleted = () => {
-    return (
-      localStorage.getItem('dentist-tour-completed') === 'true' ||
-      localStorage.getItem('tour_completed_dentist') === 'true'
-    );
-  };
 
   // Listen for onboarding completion event from OnboardingOrchestrator
   useEffect(() => {
@@ -77,23 +63,6 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     window.addEventListener('onboarding-completed', handleOnboardingCompleted);
     return () => window.removeEventListener('onboarding-completed', handleOnboardingCompleted);
   }, []);
-
-  // Check if tour has been completed and if it should auto-start
-  useEffect(() => {
-    setTourCompleted(isTourMarkedCompleted());
-
-    // Wait until onboarding has finished before auto-starting product tour
-    if (onboardingCompleted !== true) return;
-
-    const shouldStartTour = localStorage.getItem('should-start-tour') === 'true';
-    if (shouldStartTour && !isTourMarkedCompleted()) {
-      // Small delay to ensure the page is fully loaded
-      setTimeout(() => {
-        setShowDemoTour(true);
-        localStorage.removeItem('should-start-tour'); // Clear the flag
-      }, 1500);
-    }
-  }, [onboardingCompleted]);
 
   // Handle URL-based section navigation
   useEffect(() => {
@@ -341,20 +310,6 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
       dentistId={dentistId}
     >
       <div className="space-y-4">
-        {/* Demo Tour Trigger Button - Hide after completion */}
-        {!tourCompleted && (
-          <div className="flex justify-end px-6 pt-4">
-            <Button
-              onClick={() => setShowDemoTour(true)}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <HelpCircle className="h-4 w-4" />
-              {t.startTour || "Start Tour"}
-            </Button>
-          </div>
-        )}
         {activeSection === 'users' && businessInfo && (
           <div className="flex justify-end mb-4">
             <InviteDentistDialog
@@ -374,33 +329,11 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         {renderContent()}
       </div>
 
-      {/* User Tour */}
-      <UserTour
-        isOpen={showTour}
-        onClose={() => {
-          closeTour();
-          setTourCompleted(isTourMarkedCompleted());
-        }}
-        userRole="dentist"
-      />
-
-      {/* Demo Tour */}
-      <DentistDemoTour
-        run={showDemoTour}
-        onClose={() => {
-          setShowDemoTour(false);
-          // Refresh tour completed state
-          setTourCompleted(isTourMarkedCompleted());
-        }}
-        onChangeSection={(section) => navigateToSection(section as DentistSection)}
-      />
-
       {/* Onboarding Progress Tracker - only show after onboarding flow is complete */}
       {user && businessInfo && onboardingCompleted === true && (
         <OnboardingProgressTracker
           userId={user.id}
           businessId={businessInfo.id}
-          onStartTour={() => setShowDemoTour(true)}
         />
       )}
     </DentistAppShell>
