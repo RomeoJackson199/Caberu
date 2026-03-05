@@ -249,7 +249,8 @@ export function QuickAppointmentDialog({
       (p) =>
         p.first_name.toLowerCase().includes(search) ||
         p.last_name.toLowerCase().includes(search) ||
-        p.email.toLowerCase().includes(search)
+        p.email.toLowerCase().includes(search) ||
+        (p.phone && p.phone.toLowerCase().includes(search))
     );
   }, [patients, patientSearch]);
 
@@ -441,7 +442,7 @@ export function QuickAppointmentDialog({
                           </AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{selectedPatient.first_name} {selectedPatient.last_name}</span>
-                        <span className="text-xs text-muted-foreground">{selectedPatient.email}</span>
+                        <span className="text-xs text-muted-foreground">{selectedPatient.phone || selectedPatient.email}</span>
                       </div>
                     ) : (
                       <span>Search patient...</span>
@@ -452,7 +453,7 @@ export function QuickAppointmentDialog({
                 <PopoverContent className="w-[460px] p-0" align="start">
                   <Command>
                     <CommandInput
-                      placeholder="Name or email..."
+                      placeholder="Name, phone or email..."
                       value={patientSearch}
                       onValueChange={setPatientSearch}
                     />
@@ -468,7 +469,7 @@ export function QuickAppointmentDialog({
                             {filteredPatients.map((p) => (
                               <CommandItem
                                 key={p.id}
-                                value={`${p.first_name} ${p.last_name} ${p.email}`}
+                                value={`${p.first_name} ${p.last_name} ${p.phone || ''} ${p.email}`}
                                 onSelect={() => {
                                   setSelectedPatient(p);
                                   setPatientSearchOpen(false);
@@ -482,7 +483,7 @@ export function QuickAppointmentDialog({
                                   </Avatar>
                                   <div className="flex-1 min-w-0">
                                     <p className="font-medium text-sm truncate">{p.first_name} {p.last_name}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{p.email}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{p.phone || p.email}</p>
                                   </div>
                                   {selectedPatient?.id === p.id && (
                                     <CheckCircle2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
