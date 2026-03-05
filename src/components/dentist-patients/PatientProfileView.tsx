@@ -75,6 +75,8 @@ export function PatientProfileView({
   const [showBalanceDetails, setShowBalanceDetails] = useState(false);
   
   const age = getAge(patient.date_of_birth);
+  const patientContact = patient.phone?.trim() || patient.email?.trim() || 'No contact details';
+  const ContactIcon = patient.phone?.trim() ? Phone : Mail;
 
   // Filter and group appointments
   const groupedAppointments = useMemo(() => {
@@ -171,18 +173,10 @@ export function PatientProfileView({
                     {age} years
                   </span>
                 )}
-                {patient.phone && (
-                  <span className="flex items-center gap-1">
-                    <Phone className="h-3.5 w-3.5" />
-                    {patient.phone}
-                  </span>
-                )}
-                {patient.email && (
-                  <span className="flex items-center gap-1 truncate max-w-[200px]">
-                    <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                    {patient.email}
-                  </span>
-                )}
+                <span className="flex items-center gap-1">
+                  <ContactIcon className="h-3.5 w-3.5" />
+                  {patientContact}
+                </span>
               </div>
             </div>
           </div>

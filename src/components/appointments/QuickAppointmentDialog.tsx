@@ -49,6 +49,15 @@ interface QuickAppointmentDialogProps {
   showPatientSelector?: boolean;
 }
 
+const normalizePhone = (value: string) => value.replace(/\D/g, "");
+const getPatientContactLabel = (patient: Pick<Patient, "phone" | "email">) =>
+  patient.phone?.trim() || patient.email?.trim() || "No contact details";
+const getPatientSearchValue = (patient: Patient) => {
+  const phone = patient.phone?.trim() || "";
+  const email = patient.email?.trim() || "";
+  return `${patient.first_name} ${patient.last_name} ${phone} ${normalizePhone(phone)} ${email}`.trim();
+};
+
 export function QuickAppointmentDialog({
   open,
   onOpenChange,
@@ -280,11 +289,22 @@ export function QuickAppointmentDialog({
   const filteredPatients = useMemo(() => {
     if (!patientSearch) return patients;
     const search = patientSearch.toLowerCase();
+    const normalizedSearch = normalizePhone(patientSearch);
+
     return patients.filter(
-      (p) =>
-        p.first_name.toLowerCase().includes(search) ||
-        p.last_name.toLowerCase().includes(search) ||
-        p.email.toLowerCase().includes(search)
+      (p) => {
+        const rawPhone = p.phone?.trim() || "";
+        const normalizedPhone = normalizePhone(rawPhone);
+        const email = p.email?.toLowerCase() || "";
+
+        return (
+          p.first_name.toLowerCase().includes(search) ||
+          p.last_name.toLowerCase().includes(search) ||
+          email.includes(search) ||
+          rawPhone.toLowerCase().includes(search) ||
+          (!!normalizedSearch && normalizedPhone.includes(normalizedSearch))
+        );
+      }
     );
   }, [patients, patientSearch]);
 
@@ -423,7 +443,7 @@ export function QuickAppointmentDialog({
                 <PopoverContent className="w-[400px] p-0" align="start">
                   <Command>
                     <CommandInput
-                      placeholder="Search patients..."
+                      placeholder="Search by name, phone, or email..."
                       value={patientSearch}
                       onValueChange={setPatientSearch}
                     />
@@ -439,7 +459,7 @@ export function QuickAppointmentDialog({
                             {filteredPatients.map((p) => (
                               <CommandItem
                                 key={p.id}
-                                value={`${p.first_name} ${p.last_name} ${p.email}`}
+                                value={getPatientSearchValue(p)}
                                 onSelect={() => {
                                   setSelectedPatient(p);
                                   setPatientSearchOpen(false);
@@ -456,7 +476,7 @@ export function QuickAppointmentDialog({
                                       {p.first_name} {p.last_name}
                                     </p>
                                     <p className="text-xs text-muted-foreground truncate">
-                                      {p.email}
+                                      {getPatientContactLabel(p)}
                                     </p>
                                   </div>
                                 </div>
@@ -480,7 +500,7 @@ export function QuickAppointmentDialog({
                 </Avatar>
                 <div>
                   <p className="font-medium">{selectedPatient?.first_name} {selectedPatient?.last_name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedPatient?.email}</p>
+                  <p className="text-sm text-muted-foreground">{selectedPatient ? getPatientContactLabel(selectedPatient) : "No contact details"}</p>
                 </div>
               </div>
             </div>
