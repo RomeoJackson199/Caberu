@@ -518,7 +518,7 @@ export function useBookingFlow() {
             dentist_id: selectedDentist.id,
             business_id: businessId,
             appointment_date: appointmentDateTime.toISOString(),
-            reason: selectedService.name,
+            reason: symptomSummary || selectedService.name,
             status: appointmentStatus,
             booking_source: aiBookingData ? "ai" : "manual",
             urgency: "low",
