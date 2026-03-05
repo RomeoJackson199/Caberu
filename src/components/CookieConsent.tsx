@@ -93,8 +93,6 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     const consent = localStorage.getItem("cookie-consent");
     if (!consent) {
       const timer = setTimeout(() => setShowBanner(true), 1000);
@@ -107,7 +105,7 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
         logger.error("Failed to parse cookie preferences:", error);
       }
     }
-  }, [isAuthenticated]);
+  }, []);
 
   const savePreferences = (prefs: CookiePreferences) => {
     localStorage.setItem("cookie-consent", JSON.stringify(prefs));
