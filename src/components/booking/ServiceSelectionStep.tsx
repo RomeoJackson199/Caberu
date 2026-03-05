@@ -125,7 +125,14 @@ export function ServiceSelectionStep({
           </div>
           <div className="flex items-center justify-between mt-3 pt-3 border-t">
             <span className="font-semibold text-sm text-primary">
-              {new Intl.NumberFormat("fr-FR", { style: "currency", currency: service.currency || "EUR", minimumFractionDigits: 2 }).format(service.price_cents / 100)}
+              {new Intl.NumberFormat(
+                service.currency === "EUR" ? "de-DE" :
+                service.currency === "GBP" ? "en-GB" :
+                service.currency === "CAD" ? "en-CA" :
+                service.currency === "AUD" ? "en-AU" :
+                "en-US",
+                { style: "currency", currency: service.currency || "EUR", minimumFractionDigits: 2 }
+              ).format(service.price_cents / 100)}
             </span>
             <span className="flex items-center gap-1 text-sm text-muted-foreground bg-secondary px-2 py-1 rounded">
               <Timer className="h-3 w-3" />
