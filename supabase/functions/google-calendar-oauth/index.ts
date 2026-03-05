@@ -33,7 +33,6 @@ serve(async (req) => {
     if (action === 'get-auth-url') {
       console.log('OAuth request - clientId:', googleClientId, 'redirectUri:', redirectUri);
       
-      // Generate OAuth URL with full calendar access for bidirectional sync
       const scopes = [
         'https://www.googleapis.com/auth/calendar',
         'https://www.googleapis.com/auth/calendar.events'
@@ -54,7 +53,6 @@ serve(async (req) => {
     }
     
     if (action === 'exchange-code') {
-      // Exchange code for tokens
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -73,7 +71,6 @@ serve(async (req) => {
         throw new Error('No refresh token received');
       }
       
-      // Get profile_id for the user
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
@@ -84,7 +81,6 @@ serve(async (req) => {
         throw new Error('Profile not found');
       }
       
-      // Store refresh token in dentists table
       const { error: updateError } = await supabase
         .from('dentists')
         .update({
@@ -106,7 +102,6 @@ serve(async (req) => {
     }
     
     if (action === 'disconnect') {
-      // Get profile_id for the user
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
@@ -117,13 +112,13 @@ serve(async (req) => {
         throw new Error('Profile not found');
       }
       
-      // Remove tokens from dentists table
       const { error: updateError } = await supabase
         .from('dentists')
         .update({
           google_calendar_refresh_token: null,
           google_calendar_connected: false,
           google_calendar_last_sync: null,
+          google_calendar_id: 'primary',
         })
         .eq('profile_id', profile.id);
       
@@ -133,6 +128,67 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'list-calendars') {
+      // Get the dentist's refresh token
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile) throw new Error('Profile not found');
+
+      const { data: dentist } = await supabase
+        .from('dentists')
+        .select('google_calendar_refresh_token, google_calendar_connected')
+        .eq('profile_id', profile.id)
+        .single();
+
+      if (!dentist?.google_calendar_connected || !dentist.google_calendar_refresh_token) {
+        throw new Error('Google Calendar not connected');
+      }
+
+      // Get access token
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          refresh_token: dentist.google_calendar_refresh_token,
+          client_id: googleClientId!,
+          client_secret: googleClientSecret!,
+          grant_type: 'refresh_token',
+        }),
+      });
+
+      const tokens = await tokenResponse.json();
+      if (!tokens.access_token) throw new Error('Failed to get access token');
+
+      // Fetch calendar list
+      const calListRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+        headers: { 'Authorization': `Bearer ${tokens.access_token}` },
+      });
+
+      const calListData = await calListRes.json();
+      if (!calListRes.ok) {
+        console.error('Calendar list API error:', calListData);
+        throw new Error('Failed to fetch calendars');
+      }
+
+      const calendars = (calListData.items || [])
+        .filter((c: any) => c.accessRole === 'owner' || c.accessRole === 'writer')
+        .map((c: any) => ({
+          id: c.id,
+          summary: c.summary || c.id,
+          primary: !!c.primary,
+          backgroundColor: c.backgroundColor,
+        }));
+
+      return new Response(
+        JSON.stringify({ calendars }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

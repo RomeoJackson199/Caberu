@@ -25,7 +25,7 @@ serve(async (req) => {
     if (dentistId) {
       const { data, error } = await supabase
         .from('dentists')
-        .select('id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction')
+        .select('id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction, google_calendar_id')
         .eq('id', dentistId)
         .single();
       
@@ -57,7 +57,7 @@ serve(async (req) => {
       
       const { data, error } = await supabase
         .from('dentists')
-        .select('id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction')
+        .select('id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction, google_calendar_id')
         .eq('profile_id', profile.id)
         .single();
       
@@ -105,8 +105,9 @@ serve(async (req) => {
     const timeMin = new Date(startDate).toISOString();
     const timeMax = new Date(endDate).toISOString();
     
+    const calendarId = encodeURIComponent(dentist.google_calendar_id || 'primary');
     const calendarResponse = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
+      `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?` +
       `timeMin=${encodeURIComponent(timeMin)}&` +
       `timeMax=${encodeURIComponent(timeMax)}&` +
       `singleEvents=true&` +

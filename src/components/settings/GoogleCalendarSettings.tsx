@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, CheckCircle, XCircle, RefreshCw, ExternalLink, ArrowRightLeft } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, RefreshCw, ExternalLink, ArrowRightLeft, ListChecks } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentDentist } from '@/hooks/useCurrentDentist';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
@@ -12,8 +12,16 @@ import { CalendarSyncStatus } from '@/components/stability/CalendarSyncStatus';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type SyncDirection = 'both' | 'google_to_practice' | 'practice_to_google';
+
+interface GoogleCalendar {
+  id: string;
+  summary: string;
+  primary: boolean;
+  backgroundColor?: string;
+}
 
 export function GoogleCalendarSettings() {
   const { businessId } = useBusinessContext();
@@ -23,18 +31,22 @@ export function GoogleCalendarSettings() {
   const [isConnected, setIsConnected] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [syncDirection, setSyncDirection] = useState<SyncDirection>('both');
+  const [selectedCalendarId, setSelectedCalendarId] = useState('primary');
+  const [calendars, setCalendars] = useState<GoogleCalendar[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [savingDirection, setSavingDirection] = useState(false);
+  const [savingCalendar, setSavingCalendar] = useState(false);
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     if (!dentistId) return;
     try {
       const { data } = await supabase
         .from('dentists')
-        .select('google_calendar_connected, google_calendar_last_sync, google_calendar_sync_direction')
+        .select('google_calendar_connected, google_calendar_last_sync, google_calendar_sync_direction, google_calendar_id')
         .eq('id', dentistId)
         .single();
 
@@ -42,33 +54,45 @@ export function GoogleCalendarSettings() {
         setIsConnected(!!data.google_calendar_connected);
         setLastSync(data.google_calendar_last_sync ? new Date(data.google_calendar_last_sync) : null);
         setSyncDirection((data.google_calendar_sync_direction as SyncDirection) || 'both');
+        setSelectedCalendarId(data.google_calendar_id || 'primary');
       }
     } finally {
       setLoading(false);
     }
   }, [dentistId]);
 
+  const fetchCalendars = useCallback(async () => {
+    if (!isConnected) return;
+    setLoadingCalendars(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-calendar-oauth', {
+        body: { action: 'list-calendars' },
+      });
+      if (error) throw error;
+      setCalendars(data?.calendars || []);
+    } catch (err) {
+      console.error('Failed to fetch calendars:', err);
+    } finally {
+      setLoadingCalendars(false);
+    }
+  }, [isConnected]);
+
   useEffect(() => { fetchStatus(); }, [fetchStatus]);
+  useEffect(() => { fetchCalendars(); }, [fetchCalendars]);
 
   const handleConnect = async () => {
     setConnecting(true);
     try {
       const redirectUri = `${window.location.origin}/google-calendar-callback`;
-
       const { data, error } = await supabase.functions.invoke('google-calendar-oauth', {
         body: { action: 'get-auth-url', redirectUri },
       });
-
       if (error || !data?.authUrl) throw new Error(error?.message || 'Failed to get auth URL');
 
-      // Open popup
       const popup = window.open(data.authUrl, 'google-calendar-auth', 'width=500,height=700,left=200,top=100');
-
-      // Listen for callback message
       const handler = async (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
         if (event.data?.type !== 'google-calendar-auth') return;
-
         window.removeEventListener('message', handler);
         popup?.close();
 
@@ -84,10 +108,7 @@ export function GoogleCalendarSettings() {
         }
         setConnecting(false);
       };
-
       window.addEventListener('message', handler);
-
-      // Timeout after 2 minutes
       setTimeout(() => {
         window.removeEventListener('message', handler);
         if (connecting) setConnecting(false);
@@ -106,6 +127,7 @@ export function GoogleCalendarSettings() {
       });
       if (error) throw error;
       toast({ title: 'Google Calendar disconnected' });
+      setCalendars([]);
       await fetchStatus();
     } catch (err) {
       toast({ title: 'Disconnect failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
@@ -120,11 +142,9 @@ export function GoogleCalendarSettings() {
       const now = new Date();
       const startDate = now.toISOString();
       const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
       const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
         body: { startDate, endDate },
       });
-
       if (error) throw error;
       toast({ title: 'Sync complete', description: `${data?.events?.length ?? 0} events synced from Google Calendar.` });
       await fetchStatus();
@@ -152,6 +172,26 @@ export function GoogleCalendarSettings() {
       toast({ title: 'Failed to update', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
     } finally {
       setSavingDirection(false);
+    }
+  };
+
+  const handleCalendarChange = async (calId: string) => {
+    if (!dentistId) return;
+    setSavingCalendar(true);
+    const previous = selectedCalendarId;
+    setSelectedCalendarId(calId);
+    try {
+      const { error } = await supabase
+        .from('dentists')
+        .update({ google_calendar_id: calId })
+        .eq('id', dentistId);
+      if (error) throw error;
+      toast({ title: 'Calendar updated', description: 'Future syncs will use the selected calendar.' });
+    } catch (err) {
+      setSelectedCalendarId(previous);
+      toast({ title: 'Failed to update', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    } finally {
+      setSavingCalendar(false);
     }
   };
 
@@ -249,6 +289,56 @@ export function GoogleCalendarSettings() {
           )}
         </CardContent>
       </Card>
+
+      {/* Calendar Selection */}
+      {isConnected && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ListChecks className="h-4 w-4" />
+              Calendar
+            </CardTitle>
+            <CardDescription>
+              Choose which Google Calendar to sync with your practice.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingCalendars ? (
+              <div className="animate-pulse h-10 bg-muted rounded w-64" />
+            ) : calendars.length > 0 ? (
+              <Select
+                value={selectedCalendarId}
+                onValueChange={handleCalendarChange}
+                disabled={savingCalendar}
+              >
+                <SelectTrigger className="w-full max-w-md">
+                  <SelectValue placeholder="Select a calendar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {calendars.map((cal) => (
+                    <SelectItem key={cal.id} value={cal.id}>
+                      <div className="flex items-center gap-2">
+                        {cal.backgroundColor && (
+                          <span
+                            className="inline-block h-3 w-3 rounded-full shrink-0"
+                            style={{ backgroundColor: cal.backgroundColor }}
+                          />
+                        )}
+                        <span>{cal.summary}</span>
+                        {cal.primary && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Primary</Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-sm text-muted-foreground">No calendars found. Try reconnecting.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Sync Direction Settings */}
       {isConnected && (

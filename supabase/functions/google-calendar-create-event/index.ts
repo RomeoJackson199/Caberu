@@ -35,7 +35,7 @@ serve(async (req) => {
       .from('appointments_decrypted')
       .select(`
         *,
-        dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction),
+        dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction, google_calendar_id),
         profiles!appointments_patient_id_fkey(first_name, last_name, email, phone),
         business_services(name)
       `)
@@ -85,9 +85,11 @@ serve(async (req) => {
     }
 
     // Helper: find existing Google Calendar event by appointment ID
+    const calendarId = encodeURIComponent(dentist.google_calendar_id || 'primary');
+
     async function findGcalEventId(accessToken: string, aptId: string): Promise<string | null> {
       try {
-        const searchUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?privateExtendedProperty=appointmentId%3D${aptId}&maxResults=1`;
+        const searchUrl = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?privateExtendedProperty=appointmentId%3D${aptId}&maxResults=1`;
         const res = await fetch(searchUrl, {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
@@ -143,11 +145,11 @@ serve(async (req) => {
       // Look up existing event via extendedProperties
       let calendarEventId = await findGcalEventId(tokens.access_token, appointmentId);
       let method = 'POST';
-      let url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+      let url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`;
 
       if ((action === 'update' || calendarEventId) && calendarEventId) {
         method = 'PUT';
-        url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}`;
+        url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${calendarEventId}`;
       }
 
       const calendarResponse = await fetch(url, {
@@ -175,7 +177,7 @@ serve(async (req) => {
       const calendarEventId = await findGcalEventId(tokens.access_token, appointmentId);
       
       if (calendarEventId) {
-        await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}`, {
+        await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${calendarEventId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${tokens.access_token}`,
