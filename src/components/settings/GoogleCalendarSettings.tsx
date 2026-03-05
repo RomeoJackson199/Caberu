@@ -10,6 +10,10 @@ import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSyncStatus } from '@/components/stability/CalendarSyncStatus';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+
+type SyncDirection = 'both' | 'google_to_practice' | 'practice_to_google';
 
 export function GoogleCalendarSettings() {
   const { businessId } = useBusinessContext();
@@ -18,23 +22,26 @@ export function GoogleCalendarSettings() {
 
   const [isConnected, setIsConnected] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [syncDirection, setSyncDirection] = useState<SyncDirection>('both');
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [savingDirection, setSavingDirection] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     if (!dentistId) return;
     try {
       const { data } = await supabase
         .from('dentists')
-        .select('google_calendar_connected, google_calendar_last_sync')
+        .select('google_calendar_connected, google_calendar_last_sync, google_calendar_sync_direction')
         .eq('id', dentistId)
         .single();
 
       if (data) {
         setIsConnected(!!data.google_calendar_connected);
         setLastSync(data.google_calendar_last_sync ? new Date(data.google_calendar_last_sync) : null);
+        setSyncDirection((data.google_calendar_sync_direction as SyncDirection) || 'both');
       }
     } finally {
       setLoading(false);
@@ -125,6 +132,26 @@ export function GoogleCalendarSettings() {
       toast({ title: 'Sync failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleSyncDirectionChange = async (value: SyncDirection) => {
+    if (!dentistId) return;
+    setSavingDirection(true);
+    const previous = syncDirection;
+    setSyncDirection(value);
+    try {
+      const { error } = await supabase
+        .from('dentists')
+        .update({ google_calendar_sync_direction: value })
+        .eq('id', dentistId);
+      if (error) throw error;
+      toast({ title: 'Sync direction updated' });
+    } catch (err) {
+      setSyncDirection(previous);
+      toast({ title: 'Failed to update', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    } finally {
+      setSavingDirection(false);
     }
   };
 
@@ -223,12 +250,63 @@ export function GoogleCalendarSettings() {
         </CardContent>
       </Card>
 
+      {/* Sync Direction Settings */}
+      {isConnected && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <ArrowRightLeft className="h-4 w-4" />
+              Sync Direction
+            </CardTitle>
+            <CardDescription>
+              Choose how your calendar syncs between Google and your practice.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RadioGroup
+              value={syncDirection}
+              onValueChange={(v) => handleSyncDirectionChange(v as SyncDirection)}
+              disabled={savingDirection}
+              className="space-y-3"
+            >
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                <RadioGroupItem value="both" id="sync-both" className="mt-0.5" />
+                <Label htmlFor="sync-both" className="cursor-pointer space-y-1">
+                  <span className="font-medium text-sm">Bidirectional sync</span>
+                  <p className="text-xs text-muted-foreground">
+                    Appointments sync to Google Calendar, and Google events block your practice slots.
+                  </p>
+                </Label>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                <RadioGroupItem value="practice_to_google" id="sync-ptg" className="mt-0.5" />
+                <Label htmlFor="sync-ptg" className="cursor-pointer space-y-1">
+                  <span className="font-medium text-sm">Practice → Google only</span>
+                  <p className="text-xs text-muted-foreground">
+                    Practice appointments appear in Google Calendar, but Google events won't block your slots.
+                  </p>
+                </Label>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                <RadioGroupItem value="google_to_practice" id="sync-gtp" className="mt-0.5" />
+                <Label htmlFor="sync-gtp" className="cursor-pointer space-y-1">
+                  <span className="font-medium text-sm">Google → Practice only</span>
+                  <p className="text-xs text-muted-foreground">
+                    Google Calendar events block your practice slots, but appointments won't be pushed to Google.
+                  </p>
+                </Label>
+              </div>
+            </RadioGroup>
+          </CardContent>
+        </Card>
+      )}
+
       {/* How it works */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <ArrowRightLeft className="h-4 w-4" />
-            How bidirectional sync works
+            <Calendar className="h-4 w-4" />
+            How sync works
           </CardTitle>
         </CardHeader>
         <CardContent>

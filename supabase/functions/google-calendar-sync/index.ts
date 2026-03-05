@@ -25,7 +25,7 @@ serve(async (req) => {
     if (dentistId) {
       const { data, error } = await supabase
         .from('dentists')
-        .select('id, google_calendar_refresh_token, google_calendar_connected')
+        .select('id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction')
         .eq('id', dentistId)
         .single();
       
@@ -57,7 +57,7 @@ serve(async (req) => {
       
       const { data, error } = await supabase
         .from('dentists')
-        .select('id, google_calendar_refresh_token, google_calendar_connected')
+        .select('id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction')
         .eq('profile_id', profile.id)
         .single();
       
@@ -70,6 +70,15 @@ serve(async (req) => {
     if (!dentist?.google_calendar_connected || !dentist.google_calendar_refresh_token) {
       return new Response(
         JSON.stringify({ events: [], connected: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Respect sync direction — skip importing Google events if direction is practice_to_google only
+    const syncDirection = dentist.google_calendar_sync_direction || 'both';
+    if (syncDirection === 'practice_to_google') {
+      return new Response(
+        JSON.stringify({ events: [], connected: true, skipped: true, message: 'Sync direction does not import from Google' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

@@ -35,7 +35,7 @@ serve(async (req) => {
       .from('appointments_decrypted')
       .select(`
         *,
-        dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected),
+        dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction),
         profiles!appointments_patient_id_fkey(first_name, last_name, email, phone),
         business_services(name)
       `)
@@ -53,6 +53,15 @@ serve(async (req) => {
     if (!dentist.google_calendar_connected || !dentist.google_calendar_refresh_token) {
       return new Response(
         JSON.stringify({ success: false, message: 'Google Calendar not connected' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Respect sync direction — skip if direction is google_to_practice only
+    const syncDirection = dentist.google_calendar_sync_direction || 'both';
+    if (syncDirection === 'google_to_practice') {
+      return new Response(
+        JSON.stringify({ success: false, message: 'Sync direction does not allow pushing to Google Calendar' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
