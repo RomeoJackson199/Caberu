@@ -22,7 +22,7 @@ const AIInfo = () => {
           "@type": "Offer",
           "name": "Starter Plan",
           "price": "249",
-          "priceCurrency": "USD",
+          "priceCurrency": "EUR",
           "billingDuration": "P1M",
           "description": "Perfect for solo practitioners. Up to 500 patients per month, basic scheduling, patient management, email notifications, and basic reports."
         },
@@ -30,7 +30,7 @@ const AIInfo = () => {
           "@type": "Offer",
           "name": "Professional Plan",
           "price": "499",
-          "priceCurrency": "USD",
+          "priceCurrency": "EUR",
           "billingDuration": "P1M",
           "description": "For growing practices. Up to 2,500 patients per month, everything in Starter, 2,000 emails/month, advanced analytics, SMS notifications, custom branding, priority support.",
           "isRecommended": true
@@ -39,7 +39,7 @@ const AIInfo = () => {
           "@type": "Offer",
           "name": "Enterprise Plan",
           "price": "999",
-          "priceCurrency": "USD",
+          "priceCurrency": "EUR",
           "billingDuration": "P1M",
           "description": "For large practices and multi-location operations. Up to 7,500 patients per month, everything in Professional, 7,500 emails/month, unlimited staff accounts, API access, dedicated support, custom integrations."
         }
@@ -143,9 +143,9 @@ const AIInfo = () => {
         <h2 className="text-3xl font-bold mb-6">Pricing Plans</h2>
 
         <div className="mb-8" itemScope itemType="https://schema.org/Offer">
-          <h3 className="text-2xl font-semibold mb-3" itemProp="name">Starter Plan - $249/month</h3>
+          <h3 className="text-2xl font-semibold mb-3" itemProp="name">Starter Plan - €249/month</h3>
           <meta itemProp="price" content="249" />
-          <meta itemProp="priceCurrency" content="USD" />
+          <meta itemProp="priceCurrency" content="EUR" />
           <p className="mb-2"><strong>Best for:</strong> Solo practitioners and small practices</p>
           <p className="mb-2"><strong>Patient Limit:</strong> Up to 500 patients per month</p>
           <p className="mb-3" itemProp="description">Features included:</p>
@@ -161,9 +161,9 @@ const AIInfo = () => {
 
         <div className="mb-8 border-2 border-blue-500 p-6 rounded-lg" itemScope itemType="https://schema.org/Offer">
           <div className="inline-block bg-blue-500 text-white px-3 py-1 rounded-full text-sm mb-2">MOST POPULAR</div>
-          <h3 className="text-2xl font-semibold mb-3" itemProp="name">Professional Plan - $499/month</h3>
+          <h3 className="text-2xl font-semibold mb-3" itemProp="name">Professional Plan - €499/month</h3>
           <meta itemProp="price" content="499" />
-          <meta itemProp="priceCurrency" content="USD" />
+          <meta itemProp="priceCurrency" content="EUR" />
           <p className="mb-2"><strong>Best for:</strong> Growing practices with multiple providers</p>
           <p className="mb-2"><strong>Patient Limit:</strong> Up to 2,500 patients per month</p>
           <p className="mb-3" itemProp="description">Everything in Starter, plus:</p>
@@ -179,9 +179,9 @@ const AIInfo = () => {
         </div>
 
         <div className="mb-8" itemScope itemType="https://schema.org/Offer">
-          <h3 className="text-2xl font-semibold mb-3" itemProp="name">Enterprise Plan - $999/month</h3>
+          <h3 className="text-2xl font-semibold mb-3" itemProp="name">Enterprise Plan - €999/month</h3>
           <meta itemProp="price" content="999" />
-          <meta itemProp="priceCurrency" content="USD" />
+          <meta itemProp="priceCurrency" content="EUR" />
           <p className="mb-2"><strong>Best for:</strong> Large practices and multi-location operations</p>
           <p className="mb-2"><strong>Patient Limit:</strong> Up to 7,500 patients per month</p>
           <p className="mb-3" itemProp="description">Everything in Professional, plus:</p>

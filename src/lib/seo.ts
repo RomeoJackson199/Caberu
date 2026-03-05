@@ -52,7 +52,7 @@ const seoMap: Record<string, { title: string; description: string; structuredDat
           offers: {
             "@type": "Offer",
             price: "0",
-            priceCurrency: "USD"
+            priceCurrency: "EUR"
           },
           description: "AI-powered dental practice management software with scheduling, patient records, billing, and inventory management"
         },
@@ -194,18 +194,18 @@ const seoMap: Record<string, { title: string; description: string; structuredDat
           "@type": "Offer",
           name: "Free Plan",
           price: "0",
-          priceCurrency: "USD",
+          priceCurrency: "EUR",
           availability: "https://schema.org/InStock"
         },
         {
           "@type": "Offer",
           name: "Professional Plan",
           price: "49",
-          priceCurrency: "USD",
+          priceCurrency: "EUR",
           priceSpecification: {
             "@type": "UnitPriceSpecification",
             price: "49",
-            priceCurrency: "USD",
+            priceCurrency: "EUR",
             unitText: "MONTH"
           },
           availability: "https://schema.org/InStock"
@@ -214,11 +214,11 @@ const seoMap: Record<string, { title: string; description: string; structuredDat
           "@type": "Offer",
           name: "Enterprise Plan",
           price: "99",
-          priceCurrency: "USD",
+          priceCurrency: "EUR",
           priceSpecification: {
             "@type": "UnitPriceSpecification",
             price: "99",
-            priceCurrency: "USD",
+            priceCurrency: "EUR",
             unitText: "MONTH"
           },
           availability: "https://schema.org/InStock"

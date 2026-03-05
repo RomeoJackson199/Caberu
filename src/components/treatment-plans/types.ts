@@ -78,8 +78,8 @@ export function calculatePlanTotal(items: TreatmentPlanItem[]): number {
 }
 
 // Format currency amount
-export function formatCurrency(cents: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(cents: number, currency: string = 'EUR'): string {
+  return new Intl.NumberFormat('de-DE', {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,

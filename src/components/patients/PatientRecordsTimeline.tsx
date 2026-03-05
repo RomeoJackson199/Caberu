@@ -285,7 +285,7 @@ export const PatientRecordsTimeline = memo(function PatientRecordsTimeline({ pat
           dentistName,
           planStatus: plan.status,
           planTotal: plan.total_estimated_cents,
-          planCurrency: plan.currency || 'USD',
+          planCurrency: plan.currency || 'EUR',
         });
       });
     }

@@ -89,7 +89,7 @@ serve(async (req) => {
               tagline: businessData.tagline || 'Your Practice, Your Way',
               primary_color: businessData.primaryColor || '#0F3D91',
               secondary_color: businessData.secondaryColor || '#66D2D6',
-              currency: 'USD',
+              currency: 'EUR',
               template_type: 'healthcare',
               subscription_status: 'active',
               subscription_plan: metadata.plan_name || null,

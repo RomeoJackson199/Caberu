@@ -288,7 +288,7 @@ export function TreatmentPlanEditorSheet({
             notes: notes.trim() || null,
             status: newStatus,
             version: createNewVersion ? planVersion + 1 : 1,
-            currency: "USD",
+            currency: "EUR",
             total_estimated_cents: totalCents,
             created_from_appointment_id: appointmentId,
             created_by_dentist_id: dentistId,
@@ -560,7 +560,7 @@ export function TreatmentPlanEditorSheet({
                             </div>
                             {/* Line total */}
                             <div className="text-right text-sm text-muted-foreground">
-                              Subtotal: {formatCurrency(item.unit_price_cents * item.qty, "USD")}
+                              Subtotal: {formatCurrency(item.unit_price_cents * item.qty, "EUR")}
                             </div>
                           </div>
                         ))}
@@ -568,7 +568,7 @@ export function TreatmentPlanEditorSheet({
                         {/* Total */}
                         <div className="flex justify-between items-center pt-3 border-t font-medium">
                           <span>Estimated Total</span>
-                          <span className="text-lg">{formatCurrency(totalCents, "USD")}</span>
+                          <span className="text-lg">{formatCurrency(totalCents, "EUR")}</span>
                         </div>
                       </div>
                     )}

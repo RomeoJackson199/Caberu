@@ -295,7 +295,7 @@ export function TreatmentPlanEditor({
             notes: notes.trim() || null,
             status: newStatus,
             version: createNewVersion ? planVersion + 1 : 1,
-            currency: "USD",
+            currency: "EUR",
             total_estimated_cents: totalCents,
             created_from_appointment_id: appointmentId,
             created_by_dentist_id: dentistId,
@@ -535,7 +535,7 @@ export function TreatmentPlanEditor({
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                 Estimated Total
               </span>
-              <span className="text-lg">{formatCurrency(totalCents, "USD")}</span>
+              <span className="text-lg">{formatCurrency(totalCents, "EUR")}</span>
             </div>
           </>
         )}
