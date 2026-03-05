@@ -252,7 +252,7 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
           >
             By accepting, you agree to our{" "}
             <a
-              href="/cookie-policy"
+              href="/cookies"
               style={{ textDecoration: "underline", cursor: "pointer", color: "inherit" }}
             >
               Cookie Policy
@@ -374,7 +374,7 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
             }}
           >
             <a
-              href="/cookie-policy"
+              href="/cookies"
               style={{ textDecoration: "underline", cursor: "pointer", color: "inherit" }}
             >
               Cookie Policy

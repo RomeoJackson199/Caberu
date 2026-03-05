@@ -78,21 +78,9 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
     return () => window.removeEventListener('onboarding-completed', handleOnboardingCompleted);
   }, []);
 
-  // Check if tour has been completed and if it should auto-start
+  // Check if tour has been completed
   useEffect(() => {
     setTourCompleted(isTourMarkedCompleted());
-
-    // Wait until onboarding has finished before auto-starting product tour
-    if (onboardingCompleted !== true) return;
-
-    const shouldStartTour = localStorage.getItem('should-start-tour') === 'true';
-    if (shouldStartTour && !isTourMarkedCompleted()) {
-      // Small delay to ensure the page is fully loaded
-      setTimeout(() => {
-        setShowDemoTour(true);
-        localStorage.removeItem('should-start-tour'); // Clear the flag
-      }, 1500);
-    }
   }, [onboardingCompleted]);
 
   // Handle URL-based section navigation
