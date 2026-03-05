@@ -164,11 +164,12 @@ export function ServiceSelectionStep({
             ) : services.length === 0 ? (
               <div className="text-center py-6">
                 <p className="text-muted-foreground mb-4">
-                  No services configured yet.
+                  No services available for booking right now.
                 </p>
-                <Button onClick={() => onContinue(null)}>
-                  Continue without service
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                  This clinic must configure at least one active service before
+                  patients can book online.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">

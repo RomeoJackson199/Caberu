@@ -26,7 +26,13 @@ export function AppointmentSuccessDialog({
 
   const handleViewAppointments = () => {
     onOpenChange(false);
-    navigate('/dashboard?tab=appointments');
+    try {
+      localStorage.setItem('pd_section', 'appointments');
+      localStorage.setItem('pd_tab', 'appointments');
+    } catch {
+      // Ignore storage errors and still navigate.
+    }
+    navigate('/dashboard');
   };
 
   const handleGoToDashboard = () => {

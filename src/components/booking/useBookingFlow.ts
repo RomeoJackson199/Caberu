@@ -372,6 +372,16 @@ export function useBookingFlow() {
   }, []);
 
   const handleServiceSelect = useCallback(async (service: Service | null) => {
+    if (!service) {
+      toast({
+        title: "Service required",
+        description: "Please select a service to continue booking.",
+        variant: "destructive",
+      });
+      setBookingStep('service');
+      return;
+    }
+
     setSelectedService(service);
     setSelectedDentist(null);
     setSelectedDate(undefined);
@@ -379,12 +389,12 @@ export function useBookingFlow() {
     setAvailableSlots([]);
     setBookingStep('dentist');
 
-    if (service?.id) {
+    if (service.id) {
       await fetchDentistsForService(service.id);
     } else {
       await fetchDentists();
     }
-  }, [fetchDentistsForService, fetchDentists]);
+  }, [fetchDentistsForService, fetchDentists, toast]);
 
   const handleDateSelect = useCallback((date: Date | undefined) => {
     if (!date || !selectedDentist) return;
