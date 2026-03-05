@@ -1572,6 +1572,7 @@ export type Database = {
           expertise_score: number
           first_name: string | null
           google_calendar_connected: boolean | null
+          google_calendar_id: string | null
           google_calendar_last_sync: string | null
           google_calendar_refresh_token: string | null
           google_calendar_sync_direction: string
@@ -1597,6 +1598,7 @@ export type Database = {
           expertise_score?: number
           first_name?: string | null
           google_calendar_connected?: boolean | null
+          google_calendar_id?: string | null
           google_calendar_last_sync?: string | null
           google_calendar_refresh_token?: string | null
           google_calendar_sync_direction?: string
@@ -1622,6 +1624,7 @@ export type Database = {
           expertise_score?: number
           first_name?: string | null
           google_calendar_connected?: boolean | null
+          google_calendar_id?: string | null
           google_calendar_last_sync?: string | null
           google_calendar_refresh_token?: string | null
           google_calendar_sync_direction?: string
