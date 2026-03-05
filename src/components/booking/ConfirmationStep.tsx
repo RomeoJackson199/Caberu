@@ -27,12 +27,20 @@ export function ConfirmationStep({
   onConfirm,
   onBack,
 }: ConfirmationStepProps) {
-  const formatPrice = (cents: number) =>
-    new Intl.NumberFormat("fr-FR", {
+  const formatPrice = (cents: number, currencyCode?: string) => {
+    const currency = currencyCode || "EUR";
+    const locale =
+      currency === "EUR" ? "de-DE" :
+      currency === "GBP" ? "en-GB" :
+      currency === "CAD" ? "en-CA" :
+      currency === "AUD" ? "en-AU" :
+      "en-US";
+    return new Intl.NumberFormat(locale, {
       style: "currency",
-      currency: "EUR",
+      currency,
       minimumFractionDigits: 2,
     }).format(cents / 100);
+  };
 
   const clickGuard = useRef(false);
   const handleConfirm = () => {
@@ -71,7 +79,7 @@ export function ConfirmationStep({
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Price</span>
-                  <span className="font-medium">{formatPrice(selectedService.price_cents)}</span>
+                  <span className="font-medium">{formatPrice(selectedService.price_cents, selectedService.currency)}</span>
                 </div>
               </>
             )}
