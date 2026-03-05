@@ -75,6 +75,21 @@ serve(async (req) => {
       throw new Error('Failed to get access token');
     }
 
+    // Helper: find existing Google Calendar event by appointment ID
+    async function findGcalEventId(accessToken: string, aptId: string): Promise<string | null> {
+      try {
+        const searchUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events?privateExtendedProperty=appointmentId%3D${aptId}&maxResults=1`;
+        const res = await fetch(searchUrl, {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.items?.[0]?.id || null;
+      } catch {
+        return null;
+      }
+    }
+
     if (action === 'create' || action === 'update') {
       // Create or update event in Google Calendar
       const startTime = new Date(appointment.appointment_date);
@@ -109,13 +124,19 @@ serve(async (req) => {
           timeZone: 'UTC',
         },
         colorId: appointment.status === 'confirmed' ? '9' : appointment.status === 'completed' ? '10' : '11',
+        extendedProperties: {
+          private: {
+            appointmentId: appointmentId,
+          },
+        },
       };
 
-      let calendarEventId = appointment.notes?.match(/gcal_event_id:([^\s]+)/)?.[1];
+      // Look up existing event via extendedProperties
+      let calendarEventId = await findGcalEventId(tokens.access_token, appointmentId);
       let method = 'POST';
       let url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
-      if (action === 'update' && calendarEventId) {
+      if ((action === 'update' || calendarEventId) && calendarEventId) {
         method = 'PUT';
         url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}`;
       }
@@ -136,25 +157,13 @@ serve(async (req) => {
         throw new Error('Failed to sync to Google Calendar');
       }
 
-      // Store the Google Calendar event ID in appointment notes
-      if (action === 'create' && calendarData.id) {
-        const updatedNotes = appointment.notes 
-          ? `${appointment.notes}\ngcal_event_id:${calendarData.id}`
-          : `gcal_event_id:${calendarData.id}`;
-        
-        await supabase
-          .from('appointments')
-          .update({ notes: updatedNotes })
-          .eq('id', appointmentId);
-      }
-
       return new Response(
         JSON.stringify({ success: true, eventId: calendarData.id }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else if (action === 'delete') {
       // Delete event from Google Calendar
-      const calendarEventId = appointment.notes?.match(/gcal_event_id:([^\s]+)/)?.[1];
+      const calendarEventId = await findGcalEventId(tokens.access_token, appointmentId);
       
       if (calendarEventId) {
         await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${calendarEventId}`, {
