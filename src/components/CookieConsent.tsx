@@ -1,18 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { X, Cookie, Shield, Settings } from "lucide-react";
 import { logger } from "@/lib/logger";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { handleAnalyticsConsent } from "@/lib/googleAnalytics";
 
 interface CookiePreferences {
@@ -25,32 +12,97 @@ interface CookieConsentProps {
   isAuthenticated?: boolean;
 }
 
+function Toggle({
+  on,
+  onChange,
+  label,
+  emoji,
+  desc,
+}: {
+  on: boolean;
+  onChange: ((val: boolean) => void) | null;
+  label: string;
+  emoji: string;
+  desc: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "14px 16px",
+        background: on ? "#eff6ff" : "#f9fafb",
+        borderRadius: 14,
+        border: `2px solid ${on ? "#bfdbfe" : "#e5e7eb"}`,
+        transition: "all 0.2s",
+        cursor: onChange ? "pointer" : "default",
+      }}
+      onClick={onChange ? () => onChange(!on) : undefined}
+    >
+      <div style={{ fontSize: 28 }}>{emoji}</div>
+      <div style={{ flex: 1 }}>
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: "#1e3a5f",
+            fontFamily: "Georgia, serif",
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{desc}</div>
+      </div>
+      <div
+        style={{
+          width: 44,
+          height: 24,
+          borderRadius: 99,
+          background: on
+            ? "linear-gradient(135deg, #3b82f6, #1d4ed8)"
+            : "#d1d5db",
+          position: "relative",
+          transition: "background 0.25s",
+          flexShrink: 0,
+          boxShadow: on ? "0 2px 8px rgba(59,130,246,0.4)" : "none",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 3,
+            left: on ? 23 : 3,
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            background: "white",
+            transition: "left 0.25s",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
   const [showBanner, setShowBanner] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [preferences, setPreferences] = useState<CookiePreferences>({
-    necessary: true, // Always true, can't be disabled
-    analytics: false,
-    marketing: false,
-  });
+  const [view, setView] = useState<"banner" | "customize">("banner");
+  const [analytics, setAnalytics] = useState(true);
+  const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
-    // Only show banner if user is authenticated
-    if (!isAuthenticated) {
-      return;
-    }
+    if (!isAuthenticated) return;
 
-    // Check if user has already consented
     const consent = localStorage.getItem("cookie-consent");
     if (!consent) {
-      // Show banner after a short delay
       const timer = setTimeout(() => setShowBanner(true), 1000);
       return () => clearTimeout(timer);
     } else {
-      // Load saved preferences
       try {
-        const savedPreferences = JSON.parse(consent);
-        setPreferences(savedPreferences);
+        const savedPreferences: CookiePreferences = JSON.parse(consent);
+        setAnalytics(savedPreferences.analytics);
       } catch (error) {
         logger.error("Failed to parse cookie preferences:", error);
       }
@@ -60,225 +112,298 @@ export function CookieConsent({ isAuthenticated = false }: CookieConsentProps) {
   const savePreferences = (prefs: CookiePreferences) => {
     localStorage.setItem("cookie-consent", JSON.stringify(prefs));
     setShowBanner(false);
-    setShowSettings(false);
+    setAccepted(true);
 
-    // Update analytics consent using the analytics manager
-    import('@/lib/analytics').then(({ analytics }) => {
-      analytics.setConsent(prefs.analytics);
-    }).catch(() => {
-      // Analytics module not available
-    });
+    import("@/lib/analytics")
+      .then(({ analytics: analyticsModule }) => {
+        analyticsModule.setConsent(prefs.analytics);
+      })
+      .catch(() => {
+        // Analytics module not available
+      });
 
-    // Handle Google Analytics/GTM loading based on consent
-    // This will load scripts if accepted, or remove cookies if rejected
     handleAnalyticsConsent(prefs.analytics, prefs.marketing);
+    localStorage.setItem("analytics_consent", prefs.analytics.toString());
 
-    // Also update localStorage key that analytics.ts checks
-    localStorage.setItem('analytics_consent', prefs.analytics.toString());
+    setTimeout(() => setAccepted(false), 4000);
   };
 
   const acceptAll = () => {
-    const allAccepted = {
-      necessary: true,
-      analytics: true,
-      marketing: true,
-    };
-    savePreferences(allAccepted);
+    savePreferences({ necessary: true, analytics: true, marketing: true });
   };
 
-  const acceptNecessary = () => {
-    const necessaryOnly = {
-      necessary: true,
-      analytics: false,
-      marketing: false,
-    };
-    savePreferences(necessaryOnly);
+  const handleSave = () => {
+    savePreferences({ necessary: true, analytics, marketing: false });
   };
 
-  const saveCustomPreferences = () => {
-    savePreferences(preferences);
-  };
-
-  if (!showBanner) {
-    return null;
-  }
+  if (!showBanner && !accepted) return null;
 
   return (
     <>
-      {/* Cookie Banner */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-slide-up">
-        <Card className="max-w-5xl mx-auto p-6 shadow-2xl border-2 bg-white/95 backdrop-blur-sm">
-          <button
-            onClick={() => setShowBanner(false)}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Close cookie banner"
+      <style>{`
+        @keyframes slideUp { from { opacity:0; transform: translateX(-50%) translateY(40px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+        @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+        @keyframes popIn { from { opacity:0; transform: translateX(-50%) scale(0.92); } to { opacity:1; transform: translateX(-50%) scale(1); } }
+        .caberu-cookie-accept-btn:hover { transform: scale(1.04) !important; }
+        .caberu-cookie-grey-btn:hover { background: #f3f4f6 !important; }
+      `}</style>
+
+      {/* Main Banner */}
+      {showBanner && view === "banner" && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "white",
+            borderRadius: 24,
+            padding: "28px 32px",
+            maxWidth: 440,
+            width: "90%",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+            zIndex: 1000,
+            border: "3px solid #bfdbfe",
+            animation: "slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+            <div
+              style={{
+                fontSize: 48,
+                animation: "wiggle 1.2s ease-in-out infinite",
+                display: "inline-block",
+              }}
+            >
+              🍪
+            </div>
+            <div>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: "#1e3a5f",
+                  fontFamily: "Georgia, serif",
+                }}
+              >
+                Time for a check-up… on cookies!
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  color: "#6b7280",
+                  marginTop: 8,
+                  lineHeight: 1.6,
+                }}
+              >
+                We use cookies to keep Caberu running smoothly — no sugar, no
+                calories, and doctor-approved. 🩺 They help us remember your
+                preferences and improve your experience.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+            <button
+              className="caberu-cookie-accept-btn"
+              onClick={acceptAll}
+              style={{
+                flex: 1,
+                background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                color: "white",
+                border: "none",
+                borderRadius: 12,
+                padding: "13px 0",
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "transform 0.15s",
+                boxShadow: "0 4px 14px rgba(59,130,246,0.4)",
+              }}
+            >
+              Accept All
+            </button>
+            <button
+              className="caberu-cookie-grey-btn"
+              onClick={() => setView("customize")}
+              style={{
+                flex: 1,
+                background: "white",
+                color: "#6b7280",
+                border: "2px solid #e5e7eb",
+                borderRadius: 12,
+                padding: "13px 0",
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "background 0.15s",
+              }}
+            >
+              Customize ⚙️
+            </button>
+          </div>
+          <div
+            style={{
+              fontSize: 11,
+              color: "#9ca3af",
+              marginTop: 12,
+              textAlign: "center",
+            }}
           >
-            <X className="h-5 w-5" />
+            By accepting, you agree to our{" "}
+            <a
+              href="/cookie-policy"
+              style={{ textDecoration: "underline", cursor: "pointer", color: "inherit" }}
+            >
+              Cookie Policy
+            </a>{" "}
+            · Caberu Healthcare Solutions
+          </div>
+        </div>
+      )}
+
+      {/* Customize Panel */}
+      {showBanner && view === "customize" && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "white",
+            borderRadius: 24,
+            padding: "28px 32px",
+            maxWidth: 460,
+            width: "90%",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+            zIndex: 1000,
+            border: "3px solid #bfdbfe",
+            animation: "popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 6,
+            }}
+          >
+            <button
+              onClick={() => setView("banner")}
+              style={{
+                background: "#eff6ff",
+                border: "none",
+                borderRadius: 8,
+                width: 30,
+                height: 30,
+                fontSize: 16,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ←
+            </button>
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: "#1e3a5f",
+                fontFamily: "Georgia, serif",
+              }}
+            >
+              Your cookie prescription 📋
+            </div>
+          </div>
+          <div
+            style={{
+              fontSize: 13,
+              color: "#9ca3af",
+              marginBottom: 20,
+              paddingLeft: 42,
+            }}
+          >
+            Pick what you're comfortable with — we won't judge!
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <Toggle
+              on={true}
+              onChange={null}
+              emoji="🏥"
+              label="Essential (always on)"
+              desc="Keeps the platform alive. Non-negotiable, like washing your hands."
+            />
+            <Toggle
+              on={analytics}
+              onChange={setAnalytics}
+              emoji="📊"
+              label="Analytics"
+              desc="Helps us see what's working — totally anonymous, no sneaky stuff."
+            />
+          </div>
+
+          <button
+            className="caberu-cookie-accept-btn"
+            onClick={handleSave}
+            style={{
+              width: "100%",
+              marginTop: 20,
+              background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+              color: "white",
+              border: "none",
+              borderRadius: 12,
+              padding: "14px 0",
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "transform 0.15s",
+              boxShadow: "0 4px 14px rgba(59,130,246,0.4)",
+            }}
+          >
+            Save my prescription 💊
           </button>
-
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              <div className="p-3 rounded-full bg-blue-100">
-                <Cookie className="h-8 w-8 text-blue-600" />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-blue-600" />
-                We Value Your Privacy
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                We use cookies to enhance your browsing experience, provide personalized content,
-                and analyze our traffic. We also share information about your use of our site with
-                our analytics partners. By clicking "Accept All", you consent to our use of cookies.{" "}
-                <a
-                  href="/privacy"
-                  className="text-blue-600 hover:text-blue-700 underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Learn more
-                </a>
-              </p>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSettings(true)}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                Customize
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={acceptNecessary}
-              >
-                Necessary Only
-              </Button>
-              <Button
-                size="sm"
-                onClick={acceptAll}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Accept All
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Cookie Settings Dialog */}
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Cookie Preferences
-            </DialogTitle>
-            <DialogDescription>
-              Manage your cookie preferences. You can enable or disable different types of cookies below.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Necessary Cookies */}
-            <div className="space-y-3 pb-4 border-b">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 pr-4">
-                  <Label className="text-base font-semibold">
-                    Necessary Cookies
-                  </Label>
-                  <p className="text-sm text-gray-600 mt-1">
-                    These cookies are essential for the website to function properly.
-                    They enable basic functions like page navigation and access to secure areas.
-                    The website cannot function properly without these cookies.
-                  </p>
-                </div>
-                <Switch
-                  checked={preferences.necessary}
-                  disabled
-                  className="mt-1"
-                />
-              </div>
-              <p className="text-xs text-gray-500 italic">
-                Always enabled - Required for site functionality
-              </p>
-            </div>
-
-            {/* Analytics Cookies */}
-            <div className="space-y-3 pb-4 border-b">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 pr-4">
-                  <Label htmlFor="analytics" className="text-base font-semibold cursor-pointer">
-                    Analytics Cookies
-                  </Label>
-                  <p className="text-sm text-gray-600 mt-1">
-                    These cookies help us understand how visitors interact with our website by
-                    collecting and reporting information anonymously. This helps us improve our
-                    website and provide better service.
-                  </p>
-                </div>
-                <Switch
-                  id="analytics"
-                  checked={preferences.analytics}
-                  onCheckedChange={(checked) =>
-                    setPreferences({ ...preferences, analytics: checked })
-                  }
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            {/* Marketing Cookies */}
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 pr-4">
-                  <Label htmlFor="marketing" className="text-base font-semibold cursor-pointer">
-                    Marketing Cookies
-                  </Label>
-                  <p className="text-sm text-gray-600 mt-1">
-                    These cookies are used to track visitors across websites to display
-                    relevant advertisements. They also help measure the effectiveness of
-                    advertising campaigns.
-                  </p>
-                </div>
-                <Switch
-                  id="marketing"
-                  checked={preferences.marketing}
-                  onCheckedChange={(checked) =>
-                    setPreferences({ ...preferences, marketing: checked })
-                  }
-                  className="mt-1"
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={acceptNecessary}
-              className="w-full sm:w-auto"
+          <div
+            style={{
+              fontSize: 11,
+              color: "#9ca3af",
+              marginTop: 12,
+              textAlign: "center",
+            }}
+          >
+            <a
+              href="/cookie-policy"
+              style={{ textDecoration: "underline", cursor: "pointer", color: "inherit" }}
             >
-              Reject All
-            </Button>
-            <Button
-              onClick={saveCustomPreferences}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
-            >
-              Save Preferences
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              Cookie Policy
+            </a>{" "}
+            · Caberu Healthcare Solutions
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Toast */}
+      {accepted && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#1e3a5f",
+            color: "white",
+            borderRadius: 99,
+            padding: "12px 24px",
+            fontSize: 15,
+            fontWeight: 700,
+            zIndex: 1000,
+          }}
+        >
+          ✅ Cookie preferences saved — you're all set!
+        </div>
+      )}
     </>
   );
 }
