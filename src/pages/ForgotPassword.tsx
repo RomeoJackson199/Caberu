@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Loader2, Shield, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getErrorMessage } from "@/lib/errorUtils";
+import { getErrorMessage } from "@/lib/error-handling/formatting";
 
 const ForgotPassword = () => {
   const { toast } = useToast();

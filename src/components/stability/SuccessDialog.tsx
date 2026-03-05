@@ -140,52 +140,6 @@ export function SuccessDialog({
   );
 }
 
-// Pre-configured success dialogs for common actions
-interface AppointmentSuccessProps {
-  open: boolean;
-  onClose: () => void;
-  appointmentDate: string;
-  appointmentTime: string;
-  dentistName?: string;
-  serviceName?: string;
-  onViewAppointments?: () => void;
-  onBookAnother?: () => void;
-}
-
-export function AppointmentSuccessDialog({
-  open,
-  onClose,
-  appointmentDate,
-  appointmentTime,
-  dentistName,
-  serviceName,
-  onViewAppointments,
-  onBookAnother,
-}: AppointmentSuccessProps) {
-  return (
-    <SuccessDialog
-      open={open}
-      onClose={onClose}
-      title="Appointment Booked!"
-      description="Your appointment has been successfully scheduled. We've sent a confirmation to your email."
-      type="appointment"
-      showConfetti
-      details={[
-        { label: "Date", value: appointmentDate },
-        { label: "Time", value: appointmentTime },
-        ...(dentistName ? [{ label: "Dentist", value: dentistName }] : []),
-        ...(serviceName ? [{ label: "Service", value: serviceName }] : []),
-      ]}
-      actions={[
-        ...(onViewAppointments
-          ? [{ label: "View Appointments", onClick: onViewAppointments, icon: Calendar, variant: "outline" as const }]
-          : []),
-        { label: "Done", onClick: onClose, icon: CheckCircle2 },
-      ]}
-    />
-  );
-}
-
 interface PaymentSuccessProps {
   open: boolean;
   onClose: () => void;

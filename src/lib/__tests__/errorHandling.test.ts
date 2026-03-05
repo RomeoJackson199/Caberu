@@ -15,7 +15,7 @@ import {
   DashboardError,
   getUserFriendlyErrorMessage,
   getErrorMessage,
-} from '../errorHandling';
+} from '../error-handling/formatting';
 
 describe('error-handling/formatting.ts', () => {
   describe('DashboardError', () => {

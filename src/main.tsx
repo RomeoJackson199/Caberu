@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { performanceTracker } from './utils/performance'
-import { notify } from './lib/notify'
+import { toast } from 'sonner'
 import { logger } from '@/lib/logger';
 import { initPerformanceMonitoring } from '@/lib/performance';
 import { initializeAnalyticsFromConsent } from '@/lib/googleAnalytics';
@@ -66,13 +66,16 @@ if ('serviceWorker' in navigator) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // New content is available - show visible prompt
-                notify.action('New app update available!', {
+                toast.info('New app update available!', {
                   description: 'Click refresh to get the latest features',
-                  actionLabel: 'Refresh',
-                  onAction: () => {
-                    // Send message to waiting worker to skip waiting
-                    if (registration.waiting) {
-                      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                  duration: 6000,
+                  action: {
+                    label: 'Refresh',
+                    onClick: () => {
+                      // Send message to waiting worker to skip waiting
+                      if (registration.waiting) {
+                        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                      }
                     }
                   }
                 });
