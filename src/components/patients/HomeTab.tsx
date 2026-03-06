@@ -58,7 +58,6 @@ export interface HomeTabProps {
     location?: string | null;
     visitType?: string;
   } | null;
-  activePrescriptions: number;
   activeTreatmentPlans: number;
   totalDueCents: number;
   onNavigateTo: (section: 'appointments' | 'care' | 'payments') => void;
@@ -71,7 +70,6 @@ export const HomeTab = React.memo<HomeTabProps>(({
   firstName,
   profileImageUrl,
   nextAppointment,
-  activePrescriptions,
   activeTreatmentPlans,
   totalDueCents,
   onNavigateTo,
@@ -171,7 +169,6 @@ export const HomeTab = React.memo<HomeTabProps>(({
       {/* Dynamic Priority Cards */}
       <PriorityHomeCards
         nextAppointment={nextAppointment}
-        activePrescriptions={activePrescriptions}
         totalDueCents={totalDueCents}
         dentistId={dentistId}
         onNavigateTo={onNavigateTo}

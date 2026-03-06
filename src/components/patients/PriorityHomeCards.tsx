@@ -5,10 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import {
   Calendar,
-  Pill,
   CreditCard,
   MessageSquare,
-  ChevronRight,
   CheckCircle,
   Video,
   Sparkles,
@@ -37,7 +35,6 @@ export interface PriorityHomeCardsProps {
     location?: string | null;
     visitType?: string;
   } | null;
-  activePrescriptions: number;
   totalDueCents: number;
   dentistId?: string | null;
   onNavigateTo: (section: 'appointments' | 'care' | 'payments') => void;
@@ -47,7 +44,6 @@ export interface PriorityHomeCardsProps {
 
 export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
   nextAppointment,
-  activePrescriptions,
   totalDueCents,
   dentistId,
   onNavigateTo,
@@ -205,52 +201,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
       )
     });
 
-    // 3. Prescriptions card - promote if has active prescriptions, demote to bottom if 0
-    const prescriptionPriority = activePrescriptions > 0 ? 60 : 5;
-    result.push({
-      id: 'prescriptions',
-      priority: prescriptionPriority,
-      component: (
-        <Card
-          role="button"
-          tabIndex={0}
-          onClick={() => onNavigateTo('care')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onNavigateTo('care');
-            }
-          }}
-          className="h-full border-l-4 border-l-primary transition-all duration-200 hover:shadow-md cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-        >
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-base">
-              <span className="flex items-center gap-2">
-                <Pill className="h-5 w-5 text-purple-600" />
-                {t.prescriptions}
-              </span>
-              {activePrescriptions > 0 && (
-                <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                  {activePrescriptions} {t.active}
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="text-2xl font-bold">{activePrescriptions}</p>
-              <p className="text-sm text-muted-foreground">{t.activeMedications}</p>
-              <Button variant="link" className="p-0 h-auto text-primary hover:underline">
-                {t.viewInCareTab}
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )
-    });
-
-    // 4. AI Assistant / Booking card
+    // 3. AI Assistant / Booking card
     result.push({
       id: 'assistant',
       priority: 30,
@@ -336,7 +287,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
     });
 
     return result;
-  }, [nextAppointment, activePrescriptions, totalDueCents, unpaid, hasAIChat, currencySettings, t, onNavigateTo, onOpenAssistant, onBookAppointment]);
+  }, [nextAppointment, totalDueCents, unpaid, hasAIChat, currencySettings, t, onNavigateTo, onOpenAssistant, onBookAppointment]);
 
   // Always sort cards by priority - higher priority appears first
   const orderedCards = useMemo(() => {

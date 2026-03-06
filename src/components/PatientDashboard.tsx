@@ -47,7 +47,6 @@ interface PatientStats {
   totalNotes: number;
   activeTreatmentPlans: number;
   totalPrescriptions: number;
-  activePrescriptions: number;
 }
 
 // Navigation items with better organization
@@ -141,8 +140,7 @@ const PatientDashboardComponent = ({
     lastVisit: null,
     totalNotes: 0,
     activeTreatmentPlans: 0,
-    totalPrescriptions: 0,
-    activePrescriptions: 0
+    totalPrescriptions: 0
   });
   const [recentAppointments, setRecentAppointments] = useState<Appointment[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
@@ -329,8 +327,6 @@ const PatientDashboardComponent = ({
       const {
         data: prescriptionsData
       } = await supabase.from('prescriptions').select('*').eq('patient_id', profileId);
-      const activePrescriptions = prescriptionsData?.filter(p => p.status === 'active').length || 0;
-
       const {
         data: treatmentPlansData
       } = await supabase.from('treatment_plans_decrypted').select('*').eq('patient_id', profileId);
@@ -346,8 +342,7 @@ const PatientDashboardComponent = ({
         lastVisit,
         totalNotes: notesData?.length || 0,
         activeTreatmentPlans,
-        totalPrescriptions: prescriptionsData?.length || 0,
-        activePrescriptions
+        totalPrescriptions: prescriptionsData?.length || 0
       });
     } catch (error) {
       console.error('Error fetching patient stats:', error);
@@ -539,7 +534,7 @@ const PatientDashboardComponent = ({
   const badges = {
     home: false,
     assistant: false,
-    appointments: patientStats.upcomingAppointments > 0 || patientStats.activePrescriptions > 0 || patientStats.activeTreatmentPlans > 0,
+    appointments: patientStats.upcomingAppointments > 0 || patientStats.activeTreatmentPlans > 0,
     payments: totalDueCents > 0,
     settings: !userProfile?.first_name || !userProfile?.last_name
   } as Record<PatientSection, boolean>;
@@ -575,7 +570,7 @@ const PatientDashboardComponent = ({
         location,
         visitType: typeof rawVisitType === 'string' ? rawVisitType : undefined
       };
-    })() : null} activePrescriptions={patientStats.activePrescriptions} activeTreatmentPlans={patientStats.activeTreatmentPlans} totalDueCents={totalDueCents} onNavigateTo={s => setActiveSection(s)} onOpenAssistant={() => setActiveSection('assistant')} onBookAppointment={() => setActiveSection('assistant')} />}
+    })() : null} activeTreatmentPlans={patientStats.activeTreatmentPlans} totalDueCents={totalDueCents} onNavigateTo={s => setActiveSection(s)} onOpenAssistant={() => setActiveSection('assistant')} onBookAppointment={() => setActiveSection('assistant')} />}
 
     {activeSection === 'assistant' && (
       <div className="px-4 md:px-6 py-4">
