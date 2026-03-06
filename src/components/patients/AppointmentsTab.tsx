@@ -233,6 +233,8 @@ const CalendarView = ({
  * Appointments Tab - Read-only index for finding appointments
  * All actions happen in Appointment Detail
  */
+const INITIAL_SHOW = 3;
+
 export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAssistant }) => {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -241,6 +243,10 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
   const [loading, setLoading] = useState(true);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [shownCounts, setShownCounts] = useState({ upcoming: INITIAL_SHOW, completed: INITIAL_SHOW, cancelled: INITIAL_SHOW });
+
+  const showMore = (group: keyof typeof shownCounts, total: number) =>
+    setShownCounts(prev => ({ ...prev, [group]: total }));
   
   const { t } = useLanguage();
   const { businessId, businessName, loading: businessLoading } = useBusinessContext();
@@ -431,64 +437,49 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
       );
     }
     
+    const renderGroup = (
+      group: keyof typeof shownCounts,
+      items: Appointment[],
+      dotColor: string,
+      label: string
+    ) => {
+      if (items.length === 0) return null;
+      const visible = items.slice(0, shownCounts[group]);
+      const remaining = items.length - visible.length;
+      return (
+        <section>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+            <div className={cn("h-2 w-2 rounded-full", dotColor)} />
+            {label} ({items.length})
+          </h3>
+          <div className="space-y-2">
+            {visible.map(apt => (
+              <AppointmentIndexCard
+                key={apt.id}
+                appointment={apt}
+                onClick={() => openAppointmentDetail(apt.id)}
+              />
+            ))}
+          </div>
+          {remaining > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 w-full text-muted-foreground"
+              onClick={() => showMore(group, items.length)}
+            >
+              Show {remaining} more
+            </Button>
+          )}
+        </section>
+      );
+    };
+
     return (
       <div className="space-y-8">
-        {/* Upcoming */}
-        {groupedAppointments.upcoming.length > 0 && (
-          <section>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-emerald-500" />
-              Upcoming ({groupedAppointments.upcoming.length})
-            </h3>
-            <div className="space-y-2">
-              {groupedAppointments.upcoming.map(apt => (
-                <AppointmentIndexCard
-                  key={apt.id}
-                  appointment={apt}
-                  onClick={() => openAppointmentDetail(apt.id)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-        
-        {/* Completed */}
-        {groupedAppointments.completed.length > 0 && (
-          <section>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-sky-500" />
-              Completed ({groupedAppointments.completed.length})
-            </h3>
-            <div className="space-y-2">
-              {groupedAppointments.completed.map(apt => (
-                <AppointmentIndexCard
-                  key={apt.id}
-                  appointment={apt}
-                  onClick={() => openAppointmentDetail(apt.id)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-        
-        {/* Cancelled */}
-        {groupedAppointments.cancelled.length > 0 && (
-          <section>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-rose-500" />
-              Cancelled ({groupedAppointments.cancelled.length})
-            </h3>
-            <div className="space-y-2">
-              {groupedAppointments.cancelled.map(apt => (
-                <AppointmentIndexCard
-                  key={apt.id}
-                  appointment={apt}
-                  onClick={() => openAppointmentDetail(apt.id)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+        {renderGroup('upcoming', groupedAppointments.upcoming, 'bg-emerald-500', 'Upcoming')}
+        {renderGroup('completed', groupedAppointments.completed, 'bg-sky-500', 'Completed')}
+        {renderGroup('cancelled', groupedAppointments.cancelled, 'bg-rose-500', 'Cancelled')}
       </div>
     );
   };
