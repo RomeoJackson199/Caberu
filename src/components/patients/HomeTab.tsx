@@ -58,10 +58,8 @@ export interface HomeTabProps {
     location?: string | null;
     visitType?: string;
   } | null;
-  activePrescriptions: number;
-  activeTreatmentPlans: number;
   totalDueCents: number;
-  onNavigateTo: (section: 'appointments' | 'care' | 'payments') => void;
+  onNavigateTo: (section: 'appointments' | 'payments') => void;
   onOpenAssistant?: () => void;
   onBookAppointment?: () => void;
 }
