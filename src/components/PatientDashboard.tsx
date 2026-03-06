@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { PatientAppShell, PatientSection } from "@/components/patients/PatientAppShell";
 import { HomeTab } from "@/components/patients/HomeTab";
-import { PatientRecordsTimeline } from "@/components/patients/PatientRecordsTimeline";
 import { AppointmentsTab } from "@/components/patients/AppointmentsTab";
 import { PaymentsTab } from "@/components/patients/PaymentsTab";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
@@ -540,8 +539,7 @@ const PatientDashboardComponent = ({
   const badges = {
     home: false,
     assistant: false,
-    care: patientStats.activePrescriptions > 0 || patientStats.activeTreatmentPlans > 0,
-    appointments: patientStats.upcomingAppointments > 0,
+    appointments: patientStats.upcomingAppointments > 0 || patientStats.activePrescriptions > 0 || patientStats.activeTreatmentPlans > 0,
     payments: totalDueCents > 0,
     settings: !userProfile?.first_name || !userProfile?.last_name
   } as Record<PatientSection, boolean>;
@@ -596,12 +594,6 @@ const PatientDashboardComponent = ({
       <Suspense fallback={<div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
         <Messages />
       </Suspense>
-    )}
-
-    {activeSection === 'care' && userProfile?.id && (
-      <div className="px-4 md:px-6 py-4">
-        <PatientRecordsTimeline patientId={userProfile.id} />
-      </div>
     )}
 
     {activeSection === 'appointments' && <AppointmentsTab user={user} onOpenAssistant={() => setActiveSection('assistant')} />}

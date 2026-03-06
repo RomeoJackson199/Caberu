@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home as HomeIcon, FolderOpen, Calendar, CreditCard, Settings as SettingsIcon, Bot, LogOut, Info, PanelLeft, MessageSquare } from "lucide-react";
+import { Home as HomeIcon, Calendar, CreditCard, Settings as SettingsIcon, Bot, LogOut, Info, PanelLeft, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FloatingBookingButton } from "@/components/patients/FloatingBookingButton";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,11 +14,10 @@ import { useClinicBranding } from "@/hooks/useClinicBranding";
 import { LanguageSelectorMenu } from "@/components/shared/LanguagePicker";
 import { RoleSwitcherMenu } from "@/components/RoleSwitcher";
 import { UserTour, useUserTour } from "@/components/UserTour";
-import { useTemplate } from "@/contexts/TemplateContext";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
-export type PatientSection = 'home' | 'assistant' | 'care' | 'appointments' | 'payments' | 'messages' | 'settings';
+export type PatientSection = 'home' | 'assistant' | 'appointments' | 'payments' | 'messages' | 'settings';
 
 interface PatientAppShellProps {
   activeSection: PatientSection;
@@ -30,7 +29,7 @@ interface PatientAppShellProps {
   hasAIChat?: boolean;
 }
 
-const getNavItems = (hasAIChat: boolean, hasMedicalFeatures: boolean): Array<{
+const getNavItems = (hasAIChat: boolean): Array<{
   id: PatientSection;
   label: string;
   shortLabel?: string;
@@ -49,17 +48,6 @@ const getNavItems = (hasAIChat: boolean, hasMedicalFeatures: boolean): Array<{
     icon: hasAIChat ? Bot : Calendar,
     color: hasAIChat ? 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30' : 'text-orange-600 bg-orange-100 dark:bg-orange-900/30'
   }];
-
-  // Only add Treatment Records if medical features are enabled
-  if (hasMedicalFeatures) {
-    items.push({
-      id: 'care' as PatientSection,
-      label: 'Treatment Records',
-      shortLabel: 'Records',
-      icon: FolderOpen,
-      color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30'
-    });
-  }
 
   items.push(
     {
@@ -94,9 +82,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
   onBookAppointment,
   hasAIChat = false
 }) => {
-  const { hasFeature } = useTemplate();
-  const hasMedicalFeatures = hasFeature('medicalRecords') || hasFeature('treatmentPlans');
-  const NAV_ITEMS = getNavItems(hasAIChat, hasMedicalFeatures);
+  const NAV_ITEMS = getNavItems(hasAIChat);
   const {
     toast
   } = useToast();

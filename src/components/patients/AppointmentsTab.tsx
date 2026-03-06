@@ -13,8 +13,10 @@ import {
   CalendarDays,
   List,
   CalendarCheck,
-  Plus
+  Plus,
+  FileText
 } from "lucide-react";
+import { PatientRecordsTimeline } from "@/components/patients/PatientRecordsTimeline";
 import { cn } from "@/lib/utils";
 import { 
   format, 
@@ -235,6 +237,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -271,7 +274,9 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
         setAppointments([]);
         return;
       }
-      
+
+      setProfileId(profile.id);
+
       const { data, error } = await supabase
         .from('appointments_decrypted')
         .select('id, appointment_date, status, payment_status, completed_at, reason, dentist_id')
@@ -490,56 +495,71 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="px-4 md:px-6 py-4 md:py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold">{t.appointments}</h2>
-            <p className="text-sm text-muted-foreground">
-              {businessName ? `${businessName}` : 'Your appointments'}
-            </p>
+      <div className="px-4 md:px-6 py-4 md:py-6 space-y-10">
+        {/* Appointments section */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold">{t.appointments}</h2>
+              <p className="text-sm text-muted-foreground">
+                {businessName ? `${businessName}` : 'Your appointments'}
+              </p>
+            </div>
+
+            {/* View toggle */}
+            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+              <Button
+                variant={view === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setView('list')}
+                className="h-8 px-3"
+              >
+                <List className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">List</span>
+              </Button>
+              <Button
+                variant={view === 'calendar' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setView('calendar')}
+                className="h-8 px-3"
+              >
+                <CalendarDays className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">Calendar</span>
+              </Button>
+            </div>
           </div>
-          
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
-            <Button
-              variant={view === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setView('list')}
-              className="h-8 px-3"
-            >
-              <List className="h-4 w-4 mr-1.5" />
-              <span className="hidden sm:inline">List</span>
-            </Button>
-            <Button
-              variant={view === 'calendar' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setView('calendar')}
-              className="h-8 px-3"
-            >
-              <CalendarDays className="h-4 w-4 mr-1.5" />
-              <span className="hidden sm:inline">Calendar</span>
-            </Button>
-          </div>
+
+          {view === 'list' ? (
+            renderListView()
+          ) : (
+            <CalendarView
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              appointments={appointments}
+              onSelectAppointment={openAppointmentDetail}
+            />
+          )}
         </div>
-        
-        {/* Content */}
-        {view === 'list' ? (
-          renderListView()
-        ) : (
-          <CalendarView
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-            appointments={appointments}
-            onSelectAppointment={openAppointmentDetail}
-          />
+
+        {/* Records section */}
+        {profileId && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <FileText className="h-6 w-6" />
+                Treatment Records
+              </h2>
+              <p className="text-sm text-muted-foreground">Your health history and documents</p>
+            </div>
+            <PatientRecordsTimeline patientId={profileId} />
+          </div>
         )}
       </div>
-      
+
       {/* Appointment Details Dialog */}
-      <PatientAppointmentDetail 
-        appointmentId={selectedAppointmentId} 
-        open={detailsDialogOpen} 
+      <PatientAppointmentDetail
+        appointmentId={selectedAppointmentId}
+        open={detailsDialogOpen}
         onOpenChange={(open) => {
           setDetailsDialogOpen(open);
           if (!open) {
