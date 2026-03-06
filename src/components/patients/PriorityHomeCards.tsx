@@ -37,10 +37,9 @@ export interface PriorityHomeCardsProps {
     location?: string | null;
     visitType?: string;
   } | null;
-  activePrescriptions: number;
   totalDueCents: number;
   dentistId?: string | null;
-  onNavigateTo: (section: 'appointments' | 'care' | 'payments') => void;
+  onNavigateTo: (section: 'appointments' | 'payments') => void;
   onOpenAssistant?: () => void;
   onBookAppointment?: () => void;
 }
