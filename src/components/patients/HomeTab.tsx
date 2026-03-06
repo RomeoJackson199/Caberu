@@ -167,7 +167,6 @@ export const HomeTab = React.memo<HomeTabProps>(({
       {/* Dynamic Priority Cards */}
       <PriorityHomeCards
         nextAppointment={nextAppointment}
-        activePrescriptions={activePrescriptions}
         totalDueCents={totalDueCents}
         dentistId={dentistId}
         onNavigateTo={onNavigateTo}

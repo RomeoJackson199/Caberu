@@ -290,7 +290,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
     });
 
     return result;
-  }, [nextAppointment, activePrescriptions, totalDueCents, unpaid, hasAIChat, currencySettings, t, onNavigateTo, onOpenAssistant, onBookAppointment]);
+  }, [nextAppointment, totalDueCents, unpaid, hasAIChat, currencySettings, t, onNavigateTo, onOpenAssistant, onBookAppointment]);
 
   // Always sort cards by priority - higher priority appears first
   const orderedCards = useMemo(() => {

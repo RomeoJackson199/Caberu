@@ -269,10 +269,6 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
             <Input value={profile.emergency_contact} onChange={(e) => setProfile({ ...profile, emergency_contact: e.target.value })} />
           </div>
         </div>
-        <div>
-          <Label>Medical History</Label>
-          <Textarea value={profile.medical_history} onChange={(e) => setProfile({ ...profile, medical_history: e.target.value })} />
-        </div>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => window.location.reload()}>Reset</Button>
           <Button type="button" onClick={onSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
