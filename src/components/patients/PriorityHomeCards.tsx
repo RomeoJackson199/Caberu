@@ -46,7 +46,6 @@ export interface PriorityHomeCardsProps {
 
 export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
   nextAppointment,
-  activePrescriptions,
   totalDueCents,
   dentistId,
   onNavigateTo,
