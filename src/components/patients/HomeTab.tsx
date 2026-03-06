@@ -69,8 +69,6 @@ export const HomeTab = React.memo<HomeTabProps>(({
   firstName,
   profileImageUrl,
   nextAppointment,
-  activePrescriptions,
-  activeTreatmentPlans,
   totalDueCents,
   onNavigateTo,
   onOpenAssistant,
