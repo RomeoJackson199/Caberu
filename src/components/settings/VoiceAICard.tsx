@@ -1,14 +1,31 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Phone, Clock, PhoneCall, Copy, Check, DollarSign, Bot, TrendingUp } from "lucide-react";
+import { Phone, Clock, PhoneCall, Copy, Check, DollarSign, Bot, TrendingUp, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
+import { format, formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { PhoneSetupCard } from "./voice-ai/PhoneSetupCard";
-import { VoiceAICallLog, CallLog } from "./voice-ai/VoiceAICallLog";
 
 const AI_AGENT_PHONE = "+1 360 967 0625";
+
+interface CallLog {
+  id: string;
+  call_sid: string;
+  status: string | null;
+  duration_seconds: number | null;
+  patient_phone: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+  appointment_booked: boolean | null;
+  total_cost_eur: number | null;
+  openai_cost_eur: number | null;
+  twilio_cost_eur: number | null;
+  tools_used: any;
+  errors: any;
+  created_at: string | null;
+}
 
 export function VoiceAICard() {
   const { businessId } = useBusinessContext();
@@ -25,13 +42,13 @@ export function VoiceAICard() {
       try {
         const { data, error } = await supabase
           .from('call_logs')
-          .select('id, call_sid, status, duration_seconds, patient_phone, started_at, ended_at, appointment_booked, total_cost_eur, openai_cost_eur, twilio_cost_eur, tools_used, errors, transcript, created_at')
+          .select('*')
           .eq('business_id', businessId)
           .order('created_at', { ascending: false })
           .limit(20);
 
         if (error) throw error;
-        setCalls((data as CallLog[]) || []);
+        setCalls(data || []);
       } catch (error) {
         console.error('Failed to load call logs:', error);
       } finally {
@@ -47,6 +64,23 @@ export function VoiceAICard() {
     setCopied(true);
     toast({ title: "Copied!", description: "Phone number copied to clipboard" });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatCost = (eur: number | null) => {
+    if (!eur) return '€0.00';
+    return `€${eur.toFixed(4)}`;
+  };
+
+  const maskPhone = (phone: string | null) => {
+    if (!phone) return 'Unknown';
+    return phone.slice(0, 4) + '***' + phone.slice(-2);
   };
 
   // Stats
@@ -113,9 +147,6 @@ export function VoiceAICard() {
         </CardContent>
       </Card>
 
-      {/* Phone Number Setup */}
-      {businessId && <PhoneSetupCard businessId={businessId} />}
-
       {/* Stats */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -164,12 +195,69 @@ export function VoiceAICard() {
         </Card>
       </div>
 
-      {/* Call Log with expandable transcripts */}
-      <VoiceAICallLog
-        calls={calls}
-        avgDuration={avgDuration}
-        appointmentsBooked={appointmentsBooked}
-      />
+      {/* Call Log */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            Recent Calls
+          </CardTitle>
+          <CardDescription>
+            Avg duration: {formatDuration(Math.round(avgDuration))} · {appointmentsBooked} appointments booked
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {calls.length > 0 ? (
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {calls.map((call) => (
+                <div key={call.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      call.status === 'completed' ? 'bg-green-500/10' : 'bg-red-500/10'
+                    }`}>
+                      <Phone className={`h-4 w-4 ${
+                        call.status === 'completed' ? 'text-green-500' : 'text-red-500'
+                      }`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{maskPhone(call.patient_phone)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {call.started_at
+                          ? formatDistanceToNow(new Date(call.started_at), { addSuffix: true })
+                          : 'Unknown time'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono">{formatDuration(call.duration_seconds)}</span>
+                    {call.appointment_booked && (
+                      <Badge variant="default" className="text-xs">Booked</Badge>
+                    )}
+                    {call.errors && Array.isArray(call.errors) && call.errors.length > 0 && (
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                    )}
+                    <Badge variant="outline" className="text-xs">
+                      {formatCost(call.total_cost_eur)}
+                    </Badge>
+                    <Badge
+                      variant={call.status === 'completed' ? 'secondary' : 'destructive'}
+                      className="text-xs"
+                    >
+                      {call.status || 'unknown'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Phone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No calls recorded yet</p>
+              <p className="text-xs mt-1">Try calling your AI agent to test it</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

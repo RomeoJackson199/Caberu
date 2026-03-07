@@ -639,51 +639,6 @@ export type Database = {
           },
         ]
       }
-      business_phone_numbers: {
-        Row: {
-          business_id: string
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          label: string | null
-          phone_number: string
-          updated_at: string | null
-        }
-        Insert: {
-          business_id: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          label?: string | null
-          phone_number: string
-          updated_at?: string | null
-        }
-        Update: {
-          business_id?: string
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          label?: string | null
-          phone_number?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "business_phone_numbers_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "business_phone_numbers_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "public_businesses_view"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       business_services: {
         Row: {
           business_id: string
