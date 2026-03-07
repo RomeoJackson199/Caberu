@@ -848,48 +848,109 @@ async function executeTool(toolCall: any, callerPhone: string, businessId?: stri
 
 async function checkAvailability(supabase: any, args: any, businessId?: string) {
   const { start_date, end_date, time_preference = 'any', dentist_id, service_id } = args;
-  
-  let query = supabase
-    .from('appointment_slots')
-    .select('*, dentists!inner(id, first_name, last_name)')
-    .eq('is_available', true)
-    .gte('slot_date', start_date)
-    .lte('slot_date', end_date)
-    .order('slot_date', { ascending: true })
-    .order('slot_time', { ascending: true });
-  
-  if (businessId) query = query.eq('business_id', businessId);
-  if (dentist_id) query = query.eq('dentist_id', dentist_id);
-  if (service_id) query = query.eq('service_id', service_id);
-  
-  if (time_preference && time_preference !== 'any') {
-    const timeRanges: Record<string, { start: string; end: string }> = {
-      morning: { start: '08:00', end: '12:00' },
-      afternoon: { start: '12:00', end: '17:00' },
-      evening: { start: '17:00', end: '20:00' }
-    };
-    const range = timeRanges[time_preference];
-    if (range) {
-      query = query.gte('slot_time', range.start).lt('slot_time', range.end);
+
+  if (!businessId) {
+    return { error: 'business_id is required for availability check' };
+  }
+
+  // Time preference ranges for filtering
+  const timeRanges: Record<string, { start: number; end: number }> = {
+    morning:   { start: 8, end: 12 },
+    afternoon: { start: 12, end: 17 },
+    evening:   { start: 17, end: 20 },
+  };
+
+  // Determine which dentists to check
+  let dentistIds: string[] = [];
+  if (dentist_id) {
+    dentistIds = [dentist_id];
+  } else {
+    const { data: dentists, error: dErr } = await supabase
+      .from('dentists')
+      .select('id')
+      .eq('is_active', true);
+    if (dErr) {
+      console.error('Error fetching dentists:', dErr);
+      return { error: dErr.message };
+    }
+    dentistIds = (dentists || []).map((d: any) => d.id);
+  }
+
+  if (dentistIds.length === 0) {
+    return { available_slots: [], count: 0 };
+  }
+
+  // Build date range
+  const dates: string[] = [];
+  const startD = new Date(start_date + 'T00:00:00Z');
+  const endD = new Date(end_date + 'T00:00:00Z');
+  for (let d = new Date(startD); d <= endD; d.setUTCDate(d.getUTCDate() + 1)) {
+    dates.push(d.toISOString().split('T')[0]);
+  }
+
+  // Fetch dentist names for output
+  const { data: dentistRows } = await supabase
+    .from('dentists')
+    .select('id, first_name, last_name')
+    .in('id', dentistIds);
+  const dentistNameMap: Record<string, string> = {};
+  for (const d of dentistRows || []) {
+    dentistNameMap[d.id] = `Dr. ${d.last_name || d.first_name || ''}`.trim();
+  }
+
+  // Query get_available_slots RPC for each dentist × date
+  const allSlots: { dentist_id: string; date: string; time: string; dentist: string }[] = [];
+
+  for (const did of dentistIds) {
+    for (const dateStr of dates) {
+      try {
+        const { data: slots, error: sErr } = await supabase.rpc('get_available_slots', {
+          p_business_id: businessId,
+          p_date: dateStr,
+          p_dentist_id: did,
+          p_service_id: service_id || null,
+        });
+
+        if (sErr) {
+          console.error(`get_available_slots error for ${did} on ${dateStr}:`, sErr);
+          continue;
+        }
+
+        for (const slot of slots || []) {
+          // slot_start is "HH:MM:SS" or a full timestamp
+          const timeStr: string = typeof slot.slot_start === 'string' && slot.slot_start.includes('T')
+            ? slot.slot_start.split('T')[1]?.substring(0, 5) || slot.slot_start
+            : (slot.slot_start || '').substring(0, 5);
+
+          // Apply time preference filter
+          if (time_preference && time_preference !== 'any') {
+            const hour = parseInt(timeStr.split(':')[0], 10);
+            const range = timeRanges[time_preference];
+            if (range && (hour < range.start || hour >= range.end)) {
+              continue;
+            }
+          }
+
+          allSlots.push({
+            dentist_id: did,
+            date: dateStr,
+            time: timeStr,
+            dentist: dentistNameMap[did] || 'Doctor',
+          });
+        }
+      } catch (err) {
+        console.error(`RPC error for ${did} on ${dateStr}:`, err);
+      }
     }
   }
-  
-  const { data, error } = await query.limit(10);
-  
-  if (error) {
-    console.error('Error checking availability:', error);
-    return { error: error.message };
-  }
-  
+
+  // Sort by date then time, limit to 10
+  allSlots.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const limited = allSlots.slice(0, 10);
+
   return {
-    available_slots: data.map((slot: any) => ({
-      slot_id: slot.id,
-      dentist_id: slot.dentist_id,
-      date: slot.slot_date,
-      time: slot.slot_time,
-      dentist: `Dr. ${slot.dentists.last_name}`
-    })),
-    count: data.length
+    available_slots: limited,
+    count: limited.length,
   };
 }
 
