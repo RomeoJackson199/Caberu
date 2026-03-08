@@ -98,14 +98,37 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
     showTour,
     closeTour
   } = useUserTour("patient");
-  const [collapsed, setCollapsed] = React.useState<boolean>(() => {
+
+  const [userName, setUserName] = useState<string>("");
+  const [userInitials, setUserInitials] = useState<string>("?");
+  const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('secure_profiles_view')
+        .select('first_name, last_name, email, profile_picture_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const full = `${data?.first_name ?? ''} ${data?.last_name ?? ''}`.trim();
+      setUserName(full || data?.email || '');
+      const fi = (data?.first_name?.[0] || '').toUpperCase();
+      const li = (data?.last_name?.[0] || '').toUpperCase();
+      setUserInitials((fi + li || user.email?.[0] || '?').toString().toUpperCase());
+      setUserProfilePicture(data?.profile_picture_url || null);
+    })();
+  }, []);
+
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('psidebar:collapsed') === '1';
     } catch {
       return false;
     }
   });
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       localStorage.setItem('psidebar:collapsed', collapsed ? '1' : '0');
     } catch { }
