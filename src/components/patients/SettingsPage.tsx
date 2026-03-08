@@ -70,19 +70,27 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
 
   // Auto-save profile picture immediately on upload
   const handleProfilePictureChange = async (url: string) => {
-    setProfile(prev => ({ ...prev, profile_picture_url: url }));
-    // Save directly to DB so user doesn't need to click Save
+    const normalizedUrl = url || '';
+
+    // Keep state + unsaved-guard in sync immediately
+    setProfile(prev => {
+      const next = { ...prev, profile_picture_url: normalizedUrl };
+      initialProfileRef.current = JSON.stringify(next);
+      return next;
+    });
+    setHasUnsavedChanges(false);
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .update({ profile_picture_url: url || null })
-        .eq('user_id', user.id);
+        .update({ profile_picture_url: normalizedUrl || null })
+        .eq('user_id', user.id)
+        .select('id')
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data?.id) throw new Error('Profile row not updated');
 
-      // Update the initial ref so this change doesn't count as "unsaved"
-      const updated = { ...profile, profile_picture_url: url };
-      initialProfileRef.current = JSON.stringify(updated);
       toast({ title: "Profile picture updated" });
     } catch {
       toast({ title: "Failed to save profile picture", variant: "destructive" });
