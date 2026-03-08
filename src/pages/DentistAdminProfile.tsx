@@ -10,6 +10,7 @@ import { Loader2, Save, User, Globe } from "lucide-react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 
 import { PhoneNumberInput } from "@/components/ui/phone-input";
