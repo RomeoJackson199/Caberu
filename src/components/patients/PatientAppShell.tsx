@@ -267,7 +267,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
               >
                 {/* Logo / fallback */}
                 {branding.logoUrl ? (
-                  <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-9 w-9 rounded-lg object-cover group-hover:opacity-30 transition-opacity" />
+                  <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-9 w-9 rounded-lg object-cover group-hover:opacity-0 transition-opacity" />
                 ) : (
                   <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center group-hover:opacity-30 transition-opacity">
                     <span className="text-primary-foreground font-bold text-sm">P</span>
