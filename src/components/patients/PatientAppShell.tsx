@@ -290,16 +290,14 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
         </div>}
       </div>
 
-      {/* Expand hover zone when collapsed */}
-      {collapsed && (
-        <div
-          className="absolute top-0 -right-1 w-2 h-full cursor-col-resize hover:bg-primary/20 transition-colors z-50"
-          onClick={toggleSidebar}
-          aria-label="Expand sidebar"
-          role="button"
-          tabIndex={0}
-        />
-      )}
+      {/* Sidebar edge – collapse/expand on hover */}
+      <div
+        className="absolute top-0 -right-1 w-3 h-full cursor-col-resize hover:bg-primary/20 transition-colors z-50"
+        onClick={toggleSidebar}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        role="button"
+        tabIndex={0}
+      />
 
       {/* Navigation */}
       <nav className={cn("p-2", collapsed ? "space-y-1" : "space-y-2 p-4")} role="navigation" aria-label="Primary">
