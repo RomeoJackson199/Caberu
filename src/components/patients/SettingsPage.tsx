@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { LanguageSettings } from "@/components/shared/LanguagePicker";
 import { useTheme } from "next-themes";
@@ -16,6 +16,7 @@ import { AccountLinkingSection } from "@/components/auth/AccountLinkingSection";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { PhoneVerificationDialog } from "@/components/auth/PhoneVerificationDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 
 export interface SettingsPageProps {
   user: User;
