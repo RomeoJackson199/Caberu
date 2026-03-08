@@ -326,12 +326,10 @@ export function ServiceManager() {
             <CardTitle className="text-4xl font-bold text-amber-900 dark:text-amber-100">{inactiveCount}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-2 border-purple-200 dark:border-purple-900 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 shadow-md">
+        <Card className="border-2 border-orange-200 dark:border-orange-900 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/30 shadow-md">
           <CardHeader className="pb-3">
-            <CardDescription className="text-purple-700 dark:text-purple-400 font-medium">Prepay Required</CardDescription>
-            <CardTitle className="text-4xl font-bold text-purple-900 dark:text-purple-100">
-              {services.filter(service => service.requires_upfront_payment).length}
-            </CardTitle>
+            <CardDescription className="text-orange-700 dark:text-orange-400 font-medium">No Providers</CardDescription>
+            <CardTitle className="text-4xl font-bold text-orange-900 dark:text-orange-100">{noProviderCount}</CardTitle>
           </CardHeader>
         </Card>
       </div>
