@@ -478,12 +478,7 @@ const LegalSupport: React.FC = () => {
               <a href="/terms">View</a>
             </Button>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Contact Support</span>
-            <Button asChild>
-              <a href="/support">Get Help</a>
-            </Button>
-          </div>
+          <SupportFeedbackInline />
 
           <div className="border-t pt-4 mt-4">
             <h4 className="font-medium mb-3">Your Data</h4>
