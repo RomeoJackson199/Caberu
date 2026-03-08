@@ -23,6 +23,7 @@ import {
 export interface AppointmentsTabProps {
   user: User;
   onOpenAssistant?: () => void;
+  initialAppointmentId?: string | null;
 }
 
 interface Appointment {
@@ -45,13 +46,21 @@ interface Appointment {
  */
 const INITIAL_SHOW = 3;
 
-export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAssistant }) => {
+export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAssistant, initialAppointmentId }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [shownCounts, setShownCounts] = useState({ upcoming: INITIAL_SHOW, completed: INITIAL_SHOW, cancelled: INITIAL_SHOW });
+
+  // Auto-open a specific appointment when navigated from home
+  useEffect(() => {
+    if (initialAppointmentId && !loading) {
+      setSelectedAppointmentId(initialAppointmentId);
+      setDetailsDialogOpen(true);
+    }
+  }, [initialAppointmentId, loading]);
 
   const showMore = (group: keyof typeof shownCounts, total: number) =>
     setShownCounts(prev => ({ ...prev, [group]: total }));

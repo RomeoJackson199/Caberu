@@ -12,6 +12,7 @@ import {
   CheckCircle,
   Video,
   Sparkles,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -39,7 +40,7 @@ export interface PriorityHomeCardsProps {
   } | null;
   totalDueCents: number;
   dentistId?: string | null;
-  onNavigateTo: (section: 'appointments' | 'payments') => void;
+  onNavigateTo: (section: 'appointments' | 'payments', appointmentId?: string) => void;
   onOpenAssistant?: () => void;
   onBookAppointment?: () => void;
 }
@@ -159,9 +160,16 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                       </p>
                     )}
                     {nextAppointment.location && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MapPin className="h-3 w-3" />
                         {nextAppointment.location}
-                      </p>
+                      </a>
                     )}
                     {!nextAppointment.location && nextAppointment.visitType && (
                       <p className="text-sm text-muted-foreground mt-1 capitalize">
@@ -170,7 +178,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                     )}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Button size="sm" variant="outline" onClick={() => onNavigateTo('appointments')}>
+                    <Button size="sm" variant="outline" onClick={() => onNavigateTo('appointments', nextAppointment.id)}>
                       {t.reschedule}
                     </Button>
                     {(nextAppointment.isVirtual || nextAppointment.joinUrl) ? (
@@ -178,9 +186,19 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                         <Video className="h-4 w-4 mr-1" />
                         {t.join}
                       </Button>
+                    ) : nextAppointment.location ? (
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-primary hover:underline text-center inline-flex items-center justify-center gap-1"
+                      >
+                        <MapPin className="h-3 w-3" />
+                        {nextAppointment.location}
+                      </a>
                     ) : (
                       <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground text-center">
-                        {nextAppointment.location || formatVisitContext(nextAppointment.visitType) || 'In-person'}
+                        {formatVisitContext(nextAppointment.visitType) || 'In-person'}
                       </div>
                     )}
                   </div>

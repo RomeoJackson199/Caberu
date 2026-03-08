@@ -152,6 +152,7 @@ const PatientDashboardInner = ({
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [patientNotes, setPatientNotes] = useState<PatientNote[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [pendingAppointmentId, setPendingAppointmentId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<PatientSection>(() => {
     try {
       return localStorage.getItem('pd_section') as PatientSection || 'home';
@@ -577,7 +578,7 @@ const PatientDashboardInner = ({
         location,
         visitType: typeof rawVisitType === 'string' ? rawVisitType : undefined
       };
-    })() : null} totalDueCents={totalDueCents} onNavigateTo={s => setActiveSection(s)} onOpenAssistant={() => setActiveSection('assistant')} onBookAppointment={() => setActiveSection('assistant')} />}
+    })() : null} totalDueCents={totalDueCents} onNavigateTo={(s, appointmentId) => { setActiveSection(s); if (appointmentId) setPendingAppointmentId(appointmentId); }} onOpenAssistant={() => setActiveSection('assistant')} onBookAppointment={() => setActiveSection('assistant')} />}
 
     {activeSection === 'assistant' && (
       <div className="px-4 md:px-6 py-4">
@@ -598,7 +599,7 @@ const PatientDashboardInner = ({
       </Suspense>
     )}
 
-    {activeSection === 'appointments' && <AppointmentsTab user={user} onOpenAssistant={() => setActiveSection('assistant')} />}
+    {activeSection === 'appointments' && <AppointmentsTab user={user} onOpenAssistant={() => setActiveSection('assistant')} initialAppointmentId={pendingAppointmentId} />}
 
     {activeSection === 'payments' && userProfile?.id && <PaymentsTab patientId={userProfile.id} totalDueCents={totalDueCents} />}
 
