@@ -35,7 +35,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewConversation, setShowNewConversation] = useState(false);
-  const [availableContacts, setAvailableContacts] = useState<{ id: string; name: string; businessId: string }[]>([]);
+  const [availableContacts, setAvailableContacts] = useState<{ id: string; name: string; businessId: string; profilePictureUrl?: string | null }[]>([]);
   const [isDentist, setIsDentist] = useState(false);
   const [roleDetected, setRoleDetected] = useState(false);
   const [businessError, setBusinessError] = useState<string | null>(null);
