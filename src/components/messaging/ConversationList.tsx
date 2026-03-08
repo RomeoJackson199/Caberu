@@ -277,6 +277,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
               .map(p => ({
                 id: p.id,
                 name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Patient',
+                profilePictureUrl: (p as any).profile_picture_url || null,
                 businessId: businessId
               }));
 
