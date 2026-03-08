@@ -432,6 +432,10 @@ export default function DentistSettings() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="support" className="space-y-6">
+          <SupportFeedbackSection />
+        </TabsContent>
+
       </Tabs>
 
       {/* Leave Clinic Confirmation Dialog */}
