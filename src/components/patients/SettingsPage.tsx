@@ -75,10 +75,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .upsert(
-          { user_id: user.id, profile_picture_url: url || null },
-          { onConflict: 'user_id' }
-        );
+        .update({ profile_picture_url: url || null })
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
