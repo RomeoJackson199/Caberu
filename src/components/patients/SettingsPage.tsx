@@ -479,7 +479,7 @@ const LegalSupport: React.FC = () => {
               <a href="/terms">View</a>
             </Button>
           </div>
-          <SupportFeedbackInline />
+          <SupportFeedbackSection />
 
           <div className="border-t pt-4 mt-4">
             <h4 className="font-medium mb-3">Your Data</h4>

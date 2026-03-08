@@ -241,6 +241,10 @@ export default function DentistSettings() {
               <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.security || "Security"}
             </TabsTrigger>
+            <TabsTrigger value="support" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
+              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {"Support"}
+            </TabsTrigger>
           </TabsList>
         </div>
 
