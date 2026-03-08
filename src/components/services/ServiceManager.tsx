@@ -133,11 +133,12 @@ export function ServiceManager() {
   useEffect(() => {
     if (businessId) {
       loadServices();
+      loadProviderCounts();
       if (isDentistUser || isOwnerUser) {
         loadDentistServices();
       }
     }
-  }, [businessId, isDentistUser, isOwnerUser, loadDentistServices, loadServices]);
+  }, [businessId, isDentistUser, isOwnerUser, loadDentistServices, loadServices, loadProviderCounts]);
 
   const handleDentistServiceToggle = async (serviceId: string, enabled: boolean) => {
     if (!dentistId || !businessId) return;
