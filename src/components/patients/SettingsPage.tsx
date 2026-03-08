@@ -206,9 +206,10 @@ interface ProfileFormProps {
   saving: boolean;
   userId: string;
   phoneChanged?: boolean;
+  onProfilePictureChange?: (url: string) => void;
 }
 
-const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, onSave, saving, userId, phoneChanged }) => {
+const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, onSave, saving, userId, phoneChanged, onProfilePictureChange }) => {
   return (
     <Card>
       <CardHeader>
@@ -218,7 +219,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
         <ProfilePictureUploadWithCrop
           currentUrl={profile.profile_picture_url}
           userId={userId}
-          onUploadComplete={(url) => setProfile({ ...profile, profile_picture_url: url })}
+          onUploadComplete={onProfilePictureChange || ((url) => setProfile({ ...profile, profile_picture_url: url }))}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
