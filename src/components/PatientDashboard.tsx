@@ -547,7 +547,7 @@ const PatientDashboardInner = ({
   } as Record<PatientSection, boolean>;
   return <PatientAppShell
     activeSection={activeSection}
-    onChangeSection={setActiveSection}
+    onChangeSection={(section) => confirmNavigation(() => setActiveSection(section))}
     badges={badges}
     userId={user.id}
     hasAIChat={hasAIChat}
