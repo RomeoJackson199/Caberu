@@ -186,9 +186,19 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                         <Video className="h-4 w-4 mr-1" />
                         {t.join}
                       </Button>
+                    ) : nextAppointment.location ? (
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-primary hover:underline text-center inline-flex items-center justify-center gap-1"
+                      >
+                        <MapPin className="h-3 w-3" />
+                        {nextAppointment.location}
+                      </a>
                     ) : (
                       <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground text-center">
-                        {nextAppointment.location || formatVisitContext(nextAppointment.visitType) || 'In-person'}
+                        {formatVisitContext(nextAppointment.visitType) || 'In-person'}
                       </div>
                     )}
                   </div>
