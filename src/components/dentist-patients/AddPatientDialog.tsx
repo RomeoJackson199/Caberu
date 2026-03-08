@@ -35,7 +35,7 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
   const { businessName } = useBusinessContext();
 
   // Invite form state
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
   const [inviteName, setInviteName] = useState('');
 
   // Full form state
