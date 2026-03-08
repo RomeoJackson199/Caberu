@@ -71,8 +71,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   // Auto-save profile picture immediately on upload
   const handleProfilePictureChange = async (url: string) => {
     const normalizedUrl = url || '';
+    const previousProfile = profile;
 
-    // Keep state + unsaved-guard in sync immediately
+    // Optimistic UI update
     setProfile(prev => {
       const next = { ...prev, profile_picture_url: normalizedUrl };
       initialProfileRef.current = JSON.stringify(next);
@@ -93,6 +94,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
 
       toast({ title: "Profile picture updated" });
     } catch {
+      setProfile(previousProfile);
+      initialProfileRef.current = JSON.stringify(previousProfile);
+      setHasUnsavedChanges(true);
       toast({ title: "Failed to save profile picture", variant: "destructive" });
     }
   };
