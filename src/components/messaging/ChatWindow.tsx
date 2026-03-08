@@ -243,7 +243,7 @@ export function ChatWindow({
             </Button>
           )}
           <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
-            <AvatarImage src={(recipient as any).profilePictureUrl || undefined} className="object-cover" />
+            <AvatarImage src={recipient.profilePictureUrl || undefined} className="object-cover" />
             <AvatarFallback className="bg-primary text-primary-foreground font-bold">
               {recipient.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
             </AvatarFallback>
