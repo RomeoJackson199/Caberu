@@ -126,7 +126,7 @@ serve(async (req) => {
         appointment.notes ? `Notes: ${appointment.notes}` : null,
       ].filter(Boolean).join('\n');
 
-      const event = {
+      const event: Record<string, unknown> = {
         summary: `${patient.first_name} ${patient.last_name} - ${detailLabel}`,
         description: descriptionLines,
         start: {
@@ -144,6 +144,11 @@ serve(async (req) => {
           },
         },
       };
+
+      // Add practice location if available
+      if (businessLocation) {
+        event.location = businessLocation;
+      }
 
       // Look up existing event via extendedProperties
       let calendarEventId = await findGcalEventId(tokens.access_token, appointmentId);
