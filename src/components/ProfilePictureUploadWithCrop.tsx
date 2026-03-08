@@ -36,6 +36,10 @@ export const ProfilePictureUploadWithCrop = ({
   const imageRef = useRef<HTMLImageElement | null>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setPreviewUrl(currentUrl);
+  }, [currentUrl]);
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;

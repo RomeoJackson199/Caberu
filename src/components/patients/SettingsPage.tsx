@@ -73,10 +73,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
     setProfile(prev => ({ ...prev, profile_picture_url: url }));
     // Save directly to DB so user doesn't need to click Save
     try {
-      await supabase
+      const { error } = await supabase
         .from('profiles')
-        .update({ profile_picture_url: url || null })
-        .eq('user_id', user.id);
+        .upsert(
+          { user_id: user.id, profile_picture_url: url || null },
+          { onConflict: 'user_id' }
+        );
+
+      if (error) throw error;
+
       // Update the initial ref so this change doesn't count as "unsaved"
       const updated = { ...profile, profile_picture_url: url };
       initialProfileRef.current = JSON.stringify(updated);
