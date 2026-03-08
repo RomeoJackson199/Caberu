@@ -87,7 +87,7 @@ function DentistPortalInner({ user: userProp }: DentistPortalProps) {
 
   // Helper function to navigate to a section with URL update
   const navigateToSection = (section: DentistSection) => {
-    navigate(`/dentist/${section}`);
+    confirmNavigation(() => navigate(`/dentist/${section}`));
   };
 
   useEffect(() => {
