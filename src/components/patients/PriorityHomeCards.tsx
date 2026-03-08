@@ -39,7 +39,7 @@ export interface PriorityHomeCardsProps {
   } | null;
   totalDueCents: number;
   dentistId?: string | null;
-  onNavigateTo: (section: 'appointments' | 'payments') => void;
+  onNavigateTo: (section: 'appointments' | 'payments', appointmentId?: string) => void;
   onOpenAssistant?: () => void;
   onBookAppointment?: () => void;
 }
