@@ -67,21 +67,21 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
   };
 
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) {
+    if (!invitePhone.trim()) {
       toast({
         title: 'Error',
-        description: 'Email is required',
+        description: 'Phone number is required',
         variant: 'destructive',
       });
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail.trim())) {
+    // Basic phone validation - must contain digits
+    const digitsOnly = invitePhone.replace(/\D/g, '');
+    if (digitsOnly.length < 7) {
       toast({
-        title: 'Invalid email',
-        description: 'Please enter a valid email address',
+        title: 'Invalid phone number',
+        description: 'Please enter a valid phone number',
         variant: 'destructive',
       });
       return;
@@ -90,11 +90,11 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
     setLoading(true);
 
     try {
-      // Check if patient already exists
+      // Check if patient already exists by phone
       const { data: existingPatient } = await supabase
         .from('secure_profiles_view')
         .select('id, first_name, last_name')
-        .eq('email', inviteEmail.trim().toLowerCase())
+        .eq('phone', invitePhone.trim())
         .maybeSingle();
 
       if (existingPatient) {
@@ -106,10 +106,10 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
         return;
       }
 
-      // Call edge function to send invite
+      // Call edge function to send invite via SMS
       const { error } = await supabase.functions.invoke('create-patient-profile', {
         body: {
-          email: inviteEmail.trim().toLowerCase(),
+          phone: invitePhone.trim(),
           first_name: inviteName.trim() || null,
           business_id: businessId,
           dentist_id: dentistId,
@@ -121,7 +121,7 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
 
       toast({
         title: 'Invitation sent',
-        description: `An invitation email has been sent to ${inviteEmail}`,
+        description: `An invitation has been sent to ${invitePhone}`,
       });
 
       resetForm();
