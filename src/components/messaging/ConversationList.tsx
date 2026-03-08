@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { AvatarWithInitials, DebouncedSearch, UnreadBadge } from '@/components/ui/page-enhancements';
 import { StaggeredList } from '@/components/ui/micro-interactions';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Conversation {
   profileId: string;
