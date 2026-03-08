@@ -161,7 +161,7 @@ export function QuickAppointmentDialog({
 
       const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
       const { data: profiles } = patientIds.length > 0
-        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', patientIds)
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone, profile_picture_url').in('id', patientIds)
         : { data: [] };
 
       const uniquePatients = new Map<string, Patient>();
