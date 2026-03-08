@@ -134,6 +134,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
     } catch { }
   }, [collapsed]);
   const isActive = (id: PatientSection) => activeSection === id;
+  const toggleSidebar = () => setCollapsed(prev => !prev);
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
