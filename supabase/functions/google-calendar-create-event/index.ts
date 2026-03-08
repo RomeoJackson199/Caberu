@@ -37,7 +37,8 @@ serve(async (req) => {
         *,
         dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction, google_calendar_id),
         profiles!appointments_patient_id_fkey(first_name, last_name, email, phone),
-        business_services(name)
+        business_services(name),
+        businesses!appointments_business_id_fkey(name, address)
       `)
       .eq('id', appointmentId)
       .single();
@@ -48,7 +49,9 @@ serve(async (req) => {
 
     const dentist = appointment.dentists;
     const patient = appointment.profiles;
+    const business = appointment.businesses;
     const serviceName = appointment.business_services?.name || null;
+    const businessLocation = business?.address || null;
     
     if (!dentist.google_calendar_connected || !dentist.google_calendar_refresh_token) {
       return new Response(
@@ -123,7 +126,7 @@ serve(async (req) => {
         appointment.notes ? `Notes: ${appointment.notes}` : null,
       ].filter(Boolean).join('\n');
 
-      const event = {
+      const event: Record<string, unknown> = {
         summary: `${patient.first_name} ${patient.last_name} - ${detailLabel}`,
         description: descriptionLines,
         start: {
@@ -141,6 +144,11 @@ serve(async (req) => {
           },
         },
       };
+
+      // Add practice location if available
+      if (businessLocation) {
+        event.location = businessLocation;
+      }
 
       // Look up existing event via extendedProperties
       let calendarEventId = await findGcalEventId(tokens.access_token, appointmentId);
