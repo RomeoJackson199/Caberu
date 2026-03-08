@@ -27,6 +27,7 @@ interface AppointmentHeaderProps {
       first_name?: string;
       last_name?: string;
       date_of_birth?: string;
+      profile_picture_url?: string | null;
     };
     patient_name?: string;
   };
