@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTemplate } from "@/contexts/TemplateContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 import { TemplateType, getTemplateConfig } from "@/lib/businessTemplates";
 import { Language } from "@/lib/translations";
 import { logger } from "@/lib/logger";
