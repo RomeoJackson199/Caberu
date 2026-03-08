@@ -297,41 +297,6 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
         </TooltipProvider>
       </nav>
 
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right">
-                  <p>Settings</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size={collapsed ? 'icon' : 'default'}
-                  onClick={handleSignOut}
-                  className={cn(
-                    "w-full text-destructive hover:text-destructive hover:bg-destructive/10",
-                    collapsed ? "justify-center" : "justify-start gap-3"
-                  )}
-                  aria-label="Sign Out"
-                >
-                  <LogOut className="h-5 w-5" />
-                  {!collapsed && <span>Sign Out</span>}
-                </Button>
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right">
-                  <p>Sign Out</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
     </div>
 
     {/* Main Content Area */}
