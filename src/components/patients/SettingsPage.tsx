@@ -127,7 +127,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       <AccordionItem value="profile">
         <AccordionTrigger>Profile & Personal Info</AccordionTrigger>
         <AccordionContent>
-          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} />
+          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} onProfilePictureChange={handleProfilePictureChange} />
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="preferences">
