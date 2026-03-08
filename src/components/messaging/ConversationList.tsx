@@ -300,7 +300,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
 
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name')
+          .select('id, first_name, last_name, profile_picture_url')
           .in('id', patientIds);
 
         const contacts = (profilesData || []).map(p => ({
