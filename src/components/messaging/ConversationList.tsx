@@ -429,6 +429,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
+                        <AvatarImage src={contact.profilePictureUrl || undefined} className="object-cover" />
                         <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                           {contact.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
