@@ -120,7 +120,7 @@ export function DentistSelectionStep({ dentists, onSelect, onBack }: DentistSele
             return (
               <Card
                 key={dentist.id}
-                className="group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/40 overflow-hidden"
+                className="group transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/40 overflow-hidden rounded-2xl"
               >
                 <CardContent className="p-0">
                   {/* Top section with avatar + info */}
