@@ -257,9 +257,33 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
     <div className={cn("fixed left-0 top-0 bottom-0 bg-card/80 backdrop-blur-lg border-r border-border/50 z-40 transition-[width] duration-200 ease-linear overflow-hidden", collapsed ? "w-16" : "w-64")}>
       {/* Sidebar Header */}
       <div className={cn("flex items-center border-b border-border/50 gap-3", collapsed ? "p-2" : "p-4")}>
-        {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-9 w-9 rounded-lg object-cover shrink-0" /> : <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <span className="text-primary-foreground font-bold text-sm">P</span>
-        </div>}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={toggleSidebar}
+                className="relative h-9 w-9 shrink-0 rounded-lg group"
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                {/* Logo / fallback */}
+                {branding.logoUrl ? (
+                  <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-9 w-9 rounded-lg object-cover group-hover:opacity-30 transition-opacity" />
+                ) : (
+                  <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center group-hover:opacity-30 transition-opacity">
+                    <span className="text-primary-foreground font-bold text-sm">P</span>
+                  </div>
+                )}
+                {/* Collapse icon on hover */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <PanelLeft className="h-4 w-4 text-foreground" />
+                </div>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{collapsed ? "Expand sidebar" : "Collapse sidebar"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         {!collapsed && <div className="min-w-0 flex-1">
           <h1 className="font-semibold text-base leading-tight truncate">{branding.clinicName || "Patient Portal"}</h1>
           <p className="text-xs text-muted-foreground">{branding.tagline || "Healthcare Dashboard"}</p>
