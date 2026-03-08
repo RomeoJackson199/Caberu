@@ -578,7 +578,7 @@ const PatientDashboardInner = ({
         location,
         visitType: typeof rawVisitType === 'string' ? rawVisitType : undefined
       };
-    })() : null} totalDueCents={totalDueCents} onNavigateTo={s => setActiveSection(s)} onOpenAssistant={() => setActiveSection('assistant')} onBookAppointment={() => setActiveSection('assistant')} />}
+    })() : null} totalDueCents={totalDueCents} onNavigateTo={(s, appointmentId) => { setActiveSection(s); if (appointmentId) setPendingAppointmentId(appointmentId); }} onOpenAssistant={() => setActiveSection('assistant')} onBookAppointment={() => setActiveSection('assistant')} />}
 
     {activeSection === 'assistant' && (
       <div className="px-4 md:px-6 py-4">
