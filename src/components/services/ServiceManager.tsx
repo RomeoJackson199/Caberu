@@ -264,6 +264,7 @@ export function ServiceManager() {
   });
 
   const activeCount = services.filter(service => service.is_active).length;
+  const noProviderCount = services.filter(service => service.is_active && !(providerCounts[service.id])).length;
   const inactiveCount = services.length - activeCount;
 
   if (!businessId) {
