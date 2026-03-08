@@ -540,7 +540,8 @@ export function ServiceManager() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
