@@ -183,9 +183,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
   
   const handleCancelAppointment = useCallback(async (appointmentId: string) => {
     try {
-      // Release all held slots (supports multi-slot appointments)
-      await supabase.rpc('release_appointment_slots', { p_appointment_id: appointmentId });
-      // Cancel appointment via RPC
+      // Cancel appointment via RPC (also releases all booked slots)
       const { data, error } = await supabase.rpc('cancel_appointment', {
         appointment_id: appointmentId,
         user_id: user.id
