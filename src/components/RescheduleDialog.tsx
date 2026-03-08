@@ -89,16 +89,28 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         .single();
       if (error) throw error;
 
-      let dentistName = "Your Dentist";
+      let dentistName = "";
       if (data.dentist_id) {
+        // Try dentists table with profile join
         const { data: dentist } = await supabase
           .from('dentists')
-          .select('profiles:profile_id(first_name, last_name)')
+          .select('first_name, last_name, profiles:profile_id(first_name, last_name)')
           .eq('id', data.dentist_id)
           .single();
+        
+        // Use dentists table fields first, fall back to profiles join
+        const dFirst = dentist?.first_name;
+        const dLast = dentist?.last_name;
         const p = dentist?.profiles;
         const profile = Array.isArray(p) ? p[0] : p;
-        if (profile) dentistName = `Dr. ${profile.first_name} ${profile.last_name}`;
+        const pFirst = profile?.first_name;
+        const pLast = profile?.last_name;
+        
+        const firstName = dFirst || pFirst || '';
+        const lastName = dLast || pLast || '';
+        if (firstName || lastName) {
+          dentistName = `Dr. ${firstName} ${lastName}`.trim();
+        }
       }
 
       setAppointment({
@@ -386,24 +398,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                 disabled={isDateDisabled}
                 fromDate={new Date()}
                 toDate={addDays(new Date(), 90)}
-                className={cn("p-3 pointer-events-auto rounded-xl border-0")}
-                classNames={{
-                  months: "flex flex-col",
-                  month: "space-y-3",
-                  caption: "flex justify-center pt-1 relative items-center",
-                  caption_label: "text-sm font-semibold",
-                  nav: "space-x-1 flex items-center",
-                  table: "w-full border-collapse",
-                  head_row: "flex",
-                  head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex-1 text-center",
-                  row: "flex w-full mt-1",
-                  cell: "flex-1 text-center text-sm relative p-0",
-                  day: "h-9 w-9 mx-auto p-0 font-normal rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center",
-                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-semibold shadow-sm",
-                  day_today: "bg-accent text-accent-foreground font-semibold",
-                  day_outside: "text-muted-foreground/40",
-                  day_disabled: "text-muted-foreground/30 line-through cursor-not-allowed hover:bg-transparent",
-                }}
               />
             </div>
           )}
