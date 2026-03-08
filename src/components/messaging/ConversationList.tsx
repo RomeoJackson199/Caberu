@@ -176,7 +176,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
 
         // Get patients from appointments
         const { data: appointments } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('patient_id, business_id')
           .eq('dentist_id', dentistId || '');
 
