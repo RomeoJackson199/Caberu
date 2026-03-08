@@ -413,12 +413,17 @@ export function ServiceManager() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredServices.map((service) => (
+          {filteredServices.map((service) => {
+            const provCount = providerCounts[service.id] || 0;
+            const hasNoProviders = service.is_active && provCount === 0;
+            return (
             <Card
               key={service.id}
               className={`flex h-full flex-col transition-all hover:shadow-xl ${!service.is_active
                 ? 'border-dashed opacity-60 hover:opacity-80'
-                : 'border-2 hover:scale-[1.02] shadow-md'
+                : hasNoProviders
+                  ? 'border-2 border-amber-300 dark:border-amber-700 hover:scale-[1.02] shadow-md'
+                  : 'border-2 hover:scale-[1.02] shadow-md'
                 }`}
             >
               <CardHeader className="space-y-4">
@@ -439,6 +444,16 @@ export function ServiceManager() {
                     {!service.is_active && (
                       <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-400">
                         Inactive
+                      </Badge>
+                    )}
+                    {hasNoProviders && (
+                      <Badge variant="outline" className="border-orange-400 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400">
+                        No providers
+                      </Badge>
+                    )}
+                    {service.is_active && provCount > 0 && (
+                      <Badge variant="outline" className="border-emerald-400 text-emerald-700 dark:text-emerald-400">
+                        {provCount} provider{provCount !== 1 ? 's' : ''}
                       </Badge>
                     )}
                     {service.requires_upfront_payment && (
