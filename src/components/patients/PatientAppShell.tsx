@@ -386,27 +386,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
     <div className={cn("flex-1 transition-[margin-left] duration-200 ease-linear", collapsed ? "ml-16" : "ml-64")}>
       {/* Global header toggle so it’s ALWAYS visible */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 border border-transparent hover:border-border hover:bg-muted/70"
-                    onClick={toggleSidebar}
-                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  >
-                    <PanelLeft className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{collapsed ? "Expand sidebar" : "Collapse sidebar"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+        <div className="flex items-center justify-end px-3 py-2">
           <div className="flex items-center gap-2">
             <NotificationBell />
             <DropdownMenu>
