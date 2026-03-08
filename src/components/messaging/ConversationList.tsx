@@ -217,10 +217,10 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
           .select('id, first_name, last_name, profile_picture_url')
           .in('id', profileIds);
 
-        const profileNameMap = new Map<string, string>();
+        const profileNameMap = new Map<string, { name: string; pic: string | null }>();
         profilesData?.forEach(p => {
           const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Dentist';
-          profileNameMap.set(p.id, name);
+          profileNameMap.set(p.id, { name, pic: (p as any).profile_picture_url || null });
         });
 
         // Get the current selected business (if any)
