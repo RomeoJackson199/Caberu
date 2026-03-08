@@ -12,6 +12,7 @@ import { saveProfileData, loadProfileData, ProfileData } from "@/lib/profileUtil
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySettings";
+import { SupportFeedbackSection } from "@/components/shared/SupportFeedbackSection";
 import { AccountLinkingSection } from "@/components/auth/AccountLinkingSection";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { PhoneVerificationDialog } from "@/components/auth/PhoneVerificationDialog";
