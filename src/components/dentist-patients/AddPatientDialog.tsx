@@ -61,7 +61,7 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
       dateOfBirth: '',
       medicalHistory: '',
     });
-    setInviteEmail('');
+    setInvitePhone('');
     setInviteName('');
     setMode('select');
   };
