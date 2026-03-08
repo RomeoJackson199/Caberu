@@ -599,7 +599,7 @@ const PatientDashboardInner = ({
       </Suspense>
     )}
 
-    {activeSection === 'appointments' && <AppointmentsTab user={user} onOpenAssistant={() => setActiveSection('assistant')} />}
+    {activeSection === 'appointments' && <AppointmentsTab user={user} onOpenAssistant={() => setActiveSection('assistant')} initialAppointmentId={pendingAppointmentId} />}
 
     {activeSection === 'payments' && userProfile?.id && <PaymentsTab patientId={userProfile.id} totalDueCents={totalDueCents} />}
 
