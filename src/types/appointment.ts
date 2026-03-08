@@ -26,6 +26,7 @@ export interface AppointmentProfile {
   email: string;
   phone?: string;
   date_of_birth?: string;
+  profile_picture_url?: string | null;
 }
 
 /**

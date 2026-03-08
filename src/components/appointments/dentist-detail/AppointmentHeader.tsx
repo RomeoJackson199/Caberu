@@ -113,6 +113,7 @@ export function AppointmentHeader({
       {/* Patient Info Row */}
       <div className="flex items-start gap-4">
         <Avatar className="h-14 w-14 ring-2 ring-primary/10 shadow-sm">
+          <AvatarImage src={appointment.patient?.profile_picture_url || undefined} className="object-cover" />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
             {patientInitials || 'P'}
           </AvatarFallback>

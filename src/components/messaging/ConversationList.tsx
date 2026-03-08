@@ -149,6 +149,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         return {
           profileId: p.id,
           name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'User',
+          profilePictureUrl: (p as any).profile_picture_url || null,
           lastMessage: conv.lastMessage,
           lastMessageTime: conv.lastMessageTime,
           unreadCount: conv.unreadCount,

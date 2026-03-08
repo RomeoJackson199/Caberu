@@ -358,7 +358,7 @@ export function useAppointments(params: UseAppointmentsParams): UseAppointmentsR
 
       const [profilesResult, dentistsResult] = await Promise.all([
         patientIds.length > 0
-          ? supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', patientIds)
+          ? supabase.from('profiles').select('id, first_name, last_name, email, phone, profile_picture_url').in('id', patientIds)
           : { data: [], error: null },
         dentistIds.length > 0
           ? supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)

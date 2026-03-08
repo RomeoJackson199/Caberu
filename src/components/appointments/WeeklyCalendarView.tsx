@@ -556,6 +556,7 @@ export function WeeklyCalendarView({
                                 <div className="flex items-start justify-between">
                                   <div className="flex items-center gap-3">
                                     <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                      <AvatarImage src={event.patient?.profile_picture_url || undefined} className="object-cover" />
                                       <AvatarFallback className="bg-primary/10 text-primary font-bold">
                                         {getPatientInitials(event.patient?.first_name, event.patient?.last_name)}
                                       </AvatarFallback>
