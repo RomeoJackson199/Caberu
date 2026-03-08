@@ -1,47 +1,35 @@
 
 
-## Root Cause: `secure_profiles_view` maps `avatar_url` as `profile_picture_url`
+# Google Calendar Integration — Settings Tab
 
-The **`secure_profiles_view`** has this line:
+## Current State
 
-```sql
-avatar_url AS profile_picture_url,
-```
+The backend is **fully built** already:
+- `google-calendar-oauth` edge function: handles OAuth flow (get-auth-url, exchange-code, disconnect)
+- `google-calendar-sync` edge function: fetches events from Google Calendar, blocks appointment slots
+- `google-calendar-create-event` edge function: pushes appointments to Google Calendar (create/update/delete)
+- `GoogleCalendarCallback.tsx` page + route already exists
+- `DentistAppointmentsManagement.tsx` already queries and displays Google Calendar events
+- `useAppointments.tsx` already syncs new/updated appointments to Google Calendar
 
-But when the app **writes** profile pictures, it writes to the real `profile_picture_url` column on the `profiles` table. The view **reads** from `avatar_url` (which is always NULL) and aliases it as `profile_picture_url`. So:
-
-1. **Upload succeeds** -- `profile_picture_url` column gets the URL correctly (confirmed: the DB has real URLs in `profile_picture_url`)
-2. **Read fails** -- the view returns `avatar_url` (NULL) as `profile_picture_url`, so the photo appears missing on reload/re-login
-3. **Unsaved changes warning** -- Since the loaded profile has `profile_picture_url: ''` (from NULL avatar_url) but formData still has the URL, a mismatch is detected
+**What's missing:** A settings UI to connect/disconnect Google Calendar. There's no component for this yet.
 
 ## Plan
 
-### 1. Fix the `secure_profiles_view` (SQL migration)
-Recreate the view so it reads the **actual** `profile_picture_url` column instead of aliasing `avatar_url`:
+### 1. Create `GoogleCalendarSettings` component
+New file: `src/components/settings/GoogleCalendarSettings.tsx`
 
-```sql
-DROP VIEW IF EXISTS public.secure_profiles_view;
+- Fetches current dentist's `google_calendar_connected` and `google_calendar_last_sync` from the `dentists` table
+- **Connect button**: Calls `google-calendar-oauth` with `action: 'get-auth-url'`, opens popup, listens for `google-calendar-auth` message, exchanges code via `action: 'exchange-code'`
+- **Disconnect button**: Calls `google-calendar-oauth` with `action: 'disconnect'`
+- Shows connection status using the existing `CalendarSyncStatus` component
+- Manual "Sync Now" button that invokes `google-calendar-sync`
+- Explains bidirectional sync: appointments push to Google, Google events block slots
 
-CREATE VIEW public.secure_profiles_view
-WITH (security_invoker = true)
-AS
-SELECT 
-  id, user_id, email, first_name, last_name, phone,
-  date_of_birth,
-  avatar_url,
-  profile_picture_url,   -- use the REAL column, not avatar_url alias
-  address, emergency_contact, medical_history,
-  role, ai_opt_out, patient_status, profile_completion_status,
-  import_session_id, phone_verified, onboarding_completed,
-  bio,
-  created_at, updated_at
-FROM public.profiles;
+### 2. Add "Calendar" tab to `DentistSettings.tsx`
+- Add a new tab between "Appts" and "Team" with a Calendar icon
+- Renders the `GoogleCalendarSettings` component
+- Include it in the tab param validation list
 
-GRANT SELECT ON public.secure_profiles_view TO authenticated;
-GRANT SELECT ON public.secure_profiles_view TO anon;
-GRANT SELECT ON public.secure_profiles_view TO service_role;
-```
-
-### 2. No code changes needed
-The app code already writes to `profile_picture_url` on the `profiles` table and reads from `secure_profiles_view.profile_picture_url`. Once the view returns the correct column, everything will work: persistence, display across the app, and no false unsaved-changes warnings.
+No backend changes needed — everything is already wired up.
 
