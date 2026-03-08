@@ -125,7 +125,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
       // Fetch profiles
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, profile_picture_url')
         .in('id', partnerIds);
 
       // Fetch business names
