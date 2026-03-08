@@ -41,7 +41,8 @@ interface DentistPortalProps {
   user?: User | null;
 }
 
-export function DentistPortal({ user: userProp }: DentistPortalProps) {
+function DentistPortalInner({ user: userProp }: DentistPortalProps) {
+  const { confirmNavigation } = useUnsavedChangesGuard();
   const [activeSection, setActiveSection] = useState<DentistSection>('dashboard');
   const [dentistId, setDentistId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(userProp || null);
