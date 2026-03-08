@@ -152,6 +152,7 @@ const PatientDashboardInner = ({
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [patientNotes, setPatientNotes] = useState<PatientNote[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [pendingAppointmentId, setPendingAppointmentId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<PatientSection>(() => {
     try {
       return localStorage.getItem('pd_section') as PatientSection || 'home';
