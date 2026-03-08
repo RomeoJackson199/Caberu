@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Loader2, Mail, ClipboardList, ArrowLeft } from 'lucide-react';
+import { UserPlus, Loader2, Phone, ClipboardList, ArrowLeft } from 'lucide-react';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface AddPatientDialogProps {
