@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home as HomeIcon, Calendar, CreditCard, Settings as SettingsIcon, Bot, LogOut, Info, PanelLeft, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { FloatingBookingButton } from "@/components/patients/FloatingBookingButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -97,14 +98,37 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
     showTour,
     closeTour
   } = useUserTour("patient");
-  const [collapsed, setCollapsed] = React.useState<boolean>(() => {
+
+  const [userName, setUserName] = useState<string>("");
+  const [userInitials, setUserInitials] = useState<string>("?");
+  const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('secure_profiles_view')
+        .select('first_name, last_name, email, profile_picture_url')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const full = `${data?.first_name ?? ''} ${data?.last_name ?? ''}`.trim();
+      setUserName(full || data?.email || '');
+      const fi = (data?.first_name?.[0] || '').toUpperCase();
+      const li = (data?.last_name?.[0] || '').toUpperCase();
+      setUserInitials((fi + li || user.email?.[0] || '?').toString().toUpperCase());
+      setUserProfilePicture(data?.profile_picture_url || null);
+    })();
+  }, []);
+
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('psidebar:collapsed') === '1';
     } catch {
       return false;
     }
   });
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       localStorage.setItem('psidebar:collapsed', collapsed ? '1' : '0');
     } catch { }
@@ -148,7 +172,10 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className={cn("hover:bg-primary/10 transition-colors touch-target min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2", activeSection === 'settings' && "bg-primary/10 text-primary")} aria-label="Open menu">
-                  <SettingsIcon className="h-5 w-5" />
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
+                    <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -273,6 +300,36 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
       {/* Sidebar Footer */}
       <div className={cn("absolute bottom-0 left-0 right-0 border-t border-border/50", collapsed ? "p-2" : "p-4")}>
         <div className="flex flex-col gap-2">
+          {/* User Avatar & Name */}
+          {!collapsed && (
+            <div className="flex items-center gap-3 px-1 py-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">{userInitials}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{userName || 'Patient'}</p>
+              </div>
+            </div>
+          )}
+          {collapsed && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex justify-center py-1">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{userInitials}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{userName || 'Patient'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -335,6 +392,32 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
               <PanelLeft className="h-4 w-4" />
             </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="User menu">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
+                    <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>{userName || 'Account'}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSettingsClick}>
+                  <SettingsIcon className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

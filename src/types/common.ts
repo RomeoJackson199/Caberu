@@ -35,6 +35,7 @@ export interface UserProfile {
   email: string;
   phone?: string;
   avatar_url?: string;
+  profile_picture_url?: string | null;
   preferences?: UserPreferences;
   created_at: string;
   updated_at: string;

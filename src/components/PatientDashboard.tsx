@@ -551,7 +551,7 @@ const PatientDashboardComponent = ({
     hasAIChat={hasAIChat}
     onBookAppointment={() => setActiveSection('assistant')}
   >
-    {activeSection === 'home' && <HomeTab userId={user.id} firstName={userProfile?.first_name} nextAppointment={nextAppointment ? (() => {
+    {activeSection === 'home' && <HomeTab userId={user.id} firstName={userProfile?.first_name} profileImageUrl={userProfile?.profile_picture_url || undefined} nextAppointment={nextAppointment ? (() => {
       const appointmentDetails = nextAppointment as unknown as Record<string, any>;
       const joinUrl = appointmentDetails.meeting_url || appointmentDetails.join_url || appointmentDetails.telehealth_url || appointmentDetails.virtual_meeting_url || appointmentDetails.video_url || appointmentDetails.video_meeting_url || appointmentDetails.conference_url || null;
       const rawVisitType = appointmentDetails.visit_type || appointmentDetails.type || appointmentDetails.appointment_type || appointmentDetails.mode || appointmentDetails.format || appointmentDetails.channel || '';

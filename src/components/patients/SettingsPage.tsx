@@ -39,7 +39,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const [savedPhone, setSavedPhone] = useState('');
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({
-    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', address_street: '', address_house_number: '', address_postal_code: '', address_city: '', emergency_contact: '', ai_opt_out: false,
+    first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', address_street: '', address_house_number: '', address_postal_code: '', address_city: '', emergency_contact: '', ai_opt_out: false, profile_picture_url: '',
   });
 
   useEffect(() => {
