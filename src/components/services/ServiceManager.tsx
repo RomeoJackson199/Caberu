@@ -38,12 +38,34 @@ export function ServiceManager() {
 
   const [dentistId, setDentistId] = useState<string | null>(null);
   const [dentistServiceIds, setDentistServiceIds] = useState<Set<string>>(new Set());
+  const [providerCounts, setProviderCounts] = useState<Record<string, number>>({});
   const isDentistUser = membershipRole === 'dentist';
   const isOwnerUser = membershipRole === 'owner';
   const canManageCatalog = membershipRole === 'owner' || membershipRole === 'admin' || membershipRole === 'assistant';
 
   // Undo functionality
   const { deleteServiceWithUndo, toggleServiceStatusWithUndo } = useServiceActionsWithUndo();
+
+  const loadProviderCounts = useCallback(async () => {
+    if (!businessId) return;
+    try {
+      const { data, error } = await supabase
+        .from('dentist_services')
+        .select('service_id')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row: { service_id: string }) => {
+        counts[row.service_id] = (counts[row.service_id] || 0) + 1;
+      });
+      setProviderCounts(counts);
+    } catch (error) {
+      logger.error('Error loading provider counts:', error);
+    }
+  }, [businessId]);
 
   const loadServices = useCallback(async () => {
     if (!businessId) return;
@@ -111,11 +133,12 @@ export function ServiceManager() {
   useEffect(() => {
     if (businessId) {
       loadServices();
+      loadProviderCounts();
       if (isDentistUser || isOwnerUser) {
         loadDentistServices();
       }
     }
-  }, [businessId, isDentistUser, isOwnerUser, loadDentistServices, loadServices]);
+  }, [businessId, isDentistUser, isOwnerUser, loadDentistServices, loadServices, loadProviderCounts]);
 
   const handleDentistServiceToggle = async (serviceId: string, enabled: boolean) => {
     if (!dentistId || !businessId) return;
@@ -158,6 +181,8 @@ export function ServiceManager() {
       }
 
       if (error) throw error;
+      // Refresh provider counts after toggle
+      await loadProviderCounts();
     } catch (error) {
       logger.error('Error updating dentist service toggle:', error);
       toast.error('Failed to update service availability');
@@ -239,6 +264,7 @@ export function ServiceManager() {
   });
 
   const activeCount = services.filter(service => service.is_active).length;
+  const noProviderCount = services.filter(service => service.is_active && !(providerCounts[service.id])).length;
   const inactiveCount = services.length - activeCount;
 
   if (!businessId) {
@@ -300,12 +326,10 @@ export function ServiceManager() {
             <CardTitle className="text-4xl font-bold text-amber-900 dark:text-amber-100">{inactiveCount}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-2 border-purple-200 dark:border-purple-900 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 shadow-md">
+        <Card className="border-2 border-orange-200 dark:border-orange-900 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/30 shadow-md">
           <CardHeader className="pb-3">
-            <CardDescription className="text-purple-700 dark:text-purple-400 font-medium">Prepay Required</CardDescription>
-            <CardTitle className="text-4xl font-bold text-purple-900 dark:text-purple-100">
-              {services.filter(service => service.requires_upfront_payment).length}
-            </CardTitle>
+            <CardDescription className="text-orange-700 dark:text-orange-400 font-medium">No Providers</CardDescription>
+            <CardTitle className="text-4xl font-bold text-orange-900 dark:text-orange-100">{noProviderCount}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -388,12 +412,17 @@ export function ServiceManager() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredServices.map((service) => (
+          {filteredServices.map((service) => {
+            const provCount = providerCounts[service.id] || 0;
+            const hasNoProviders = service.is_active && provCount === 0;
+            return (
             <Card
               key={service.id}
               className={`flex h-full flex-col transition-all hover:shadow-xl ${!service.is_active
                 ? 'border-dashed opacity-60 hover:opacity-80'
-                : 'border-2 hover:scale-[1.02] shadow-md'
+                : hasNoProviders
+                  ? 'border-2 border-amber-300 dark:border-amber-700 hover:scale-[1.02] shadow-md'
+                  : 'border-2 hover:scale-[1.02] shadow-md'
                 }`}
             >
               <CardHeader className="space-y-4">
@@ -414,6 +443,16 @@ export function ServiceManager() {
                     {!service.is_active && (
                       <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-400">
                         Inactive
+                      </Badge>
+                    )}
+                    {hasNoProviders && (
+                      <Badge variant="outline" className="border-orange-400 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400">
+                        No providers
+                      </Badge>
+                    )}
+                    {service.is_active && provCount > 0 && (
+                      <Badge variant="outline" className="border-emerald-400 text-emerald-700 dark:text-emerald-400">
+                        {provCount} provider{provCount !== 1 ? 's' : ''}
                       </Badge>
                     )}
                     {service.requires_upfront_payment && (
@@ -500,7 +539,8 @@ export function ServiceManager() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
