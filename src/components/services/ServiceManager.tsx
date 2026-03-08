@@ -38,12 +38,34 @@ export function ServiceManager() {
 
   const [dentistId, setDentistId] = useState<string | null>(null);
   const [dentistServiceIds, setDentistServiceIds] = useState<Set<string>>(new Set());
+  const [providerCounts, setProviderCounts] = useState<Record<string, number>>({});
   const isDentistUser = membershipRole === 'dentist';
   const isOwnerUser = membershipRole === 'owner';
   const canManageCatalog = membershipRole === 'owner' || membershipRole === 'admin' || membershipRole === 'assistant';
 
   // Undo functionality
   const { deleteServiceWithUndo, toggleServiceStatusWithUndo } = useServiceActionsWithUndo();
+
+  const loadProviderCounts = useCallback(async () => {
+    if (!businessId) return;
+    try {
+      const { data, error } = await supabase
+        .from('dentist_services')
+        .select('service_id')
+        .eq('business_id', businessId)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      (data || []).forEach((row: { service_id: string }) => {
+        counts[row.service_id] = (counts[row.service_id] || 0) + 1;
+      });
+      setProviderCounts(counts);
+    } catch (error) {
+      logger.error('Error loading provider counts:', error);
+    }
+  }, [businessId]);
 
   const loadServices = useCallback(async () => {
     if (!businessId) return;
