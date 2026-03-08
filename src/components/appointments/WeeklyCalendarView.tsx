@@ -104,7 +104,7 @@ export function WeeklyCalendarView({
       // Fetch patient profiles separately (views don't support PostgREST joins)
       const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
       const { data: profiles } = patientIds.length > 0
-        ? await supabase.from('profiles').select('id, first_name, last_name, email').in('id', patientIds)
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, profile_picture_url').in('id', patientIds)
         : { data: [] };
       const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
 
