@@ -421,7 +421,7 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
         <DialogHeader>
           <DialogTitle>
             {mode === 'select' && 'Add New Patient'}
-            {mode === 'invite' && 'Invite Patient by Email'}
+            {mode === 'invite' && 'Invite Patient by Phone'}
             {mode === 'full' && 'Create Patient Profile'}
           </DialogTitle>
           <DialogDescription>
