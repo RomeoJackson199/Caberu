@@ -168,7 +168,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       </div>
       <div className="flex-1 overflow-auto p-4">
         {active === 'Profile & Personal Info' && (
-          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} />
+          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} onProfilePictureChange={handleProfilePictureChange} />
         )}
         {active === 'Preferences' && (
           <Preferences theme={theme} setTheme={setTheme} />
