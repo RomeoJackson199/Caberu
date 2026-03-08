@@ -229,9 +229,11 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         const contacts = dentists
           .map(d => {
             const businessId = dentistBusinessMap.get(d.id) || '';
+            const info = profileNameMap.get(d.profile_id);
             return {
               id: d.profile_id,
-              name: profileNameMap.get(d.profile_id) || 'Dentist',
+              name: info?.name || 'Dentist',
+              profilePictureUrl: info?.pic || null,
               businessId,
               businessName: businessNameMap.get(businessId) || ''
             };
