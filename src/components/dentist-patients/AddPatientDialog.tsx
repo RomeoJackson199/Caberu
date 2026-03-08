@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Loader2, Mail, ClipboardList, ArrowLeft } from 'lucide-react';
+import { UserPlus, Loader2, Phone, ClipboardList, ArrowLeft } from 'lucide-react';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 
 interface AddPatientDialogProps {
@@ -35,7 +35,7 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
   const { businessName } = useBusinessContext();
 
   // Invite form state
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
   const [inviteName, setInviteName] = useState('');
 
   // Full form state
@@ -61,27 +61,27 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
       dateOfBirth: '',
       medicalHistory: '',
     });
-    setInviteEmail('');
+    setInvitePhone('');
     setInviteName('');
     setMode('select');
   };
 
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) {
+    if (!invitePhone.trim()) {
       toast({
         title: 'Error',
-        description: 'Email is required',
+        description: 'Phone number is required',
         variant: 'destructive',
       });
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail.trim())) {
+    // Basic phone validation - must contain digits
+    const digitsOnly = invitePhone.replace(/\D/g, '');
+    if (digitsOnly.length < 7) {
       toast({
-        title: 'Invalid email',
-        description: 'Please enter a valid email address',
+        title: 'Invalid phone number',
+        description: 'Please enter a valid phone number',
         variant: 'destructive',
       });
       return;
@@ -90,11 +90,11 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
     setLoading(true);
 
     try {
-      // Check if patient already exists
+      // Check if patient already exists by phone
       const { data: existingPatient } = await supabase
         .from('secure_profiles_view')
         .select('id, first_name, last_name')
-        .eq('email', inviteEmail.trim().toLowerCase())
+        .eq('phone', invitePhone.trim())
         .maybeSingle();
 
       if (existingPatient) {
@@ -106,10 +106,10 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
         return;
       }
 
-      // Call edge function to send invite
+      // Call edge function to send invite via SMS
       const { error } = await supabase.functions.invoke('create-patient-profile', {
         body: {
-          email: inviteEmail.trim().toLowerCase(),
+          phone: invitePhone.trim(),
           first_name: inviteName.trim() || null,
           business_id: businessId,
           dentist_id: dentistId,
@@ -121,7 +121,7 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
 
       toast({
         title: 'Invitation sent',
-        description: `An invitation email has been sent to ${inviteEmail}`,
+        description: `An invitation has been sent to ${invitePhone}`,
       });
 
       resetForm();
@@ -219,12 +219,12 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
-              <Mail className="h-5 w-5 text-primary" />
+              <Phone className="h-5 w-5 text-primary" />
             </div>
             <div>
               <CardTitle className="text-base">Quick Invite</CardTitle>
               <CardDescription className="text-sm">
-                Send an email invitation to let the patient complete their profile
+                Send an SMS invitation to let the patient complete their profile
               </CardDescription>
             </div>
           </div>
@@ -266,17 +266,17 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="inviteEmail">Email Address *</Label>
+          <Label htmlFor="invitePhone">Phone Number *</Label>
           <Input
-            id="inviteEmail"
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="patient@email.com"
+            id="invitePhone"
+            type="tel"
+            value={invitePhone}
+            onChange={(e) => setInvitePhone(e.target.value)}
+            placeholder="+31 6 12345678"
             required
           />
           <p className="text-xs text-muted-foreground">
-            We'll send an invitation to create their account
+            We'll send an SMS invitation to create their account
           </p>
         </div>
 
@@ -421,12 +421,12 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
         <DialogHeader>
           <DialogTitle>
             {mode === 'select' && 'Add New Patient'}
-            {mode === 'invite' && 'Invite Patient by Email'}
+            {mode === 'invite' && 'Invite Patient by Phone'}
             {mode === 'full' && 'Create Patient Profile'}
           </DialogTitle>
           <DialogDescription>
             {mode === 'select' && 'Choose how you want to add a patient to your practice.'}
-            {mode === 'invite' && `Send an invitation for ${businessName || 'your practice'}.`}
+            {mode === 'invite' && `Send an SMS invitation for ${businessName || 'your practice'}.`}
             {mode === 'full' && 'Enter the patient details to create their profile.'}
           </DialogDescription>
         </DialogHeader>
