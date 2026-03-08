@@ -1118,37 +1118,56 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
     } else parsedTime = '09:00';
   }
 
+  // Look up service duration for multi-slot booking
+  let serviceDuration = 30;
+  if (service_id) {
+    const { data: svcData } = await supabase.from('business_services').select('duration_minutes').eq('id', service_id).maybeSingle();
+    if (svcData?.duration_minutes) serviceDuration = svcData.duration_minutes;
+  }
+
   let finalDentistId = dentist_id;
   if (!finalDentistId) {
-    let slotQuery = supabase.from('appointment_slots').select('id, dentist_id, business_id').eq('slot_date', parsedDate).eq('slot_time', parsedTime).eq('is_available', true).limit(1);
-    if (businessId) slotQuery = slotQuery.eq('business_id', businessId);
-    const { data: availSlot } = await slotQuery.maybeSingle();
-    if (availSlot) {
-      finalDentistId = availSlot.dentist_id;
-      if (!resolvedBusinessId && (availSlot as any).business_id) resolvedBusinessId = (availSlot as any).business_id;
-    } else {
-      const { data: dentists } = await supabase.from('dentists').select('id').eq('is_active', true).limit(1);
-      if (dentists && dentists.length > 0) finalDentistId = dentists[0].id;
+    // Use get_available_slots RPC to find a dentist with availability instead of raw table query
+    if (businessId) {
+      const { data: activeDentists } = await supabase.from('dentists').select('id').eq('is_active', true)
+        .in('id', (await supabase.from('business_members').select('profile_id').eq('business_id', businessId)).data?.map((m: any) => m.profile_id) || []);
+
+      // Query via profile_id won't match dentist.id — fetch dentists in this business properly
+      const { data: memberProfiles } = await supabase.from('business_members').select('profile_id').eq('business_id', businessId);
+      const profileIds = (memberProfiles || []).map((m: any) => m.profile_id);
+      const { data: bizDentists } = profileIds.length > 0
+        ? await supabase.from('dentists').select('id').eq('is_active', true).in('profile_id', profileIds)
+        : { data: [] };
+
+      for (const d of (bizDentists || [])) {
+        const { data: slots } = await supabase.rpc('get_available_slots', {
+          p_dentist_id: d.id,
+          p_date: parsedDate,
+          p_business_id: businessId,
+          p_service_id: service_id || null,
+        });
+        const slotTimes = (slots || []).map((s: any) => typeof s === 'string' ? s.substring(0, 5) : (s.slot_start || s.slot_time || s.start_time || '').toString().substring(0, 5));
+        if (slotTimes.includes(parsedTime)) {
+          finalDentistId = d.id;
+          break;
+        }
+      }
+    }
+    // Last resort: pick any active dentist
+    if (!finalDentistId) {
+      const { data: anyDentists } = await supabase.from('dentists').select('id').eq('is_active', true).limit(1);
+      if (anyDentists && anyDentists.length > 0) finalDentistId = anyDentists[0].id;
     }
   }
 
   if (!finalDentistId) return { error: 'No dentist available' };
 
-  const { data: slot } = await supabase.from('appointment_slots').select('id, business_id').eq('dentist_id', finalDentistId).eq('slot_date', parsedDate).eq('slot_time', parsedTime).eq('is_available', true).maybeSingle();
-
+  // Resolve business ID if still missing
   if (!resolvedBusinessId) {
-    if (slot && (slot as any).business_id) {
-      resolvedBusinessId = (slot as any).business_id as string;
-    } else {
-      const { data: dentistRec } = await supabase.from('dentists').select('profile_id').eq('id', finalDentistId).single();
-      if (dentistRec?.profile_id) {
-        const { data: pbm } = await supabase.from('provider_business_map').select('business_id').eq('provider_id', dentistRec.profile_id).maybeSingle();
-        if (pbm?.business_id) resolvedBusinessId = pbm.business_id as string;
-        else {
-          const { data: member } = await supabase.from('business_members').select('business_id').eq('profile_id', dentistRec.profile_id).maybeSingle();
-          if (member?.business_id) resolvedBusinessId = member.business_id as string;
-        }
-      }
+    const { data: dentistRec } = await supabase.from('dentists').select('profile_id').eq('id', finalDentistId).single();
+    if (dentistRec?.profile_id) {
+      const { data: member } = await supabase.from('business_members').select('business_id').eq('profile_id', dentistRec.profile_id).maybeSingle();
+      if (member?.business_id) resolvedBusinessId = member.business_id as string;
     }
   }
 
@@ -1163,6 +1182,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
     status: 'confirmed',
     patient_name: `${patient.first_name ?? firstName} ${patient.last_name ?? lastName}`.trim(),
     business_id: resolvedBusinessId,
+    duration_minutes: serviceDuration,
   };
   if (service_id) appointmentData.service_id = service_id;
 
@@ -1173,8 +1193,19 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
     return { error: appointmentError.message };
   }
 
-  if (slot) {
-    await supabase.from('appointment_slots').update({ is_available: false, appointment_id: appointment.id }).eq('id', slot.id);
+  // Book slots using the duration-aware RPC (handles multi-slot + row locking)
+  const { error: slotError } = await supabase.rpc('book_appointment_slots_for_duration', {
+    p_dentist_id: finalDentistId,
+    p_slot_date: parsedDate,
+    p_start_time: `${parsedTime}:00`, // RPC requires HH:MM:SS format
+    p_duration_minutes: serviceDuration,
+    p_appointment_id: appointment.id,
+  });
+
+  if (slotError) {
+    console.error('Slot booking failed, cleaning up appointment:', slotError);
+    await supabase.from('appointments').delete().eq('id', appointment.id);
+    return { error: 'This time slot was just taken by another patient. Please choose a different time.' };
   }
 
   return {
