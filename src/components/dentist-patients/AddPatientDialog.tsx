@@ -219,12 +219,12 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
-              <Mail className="h-5 w-5 text-primary" />
+              <Phone className="h-5 w-5 text-primary" />
             </div>
             <div>
               <CardTitle className="text-base">Quick Invite</CardTitle>
               <CardDescription className="text-sm">
-                Send an email invitation to let the patient complete their profile
+                Send an SMS invitation to let the patient complete their profile
               </CardDescription>
             </div>
           </div>
