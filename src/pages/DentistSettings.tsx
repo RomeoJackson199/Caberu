@@ -26,6 +26,7 @@ import { CancelSubscriptionSection } from "@/components/settings/CancelSubscript
 import { VoiceAICard } from "@/components/settings/VoiceAICard";
 import { PhoneBookingFlowCard } from "@/components/settings/PhoneBookingFlowCard";
 import { useLanguage } from "@/hooks/useLanguage";
+import { SupportFeedbackSection } from "@/components/shared/SupportFeedbackSection";
 
 export default function DentistSettings() {
   const { businessId, loading: businessLoading, membershipRole } = useBusinessContext();
@@ -241,6 +242,10 @@ export default function DentistSettings() {
               <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.security || "Security"}
             </TabsTrigger>
+            <TabsTrigger value="support" className="gap-1.5 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0">
+              <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {"Support"}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -425,6 +430,10 @@ export default function DentistSettings() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="support" className="space-y-6">
+          <SupportFeedbackSection />
         </TabsContent>
 
       </Tabs>

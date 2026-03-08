@@ -12,6 +12,7 @@ import { saveProfileData, loadProfileData, ProfileData } from "@/lib/profileUtil
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 import { PatientSecuritySettings } from "@/components/patients/PatientSecuritySettings";
+import { SupportFeedbackSection } from "@/components/shared/SupportFeedbackSection";
 import { AccountLinkingSection } from "@/components/auth/AccountLinkingSection";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { PhoneVerificationDialog } from "@/components/auth/PhoneVerificationDialog";
@@ -478,12 +479,7 @@ const LegalSupport: React.FC = () => {
               <a href="/terms">View</a>
             </Button>
           </div>
-          <div className="flex items-center justify-between">
-            <span>Contact Support</span>
-            <Button asChild>
-              <a href="/support">Get Help</a>
-            </Button>
-          </div>
+          <SupportFeedbackSection />
 
           <div className="border-t pt-4 mt-4">
             <h4 className="font-medium mb-3">Your Data</h4>
