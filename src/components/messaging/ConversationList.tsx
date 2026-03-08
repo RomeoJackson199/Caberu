@@ -269,7 +269,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
             const businessId = await getCurrentBusinessId();
             const { data: profilesData } = await supabase
               .from('profiles')
-              .select('id, first_name, last_name')
+              .select('id, first_name, last_name, profile_picture_url')
               .limit(50);
 
             const contacts = (profilesData || [])
