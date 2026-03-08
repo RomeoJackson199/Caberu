@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 interface Conversation {
   profileId: string;
   name: string;
+  profilePictureUrl?: string | null;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
