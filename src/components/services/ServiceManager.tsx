@@ -181,6 +181,8 @@ export function ServiceManager() {
       }
 
       if (error) throw error;
+      // Refresh provider counts after toggle
+      await loadProviderCounts();
     } catch (error) {
       logger.error('Error updating dentist service toggle:', error);
       toast.error('Failed to update service availability');
