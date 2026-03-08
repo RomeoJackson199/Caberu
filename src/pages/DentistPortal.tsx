@@ -342,4 +342,12 @@ function DentistPortalInner({ user: userProp }: DentistPortalProps) {
   );
 }
 
+export function DentistPortal(props: DentistPortalProps) {
+  return (
+    <UnsavedChangesProvider>
+      <DentistPortalInner {...props} />
+    </UnsavedChangesProvider>
+  );
+}
+
 export default DentistPortal;
