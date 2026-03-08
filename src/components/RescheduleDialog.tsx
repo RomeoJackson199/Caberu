@@ -89,16 +89,28 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         .single();
       if (error) throw error;
 
-      let dentistName = "Your Dentist";
+      let dentistName = "";
       if (data.dentist_id) {
+        // Try dentists table with profile join
         const { data: dentist } = await supabase
           .from('dentists')
-          .select('profiles:profile_id(first_name, last_name)')
+          .select('first_name, last_name, profiles:profile_id(first_name, last_name)')
           .eq('id', data.dentist_id)
           .single();
+        
+        // Use dentists table fields first, fall back to profiles join
+        const dFirst = dentist?.first_name;
+        const dLast = dentist?.last_name;
         const p = dentist?.profiles;
         const profile = Array.isArray(p) ? p[0] : p;
-        if (profile) dentistName = `Dr. ${profile.first_name} ${profile.last_name}`;
+        const pFirst = profile?.first_name;
+        const pLast = profile?.last_name;
+        
+        const firstName = dFirst || pFirst || '';
+        const lastName = dLast || pLast || '';
+        if (firstName || lastName) {
+          dentistName = `Dr. ${firstName} ${lastName}`.trim();
+        }
       }
 
       setAppointment({
