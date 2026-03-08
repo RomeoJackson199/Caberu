@@ -310,7 +310,7 @@ export function ChatWindow({
                         <div className="w-8 shrink-0">
                           {showAvatar && (
                             <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm border border-primary/10">
-                              <AvatarImage src={(recipient as any).profilePictureUrl || undefined} className="object-cover" />
+                              <AvatarImage src={recipient.profilePictureUrl || undefined} className="object-cover" />
                               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                                 {recipient.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                               </AvatarFallback>
