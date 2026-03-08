@@ -28,7 +28,7 @@ interface Conversation {
 
 interface ConversationListProps {
   currentUserId: string;
-  onSelectRecipient: (recipient: { id: string; name: string; businessId: string }) => void;
+  onSelectRecipient: (recipient: { id: string; name: string; businessId: string; profilePictureUrl?: string | null }) => void;
 }
 
 export function ConversationList({ currentUserId, onSelectRecipient }: ConversationListProps) {
