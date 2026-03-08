@@ -82,7 +82,7 @@ export function DayCalendarView({
       if (patientIds.length) {
         const { data: profiles } = await supabase
           .from("secure_profiles_view")
-          .select("id, first_name, last_name, email")
+          .select("id, first_name, last_name, email, profile_picture_url")
           .in("id", patientIds);
         const map = new Map((profiles || []).map((p: any) => [p.id, p]));
         return appointments.map((a: any) => ({ ...a, patient: map.get(a.patient_id) || null }));
