@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Upload, X, ZoomIn, ZoomOut, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,10 @@ export const ProfilePictureUploadWithCrop = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setPreviewUrl(currentUrl);
+  }, [currentUrl]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

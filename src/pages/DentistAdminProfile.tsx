@@ -158,11 +158,13 @@ export default function DentistAdminProfile() {
     setFormData(prev => ({ ...prev, profile_picture_url: url }));
     if (!dentistId || !profileId) return;
     try {
-      await Promise.all([
-        supabase.from('dentists').update({ profile_picture_url: url }).eq('id', dentistId),
-        supabase.from('profiles').update({ profile_picture_url: url || null }).eq('id', profileId),
+      const [dentistResult, profileResult] = await Promise.all([
+        supabase.from('dentists').update({ profile_picture_url: url || null }).eq('id', dentistId).select('id').maybeSingle(),
+        supabase.from('profiles').update({ profile_picture_url: url || null }).eq('id', profileId).select('id').maybeSingle(),
       ]);
-      // Update initial data so this doesn't count as unsaved
+
+      if (dentistResult.error) throw dentistResult.error;
+      if (profileResult.error) throw profileResult.error;
       setInitialData(prev => ({ ...prev, profile_picture_url: url }));
       toast({ title: "Profile picture updated" });
     } catch {

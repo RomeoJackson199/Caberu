@@ -297,90 +297,6 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
         </TooltipProvider>
       </nav>
 
-      {/* Sidebar Footer */}
-      <div className={cn("absolute bottom-0 left-0 right-0 border-t border-border/50", collapsed ? "p-2" : "p-4")}>
-        <div className="flex flex-col gap-2">
-          {/* User Avatar & Name */}
-          {!collapsed && (
-            <div className="flex items-center gap-3 px-1 py-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">{userInitials}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{userName || 'Patient'}</p>
-              </div>
-            </div>
-          )}
-          {collapsed && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex justify-center py-1">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{userInitials}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{userName || 'Patient'}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size={collapsed ? 'icon' : 'default'}
-                  onClick={handleSettingsClick}
-                  className={cn(
-                    "w-full",
-                    collapsed ? "justify-center" : "justify-start gap-3"
-                  )}
-                  aria-label="Settings"
-                >
-                  <SettingsIcon className="h-5 w-5" />
-                  {!collapsed && <span>Settings</span>}
-                </Button>
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right">
-                  <p>Settings</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size={collapsed ? 'icon' : 'default'}
-                  onClick={handleSignOut}
-                  className={cn(
-                    "w-full text-destructive hover:text-destructive hover:bg-destructive/10",
-                    collapsed ? "justify-center" : "justify-start gap-3"
-                  )}
-                  aria-label="Sign Out"
-                >
-                  <LogOut className="h-5 w-5" />
-                  {!collapsed && <span>Sign Out</span>}
-                </Button>
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right">
-                  <p>Sign Out</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
     </div>
 
     {/* Main Content Area */}
@@ -389,9 +305,24 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
-              <PanelLeft className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 border border-transparent hover:border-border hover:bg-muted/70"
+                    onClick={() => setCollapsed(v => !v)}
+                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  >
+                    <PanelLeft className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{collapsed ? "Expand sidebar" : "Collapse sidebar"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
