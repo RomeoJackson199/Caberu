@@ -205,37 +205,59 @@ export function useBookingFlow() {
 
       if (error) throw error;
 
-      // Fetch require_appointment_approval for each dentist from the dentists table
+      // Fetch extra dentist details (approval + profile bio) in parallel
       const dentistIds = (data || []).map(d => d.dentist_id);
-      const { data: dentistDetails } = dentistIds.length > 0
-        ? await supabase
-            .from('dentists')
-            .select('id, require_appointment_approval')
-            .in('id', dentistIds)
-        : { data: [] };
+      const [{ data: dentistDetails }, { data: profileDetails }] = dentistIds.length > 0
+        ? await Promise.all([
+            supabase
+              .from('dentists')
+              .select('id, profile_id, require_appointment_approval, clinic_address')
+              .in('id', dentistIds),
+            supabase
+              .from('dentists')
+              .select('id, profiles:profile_id(bio, phone, address, email)')
+              .in('id', dentistIds),
+          ])
+        : [{ data: [] }, { data: [] }];
 
       const approvalMap = new Map(
         (dentistDetails || []).map(d => [d.id, d.require_appointment_approval])
       );
+      const clinicAddressMap = new Map(
+        (dentistDetails || []).map(d => [d.id, d.clinic_address])
+      );
+      const profileMap = new Map(
+        (profileDetails || []).map(d => {
+          const p = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
+          return [d.id, p] as [string, { bio?: string; phone?: string; address?: string; email?: string } | null];
+        })
+      );
 
-      const typedDentists: Dentist[] = (data || []).map((dentist) => ({
-        id: dentist.dentist_id,
-        first_name: dentist.dentist_first_name,
-        last_name: dentist.dentist_last_name,
-        email: '',
-        specialization: dentist.specialization || '',
-        profile_id: '',
-        require_appointment_approval: approvalMap.get(dentist.dentist_id) ?? false,
-        next_available_slot: dentist.next_available_date && dentist.next_available_time
-          ? `${dentist.next_available_date}T${dentist.next_available_time}`
-          : null,
-        profiles: {
+      const typedDentists: Dentist[] = (data || []).map((dentist) => {
+        const profile = profileMap.get(dentist.dentist_id);
+        return {
+          id: dentist.dentist_id,
           first_name: dentist.dentist_first_name,
           last_name: dentist.dentist_last_name,
-          email: '',
-          profile_picture_url: dentist.profile_picture_url,
-        },
-      }));
+          email: profile?.email || '',
+          specialization: dentist.specialization || '',
+          profile_id: '',
+          clinic_address: clinicAddressMap.get(dentist.dentist_id) || undefined,
+          require_appointment_approval: approvalMap.get(dentist.dentist_id) ?? false,
+          next_available_slot: dentist.next_available_date && dentist.next_available_time
+            ? `${dentist.next_available_date}T${dentist.next_available_time}`
+            : null,
+          profiles: {
+            first_name: dentist.dentist_first_name,
+            last_name: dentist.dentist_last_name,
+            email: profile?.email || '',
+            phone: profile?.phone,
+            address: profile?.address,
+            bio: profile?.bio,
+            profile_picture_url: dentist.profile_picture_url,
+          },
+        };
+      });
 
       setDentists(typedDentists);
     } catch (error) {
