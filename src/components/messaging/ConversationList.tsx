@@ -214,7 +214,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         const profileIds = dentists.map(d => d.profile_id).filter(Boolean);
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name')
+          .select('id, first_name, last_name, profile_picture_url')
           .in('id', profileIds);
 
         const profileNameMap = new Map<string, string>();
