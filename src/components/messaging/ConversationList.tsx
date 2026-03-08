@@ -82,7 +82,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
 
       // 1. Load all messages to build conversation data
       const { data: messagesData } = await supabase
-        .from('messages_decrypted' as any)
+        .from('messages')
         .select('sender_profile_id, recipient_profile_id, message_text, created_at, is_read, business_id')
         .or(`sender_profile_id.eq.${profileId},recipient_profile_id.eq.${profileId}`)
         .order('created_at', { ascending: false });
@@ -113,10 +113,12 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
 
       if (!isDentistUser) {
         // Patient: show all dentists from businesses they have appointments with
-        const { data: appointments } = await supabase
-          .from('appointments_decrypted')
+        const { data: appointments, error: aptErr } = await supabase
+          .from('appointments')
           .select('dentist_id, business_id')
           .eq('patient_id', profileId);
+
+        console.debug('[ConversationList] Patient appointments:', appointments?.length, aptErr?.message);
 
         if (appointments && appointments.length > 0) {
           const dentistIds = Array.from(new Set(appointments.map(a => a.dentist_id).filter(Boolean)));
@@ -174,7 +176,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
 
         // Get patients from appointments
         const { data: appointments } = await supabase
-          .from('appointments_decrypted')
+          .from('appointments')
           .select('patient_id, business_id')
           .eq('dentist_id', dentistId || '');
 
