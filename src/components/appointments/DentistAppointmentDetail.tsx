@@ -59,7 +59,7 @@ interface DetailAppointment {
   service_id?: string | null;
   created_at?: string;
   updated_at?: string;
-  patient?: { first_name?: string; last_name?: string; email?: string; phone?: string };
+  patient?: { first_name?: string; last_name?: string; email?: string; phone?: string; profile_picture_url?: string | null };
 }
 
 interface DentistAppointmentDetailProps {

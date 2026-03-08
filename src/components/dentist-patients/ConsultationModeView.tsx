@@ -56,7 +56,8 @@ export function ConsultationModeView({
       first_name: patient.first_name,
       last_name: patient.last_name,
       email: patient.email,
-      phone: patient.phone
+      phone: patient.phone,
+      profile_picture_url: patient.profile_picture_url,
     }
   };
 
