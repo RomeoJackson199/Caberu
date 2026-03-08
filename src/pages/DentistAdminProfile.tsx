@@ -195,7 +195,7 @@ export default function DentistAdminProfile() {
             <ProfilePictureUploadWithCrop
               currentUrl={formData.profile_picture_url}
               userId={dentistId || ''}
-              onUploadComplete={(url) => handleInputChange('profile_picture_url', url)}
+              onUploadComplete={handleProfilePictureChange}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
