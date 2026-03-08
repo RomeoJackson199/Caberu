@@ -29,6 +29,7 @@ interface ChatWindowProps {
     id: string;
     name: string;
     businessId: string;
+    profilePictureUrl?: string | null;
   };
   onBack: (() => void) | null;
 }
