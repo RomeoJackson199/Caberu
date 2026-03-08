@@ -378,7 +378,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 border border-transparent hover:border-border hover:bg-muted/70"
-                    onClick={() => setCollapsed(v => !v)}
+                    onClick={toggleSidebar}
                     aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                   >
                     <PanelLeft className="h-4 w-4" />
