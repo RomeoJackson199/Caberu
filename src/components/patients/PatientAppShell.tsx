@@ -382,37 +382,6 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
 
     {/* Main Content Area */}
     <div className={cn("flex-1 transition-[margin-left] duration-200 ease-linear", collapsed ? "ml-16" : "ml-64")}>
-      {/* Global header toggle so it’s ALWAYS visible */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur border-b">
-        <div className="flex items-center justify-end px-3 py-2">
-          <div className="flex items-center gap-2">
-            <NotificationBell />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="User menu">
-                  <Avatar className="h-7 w-7">
-                    <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
-                    <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>{userName || 'Account'}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSettingsClick}>
-                  <SettingsIcon className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
 
       <AnimatePresence mode="wait">
         <motion.div key={activeSection} initial={{
