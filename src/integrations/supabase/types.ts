@@ -5777,6 +5777,7 @@ export type Database = {
           address: string | null
           ai_opt_out: boolean | null
           avatar_url: string | null
+          bio: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
@@ -5800,6 +5801,7 @@ export type Database = {
           address?: string | null
           ai_opt_out?: boolean | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
@@ -5823,6 +5825,7 @@ export type Database = {
           address?: string | null
           ai_opt_out?: boolean | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
