@@ -438,6 +438,7 @@ export function QuickAppointmentDialog({
                     {selectedPatient ? (
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-7 w-7 border border-border">
+                          <AvatarImage src={selectedPatient.profile_picture_url || undefined} className="object-cover" />
                           <AvatarFallback className="text-xs bg-blue-50 text-blue-700 font-semibold">
                             {selectedPatient.first_name?.[0]}{selectedPatient.last_name?.[0]}
                           </AvatarFallback>
