@@ -49,7 +49,9 @@ serve(async (req) => {
 
     const dentist = appointment.dentists;
     const patient = appointment.profiles;
+    const business = appointment.businesses;
     const serviceName = appointment.business_services?.name || null;
+    const businessLocation = business?.address || null;
     
     if (!dentist.google_calendar_connected || !dentist.google_calendar_refresh_token) {
       return new Response(
