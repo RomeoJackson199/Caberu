@@ -114,9 +114,10 @@ const getNavigationItems = (hasAIChat: boolean) => [{
   }]
 }];
 
-const PatientDashboardComponent = ({
+const PatientDashboardInner = ({
   user
 }: PatientDashboardProps) => {
+  const { confirmNavigation } = useUnsavedChangesGuard();
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
