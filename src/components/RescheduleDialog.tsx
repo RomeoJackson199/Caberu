@@ -5,8 +5,12 @@ import { getCurrentBusinessId } from "@/lib/businessScopedSupabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar as CalendarIcon, Clock, User, ArrowRight, Sun, Sunset, AlertCircle } from "lucide-react";
+import {
+  Loader2, Calendar as CalendarIcon, Clock, User, ArrowRight,
+  CheckCircle, Sun, Sunset, AlertCircle,
+} from "lucide-react";
 import { format, addDays } from "date-fns";
 import { isPublicHoliday } from "@/lib/belgianHolidays";
 import { cn } from "@/lib/utils";
@@ -33,6 +37,8 @@ interface TimeSlot {
   slot_time: string;
 }
 
+type Step = "date" | "time" | "confirm";
+
 function groupSlotsByPeriod(slots: TimeSlot[]) {
   const morning: TimeSlot[] = [];
   const afternoon: TimeSlot[] = [];
@@ -53,9 +59,9 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
   const [processing, setProcessing] = useState(false);
   const [dentistAvailability, setDentistAvailability] = useState<Record<number, boolean>>({});
   const [businessId, setBusinessId] = useState<string>("");
+  const [step, setStep] = useState<Step>("date");
   const { toast } = useToast();
 
-  // Reset state when dialog closes
   useEffect(() => {
     if (open && appointmentId) {
       loadAppointmentDetails();
@@ -65,6 +71,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       setAvailableSlots([]);
       setAppointment(null);
       setDentistAvailability({});
+      setStep("date");
     }
   }, [open, appointmentId]);
 
@@ -82,7 +89,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         .single();
       if (error) throw error;
 
-      // Fetch dentist name
       let dentistName = "Your Dentist";
       if (data.dentist_id) {
         const { data: dentist } = await supabase
@@ -104,7 +110,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         dentistName,
       });
 
-      // Load dentist weekly schedule for calendar disabling
       const { data: avail } = await supabase
         .from('dentist_availability')
         .select('day_of_week, is_available')
@@ -126,7 +131,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     }
   };
 
-  // Fetch slots when date changes
   useEffect(() => {
     if (selectedDate && appointment && businessId) {
       loadAvailableSlots(selectedDate);
@@ -140,7 +144,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     setAvailableSlots([]);
 
     try {
-      // If appointment has no service_id, find a default one for this business
       let serviceId = appointment.service_id;
       if (!serviceId) {
         const { data: services } = await supabase
@@ -152,9 +155,7 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         serviceId = services?.[0]?.id || null;
       }
 
-      // If still no service ID, we can't call the RPC
       if (!serviceId) {
-        logger.error('No service_id found for rescheduling');
         setAvailableSlots([]);
         setLoadingSlots(false);
         return;
@@ -180,7 +181,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
         return;
       }
 
-      // Filter out past times if today
       const now = new Date();
       const isToday = format(date, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
       const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
@@ -219,7 +219,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-      // Try patient-scoped RPC first
       const { error: rpcError } = await supabase.rpc('reschedule_appointment', {
         p_appointment_id: appointment.id,
         p_user_id: userData.user.id,
@@ -254,7 +253,11 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     } catch (error: unknown) {
       logger.error('Error rescheduling:', error);
       const msg = error instanceof Error ? error.message : 'Failed to reschedule';
-      toast({ title: "Error", description: msg.includes('slot_unavailable') ? 'This slot is no longer available.' : msg, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: msg.includes('slot_unavailable') ? 'This slot is no longer available.' : msg,
+        variant: "destructive",
+      });
     } finally {
       setProcessing(false);
     }
@@ -270,7 +273,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
     return dow === 0 || dow === 6;
   };
 
-  // Loading state
   if (!appointment && loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -286,46 +288,92 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
   }
 
   const currentDate = appointment ? new Date(appointment.appointment_date) : null;
-  const hasSelectedSlot = !!selectedDate && !!selectedTime;
   const { morning, afternoon } = groupSlotsByPeriod(availableSlots);
+
+  const steps: { key: Step; label: string; icon: typeof CalendarIcon }[] = [
+    { key: "date", label: "Date", icon: CalendarIcon },
+    { key: "time", label: "Time", icon: Clock },
+    { key: "confirm", label: "Confirm", icon: CheckCircle },
+  ];
+  const stepIndex = steps.findIndex(s => s.key === step);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b bg-muted/30">
+        <div className="px-6 pt-6 pb-4">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
+            <DialogTitle className="text-xl font-bold flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <CalendarIcon className="h-4 w-4 text-primary" />
+              </div>
               Reschedule Appointment
             </DialogTitle>
-            <DialogDescription>
-              {appointment?.dentistName && (
-                <span className="flex items-center gap-1.5 mt-1">
-                  <User className="h-3.5 w-3.5" />
-                  with {appointment.dentistName}
-                </span>
-              )}
+            <DialogDescription className="sr-only">
+              Choose a new date and time for your appointment
             </DialogDescription>
           </DialogHeader>
 
-          {/* Current appointment info */}
+          {appointment?.dentistName && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1 ml-[42px]">
+              <User className="h-3.5 w-3.5" />
+              with {appointment.dentistName}
+            </p>
+          )}
+
+          {/* Current appointment pill */}
           {currentDate && (
-            <div className="mt-3 flex items-center gap-2 text-sm bg-muted rounded-lg px-3 py-2">
+            <div className="mt-4 bg-muted rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Current:</span>
-              <span className="font-medium">{format(currentDate, 'EEE, MMM d')}</span>
+              <span className="font-semibold">{format(currentDate, 'EEE, MMM d')}</span>
               <span className="text-muted-foreground">at</span>
-              <span className="font-medium">{format(currentDate, 'h:mm a')}</span>
+              <span className="font-semibold">{format(currentDate, 'h:mm a')}</span>
             </div>
           )}
+
+          {/* Step indicator */}
+          <div className="mt-5 flex items-center gap-0">
+            {steps.map((s, i) => {
+              const active = i === stepIndex;
+              const completed = i < stepIndex;
+              const StepIcon = s.icon;
+              return (
+                <div key={s.key} className="flex items-center flex-1">
+                  <button
+                    type="button"
+                    onClick={() => { if (completed) setStep(s.key); }}
+                    disabled={i > stepIndex}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all w-full justify-center",
+                      active && "bg-primary text-primary-foreground shadow-sm",
+                      completed && "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20",
+                      !active && !completed && "text-muted-foreground",
+                    )}
+                  >
+                    {completed ? (
+                      <CheckCircle className="h-3.5 w-3.5" />
+                    ) : (
+                      <StepIcon className="h-3.5 w-3.5" />
+                    )}
+                    {s.label}
+                  </button>
+                  {i < steps.length - 1 && (
+                    <div className={cn(
+                      "h-px w-6 mx-0.5 shrink-0 transition-colors",
+                      completed ? "bg-primary" : "bg-border",
+                    )} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Content: Calendar + Slots side by side on larger screens */}
-        <div className="px-6 py-5 max-h-[65vh] overflow-y-auto">
-          <div className="flex flex-col md:flex-row gap-5">
-            {/* Calendar */}
-            <div className="shrink-0">
-              <p className="text-sm font-medium mb-2">Pick a new date</p>
+        {/* Content */}
+        <div className="px-6 pb-2 max-h-[55vh] overflow-y-auto">
+          {/* Step 1: Date */}
+          {step === "date" && (
+            <div className="flex justify-center pb-4">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -338,62 +386,85 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                 disabled={isDateDisabled}
                 fromDate={new Date()}
                 toDate={addDays(new Date(), 90)}
-                className="rounded-lg border"
+                className={cn("p-3 pointer-events-auto rounded-xl border-0")}
                 classNames={{
-                  disabled: "text-muted-foreground opacity-30 line-through cursor-not-allowed",
+                  months: "flex flex-col",
+                  month: "space-y-3",
+                  caption: "flex justify-center pt-1 relative items-center",
+                  caption_label: "text-sm font-semibold",
+                  nav: "space-x-1 flex items-center",
+                  table: "w-full border-collapse",
+                  head_row: "flex",
+                  head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex-1 text-center",
+                  row: "flex w-full mt-1",
+                  cell: "flex-1 text-center text-sm relative p-0",
+                  day: "h-9 w-9 mx-auto p-0 font-normal rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center",
+                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-semibold shadow-sm",
+                  day_today: "bg-accent text-accent-foreground font-semibold",
+                  day_outside: "text-muted-foreground/40",
+                  day_disabled: "text-muted-foreground/30 line-through cursor-not-allowed hover:bg-transparent",
                 }}
               />
             </div>
+          )}
 
-            {/* Time slots */}
-            <div className="flex-1 min-w-0">
-              {!selectedDate ? (
-                <div className="flex flex-col items-center justify-center h-full py-10 text-center">
-                  <CalendarIcon className="h-8 w-8 text-muted-foreground/40 mb-2" />
-                  <p className="text-sm text-muted-foreground">Select a date to see available times</p>
-                </div>
-              ) : loadingSlots ? (
-                <div className="flex flex-col items-center justify-center h-full py-10 gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">Loading times…</span>
+          {/* Step 2: Time */}
+          {step === "time" && selectedDate && (
+            <div className="space-y-4 pb-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">
+                  {format(selectedDate, 'EEEE, MMM d')}
+                </p>
+                {!loadingSlots && availableSlots.length > 0 && (
+                  <Badge className="bg-primary/10 text-primary border-0 text-xs font-semibold px-2.5">
+                    {availableSlots.length} slots
+                  </Badge>
+                )}
+              </div>
+
+              {loadingSlots ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">Finding available times…</span>
                 </div>
               ) : availableSlots.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-10 gap-2 text-center">
-                  <AlertCircle className="h-7 w-7 text-muted-foreground/40" />
-                  <p className="text-sm font-medium text-muted-foreground">No times available</p>
-                  <p className="text-xs text-muted-foreground/70">Try a different date</p>
+                <div className="flex flex-col items-center py-12 gap-3 text-center">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                    <AlertCircle className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">No times available</p>
+                    <p className="text-xs text-muted-foreground mt-1">Try selecting a different date</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setStep("date")} className="mt-2">
+                    Choose another date
+                  </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      {format(selectedDate, 'EEE, MMM d')}
-                    </p>
-                    <Badge variant="secondary" className="text-xs">
-                      {availableSlots.length} slot{availableSlots.length !== 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-
+                <div className="space-y-5">
                   {morning.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <Sun className="h-3.5 w-3.5 text-amber-500" />
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Morning</span>
+                      <div className="flex items-center gap-1.5 mb-2.5">
+                        <Sun className="h-4 w-4 text-amber-500" />
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Morning</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-4 gap-2">
                         {morning.map((slot) => {
                           const t = slot.slot_time.substring(0, 5);
                           const sel = selectedTime === t;
                           return (
-                            <Button
+                            <button
                               key={t}
-                              variant={sel ? "default" : "outline"}
-                              size="sm"
-                              className={cn("h-9 text-sm", sel && "ring-2 ring-primary ring-offset-1")}
                               onClick={() => setSelectedTime(t)}
+                              className={cn(
+                                "h-10 rounded-xl text-sm font-medium transition-all border",
+                                sel
+                                  ? "bg-primary text-primary-foreground border-primary shadow-sm scale-[1.02]"
+                                  : "bg-background border-border hover:border-primary/50 hover:bg-primary/5",
+                              )}
                             >
                               {t}
-                            </Button>
+                            </button>
                           );
                         })}
                       </div>
@@ -402,24 +473,27 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
                   {afternoon.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <Sunset className="h-3.5 w-3.5 text-orange-500" />
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Afternoon</span>
+                      <div className="flex items-center gap-1.5 mb-2.5">
+                        <Sunset className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Afternoon</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-4 gap-2">
                         {afternoon.map((slot) => {
                           const t = slot.slot_time.substring(0, 5);
                           const sel = selectedTime === t;
                           return (
-                            <Button
+                            <button
                               key={t}
-                              variant={sel ? "default" : "outline"}
-                              size="sm"
-                              className={cn("h-9 text-sm", sel && "ring-2 ring-primary ring-offset-1")}
                               onClick={() => setSelectedTime(t)}
+                              className={cn(
+                                "h-10 rounded-xl text-sm font-medium transition-all border",
+                                sel
+                                  ? "bg-primary text-primary-foreground border-primary shadow-sm scale-[1.02]"
+                                  : "bg-background border-border hover:border-primary/50 hover:bg-primary/5",
+                              )}
                             >
                               {t}
-                            </Button>
+                            </button>
                           );
                         })}
                       </div>
@@ -428,45 +502,100 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                 </div>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Confirmation summary */}
-          {hasSelectedSlot && (
-            <div className="mt-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
-              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">New Appointment</p>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <CalendarIcon className="h-4 w-4 text-primary" />
-                  <span className="font-medium">{format(selectedDate!, 'EEEE, MMM d, yyyy')}</span>
+          {/* Step 3: Confirm */}
+          {step === "confirm" && selectedDate && selectedTime && appointment && currentDate && (
+            <div className="space-y-5 pb-4">
+              <p className="text-sm font-medium">Review your changes</p>
+
+              <div className="flex items-stretch gap-3">
+                {/* Old */}
+                <Card className="flex-1 border-dashed opacity-60">
+                  <CardContent className="p-4 space-y-2">
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Current</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {format(currentDate, 'MMM d, yyyy')}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        {format(currentDate, 'h:mm a')}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="flex items-center">
+                  <ArrowRight className="h-5 w-5 text-primary" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span className="font-medium">{selectedTime}</span>
-                </div>
+
+                {/* New */}
+                <Card className="flex-1 border-primary/40 bg-primary/5">
+                  <CardContent className="p-4 space-y-2">
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-primary">New</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                        {format(selectedDate, 'MMM d, yyyy')}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Clock className="h-3.5 w-3.5 text-primary" />
+                        {selectedTime}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              {currentDate && (
-                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                  <span>{format(currentDate, 'MMM d')} at {format(currentDate, 'h:mm a')}</span>
-                  <ArrowRight className="h-3 w-3" />
-                  <span className="text-primary font-medium">{format(selectedDate!, 'MMM d')} at {selectedTime}</span>
-                </div>
-              )}
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-3.5 w-3.5" />
+                with {appointment.dentistName}
+              </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t bg-muted/30 flex items-center justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={processing}>
-            Cancel
-          </Button>
-          <Button onClick={handleReschedule} disabled={!hasSelectedSlot || processing}>
-            {processing ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Rescheduling…</>
-            ) : (
-              "Confirm Reschedule"
+        <div className="px-6 py-4 border-t flex items-center justify-between">
+          <div>
+            {step !== "date" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStep(step === "confirm" ? "time" : "date")}
+                disabled={processing}
+              >
+                Back
+              </Button>
             )}
-          </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={processing}>
+              Cancel
+            </Button>
+
+            {step === "date" && (
+              <Button onClick={() => setStep("time")} disabled={!selectedDate}>
+                Continue
+              </Button>
+            )}
+            {step === "time" && (
+              <Button onClick={() => setStep("confirm")} disabled={!selectedTime}>
+                Continue
+              </Button>
+            )}
+            {step === "confirm" && (
+              <Button onClick={handleReschedule} disabled={processing} className="min-w-[140px]">
+                {processing ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Rescheduling…</>
+                ) : (
+                  "Confirm Reschedule"
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
