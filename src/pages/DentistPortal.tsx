@@ -10,6 +10,7 @@ import { useBusinessSubscription } from "@/hooks/useBusinessSubscription";
 import { SubscriptionExpiredDialog } from "@/components/subscription/SubscriptionExpiredDialog";
 import { DentistPortalSkeleton } from "@/components/dentist/DentistPortalSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
+import { UnsavedChangesProvider, useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
