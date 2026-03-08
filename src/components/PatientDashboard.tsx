@@ -614,5 +614,11 @@ const PatientDashboardInner = ({
   </PatientAppShell>;
 };
 
-// Export with error boundary for better stability
+// Wrap with UnsavedChangesProvider and error boundary
+const PatientDashboardComponent = (props: PatientDashboardProps) => (
+  <UnsavedChangesProvider>
+    <PatientDashboardInner {...props} />
+  </UnsavedChangesProvider>
+);
+
 export const PatientDashboard = withErrorBoundary(PatientDashboardComponent);
