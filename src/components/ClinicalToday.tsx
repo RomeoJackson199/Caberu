@@ -38,6 +38,7 @@ interface TodayAppointment {
 		phone?: string | null;
 		allergies?: string | null;
 		medical_conditions?: string | null;
+		profile_picture_url?: string | null;
 	};
 }
 
