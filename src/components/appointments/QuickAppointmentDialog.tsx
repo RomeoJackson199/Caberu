@@ -14,7 +14,7 @@ import { Calendar, Clock, User, Search, Loader2, Stethoscope, CheckCircle2, Euro
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createAppointmentWithNotification } from "@/hooks/useAppointments";
 import { cn } from "@/lib/utils";
 
