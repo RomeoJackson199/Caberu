@@ -12,6 +12,7 @@ import {
   CheckCircle,
   Video,
   Sparkles,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";

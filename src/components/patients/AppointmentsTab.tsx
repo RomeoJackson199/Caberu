@@ -54,6 +54,14 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [shownCounts, setShownCounts] = useState({ upcoming: INITIAL_SHOW, completed: INITIAL_SHOW, cancelled: INITIAL_SHOW });
 
+  // Auto-open a specific appointment when navigated from home
+  useEffect(() => {
+    if (initialAppointmentId && !loading) {
+      setSelectedAppointmentId(initialAppointmentId);
+      setDetailsDialogOpen(true);
+    }
+  }, [initialAppointmentId, loading]);
+
   const showMore = (group: keyof typeof shownCounts, total: number) =>
     setShownCounts(prev => ({ ...prev, [group]: total }));
   
