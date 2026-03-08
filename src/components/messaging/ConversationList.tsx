@@ -306,6 +306,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         const contacts = (profilesData || []).map(p => ({
           id: p.id,
           name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Patient',
+          profilePictureUrl: (p as any).profile_picture_url || null,
           businessId: patientBusinessMap.get(p.id) || ''
         })).filter(c => !!c.businessId);
 
