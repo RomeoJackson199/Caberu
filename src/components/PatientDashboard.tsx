@@ -28,6 +28,7 @@ import { HomeTab } from "@/components/patients/HomeTab";
 import { AppointmentsTab } from "@/components/patients/AppointmentsTab";
 import { PaymentsTab } from "@/components/patients/PaymentsTab";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
+import { UnsavedChangesProvider, useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { logger } from '@/lib/logger';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
@@ -113,9 +114,10 @@ const getNavigationItems = (hasAIChat: boolean) => [{
   }]
 }];
 
-const PatientDashboardComponent = ({
+const PatientDashboardInner = ({
   user
 }: PatientDashboardProps) => {
+  const { confirmNavigation } = useUnsavedChangesGuard();
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -545,7 +547,7 @@ const PatientDashboardComponent = ({
   } as Record<PatientSection, boolean>;
   return <PatientAppShell
     activeSection={activeSection}
-    onChangeSection={setActiveSection}
+    onChangeSection={(section) => confirmNavigation(() => setActiveSection(section))}
     badges={badges}
     userId={user.id}
     hasAIChat={hasAIChat}
@@ -612,5 +614,11 @@ const PatientDashboardComponent = ({
   </PatientAppShell>;
 };
 
-// Export with error boundary for better stability
+// Wrap with UnsavedChangesProvider and error boundary
+const PatientDashboardComponent = (props: PatientDashboardProps) => (
+  <UnsavedChangesProvider>
+    <PatientDashboardInner {...props} />
+  </UnsavedChangesProvider>
+);
+
 export const PatientDashboard = withErrorBoundary(PatientDashboardComponent);

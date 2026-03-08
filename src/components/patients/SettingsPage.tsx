@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { LanguageSettings } from "@/components/shared/LanguagePicker";
 import { useTheme } from "next-themes";
@@ -16,6 +16,7 @@ import { AccountLinkingSection } from "@/components/auth/AccountLinkingSection";
 import { PhoneNumberInput } from "@/components/ui/phone-input";
 import { PhoneVerificationDialog } from "@/components/auth/PhoneVerificationDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 
 export interface SettingsPageProps {
   user: User;
@@ -34,6 +35,7 @@ type Section = typeof SECTIONS[number];
 export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+  const { setHasUnsavedChanges } = useUnsavedChangesGuard();
   const [active, setActive] = useState<Section>('Profile & Personal Info');
   const [saving, setSaving] = useState(false);
   const [savedPhone, setSavedPhone] = useState('');
@@ -41,6 +43,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   const [profile, setProfile] = useState<ProfileData>({
     first_name: '', last_name: '', phone: '', date_of_birth: '', medical_history: '', address: '', address_street: '', address_house_number: '', address_postal_code: '', address_city: '', emergency_contact: '', ai_opt_out: false, profile_picture_url: '',
   });
+  const initialProfileRef = useRef<string>('');
 
   useEffect(() => {
     (async () => {
@@ -48,19 +51,47 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
         const data = await loadProfileData(user);
         setProfile(data);
         setSavedPhone(data.phone || '');
+        initialProfileRef.current = JSON.stringify(data);
       } catch {
         // ignore profile load errors in settings
       }
     })();
   }, [user]);
 
+  // Track unsaved changes
+  useEffect(() => {
+    const currentJson = JSON.stringify(profile);
+    const hasChanges = initialProfileRef.current !== '' && currentJson !== initialProfileRef.current;
+    setHasUnsavedChanges(hasChanges);
+    return () => setHasUnsavedChanges(false);
+  }, [profile, setHasUnsavedChanges]);
+
   const phoneChanged = (profile.phone || '') !== savedPhone;
+
+  // Auto-save profile picture immediately on upload
+  const handleProfilePictureChange = async (url: string) => {
+    setProfile(prev => ({ ...prev, profile_picture_url: url }));
+    // Save directly to DB so user doesn't need to click Save
+    try {
+      await supabase
+        .from('profiles')
+        .update({ profile_picture_url: url || null })
+        .eq('user_id', user.id);
+      // Update the initial ref so this change doesn't count as "unsaved"
+      const updated = { ...profile, profile_picture_url: url };
+      initialProfileRef.current = JSON.stringify(updated);
+      toast({ title: "Profile picture updated" });
+    } catch {
+      toast({ title: "Failed to save profile picture", variant: "destructive" });
+    }
+  };
 
   const doSave = async (profileToSave: ProfileData) => {
     setSaving(true);
     try {
       await saveProfileData(user, profileToSave);
       setSavedPhone(profileToSave.phone || '');
+      initialProfileRef.current = JSON.stringify(profileToSave);
       toast({
         title: "Success",
         description: "Your profile has been saved successfully",
@@ -96,7 +127,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       <AccordionItem value="profile">
         <AccordionTrigger>Profile & Personal Info</AccordionTrigger>
         <AccordionContent>
-          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} />
+          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} onProfilePictureChange={handleProfilePictureChange} />
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="preferences">
@@ -137,7 +168,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
       </div>
       <div className="flex-1 overflow-auto p-4">
         {active === 'Profile & Personal Info' && (
-          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} />
+          <ProfileForm profile={profile} setProfile={setProfile} onSave={handleSave} saving={saving} email={user.email || ''} userId={user.id} phoneChanged={phoneChanged} onProfilePictureChange={handleProfilePictureChange} />
         )}
         {active === 'Preferences' && (
           <Preferences theme={theme} setTheme={setTheme} />
@@ -175,9 +206,10 @@ interface ProfileFormProps {
   saving: boolean;
   userId: string;
   phoneChanged?: boolean;
+  onProfilePictureChange?: (url: string) => void;
 }
 
-const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, onSave, saving, userId, phoneChanged }) => {
+const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, onSave, saving, userId, phoneChanged, onProfilePictureChange }) => {
   return (
     <Card>
       <CardHeader>
@@ -187,7 +219,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ email, profile, setProfile, o
         <ProfilePictureUploadWithCrop
           currentUrl={profile.profile_picture_url}
           userId={userId}
-          onUploadComplete={(url) => setProfile({ ...profile, profile_picture_url: url })}
+          onUploadComplete={onProfilePictureChange || ((url) => setProfile({ ...profile, profile_picture_url: url }))}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

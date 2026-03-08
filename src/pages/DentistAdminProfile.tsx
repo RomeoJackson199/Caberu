@@ -10,6 +10,7 @@ import { Loader2, Save, User, Globe } from "lucide-react";
 import { useCurrentDentist } from "@/hooks/useCurrentDentist";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 import { ProfilePictureUploadWithCrop } from "@/components/ProfilePictureUploadWithCrop";
 
 import { PhoneNumberInput } from "@/components/ui/phone-input";
@@ -129,9 +130,14 @@ export default function DentistAdminProfile() {
     }
   };
 
+  const { setHasUnsavedChanges } = useUnsavedChangesGuard();
+
   useEffect(() => {
-    setHasChanges(JSON.stringify(formData) !== JSON.stringify(initialData));
-  }, [formData, initialData]);
+    const changed = JSON.stringify(formData) !== JSON.stringify(initialData);
+    setHasChanges(changed);
+    setHasUnsavedChanges(changed);
+    return () => setHasUnsavedChanges(false);
+  }, [formData, initialData, setHasUnsavedChanges]);
 
   const handleSave = async () => {
     const fakeEvent = { preventDefault: () => { } } as React.FormEvent;
@@ -145,6 +151,23 @@ export default function DentistAdminProfile() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
+  };
+
+  // Auto-save profile picture immediately
+  const handleProfilePictureChange = async (url: string) => {
+    setFormData(prev => ({ ...prev, profile_picture_url: url }));
+    if (!dentistId || !profileId) return;
+    try {
+      await Promise.all([
+        supabase.from('dentists').update({ profile_picture_url: url }).eq('id', dentistId),
+        supabase.from('profiles').update({ profile_picture_url: url || null }).eq('id', profileId),
+      ]);
+      // Update initial data so this doesn't count as unsaved
+      setInitialData(prev => ({ ...prev, profile_picture_url: url }));
+      toast({ title: "Profile picture updated" });
+    } catch {
+      toast({ title: "Failed to save profile picture", variant: "destructive" });
+    }
   };
 
   if (dentistLoading || loading) {
@@ -172,7 +195,7 @@ export default function DentistAdminProfile() {
             <ProfilePictureUploadWithCrop
               currentUrl={formData.profile_picture_url}
               userId={dentistId || ''}
-              onUploadComplete={(url) => handleInputChange('profile_picture_url', url)}
+              onUploadComplete={handleProfilePictureChange}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">

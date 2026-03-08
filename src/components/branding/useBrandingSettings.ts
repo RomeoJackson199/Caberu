@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTemplate } from "@/contexts/TemplateContext";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 import { TemplateType, getTemplateConfig } from "@/lib/businessTemplates";
 import { Language } from "@/lib/translations";
 import { logger } from "@/lib/logger";
@@ -98,6 +99,12 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     };
     setHasChanges(JSON.stringify(currentState) !== JSON.stringify(initialState));
   }, [clinicName, slug, tagline, addressStreet, addressHouseNumber, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, defaultLanguage, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
+
+  const { setHasUnsavedChanges } = useUnsavedChangesGuard();
+  useEffect(() => {
+    setHasUnsavedChanges(hasChanges);
+    return () => setHasUnsavedChanges(false);
+  }, [hasChanges, setHasUnsavedChanges]);
 
   useUnsavedChanges({
     when: hasChanges,

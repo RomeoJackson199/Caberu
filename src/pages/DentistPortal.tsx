@@ -10,6 +10,7 @@ import { useBusinessSubscription } from "@/hooks/useBusinessSubscription";
 import { SubscriptionExpiredDialog } from "@/components/subscription/SubscriptionExpiredDialog";
 import { DentistPortalSkeleton } from "@/components/dentist/DentistPortalSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
+import { UnsavedChangesProvider, useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 
 // Import components
 import { ClinicalToday } from "@/components/ClinicalToday";
@@ -40,7 +41,8 @@ interface DentistPortalProps {
   user?: User | null;
 }
 
-export function DentistPortal({ user: userProp }: DentistPortalProps) {
+function DentistPortalInner({ user: userProp }: DentistPortalProps) {
+  const { confirmNavigation } = useUnsavedChangesGuard();
   const [activeSection, setActiveSection] = useState<DentistSection>('dashboard');
   const [dentistId, setDentistId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(userProp || null);
@@ -85,7 +87,7 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
 
   // Helper function to navigate to a section with URL update
   const navigateToSection = (section: DentistSection) => {
-    navigate(`/dentist/${section}`);
+    confirmNavigation(() => navigate(`/dentist/${section}`));
   };
 
   useEffect(() => {
@@ -337,6 +339,14 @@ export function DentistPortal({ user: userProp }: DentistPortalProps) {
         />
       )}
     </DentistAppShell>
+  );
+}
+
+export function DentistPortal(props: DentistPortalProps) {
+  return (
+    <UnsavedChangesProvider>
+      <DentistPortalInner {...props} />
+    </UnsavedChangesProvider>
   );
 }
 
