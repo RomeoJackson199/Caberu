@@ -37,6 +37,7 @@ interface HeroAppointment {
     last_name: string;
     email?: string;
     phone?: string | null;
+    profile_picture_url?: string | null;
   } | null;
   patient_name: string | null;
 }
