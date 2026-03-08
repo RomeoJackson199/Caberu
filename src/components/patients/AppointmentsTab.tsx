@@ -23,6 +23,7 @@ import {
 export interface AppointmentsTabProps {
   user: User;
   onOpenAssistant?: () => void;
+  initialAppointmentId?: string | null;
 }
 
 interface Appointment {
