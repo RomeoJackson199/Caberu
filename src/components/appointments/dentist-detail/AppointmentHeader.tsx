@@ -3,7 +3,7 @@ import { differenceInYears } from "date-fns";
 import { formatClinicTime } from "@/lib/timezone";
 import { Calendar, Clock, User, MapPin, Stethoscope, Pencil, Check, X, Loader2, MessageSquare, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
