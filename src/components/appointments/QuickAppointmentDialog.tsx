@@ -14,7 +14,7 @@ import { Calendar, Clock, User, Search, Loader2, Stethoscope, CheckCircle2, Euro
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createAppointmentWithNotification } from "@/hooks/useAppointments";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ interface Patient {
   last_name: string;
   email: string;
   phone?: string;
+  profile_picture_url?: string | null;
 }
 
 interface DentistService {
@@ -160,7 +161,7 @@ export function QuickAppointmentDialog({
 
       const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
       const { data: profiles } = patientIds.length > 0
-        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone').in('id', patientIds)
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone, profile_picture_url').in('id', patientIds)
         : { data: [] };
 
       const uniquePatients = new Map<string, Patient>();
@@ -437,6 +438,7 @@ export function QuickAppointmentDialog({
                     {selectedPatient ? (
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-7 w-7 border border-border">
+                          <AvatarImage src={selectedPatient.profile_picture_url || undefined} className="object-cover" />
                           <AvatarFallback className="text-xs bg-blue-50 text-blue-700 font-semibold">
                             {selectedPatient.first_name?.[0]}{selectedPatient.last_name?.[0]}
                           </AvatarFallback>
@@ -477,6 +479,7 @@ export function QuickAppointmentDialog({
                               >
                                 <div className="flex items-center gap-3 w-full py-0.5">
                                   <Avatar className="h-9 w-9 border border-border">
+                                    <AvatarImage src={p.profile_picture_url || undefined} className="object-cover" />
                                     <AvatarFallback className="text-sm bg-blue-50 text-blue-700 font-semibold">
                                       {p.first_name?.[0]}{p.last_name?.[0]}
                                     </AvatarFallback>
@@ -502,6 +505,7 @@ export function QuickAppointmentDialog({
           ) : (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
               <Avatar className="h-11 w-11 border-2 border-white shadow-sm">
+                <AvatarImage src={selectedPatient?.profile_picture_url || undefined} className="object-cover" />
                 <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
                   {selectedPatient?.first_name?.[0]}{selectedPatient?.last_name?.[0]}
                 </AvatarFallback>

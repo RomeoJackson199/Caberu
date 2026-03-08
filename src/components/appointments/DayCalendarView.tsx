@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, addHours, isSameDay, parseISO, differenceInMinutes, setHours, setMinutes } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,7 @@ export function DayCalendarView({
       if (patientIds.length) {
         const { data: profiles } = await supabase
           .from("secure_profiles_view")
-          .select("id, first_name, last_name, email")
+          .select("id, first_name, last_name, email, profile_picture_url")
           .in("id", patientIds);
         const map = new Map((profiles || []).map((p: any) => [p.id, p]));
         return appointments.map((a: any) => ({ ...a, patient: map.get(a.patient_id) || null }));
@@ -306,6 +306,7 @@ export function DayCalendarView({
                         <div className="p-4 space-y-3">
                           <div className="flex items-center gap-3 pb-3 border-b">
                             <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                              <AvatarImage src={event.patient?.profile_picture_url || undefined} className="object-cover" />
                               <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                                 {getPatientInitials(event.patient?.first_name, event.patient?.last_name)}
                               </AvatarFallback>

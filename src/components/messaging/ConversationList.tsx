@@ -13,11 +13,12 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { AvatarWithInitials, DebouncedSearch, UnreadBadge } from '@/components/ui/page-enhancements';
 import { StaggeredList } from '@/components/ui/micro-interactions';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Conversation {
   profileId: string;
   name: string;
+  profilePictureUrl?: string | null;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
@@ -27,14 +28,14 @@ interface Conversation {
 
 interface ConversationListProps {
   currentUserId: string;
-  onSelectRecipient: (recipient: { id: string; name: string; businessId: string }) => void;
+  onSelectRecipient: (recipient: { id: string; name: string; businessId: string; profilePictureUrl?: string | null }) => void;
 }
 
 export function ConversationList({ currentUserId, onSelectRecipient }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewConversation, setShowNewConversation] = useState(false);
-  const [availableContacts, setAvailableContacts] = useState<{ id: string; name: string; businessId: string }[]>([]);
+  const [availableContacts, setAvailableContacts] = useState<{ id: string; name: string; businessId: string; profilePictureUrl?: string | null }[]>([]);
   const [isDentist, setIsDentist] = useState(false);
   const [roleDetected, setRoleDetected] = useState(false);
   const [businessError, setBusinessError] = useState<string | null>(null);
@@ -125,7 +126,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
       // Fetch profiles
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, profile_picture_url')
         .in('id', partnerIds);
 
       // Fetch business names
@@ -149,6 +150,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         return {
           profileId: p.id,
           name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'User',
+          profilePictureUrl: (p as any).profile_picture_url || null,
           lastMessage: conv.lastMessage,
           lastMessageTime: conv.lastMessageTime,
           unreadCount: conv.unreadCount,
@@ -212,13 +214,13 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         const profileIds = dentists.map(d => d.profile_id).filter(Boolean);
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name')
+          .select('id, first_name, last_name, profile_picture_url')
           .in('id', profileIds);
 
-        const profileNameMap = new Map<string, string>();
+        const profileNameMap = new Map<string, { name: string; pic: string | null }>();
         profilesData?.forEach(p => {
           const name = `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Dentist';
-          profileNameMap.set(p.id, name);
+          profileNameMap.set(p.id, { name, pic: (p as any).profile_picture_url || null });
         });
 
         // Get the current selected business (if any)
@@ -227,9 +229,11 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
         const contacts = dentists
           .map(d => {
             const businessId = dentistBusinessMap.get(d.id) || '';
+            const info = profileNameMap.get(d.profile_id);
             return {
               id: d.profile_id,
-              name: profileNameMap.get(d.profile_id) || 'Dentist',
+              name: info?.name || 'Dentist',
+              profilePictureUrl: info?.pic || null,
               businessId,
               businessName: businessNameMap.get(businessId) || ''
             };
@@ -265,7 +269,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
             const businessId = await getCurrentBusinessId();
             const { data: profilesData } = await supabase
               .from('profiles')
-              .select('id, first_name, last_name')
+              .select('id, first_name, last_name, profile_picture_url')
               .limit(50);
 
             const contacts = (profilesData || [])
@@ -273,6 +277,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
               .map(p => ({
                 id: p.id,
                 name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Patient',
+                profilePictureUrl: (p as any).profile_picture_url || null,
                 businessId: businessId
               }));
 
@@ -295,12 +300,13 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
 
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name')
+          .select('id, first_name, last_name, profile_picture_url')
           .in('id', patientIds);
 
         const contacts = (profilesData || []).map(p => ({
           id: p.id,
           name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Patient',
+          profilePictureUrl: (p as any).profile_picture_url || null,
           businessId: patientBusinessMap.get(p.id) || ''
         })).filter(c => !!c.businessId);
 
@@ -427,6 +433,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
+                        <AvatarImage src={contact.profilePictureUrl || undefined} className="object-cover" />
                         <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                           {contact.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                         </AvatarFallback>
@@ -458,7 +465,8 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                     onSelectRecipient({
                       id: conv.profileId,
                       name: conv.name,
-                      businessId: conv.businessId
+                      businessId: conv.businessId,
+                      profilePictureUrl: conv.profilePictureUrl
                     })
                   }
                   className={cn(
@@ -471,6 +479,7 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                   <div className="flex items-start gap-3">
                     <div className="relative">
                       <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
+                        <AvatarImage src={conv.profilePictureUrl || undefined} className="object-cover" />
                         <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                           {conv.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                         </AvatarFallback>

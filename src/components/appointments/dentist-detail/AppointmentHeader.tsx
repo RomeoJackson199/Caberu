@@ -3,7 +3,7 @@ import { differenceInYears } from "date-fns";
 import { formatClinicTime } from "@/lib/timezone";
 import { Calendar, Clock, User, MapPin, Stethoscope, Pencil, Check, X, Loader2, MessageSquare, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ interface AppointmentHeaderProps {
       first_name?: string;
       last_name?: string;
       date_of_birth?: string;
+      profile_picture_url?: string | null;
     };
     patient_name?: string;
   };
@@ -112,6 +113,7 @@ export function AppointmentHeader({
       {/* Patient Info Row */}
       <div className="flex items-start gap-4">
         <Avatar className="h-14 w-14 ring-2 ring-primary/10 shadow-sm">
+          <AvatarImage src={appointment.patient?.profile_picture_url || undefined} className="object-cover" />
           <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
             {patientInitials || 'P'}
           </AvatarFallback>

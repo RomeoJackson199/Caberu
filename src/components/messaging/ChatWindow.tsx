@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Send, Check, CheckCheck, Clock, ChevronDown } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +29,7 @@ interface ChatWindowProps {
     id: string;
     name: string;
     businessId: string;
+    profilePictureUrl?: string | null;
   };
   onBack: (() => void) | null;
 }
@@ -242,6 +243,7 @@ export function ChatWindow({
             </Button>
           )}
           <Avatar className="h-12 w-12 ring-2 ring-background shadow-md border-2 border-primary/10">
+            <AvatarImage src={recipient.profilePictureUrl || undefined} className="object-cover" />
             <AvatarFallback className="bg-primary text-primary-foreground font-bold">
               {recipient.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
             </AvatarFallback>
@@ -308,6 +310,7 @@ export function ChatWindow({
                         <div className="w-8 shrink-0">
                           {showAvatar && (
                             <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm border border-primary/10">
+                              <AvatarImage src={recipient.profilePictureUrl || undefined} className="object-cover" />
                               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                                 {recipient.name.split(' ').map((n) => n[0]).join('').toUpperCase()}
                               </AvatarFallback>

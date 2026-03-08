@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { format, startOfWeek, addDays, addHours, isSameDay, parseISO, differenceInMinutes, setHours, setMinutes, startOfDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ export function WeeklyCalendarView({
       // Fetch patient profiles separately (views don't support PostgREST joins)
       const patientIds = [...new Set((data || []).map(a => a.patient_id).filter(Boolean))];
       const { data: profiles } = patientIds.length > 0
-        ? await supabase.from('profiles').select('id, first_name, last_name, email').in('id', patientIds)
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, profile_picture_url').in('id', patientIds)
         : { data: [] };
       const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
 
@@ -556,6 +556,7 @@ export function WeeklyCalendarView({
                                 <div className="flex items-start justify-between">
                                   <div className="flex items-center gap-3">
                                     <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                      <AvatarImage src={event.patient?.profile_picture_url || undefined} className="object-cover" />
                                       <AvatarFallback className="bg-primary/10 text-primary font-bold">
                                         {getPatientInitials(event.patient?.first_name, event.patient?.last_name)}
                                       </AvatarFallback>
