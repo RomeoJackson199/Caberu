@@ -46,7 +46,7 @@ interface Appointment {
  */
 const INITIAL_SHOW = 3;
 
-export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAssistant }) => {
+export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAssistant, initialAppointmentId }) => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

@@ -59,7 +59,7 @@ export interface HomeTabProps {
     visitType?: string;
   } | null;
   totalDueCents: number;
-  onNavigateTo: (section: 'appointments' | 'payments') => void;
+  onNavigateTo: (section: 'appointments' | 'payments', appointmentId?: string) => void;
   onOpenAssistant?: () => void;
   onBookAppointment?: () => void;
 }

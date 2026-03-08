@@ -159,9 +159,16 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                       </p>
                     )}
                     {nextAppointment.location && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MapPin className="h-3 w-3" />
                         {nextAppointment.location}
-                      </p>
+                      </a>
                     )}
                     {!nextAppointment.location && nextAppointment.visitType && (
                       <p className="text-sm text-muted-foreground mt-1 capitalize">
@@ -170,7 +177,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                     )}
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Button size="sm" variant="outline" onClick={() => onNavigateTo('appointments')}>
+                    <Button size="sm" variant="outline" onClick={() => onNavigateTo('appointments', nextAppointment.id)}>
                       {t.reschedule}
                     </Button>
                     {(nextAppointment.isVirtual || nextAppointment.joinUrl) ? (
