@@ -24,6 +24,7 @@ interface Patient {
   last_name: string;
   email: string;
   phone?: string;
+  profile_picture_url?: string | null;
 }
 
 interface DentistService {
