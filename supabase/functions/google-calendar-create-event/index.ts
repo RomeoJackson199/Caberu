@@ -37,7 +37,8 @@ serve(async (req) => {
         *,
         dentists!inner(profile_id, google_calendar_refresh_token, google_calendar_connected, google_calendar_sync_direction, google_calendar_id),
         profiles!appointments_patient_id_fkey(first_name, last_name, email, phone),
-        business_services(name)
+        business_services(name),
+        businesses!appointments_business_id_fkey(name, address)
       `)
       .eq('id', appointmentId)
       .single();
