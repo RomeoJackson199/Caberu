@@ -134,6 +134,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
     } catch { }
   }, [collapsed]);
   const isActive = (id: PatientSection) => activeSection === id;
+  const toggleSidebar = () => setCollapsed(prev => !prev);
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -256,20 +257,31 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
     <div className={cn("fixed left-0 top-0 bottom-0 bg-card/80 backdrop-blur-lg border-r border-border/50 z-40 transition-[width] duration-200 ease-linear overflow-hidden", collapsed ? "w-16" : "w-64")}>
       {/* Sidebar Header */}
       <div className={cn("flex items-center border-b border-border/50 gap-3", collapsed ? "p-2" : "p-4")}>
-        <button
-          onClick={() => setCollapsed(v => !v)}
-          className="shrink-0 hover:opacity-80 transition-opacity cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          aria-label="Toggle sidebar"
-          title="Click to expand/collapse sidebar"
-        >
-          {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-9 w-9 rounded-lg object-cover" /> : <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">P</span>
-          </div>}
-        </button>
-        {!collapsed && <div className="min-w-0">
+        {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-9 w-9 rounded-lg object-cover shrink-0" /> : <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <span className="text-primary-foreground font-bold text-sm">P</span>
+        </div>}
+        {!collapsed && <div className="min-w-0 flex-1">
           <h1 className="font-semibold text-base leading-tight truncate">{branding.clinicName || "Patient Portal"}</h1>
           <p className="text-xs text-muted-foreground">{branding.tagline || "Healthcare Dashboard"}</p>
         </div>}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 border border-transparent hover:border-border hover:bg-muted/70"
+                onClick={toggleSidebar}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{collapsed ? "Expand sidebar" : "Collapse sidebar"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Navigation */}
@@ -300,36 +312,6 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
       {/* Sidebar Footer */}
       <div className={cn("absolute bottom-0 left-0 right-0 border-t border-border/50", collapsed ? "p-2" : "p-4")}>
         <div className="flex flex-col gap-2">
-          {/* User Avatar & Name */}
-          {!collapsed && (
-            <div className="flex items-center gap-3 px-1 py-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
-                <AvatarFallback className="text-xs bg-primary/10 text-primary">{userInitials}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{userName || 'Patient'}</p>
-              </div>
-            </div>
-          )}
-          {collapsed && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex justify-center py-1">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{userInitials}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{userName || 'Patient'}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -396,7 +378,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 border border-transparent hover:border-border hover:bg-muted/70"
-                    onClick={() => setCollapsed(v => !v)}
+                    onClick={toggleSidebar}
                     aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                   >
                     <PanelLeft className="h-4 w-4" />
