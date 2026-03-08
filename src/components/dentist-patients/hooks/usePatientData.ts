@@ -40,7 +40,7 @@ export function usePatientData({ dentistId, businessId }: UsePatientDataOptions)
 
       const patientIds = [...new Set((appointmentData || []).map(a => a.patient_id).filter(Boolean))];
       const { data: profilesData } = patientIds.length > 0
-        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone, date_of_birth, address, medical_history, emergency_contact, avatar_url').in('id', patientIds)
+        ? await supabase.from('profiles').select('id, first_name, last_name, email, phone, date_of_birth, address, medical_history, emergency_contact, avatar_url, profile_picture_url').in('id', patientIds)
         : { data: [] };
 
       const patientsFromAppointments = (profilesData || []).filter(Boolean) as DentistPatient[];

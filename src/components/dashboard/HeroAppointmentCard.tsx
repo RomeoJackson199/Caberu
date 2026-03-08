@@ -210,9 +210,12 @@ export function HeroAppointmentCard({ appointment, loading, className }: HeroApp
 
           {/* Patient info */}
           <div className="flex items-center gap-4 mb-4">
-            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-semibold text-lg shrink-0">
-              {patientName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
+            <Avatar className="h-12 w-12 border-2 border-primary/20">
+              <AvatarImage src={appointment.profiles?.profile_picture_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold text-lg">
+                {patientName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-lg truncate">{patientName}</h3>
               <p className="text-sm text-muted-foreground truncate">
