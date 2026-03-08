@@ -113,10 +113,12 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
 
       if (!isDentistUser) {
         // Patient: show all dentists from businesses they have appointments with
-        const { data: appointments } = await supabase
-          .from('appointments_decrypted')
+        const { data: appointments, error: aptErr } = await supabase
+          .from('appointments')
           .select('dentist_id, business_id')
           .eq('patient_id', profileId);
+
+        console.debug('[ConversationList] Patient appointments:', appointments?.length, aptErr?.message);
 
         if (appointments && appointments.length > 0) {
           const dentistIds = Array.from(new Set(appointments.map(a => a.dentist_id).filter(Boolean)));
