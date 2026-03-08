@@ -26,6 +26,7 @@ import { CancelSubscriptionSection } from "@/components/settings/CancelSubscript
 import { VoiceAICard } from "@/components/settings/VoiceAICard";
 import { PhoneBookingFlowCard } from "@/components/settings/PhoneBookingFlowCard";
 import { useLanguage } from "@/hooks/useLanguage";
+import { SupportFeedbackSection } from "@/components/shared/SupportFeedbackSection";
 
 export default function DentistSettings() {
   const { businessId, loading: businessLoading, membershipRole } = useBusinessContext();
