@@ -264,25 +264,18 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
           <h1 className="font-semibold text-base leading-tight truncate">{branding.clinicName || "Patient Portal"}</h1>
           <p className="text-xs text-muted-foreground">{branding.tagline || "Healthcare Dashboard"}</p>
         </div>}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0 border border-transparent hover:border-border hover:bg-muted/70"
-                onClick={toggleSidebar}
-                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                <PanelLeft className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>{collapsed ? "Expand sidebar" : "Collapse sidebar"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
+
+      {/* Expand hover zone when collapsed */}
+      {collapsed && (
+        <div
+          className="absolute top-0 -right-1 w-2 h-full cursor-col-resize hover:bg-primary/20 transition-colors z-50"
+          onClick={toggleSidebar}
+          aria-label="Expand sidebar"
+          role="button"
+          tabIndex={0}
+        />
+      )}
 
       {/* Navigation */}
       <nav className={cn("p-2", collapsed ? "space-y-1" : "space-y-2 p-4")} role="navigation" aria-label="Primary">
