@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { format, startOfWeek, addDays, addHours, isSameDay, parseISO, differenceInMinutes, setHours, setMinutes, startOfDay } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
