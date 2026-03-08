@@ -289,8 +289,8 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
   const cancelAppointment = async (appointmentId: string) => {
     try {
       setProcessing(true);
-      // Release any held slot
-      await supabase.rpc('release_appointment_slot', { p_appointment_id: appointmentId });
+      // Release all held slots (supports multi-slot appointments)
+      await supabase.rpc('release_appointment_slots', { p_appointment_id: appointmentId });
       // Cancel appointment via RPC
       const { data, error } = await supabase.rpc('cancel_appointment', {
         appointment_id: appointmentId,
