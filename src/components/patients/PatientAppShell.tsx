@@ -172,7 +172,10 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className={cn("hover:bg-primary/10 transition-colors touch-target min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2", activeSection === 'settings' && "bg-primary/10 text-primary")} aria-label="Open menu">
-                  <SettingsIcon className="h-5 w-5" />
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
+                    <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
