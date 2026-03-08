@@ -28,6 +28,7 @@ import { HomeTab } from "@/components/patients/HomeTab";
 import { AppointmentsTab } from "@/components/patients/AppointmentsTab";
 import { PaymentsTab } from "@/components/patients/PaymentsTab";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
+import { UnsavedChangesProvider, useUnsavedChangesGuard } from "@/contexts/UnsavedChangesContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { logger } from '@/lib/logger';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
