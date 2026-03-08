@@ -6055,6 +6055,10 @@ export type Database = {
         Args: { _target_profile_id: string; _viewer_user_id: string }
         Returns: boolean
       }
+      cancel_appointment: {
+        Args: { appointment_id: string; user_id: string }
+        Returns: boolean
+      }
       check_affected_appointments_on_availability_change: {
         Args: {
           p_business_id: string
