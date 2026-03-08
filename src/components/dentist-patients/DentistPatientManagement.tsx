@@ -318,7 +318,8 @@ export function DentistPatientManagement({ dentistId }: DentistPatientManagement
                   first_name: selectedPatient.first_name,
                   last_name: selectedPatient.last_name,
                   email: selectedPatient.email,
-                  phone: selectedPatient.phone
+                  phone: selectedPatient.phone,
+                  profile_picture_url: selectedPatient.profile_picture_url,
                 }
               }}
               onClose={() => setShowAppointmentDetail(false)}
