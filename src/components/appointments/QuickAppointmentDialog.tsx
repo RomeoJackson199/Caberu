@@ -479,6 +479,7 @@ export function QuickAppointmentDialog({
                               >
                                 <div className="flex items-center gap-3 w-full py-0.5">
                                   <Avatar className="h-9 w-9 border border-border">
+                                    <AvatarImage src={p.profile_picture_url || undefined} className="object-cover" />
                                     <AvatarFallback className="text-sm bg-blue-50 text-blue-700 font-semibold">
                                       {p.first_name?.[0]}{p.last_name?.[0]}
                                     </AvatarFallback>
