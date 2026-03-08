@@ -398,24 +398,6 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
                 disabled={isDateDisabled}
                 fromDate={new Date()}
                 toDate={addDays(new Date(), 90)}
-                className={cn("p-3 pointer-events-auto rounded-xl border-0")}
-                classNames={{
-                  months: "flex flex-col",
-                  month: "space-y-3",
-                  caption: "flex justify-center pt-1 relative items-center",
-                  caption_label: "text-sm font-semibold",
-                  nav: "space-x-1 flex items-center",
-                  table: "w-full border-collapse",
-                  head_row: "flex",
-                  head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] flex-1 text-center",
-                  row: "flex w-full mt-1",
-                  cell: "flex-1 text-center text-sm relative p-0",
-                  day: "h-9 w-9 mx-auto p-0 font-normal rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center",
-                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-semibold shadow-sm",
-                  day_today: "bg-accent text-accent-foreground font-semibold",
-                  day_outside: "text-muted-foreground/40",
-                  day_disabled: "text-muted-foreground/30 line-through cursor-not-allowed hover:bg-transparent",
-                }}
               />
             </div>
           )}
