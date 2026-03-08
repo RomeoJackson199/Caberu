@@ -17,6 +17,7 @@ export default function Messages() {
     id: string;
     name: string;
     businessId: string;
+    profilePictureUrl?: string | null;
   } | null>(null);
   const isMobile = useIsMobile();
   const navigate = useNavigate();

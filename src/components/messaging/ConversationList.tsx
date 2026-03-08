@@ -465,7 +465,8 @@ export function ConversationList({ currentUserId, onSelectRecipient }: Conversat
                     onSelectRecipient({
                       id: conv.profileId,
                       name: conv.name,
-                      businessId: conv.businessId
+                      businessId: conv.businessId,
+                      profilePictureUrl: conv.profilePictureUrl
                     })
                   }
                   className={cn(
