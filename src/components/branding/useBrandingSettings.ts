@@ -100,6 +100,12 @@ export function useBrandingSettings(): UseBrandingSettingsReturn {
     setHasChanges(JSON.stringify(currentState) !== JSON.stringify(initialState));
   }, [clinicName, slug, tagline, addressStreet, addressHouseNumber, addressPostalCode, addressCity, phone, primaryColor, secondaryColor, logoUrl, templateType, defaultLanguage, aiSystemBehavior, aiGreeting, aiPersonalityTraits, initialState]);
 
+  const { setHasUnsavedChanges } = useUnsavedChangesGuard();
+  useEffect(() => {
+    setHasUnsavedChanges(hasChanges);
+    return () => setHasUnsavedChanges(false);
+  }, [hasChanges, setHasUnsavedChanges]);
+
   useUnsavedChanges({
     when: hasChanges,
     onNavigate: handleSaveBranding,
