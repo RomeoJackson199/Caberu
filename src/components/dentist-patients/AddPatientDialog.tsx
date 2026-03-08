@@ -266,17 +266,17 @@ export function AddPatientDialog({ businessId, dentistId, onPatientAdded }: AddP
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="inviteEmail">Email Address *</Label>
+          <Label htmlFor="invitePhone">Phone Number *</Label>
           <Input
-            id="inviteEmail"
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="patient@email.com"
+            id="invitePhone"
+            type="tel"
+            value={invitePhone}
+            onChange={(e) => setInvitePhone(e.target.value)}
+            placeholder="+31 6 12345678"
             required
           />
           <p className="text-xs text-muted-foreground">
-            We'll send an invitation to create their account
+            We'll send an SMS invitation to create their account
           </p>
         </div>
 
