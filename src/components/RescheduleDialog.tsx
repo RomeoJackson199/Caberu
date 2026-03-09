@@ -231,35 +231,23 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
 
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-      const { error: rpcError } = await supabase.rpc('reschedule_appointment', {
-        p_appointment_id: appointment.id,
-        p_user_id: userData.user.id,
-        p_slot_date: dateStr,
-        p_slot_time: selectedTime + ':00',
-      });
+      // Direct update — the reschedule_appointment RPC is not deployed
+      const newDateTime = `${dateStr}T${selectedTime}:00`;
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({
+          appointment_date: new Date(`${newDateTime}+01:00`).toISOString(),
+          status: 'confirmed',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', appointment.id);
+      if (updateError) throw updateError;
 
-      if (rpcError) {
-        // Fallback to direct update when RPC is unavailable (400) or user not authorized
-        const isFallbackError =
-          rpcError.message?.includes('not_authorized') ||
-          rpcError.code === 'PGRST202' ||
-          rpcError.message?.includes('Could not find') ||
-          (rpcError as any).status === 400;
-
-        if (isFallbackError) {
-          const newDateTime = `${dateStr}T${selectedTime}:00`;
-          const { error: updateError } = await supabase
-            .from('appointments')
-            .update({
-              appointment_date: new Date(`${newDateTime}+01:00`).toISOString(),
-              status: 'confirmed',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', appointment.id);
-          if (updateError) throw updateError;
-        } else {
-          throw rpcError;
-        }
+      // Release old slots and book new ones if possible
+      try {
+        await supabase.rpc('release_appointment_slots', { p_appointment_id: appointment.id });
+      } catch {
+        // Slot release is best-effort
       }
 
       toast({
