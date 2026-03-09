@@ -324,21 +324,110 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
     return [...cards].sort((a, b) => b.priority - a.priority);
   }, [cards]);
 
+  const dentistInitials = nextAppointment?.dentistName
+    ? nextAppointment.dentistName.split(' ').map(n => n[0]).join('').toUpperCase()
+    : '?';
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {orderedCards.map((card, index) => (
-        <motion.div
-          key={card.id}
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: index * 0.05 }}
-          className={cn(
-            card.id === 'appointment' && "md:col-span-2 lg:col-span-2"
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {orderedCards.map((card, index) => (
+          <motion.div
+            key={card.id}
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: index * 0.05 }}
+            className={cn(
+              card.id === 'appointment' && "md:col-span-2 lg:col-span-2"
+            )}
+          >
+            {card.component}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Dentist Info Dialog - matching booking flow design */}
+      <Dialog open={showDentistDialog} onOpenChange={setShowDentistDialog}>
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0">
+          {nextAppointment?.dentistName && (
+            <>
+              {/* Profile header with gradient */}
+              <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-background pt-8 pb-6 px-6">
+                <DialogHeader className="items-center text-center space-y-4">
+                  <Avatar className="h-28 w-28 ring-4 ring-background shadow-2xl">
+                    <AvatarImage
+                      src={nextAppointment.dentistProfilePicture || undefined}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-3xl font-bold">
+                      {dentistInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <DialogTitle className="text-2xl font-bold">
+                      Dr. {nextAppointment.dentistName}
+                    </DialogTitle>
+                    <Badge variant="secondary" className="mt-2">
+                      <Stethoscope className="h-3 w-3 mr-1" />
+                      {nextAppointment.dentistSpecialization || "General Dentistry"}
+                    </Badge>
+                  </div>
+                </DialogHeader>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-5">
+                {/* Bio */}
+                {nextAppointment.dentistBio && (
+                  <div className="space-y-1.5">
+                    <h4 className="text-sm font-semibold text-foreground">About</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{nextAppointment.dentistBio}</p>
+                  </div>
+                )}
+
+                {/* Contact info */}
+                <div className="space-y-2.5">
+                  {nextAppointment.dentistEmail && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <span className="text-muted-foreground">{nextAppointment.dentistEmail}</span>
+                    </div>
+                  )}
+                  {nextAppointment.dentistPhone && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <Phone className="h-4 w-4" />
+                      </div>
+                      <span className="text-muted-foreground">{nextAppointment.dentistPhone}</span>
+                    </div>
+                  )}
+                  {nextAppointment.location && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <MapPin className="h-4 w-4" />
+                      </div>
+                      <span className="text-muted-foreground">{nextAppointment.location}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Next appointment info */}
+                <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl px-4 py-3">
+                  <Calendar className="h-5 w-5 text-emerald-600" />
+                  <div>
+                    <p className="text-xs text-emerald-600/70 font-medium">{t.nextAppointment}</p>
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                      {nextAppointment.date}, {nextAppointment.time}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
-        >
-          {card.component}
-        </motion.div>
-      ))}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
