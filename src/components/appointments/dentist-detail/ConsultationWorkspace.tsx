@@ -407,6 +407,25 @@ export function ConsultationWorkspace({
 
       if (error) throw error;
 
+      // Auto-populate charge from service price if service has a price
+      if (service && service.price_cents > 0) {
+        const serviceCharge: ChargeItem = {
+          id: `service-${service.id}`,
+          description: service.name,
+          amount_cents: service.price_cents,
+        };
+        // Replace any existing service-based charges, keep manual ones
+        const manualCharges = charges.filter(c => !c.id.startsWith('service-'));
+        const updatedCharges = [serviceCharge, ...manualCharges];
+        setCharges(updatedCharges);
+        onChargesChange?.(updatedCharges);
+      } else if (!parsedServiceId) {
+        // If service cleared, remove service-based charges
+        const manualCharges = charges.filter(c => !c.id.startsWith('service-'));
+        setCharges(manualCharges);
+        onChargesChange?.(manualCharges);
+      }
+
       onServiceChange?.(parsedServiceId);
 
       toast({
