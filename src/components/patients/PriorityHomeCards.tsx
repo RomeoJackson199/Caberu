@@ -72,6 +72,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
   const { hasFeature, loading: templateLoading } = useBusinessTemplate();
   const hasAIChat = !templateLoading && hasFeature('aiChat');
   const unpaid = totalDueCents > 0;
+  const [showDentistDialog, setShowDentistDialog] = useState(false);
 
   const formatVisitContext = (value?: string | null) => {
     if (!value) return null;
