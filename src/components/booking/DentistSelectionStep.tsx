@@ -161,20 +161,20 @@ export function DentistSelectionStep({ dentists, onSelect, onBack }: DentistSele
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex border-t">
+                  <div className="flex gap-2 px-5 pb-5">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedIndex(index);
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all border-r"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all rounded-xl border border-border"
                     >
                       <Info className="h-4 w-4" />
                       More Info
                     </button>
                     <button
                       onClick={() => onSelect(dentist)}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-primary-foreground bg-primary hover:bg-primary/90 transition-all rounded-xl"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Select
