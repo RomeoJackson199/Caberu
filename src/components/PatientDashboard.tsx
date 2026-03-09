@@ -373,7 +373,7 @@ const PatientDashboardInner = ({
       // Fetch dentist data separately (views don't support PostgREST joins)
       const dentistIds = [...new Set((appointmentsData || []).map(a => a.dentist_id).filter(Boolean))];
       const { data: dentists } = dentistIds.length > 0
-        ? await supabase.from('dentists').select('id, specialization, clinic_address, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+        ? await supabase.from('dentists').select('id, specialization, email, profile_picture_url, profiles:profile_id(first_name, last_name, bio, phone, address, profile_picture_url)').in('id', dentistIds)
         : { data: [] };
       const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
 
@@ -388,7 +388,10 @@ const PatientDashboardInner = ({
             first_name: (dentist.profiles as any)?.first_name,
             last_name: (dentist.profiles as any)?.last_name,
             specialization: dentist.specialization,
-            clinic_address: (dentist as any).clinic_address
+            email: dentist.email || (dentist.profiles as any)?.email,
+            phone: (dentist.profiles as any)?.phone,
+            bio: (dentist.profiles as any)?.bio,
+            profile_picture_url: dentist.profile_picture_url || (dentist.profiles as any)?.profile_picture_url,
           } : undefined
         };
       });
