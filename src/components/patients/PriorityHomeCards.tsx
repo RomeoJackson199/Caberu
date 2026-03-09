@@ -1,28 +1,33 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import {
   Calendar,
-  Pill,
   CreditCard,
   MessageSquare,
-  ChevronRight,
   CheckCircle,
   Video,
   Sparkles,
   MapPin,
+  Stethoscope,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { differenceInHours } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CardData {
   id: string;
-  priority: number; // higher = more important
+  priority: number;
   component: React.ReactNode;
 }
 
@@ -32,6 +37,7 @@ export interface PriorityHomeCardsProps {
     date: string;
     time?: string | null;
     dentistName?: string | null;
+    dentistSpecialization?: string | null;
     status?: string;
     isVirtual?: boolean;
     joinUrl?: string | null;
@@ -128,7 +134,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
       if (hoursUntil <= 24) appointmentPriority = 90;
       else if (hoursUntil <= 72) appointmentPriority = 70;
     } else {
-      appointmentPriority = 40; // No appointment, still important
+      appointmentPriority = 40;
     }
 
     result.push({
@@ -155,9 +161,38 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                     <p className="text-lg font-semibold">{nextAppointment.date}</p>
                     <p className="text-muted-foreground">{nextAppointment.time || 'Time TBD'}</p>
                     {nextAppointment.dentistName && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Dr. {nextAppointment.dentistName}
-                      </p>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            className="text-sm text-primary hover:underline mt-1 inline-flex items-center gap-1 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <User className="h-3 w-3" />
+                            Dr. {nextAppointment.dentistName}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-4" align="start">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Stethoscope className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm">Dr. {nextAppointment.dentistName}</p>
+                                <p className="text-xs text-muted-foreground capitalize">
+                                  {nextAppointment.dentistSpecialization || 'General Dentistry'}
+                                </p>
+                              </div>
+                            </div>
+                            {nextAppointment.location && (
+                              <div className="flex items-start gap-1.5 text-xs text-muted-foreground pt-1 border-t">
+                                <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                                <span>{nextAppointment.location}</span>
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     )}
                     {nextAppointment.location && (
                       <a
@@ -186,16 +221,6 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                         <Video className="h-4 w-4 mr-1" />
                         {t.join}
                       </Button>
-                    ) : nextAppointment.location ? (
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-primary hover:underline text-center inline-flex items-center justify-center gap-1"
-                      >
-                        <MapPin className="h-3 w-3" />
-                        {nextAppointment.location}
-                      </a>
                     ) : (
                       <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground text-center">
                         {formatVisitContext(nextAppointment.visitType) || 'In-person'}

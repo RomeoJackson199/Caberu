@@ -579,6 +579,7 @@ const PatientDashboardInner = ({
         date: formatClinicTime(nextAppointment.appointment_date, 'PPP'),
         time: formatClinicTime(nextAppointment.appointment_date, 'HH:mm'),
         dentistName,
+        dentistSpecialization: dentistInfo?.specialization || null,
         status: nextAppointment.status,
         isVirtual,
         joinUrl,
