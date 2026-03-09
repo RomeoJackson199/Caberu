@@ -239,7 +239,14 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       });
 
       if (rpcError) {
-        if (rpcError.message?.includes('not_authorized')) {
+        // Fallback to direct update when RPC is unavailable (400) or user not authorized
+        const isFallbackError =
+          rpcError.message?.includes('not_authorized') ||
+          rpcError.code === 'PGRST202' ||
+          rpcError.message?.includes('Could not find') ||
+          (rpcError as any).status === 400;
+
+        if (isFallbackError) {
           const newDateTime = `${dateStr}T${selectedTime}:00`;
           const { error: updateError } = await supabase
             .from('appointments')
