@@ -13,6 +13,8 @@ import {
   MapPin,
   Stethoscope,
   User,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -20,10 +22,12 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { differenceInHours } from "date-fns";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CardData {
   id: string;
@@ -38,6 +42,10 @@ export interface PriorityHomeCardsProps {
     time?: string | null;
     dentistName?: string | null;
     dentistSpecialization?: string | null;
+    dentistBio?: string | null;
+    dentistEmail?: string | null;
+    dentistPhone?: string | null;
+    dentistProfilePicture?: string | null;
     status?: string;
     isVirtual?: boolean;
     joinUrl?: string | null;
