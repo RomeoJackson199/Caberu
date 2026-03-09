@@ -52,6 +52,7 @@ export interface HomeTabProps {
     date: string;
     time?: string | null;
     dentistName?: string | null;
+    dentistSpecialization?: string | null;
     status?: string;
     isVirtual?: boolean;
     joinUrl?: string | null;
