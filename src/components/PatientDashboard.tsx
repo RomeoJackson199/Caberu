@@ -125,6 +125,7 @@ const PatientDashboardInner = ({
   const hasAIChat = hasFeature('aiChat');
   const navigationItems = getNavigationItems(hasAIChat);
   const { businessId, businessSlug } = useBusinessContext();
+  const [businessAddress, setBusinessAddress] = useState<string | null>(null);
   type Tab = 'overview' | 'chat' | 'appointments' | 'prescriptions' | 'treatment' | 'records' | 'notes' | 'payments' | 'analytics' | 'test';
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     try {
@@ -474,7 +475,14 @@ const PatientDashboardInner = ({
     }
   }, [userProfile?.id, fetchPatientStatsCallback, fetchRecentAppointmentsCallback, fetchPatientDataCallback, fetchTotalDue]);
 
-  // Refetch appointments when navigating back to home tab so rescheduled data shows immediately
+  // Fetch business address for location display
+  useEffect(() => {
+    if (!businessId) return;
+    supabase.from('businesses').select('address').eq('id', businessId).single().then(({ data }) => {
+      setBusinessAddress(data?.address || null);
+    });
+  }, [businessId]);
+
   useEffect(() => {
     if (activeSection === 'home' && userProfile?.id) {
       fetchRecentAppointmentsCallback(userProfile.id);
@@ -569,7 +577,7 @@ const PatientDashboardInner = ({
       const baseIsVirtual = appointmentDetails.is_virtual ?? appointmentDetails.virtual ?? appointmentDetails.is_online ?? appointmentDetails.telehealth;
       const derivedIsVirtual = normalizedVisitType ? normalizedVisitType.includes('virtual') || normalizedVisitType.includes('tele') || normalizedVisitType.includes('online') || normalizedVisitType.includes('remote') : false;
       const isVirtual = Boolean(baseIsVirtual ?? (derivedIsVirtual || joinUrl));
-      const location = appointmentDetails.location || appointmentDetails.location_description || appointmentDetails.clinic_location || appointmentDetails.address || appointmentDetails.office || appointmentDetails.meeting_location || appointmentDetails.dentists?.clinic_address || null;
+      const location = businessAddress || appointmentDetails.location || appointmentDetails.location_description || appointmentDetails.clinic_location || appointmentDetails.address || null;
       const dentistInfo = appointmentDetails.dentists;
       const dentistName = dentistInfo?.first_name && dentistInfo?.last_name
         ? `${dentistInfo.first_name} ${dentistInfo.last_name}`
