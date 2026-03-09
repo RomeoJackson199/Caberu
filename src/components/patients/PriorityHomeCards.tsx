@@ -170,45 +170,13 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                     <p className="text-lg font-semibold">{nextAppointment.date}</p>
                     <p className="text-muted-foreground">{nextAppointment.time || 'Time TBD'}</p>
                     {nextAppointment.dentistName && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button
-                            className="text-sm text-primary hover:underline mt-1 inline-flex items-center gap-1 cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <User className="h-3 w-3" />
-                            Dr. {nextAppointment.dentistName}
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-4" align="start">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Stethoscope className="h-6 w-6 text-primary" />
-                              </div>
-                              <div>
-                                <p className="font-semibold">Dr. {nextAppointment.dentistName}</p>
-                                <p className="text-sm text-muted-foreground capitalize">
-                                  {nextAppointment.dentistSpecialization || 'General Dentistry'}
-                                </p>
-                              </div>
-                            </div>
-                            {nextAppointment.location && (
-                              <div className="flex items-start gap-2 text-sm text-muted-foreground pt-2 border-t">
-                                <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-                                <a
-                                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline hover:text-primary"
-                                >
-                                  {nextAppointment.location}
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <button
+                        className="text-sm text-primary hover:underline mt-1 inline-flex items-center gap-1 cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); setShowDentistDialog(true); }}
+                      >
+                        <User className="h-3 w-3" />
+                        Dr. {nextAppointment.dentistName}
+                      </button>
                     )}
                     {nextAppointment.location && (
                       <a
