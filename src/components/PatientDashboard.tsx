@@ -475,7 +475,14 @@ const PatientDashboardInner = ({
     }
   }, [userProfile?.id, fetchPatientStatsCallback, fetchRecentAppointmentsCallback, fetchPatientDataCallback, fetchTotalDue]);
 
-  // Refetch appointments when navigating back to home tab so rescheduled data shows immediately
+  // Fetch business address for location display
+  useEffect(() => {
+    if (!businessId) return;
+    supabase.from('businesses').select('address').eq('id', businessId).single().then(({ data }) => {
+      setBusinessAddress(data?.address || null);
+    });
+  }, [businessId]);
+
   useEffect(() => {
     if (activeSection === 'home' && userProfile?.id) {
       fetchRecentAppointmentsCallback(userProfile.id);
