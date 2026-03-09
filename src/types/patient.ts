@@ -104,6 +104,7 @@ export interface PatientAppointment {
     notes?: string;
     consultation_notes?: string;
     treatment_plan_id?: string;
+    service_id?: string | null;
     amount_paid_cents?: number | null;
     payment_status?: string;
     completed_at?: string;

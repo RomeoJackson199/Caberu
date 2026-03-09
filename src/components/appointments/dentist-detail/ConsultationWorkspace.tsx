@@ -114,6 +114,10 @@ export function ConsultationWorkspace({
   const [loadingServices, setLoadingServices] = useState(false);
   const [serviceSaving, setServiceSaving] = useState(false);
 
+  // Counter incremented whenever the sync effect resets hasAutoPopulated,
+  // ensuring the auto-populate effect re-evaluates even when charges.length stays 0.
+  const [autoPopulateTrigger, setAutoPopulateTrigger] = useState(0);
+
   // Track the last saved values to detect changes
   const lastSavedNotesRef = useRef(existingNotes);
   const lastSavedChargesRef = useRef(JSON.stringify(existingCharges));
@@ -146,9 +150,11 @@ export function ConsultationWorkspace({
   useEffect(() => {
     setCharges(existingCharges);
     lastSavedChargesRef.current = JSON.stringify(existingCharges);
-    // Reset auto-populate flag so service price can fill in if parent loaded empty charges
     if (existingCharges.length === 0) {
+      // Reset auto-populate flag so service price can fill in
       hasAutoPopulated.current = false;
+      // Bump trigger so auto-populate effect re-runs even if charges.length stays 0
+      setAutoPopulateTrigger(prev => prev + 1);
     } else {
       hasAutoPopulated.current = true;
     }
@@ -208,7 +214,7 @@ export function ConsultationWorkspace({
       onChargesChange?.([serviceCharge]);
       hasAutoPopulated.current = true;
     }
-  }, [services, selectedServiceId, charges.length]);
+  }, [services, selectedServiceId, charges.length, autoPopulateTrigger]);
 
   useEffect(() => {
     if (!isEditable || notes === lastSavedNotesRef.current) return;
