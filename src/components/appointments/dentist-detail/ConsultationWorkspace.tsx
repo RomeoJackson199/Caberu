@@ -177,21 +177,32 @@ export function ConsultationWorkspace({
     fetchServices();
   }, [businessId]);
 
-  // Auto-populate charge from service on initial load if no charges exist
+  // Auto-populate charge from service when services load and no charges exist yet
+  const hasAutoPopulated = useRef(false);
   useEffect(() => {
-    if (services.length > 0 && selectedServiceId && charges.length === 0) {
-      const service = services.find(s => s.id === selectedServiceId);
-      if (service && service.price_cents > 0) {
-        const serviceCharge: ChargeItem = {
-          id: `service-${service.id}`,
-          description: service.name,
-          amount_cents: service.price_cents,
-        };
-        setCharges([serviceCharge]);
-        onChargesChange?.([serviceCharge]);
-      }
+    // Only auto-populate once, when services first load with a selected service and no charges
+    if (hasAutoPopulated.current) return;
+    if (services.length === 0 || !selectedServiceId) return;
+    
+    // Check current charges state - if there are already charges, don't overwrite
+    const hasExistingCharges = charges.length > 0;
+    if (hasExistingCharges) {
+      hasAutoPopulated.current = true;
+      return;
     }
-  }, [services, selectedServiceId]); // Only on initial service load
+
+    const service = services.find(s => s.id === selectedServiceId);
+    if (service && service.price_cents > 0) {
+      const serviceCharge: ChargeItem = {
+        id: `service-${service.id}`,
+        description: service.name,
+        amount_cents: service.price_cents,
+      };
+      setCharges([serviceCharge]);
+      onChargesChange?.([serviceCharge]);
+      hasAutoPopulated.current = true;
+    }
+  }, [services, selectedServiceId, charges.length]);
 
   useEffect(() => {
     if (!isEditable || notes === lastSavedNotesRef.current) return;
