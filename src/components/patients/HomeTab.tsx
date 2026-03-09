@@ -53,6 +53,10 @@ export interface HomeTabProps {
     time?: string | null;
     dentistName?: string | null;
     dentistSpecialization?: string | null;
+    dentistBio?: string | null;
+    dentistEmail?: string | null;
+    dentistPhone?: string | null;
+    dentistProfilePicture?: string | null;
     status?: string;
     isVirtual?: boolean;
     joinUrl?: string | null;

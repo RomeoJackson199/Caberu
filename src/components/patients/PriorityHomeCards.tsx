@@ -13,6 +13,8 @@ import {
   MapPin,
   Stethoscope,
   User,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -20,10 +22,12 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useBusinessTemplate } from "@/hooks/useBusinessTemplate";
 import { differenceInHours } from "date-fns";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CardData {
   id: string;
@@ -38,6 +42,10 @@ export interface PriorityHomeCardsProps {
     time?: string | null;
     dentistName?: string | null;
     dentistSpecialization?: string | null;
+    dentistBio?: string | null;
+    dentistEmail?: string | null;
+    dentistPhone?: string | null;
+    dentistProfilePicture?: string | null;
     status?: string;
     isVirtual?: boolean;
     joinUrl?: string | null;
@@ -64,6 +72,7 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
   const { hasFeature, loading: templateLoading } = useBusinessTemplate();
   const hasAIChat = !templateLoading && hasFeature('aiChat');
   const unpaid = totalDueCents > 0;
+  const [showDentistDialog, setShowDentistDialog] = useState(false);
 
   const formatVisitContext = (value?: string | null) => {
     if (!value) return null;
@@ -161,45 +170,13 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                     <p className="text-lg font-semibold">{nextAppointment.date}</p>
                     <p className="text-muted-foreground">{nextAppointment.time || 'Time TBD'}</p>
                     {nextAppointment.dentistName && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button
-                            className="text-sm text-primary hover:underline mt-1 inline-flex items-center gap-1 cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <User className="h-3 w-3" />
-                            Dr. {nextAppointment.dentistName}
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-4" align="start">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Stethoscope className="h-6 w-6 text-primary" />
-                              </div>
-                              <div>
-                                <p className="font-semibold">Dr. {nextAppointment.dentistName}</p>
-                                <p className="text-sm text-muted-foreground capitalize">
-                                  {nextAppointment.dentistSpecialization || 'General Dentistry'}
-                                </p>
-                              </div>
-                            </div>
-                            {nextAppointment.location && (
-                              <div className="flex items-start gap-2 text-sm text-muted-foreground pt-2 border-t">
-                                <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-                                <a
-                                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline hover:text-primary"
-                                >
-                                  {nextAppointment.location}
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <button
+                        className="text-sm text-primary hover:underline mt-1 inline-flex items-center gap-1 cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); setShowDentistDialog(true); }}
+                      >
+                        <User className="h-3 w-3" />
+                        Dr. {nextAppointment.dentistName}
+                      </button>
                     )}
                     {nextAppointment.location && (
                       <a
