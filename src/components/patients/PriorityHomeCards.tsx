@@ -171,23 +171,30 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
                             Dr. {nextAppointment.dentistName}
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-64 p-4" align="start">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Stethoscope className="h-5 w-5 text-primary" />
+                        <PopoverContent className="w-72 p-4" align="start">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Stethoscope className="h-6 w-6 text-primary" />
                               </div>
                               <div>
-                                <p className="font-semibold text-sm">Dr. {nextAppointment.dentistName}</p>
-                                <p className="text-xs text-muted-foreground capitalize">
+                                <p className="font-semibold">Dr. {nextAppointment.dentistName}</p>
+                                <p className="text-sm text-muted-foreground capitalize">
                                   {nextAppointment.dentistSpecialization || 'General Dentistry'}
                                 </p>
                               </div>
                             </div>
                             {nextAppointment.location && (
-                              <div className="flex items-start gap-1.5 text-xs text-muted-foreground pt-1 border-t">
-                                <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
-                                <span>{nextAppointment.location}</span>
+                              <div className="flex items-start gap-2 text-sm text-muted-foreground pt-2 border-t">
+                                <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+                                <a
+                                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nextAppointment.location)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline hover:text-primary"
+                                >
+                                  {nextAppointment.location}
+                                </a>
                               </div>
                             )}
                           </div>
