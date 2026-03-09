@@ -146,6 +146,12 @@ export function ConsultationWorkspace({
   useEffect(() => {
     setCharges(existingCharges);
     lastSavedChargesRef.current = JSON.stringify(existingCharges);
+    // Reset auto-populate flag so service price can fill in if parent loaded empty charges
+    if (existingCharges.length === 0) {
+      hasAutoPopulated.current = false;
+    } else {
+      hasAutoPopulated.current = true;
+    }
   }, [existingCharges]);
 
   // Sync service when external prop changes
