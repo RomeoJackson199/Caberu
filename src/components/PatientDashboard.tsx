@@ -473,6 +473,13 @@ const PatientDashboardInner = ({
       fetchTotalDue(userProfile.id);
     }
   }, [userProfile?.id, fetchPatientStatsCallback, fetchRecentAppointmentsCallback, fetchPatientDataCallback, fetchTotalDue]);
+
+  // Refetch appointments when navigating back to home tab so rescheduled data shows immediately
+  useEffect(() => {
+    if (activeSection === 'home' && userProfile?.id) {
+      fetchRecentAppointmentsCallback(userProfile.id);
+    }
+  }, [activeSection, userProfile?.id, fetchRecentAppointmentsCallback]);
   const getWelcomeMessage = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
