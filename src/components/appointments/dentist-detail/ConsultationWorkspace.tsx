@@ -177,7 +177,22 @@ export function ConsultationWorkspace({
     fetchServices();
   }, [businessId]);
 
-  // Auto-save notes with debounce
+  // Auto-populate charge from service on initial load if no charges exist
+  useEffect(() => {
+    if (services.length > 0 && selectedServiceId && charges.length === 0) {
+      const service = services.find(s => s.id === selectedServiceId);
+      if (service && service.price_cents > 0) {
+        const serviceCharge: ChargeItem = {
+          id: `service-${service.id}`,
+          description: service.name,
+          amount_cents: service.price_cents,
+        };
+        setCharges([serviceCharge]);
+        onChargesChange?.([serviceCharge]);
+      }
+    }
+  }, [services, selectedServiceId]); // Only on initial service load
+
   useEffect(() => {
     if (!isEditable || notes === lastSavedNotesRef.current) return;
 
