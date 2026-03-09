@@ -125,6 +125,7 @@ const PatientDashboardInner = ({
   const hasAIChat = hasFeature('aiChat');
   const navigationItems = getNavigationItems(hasAIChat);
   const { businessId, businessSlug } = useBusinessContext();
+  const [businessAddress, setBusinessAddress] = useState<string | null>(null);
   type Tab = 'overview' | 'chat' | 'appointments' | 'prescriptions' | 'treatment' | 'records' | 'notes' | 'payments' | 'analytics' | 'test';
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     try {
