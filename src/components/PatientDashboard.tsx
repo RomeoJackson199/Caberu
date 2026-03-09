@@ -577,7 +577,7 @@ const PatientDashboardInner = ({
       const baseIsVirtual = appointmentDetails.is_virtual ?? appointmentDetails.virtual ?? appointmentDetails.is_online ?? appointmentDetails.telehealth;
       const derivedIsVirtual = normalizedVisitType ? normalizedVisitType.includes('virtual') || normalizedVisitType.includes('tele') || normalizedVisitType.includes('online') || normalizedVisitType.includes('remote') : false;
       const isVirtual = Boolean(baseIsVirtual ?? (derivedIsVirtual || joinUrl));
-      const location = appointmentDetails.location || appointmentDetails.location_description || appointmentDetails.clinic_location || appointmentDetails.address || appointmentDetails.office || appointmentDetails.meeting_location || appointmentDetails.dentists?.clinic_address || null;
+      const location = businessAddress || appointmentDetails.location || appointmentDetails.location_description || appointmentDetails.clinic_location || appointmentDetails.address || null;
       const dentistInfo = appointmentDetails.dentists;
       const dentistName = dentistInfo?.first_name && dentistInfo?.last_name
         ? `${dentistInfo.first_name} ${dentistInfo.last_name}`
