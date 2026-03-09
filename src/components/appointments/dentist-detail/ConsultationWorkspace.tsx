@@ -607,7 +607,106 @@ export function ConsultationWorkspace({
         </CardContent>
       </Card>
 
-      {/* Charges section removed - service prices define costs */}
+      {/* Billing / Charges */}
+      <Card className="border-muted/60">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <span className="text-primary/70">€</span>
+            Billing
+            {chargesSaving && (
+              <span className="ml-auto text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving...
+              </span>
+            )}
+            {chargesSaved && !chargesSaving && (
+              <span className="ml-auto text-xs text-emerald-600 flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                Saved
+              </span>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {charges.length > 0 && (
+            <div className="space-y-2">
+              {charges.map((charge) => (
+                <div key={charge.id} className="flex items-center gap-2 text-sm">
+                  <span className="flex-1 truncate">{charge.description}</span>
+                  {isEditable ? (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="w-24 h-7 text-sm text-right"
+                      value={(charge.amount_cents / 100).toFixed(2)}
+                      onChange={(e) => {
+                        const newCents = Math.round(parseFloat(e.target.value) * 100);
+                        if (isNaN(newCents)) return;
+                        const updated = charges.map(c =>
+                          c.id === charge.id ? { ...c, amount_cents: newCents } : c
+                        );
+                        setCharges(updated);
+                        onChargesChange?.(updated);
+                      }}
+                    />
+                  ) : (
+                    <span className="font-medium">€{(charge.amount_cents / 100).toFixed(2)}</span>
+                  )}
+                  {isEditable && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleRemoveCharge(charge.id)}
+                    >
+                      <XCircle className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Separator />
+              <div className="flex items-center justify-between text-sm font-semibold">
+                <span>Total</span>
+                <span>€{totalFormatted}</span>
+              </div>
+            </div>
+          )}
+
+          {isEditable && (
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Description"
+                className="flex-1 h-8 text-sm"
+                value={newChargeDesc}
+                onChange={(e) => setNewChargeDesc(e.target.value)}
+              />
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                className="w-24 h-8 text-sm"
+                value={newChargeAmount}
+                onChange={(e) => setNewChargeAmount(e.target.value)}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={handleAddCharge}
+                disabled={!newChargeDesc.trim() || !newChargeAmount}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+
+          {charges.length === 0 && !isEditable && (
+            <p className="text-sm text-muted-foreground">No charges recorded.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Follow-up */}
       <Card className="border-muted/60">
