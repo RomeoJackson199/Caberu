@@ -1,39 +1,35 @@
 
 
-## Fix: Google Calendar Slot Blocking - Time Matching Bug
+# Google Calendar Integration — Settings Tab
 
-### Root Cause
-The edge function generates times from the event's actual start (e.g., `08:15, 08:45, 09:15...`) but the database stores slots at fixed 30-minute boundaries (`09:00, 09:30, 10:00...`). The `.in('slot_time', slotsToBlock)` query matches **zero rows** because the times never align.
+## Current State
 
-Confirmed by testing: I triggered the sync just now. It returned 2 events for Thursday March 12:
-- "Untitled Event": 07:00-08:00 Brussels
-- "app": 08:15-15:45 Brussels
+The backend is **fully built** already:
+- `google-calendar-oauth` edge function: handles OAuth flow (get-auth-url, exchange-code, disconnect)
+- `google-calendar-sync` edge function: fetches events from Google Calendar, blocks appointment slots
+- `google-calendar-create-event` edge function: pushes appointments to Google Calendar (create/update/delete)
+- `GoogleCalendarCallback.tsx` page + route already exists
+- `DentistAppointmentsManagement.tsx` already queries and displays Google Calendar events
+- `useAppointments.tsx` already syncs new/updated appointments to Google Calendar
 
-But all 16 slots for that date remain `is_available: true`.
+**What's missing:** A settings UI to connect/disconnect Google Calendar. There's no component for this yet.
 
-### Fix
+## Plan
 
-**File**: `supabase/functions/google-calendar-sync/index.ts`
+### 1. Create `GoogleCalendarSettings` component
+New file: `src/components/settings/GoogleCalendarSettings.tsx`
 
-Replace the timed-event blocking logic. Instead of generating times from the event start and using `.in()`, use **range-based filtering** with `.gte()` and `.lt()` on `slot_time`:
+- Fetches current dentist's `google_calendar_connected` and `google_calendar_last_sync` from the `dentists` table
+- **Connect button**: Calls `google-calendar-oauth` with `action: 'get-auth-url'`, opens popup, listens for `google-calendar-auth` message, exchanges code via `action: 'exchange-code'`
+- **Disconnect button**: Calls `google-calendar-oauth` with `action: 'disconnect'`
+- Shows connection status using the existing `CalendarSyncStatus` component
+- Manual "Sync Now" button that invokes `google-calendar-sync`
+- Explains bidirectional sync: appointments push to Google, Google events block slots
 
-```typescript
-// For a timed event 08:15-15:45 Brussels:
-// Block all slots where slot_time >= 08:00 (rounded down) AND slot_time < 15:45
-// This correctly catches 09:00, 09:30, 10:00, ..., 15:30
+### 2. Add "Calendar" tab to `DentistSettings.tsx`
+- Add a new tab between "Appts" and "Team" with a Calendar icon
+- Renders the `GoogleCalendarSettings` component
+- Include it in the tab param validation list
 
-// 1. Convert event start/end to Brussels time strings
-// 2. Round start DOWN to nearest 30-min boundary  
-// 3. Use .gte('slot_time', roundedStart).lt('slot_time', endTime)
-```
-
-This approach:
-- Correctly blocks all slots that overlap with the event regardless of event start alignment
-- Handles events that start/end at non-30-minute boundaries (e.g., 08:15, 15:45)
-- Uses simple range comparison instead of exact time matching
-
-### No other changes needed
-- The `get_available_slots` RPC already correctly checks `appointment_slots` for blocks
-- The `validate_slot_availability` trigger already permits Google Calendar blocks
-- The `ensure_daily_slots` logic is working fine
+No backend changes needed — everything is already wired up.
 
