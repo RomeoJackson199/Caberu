@@ -335,7 +335,7 @@ serve(async (req) => {
           const logPayload: any = {
             business_id: actionBusinessId,
             call_sid: body.call_sid,
-            caller_phone: maskPhone(body.caller_phone || ''),
+            patient_phone: maskPhone(body.caller_phone || body.patient_phone || ''),
             started_at: body.started_at || new Date().toISOString(),
             ended_at: body.ended_at || new Date().toISOString(),
             duration_seconds: body.duration_seconds || 0,
