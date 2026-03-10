@@ -339,10 +339,10 @@ export function GoogleCalendarSettings() {
               <p className="text-sm text-muted-foreground">No calendars found. Try reconnecting.</p>
             )}
 
-            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30">
-              <Info className="h-4 w-4 text-amber-600" />
+            <Alert className="border-destructive/50 bg-destructive/5">
+              <Info className="h-4 w-4 text-destructive" />
               <AlertDescription className="text-sm">
-                <strong className="text-amber-800 dark:text-amber-400">⚠️ Only use a work-only calendar!</strong>
+                <strong className="text-destructive">⚠️ Only use a work-only calendar!</strong>
                 <span className="block mt-1 text-muted-foreground">
                   Every event on the selected calendar will <strong className="text-foreground">block patient booking slots</strong>. 
                   If this calendar contains personal events (gym, dinner, errands…), patients won't be able to book during those times. 
