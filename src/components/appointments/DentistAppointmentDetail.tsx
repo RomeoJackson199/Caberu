@@ -152,15 +152,14 @@ export function DentistAppointmentDetail({
       if (data?.content) {
         try {
           const parsedCharges = JSON.parse(data.content);
-
           setCharges(parsedCharges);
         } catch {
           // Invalid JSON in draft charges, ignore
         }
-      } else {
-
-        setCharges([]);
       }
+      // When no draft charges are found, leave charges as-is (initial [] state).
+      // Calling setCharges([]) here creates a new array reference that propagates
+      // to ConsultationWorkspace and disrupts the service-price auto-populate.
     };
 
     loadDraftCharges();
