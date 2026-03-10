@@ -60,6 +60,7 @@ export function DayCalendarView({
         .select("*")
         .gte("appointment_date", dayStart.toISOString())
         .lte("appointment_date", dayEnd.toISOString())
+        .neq("status", "cancelled")
         .order("appointment_date", { ascending: true });
 
       // Filter by specific dentist unless showing all

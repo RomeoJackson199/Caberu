@@ -132,17 +132,27 @@ serve(async (req) => {
       .update({ google_calendar_last_sync: new Date().toISOString() })
       .eq('id', dentist.id);
     
-    // Transform events to match our format
-    const events = (calendarData.items || []).map((event: any) => ({
-      id: `gcal_${event.id}`,
-      summary: event.summary || 'Untitled Event',
-      description: event.description || '',
-      start: event.start?.dateTime || event.start?.date,
-      end: event.end?.dateTime || event.end?.date,
-      location: event.location || '',
-      isGoogleCalendarEvent: true,
-      isAllDay: !event.start?.dateTime, // All-day events don't have dateTime
-    }));
+    // Transform events to match our format, filtering out events that originated from the practice
+    const events = (calendarData.items || [])
+      .filter((event: any) => {
+        // Skip events that were pushed from the practice system (they have appointmentId in extendedProperties)
+        const privateProps = event.extendedProperties?.private;
+        if (privateProps?.appointmentId) {
+          console.log(`Skipping practice-originated event: ${event.summary} (appointmentId: ${privateProps.appointmentId})`);
+          return false;
+        }
+        return true;
+      })
+      .map((event: any) => ({
+        id: `gcal_${event.id}`,
+        summary: event.summary || 'Untitled Event',
+        description: event.description || '',
+        start: event.start?.dateTime || event.start?.date,
+        end: event.end?.dateTime || event.end?.date,
+        location: event.location || '',
+        isGoogleCalendarEvent: true,
+        isAllDay: !event.start?.dateTime,
+      }));
 
     console.log(`Found ${events.length} Google Calendar events`);
 

@@ -80,6 +80,7 @@ export function WeeklyCalendarView({
         .select("*")
         .gte("appointment_date", weekStart.toISOString())
         .lt("appointment_date", weekEnd.toISOString())
+        .neq("status", "cancelled")
         .order("appointment_date", { ascending: true });
 
       // Filter by specific dentist unless showing all
