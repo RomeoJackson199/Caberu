@@ -232,14 +232,20 @@ serve(async (req) => {
         const endTime = new Date(event.end);
         const slotDate = event.start.substring(0, 10); // YYYY-MM-DD
         
-        // Generate all 30-minute slot times for this event
+        // Generate all 30-minute slot times for this event in Brussels timezone
         const slotsToBlock: string[] = [];
         let currentSlot = new Date(startTime);
         
         while (currentSlot < endTime) {
-          const hours = currentSlot.getHours().toString().padStart(2, '0');
-          const minutes = currentSlot.getMinutes().toString().padStart(2, '0');
-          slotsToBlock.push(`${hours}:${minutes}`);
+          // Format time in Europe/Brussels timezone to match slot_time format (HH:MM:SS)
+          const brusselsTime = currentSlot.toLocaleString('en-GB', { 
+            timeZone: 'Europe/Brussels', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit',
+            hour12: false 
+          });
+          slotsToBlock.push(brusselsTime);
           currentSlot.setMinutes(currentSlot.getMinutes() + 30);
         }
         
