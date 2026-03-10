@@ -1167,16 +1167,28 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
 
   // Validate requested time against actual availability
   if (finalDentistId && businessId) {
-    const { data: availSlots } = await supabase.rpc('get_available_slots', {
+    const { data: availSlots, error: slotErr } = await supabase.rpc('get_available_slots', {
       p_dentist_id: finalDentistId,
       p_date: parsedDate,
       p_business_id: businessId,
       p_service_id: service_id || null,
     });
-    const slotTimes = (availSlots || []).map((s: any) => typeof s === 'string' ? s.substring(0, 5) : (s.slot_start || s.slot_time || s.start_time || '').toString().substring(0, 5));
-    if (slotTimes.length > 0 && !slotTimes.includes(parsedTime)) {
-      console.warn(`Requested time ${parsedTime} not in available slots [${slotTimes.slice(0, 5).join(', ')}...], using first available`);
-      parsedTime = slotTimes[0];
+    if (slotErr) {
+      console.warn('Slot validation RPC error:', slotErr.message);
+    } else if (availSlots && availSlots.length > 0) {
+      // Log raw slot data for debugging
+      console.log('Raw slot sample:', JSON.stringify(availSlots[0]));
+      const slotTimes = availSlots.map((s: any) => {
+        const raw = typeof s === 'string' ? s : (s.slot_start || s.slot_time || s.start_time || s.time || '');
+        return raw.toString().substring(0, 5);
+      });
+      console.log(`Validating time ${parsedTime} against slots: [${slotTimes.join(', ')}]`);
+      if (!slotTimes.includes(parsedTime)) {
+        console.warn(`Requested time ${parsedTime} not in available slots, using first available: ${slotTimes[0]}`);
+        parsedTime = slotTimes[0];
+      } else {
+        console.log(`Time ${parsedTime} confirmed available`);
+      }
     }
   }
 
