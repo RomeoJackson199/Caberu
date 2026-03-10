@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, CheckCircle, XCircle, RefreshCw, ExternalLink, ArrowRightLeft, ListChecks } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, RefreshCw, ExternalLink, ArrowRightLeft, ListChecks, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentDentist } from '@/hooks/useCurrentDentist';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
