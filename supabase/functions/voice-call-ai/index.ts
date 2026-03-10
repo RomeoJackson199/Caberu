@@ -1165,6 +1165,21 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
 
   if (!finalDentistId) return { error: 'No dentist available' };
 
+  // Validate requested time against actual availability
+  if (finalDentistId && businessId) {
+    const { data: availSlots } = await supabase.rpc('get_available_slots', {
+      p_dentist_id: finalDentistId,
+      p_date: parsedDate,
+      p_business_id: businessId,
+      p_service_id: service_id || null,
+    });
+    const slotTimes = (availSlots || []).map((s: any) => typeof s === 'string' ? s.substring(0, 5) : (s.slot_start || s.slot_time || s.start_time || '').toString().substring(0, 5));
+    if (slotTimes.length > 0 && !slotTimes.includes(parsedTime)) {
+      console.warn(`Requested time ${parsedTime} not in available slots [${slotTimes.slice(0, 5).join(', ')}...], using first available`);
+      parsedTime = slotTimes[0];
+    }
+  }
+
   // Resolve business ID if still missing
   if (!resolvedBusinessId) {
     const { data: dentistRec } = await supabase.from('dentists').select('profile_id').eq('id', finalDentistId).single();
