@@ -29,7 +29,7 @@ Object.defineProperty(globalThis, 'IntersectionObserver', {
 });
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
+(globalThis as any).ResizeObserver = class ResizeObserver {
   constructor() { }
   disconnect() { }
   observe() { }
