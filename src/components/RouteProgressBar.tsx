@@ -24,7 +24,7 @@ export function RouteProgressBar() {
     const timer3 = setTimeout(() => setProgress(90), 600);
 
     // Complete progress
-    let timer5: NodeJS.Timeout | null = null;
+    let timer5: ReturnType<typeof setTimeout> | null = null;
     const timer4 = setTimeout(() => {
       setProgress(100);
       timer5 = setTimeout(() => setIsAnimating(false), 300);

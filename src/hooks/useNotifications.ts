@@ -32,7 +32,7 @@ export const useNotifications = (userIdProp?: string): UseNotificationsReturn =>
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced state update to prevent rapid changes
   const debouncedSetUnreadCount = useCallback((newCount: number) => {

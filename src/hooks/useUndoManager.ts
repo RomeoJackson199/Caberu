@@ -41,7 +41,7 @@ interface UndoAction<T = any> {
 }
 
 interface PendingAction<T = any> {
-  timeoutId: NodeJS.Timeout;
+  timeoutId: ReturnType<typeof setTimeout>;
   action: () => Promise<T>;
   undo: () => Promise<void>;
   invalidateQueries?: string[][];
