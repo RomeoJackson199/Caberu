@@ -1119,23 +1119,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
     } else parsedTime = '09:00';
   }
 
-  // Validate requested time against actual availability
-  if (finalDentistId || dentist_id) {
-    const checkDentistId = dentist_id || finalDentistId;
-    if (checkDentistId && businessId) {
-      const { data: availSlots } = await supabase.rpc('get_available_slots', {
-        p_dentist_id: checkDentistId,
-        p_date: parsedDate,
-        p_business_id: businessId,
-        p_service_id: service_id || null,
-      });
-      const slotTimes = (availSlots || []).map((s: any) => typeof s === 'string' ? s.substring(0, 5) : (s.slot_start || s.slot_time || s.start_time || '').toString().substring(0, 5));
-      if (slotTimes.length > 0 && !slotTimes.includes(parsedTime)) {
-        console.warn(`Requested time ${parsedTime} not in available slots [${slotTimes.slice(0, 5).join(', ')}...], using first available`);
-        parsedTime = slotTimes[0];
-      }
-    }
-  }
+
 
   // Look up service duration for multi-slot booking
   let serviceDuration = 30;
