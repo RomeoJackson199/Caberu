@@ -908,12 +908,16 @@ export type Database = {
           ended_at: string | null
           errors: Json | null
           id: string
+          input_audio_tokens: number | null
+          input_text_tokens: number | null
           openai_audio_input_tokens: number | null
           openai_audio_output_tokens: number | null
           openai_cost_eur: number | null
           openai_cost_usd: number | null
           openai_text_input_tokens: number | null
           openai_text_output_tokens: number | null
+          output_audio_tokens: number | null
+          output_text_tokens: number | null
           patient_phone: string | null
           started_at: string | null
           status: string | null
@@ -932,12 +936,16 @@ export type Database = {
           ended_at?: string | null
           errors?: Json | null
           id?: string
+          input_audio_tokens?: number | null
+          input_text_tokens?: number | null
           openai_audio_input_tokens?: number | null
           openai_audio_output_tokens?: number | null
           openai_cost_eur?: number | null
           openai_cost_usd?: number | null
           openai_text_input_tokens?: number | null
           openai_text_output_tokens?: number | null
+          output_audio_tokens?: number | null
+          output_text_tokens?: number | null
           patient_phone?: string | null
           started_at?: string | null
           status?: string | null
@@ -956,12 +964,16 @@ export type Database = {
           ended_at?: string | null
           errors?: Json | null
           id?: string
+          input_audio_tokens?: number | null
+          input_text_tokens?: number | null
           openai_audio_input_tokens?: number | null
           openai_audio_output_tokens?: number | null
           openai_cost_eur?: number | null
           openai_cost_usd?: number | null
           openai_text_input_tokens?: number | null
           openai_text_output_tokens?: number | null
+          output_audio_tokens?: number | null
+          output_text_tokens?: number | null
           patient_phone?: string | null
           started_at?: string | null
           status?: string | null
