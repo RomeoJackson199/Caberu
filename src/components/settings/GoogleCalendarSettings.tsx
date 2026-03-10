@@ -291,15 +291,6 @@ export function GoogleCalendarSettings() {
         </CardContent>
       </Card>
 
-      {/* Calendar Warning */}
-      {isConnected && (
-        <Alert className="border-amber-500/30 bg-amber-500/5">
-          <Info className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Important:</strong> Every event on your synced calendar will block patient booking slots. For best results, use a <strong>dedicated work calendar</strong> — personal events (e.g., gym, dinner) will prevent patients from booking those times. If your calendar has personal events, consider using the <strong>"Practice → Google only"</strong> sync direction below.
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Calendar Selection */}
       {isConnected && (
@@ -313,7 +304,7 @@ export function GoogleCalendarSettings() {
               Choose which Google Calendar to sync with your practice.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {loadingCalendars ? (
               <div className="animate-pulse h-10 bg-muted rounded w-64" />
             ) : calendars.length > 0 ? (
@@ -347,6 +338,18 @@ export function GoogleCalendarSettings() {
             ) : (
               <p className="text-sm text-muted-foreground">No calendars found. Try reconnecting.</p>
             )}
+
+            <Alert className="border-destructive/50 bg-destructive/5">
+              <Info className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-sm">
+                <strong className="text-destructive">⚠️ Only use a work-only calendar!</strong>
+                <span className="block mt-1 text-muted-foreground">
+                  Every event on the selected calendar will <strong className="text-foreground">block patient booking slots</strong>. 
+                  If this calendar contains personal events (gym, dinner, errands…), patients won't be able to book during those times. 
+                  We recommend creating a <strong className="text-foreground">dedicated work calendar</strong> in Google Calendar and selecting it here.
+                </span>
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       )}
