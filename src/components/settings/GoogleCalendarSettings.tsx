@@ -9,6 +9,7 @@ import { useCurrentDentist } from '@/hooks/useCurrentDentist';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSyncStatus } from '@/components/stability/CalendarSyncStatus';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';

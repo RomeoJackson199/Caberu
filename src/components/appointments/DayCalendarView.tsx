@@ -49,6 +49,8 @@ export function DayCalendarView({
   // Fetch appointments for the day
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments-day", dentistId, businessId, format(currentDate, "yyyy-MM-dd")],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const dayStart = new Date(currentDate);
       dayStart.setHours(0, 0, 0, 0);
