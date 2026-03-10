@@ -303,19 +303,17 @@ export function GoogleCalendarSettings() {
             <CardDescription>
               Choose which Google Calendar to sync with your practice.
             </CardDescription>
-            <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-3">
-              <p className="text-sm font-semibold text-destructive flex items-center gap-1.5">
-                <Info className="h-4 w-4 shrink-0" />
-                ⚠️ Only use a work-only calendar!
-              </p>
-              <p className="text-sm text-muted-foreground mt-1.5 ml-5.5">
-                Every event on the selected calendar will <strong className="text-foreground">block patient booking slots</strong>. 
-                Personal events (gym, dinner, errands…) will prevent patients from booking. 
-                Use a <strong className="text-foreground">dedicated work calendar</strong> for best results.
-              </p>
-            </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <span className="font-semibold">Only use a work-only calendar!</span>{' '}
+                Every event on the selected calendar will <strong>block patient booking slots</strong>.
+                Personal events (gym, dinner, errands…) will prevent patients from booking.
+                Use a <strong>dedicated work calendar</strong> for best results.
+              </AlertDescription>
+            </Alert>
             {loadingCalendars ? (
               <div className="animate-pulse h-10 bg-muted rounded w-64" />
             ) : calendars.length > 0 ? (
