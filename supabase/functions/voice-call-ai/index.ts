@@ -1114,8 +1114,7 @@ async function bookAppointment(supabase: any, args: any, callerPhone: string, bu
     if (t) {
       let h = Math.max(0, Math.min(23, parseInt(t[1], 10)));
       let m = t[2] ? Math.max(0, Math.min(59, parseInt(t[2], 10))) : 0;
-      // Clamp to reasonable business hours (07:00 - 20:00)
-      if (h > 20) { h = 9; m = 0; console.warn(`Time ${parsedTime} out of business hours, defaulting to 09:00`); }
+      parsedTime = `${pad(h)}:${pad(m)}`;
       parsedTime = `${pad(h)}:${pad(m)}`;
     } else parsedTime = '09:00';
   }
