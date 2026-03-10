@@ -72,6 +72,8 @@ export function WeeklyCalendarView({
   // Fetch appointments with patient profiles in a single query (eliminates N+1 pattern)
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ["appointments-calendar", dentistId, businessId, format(weekStart, "yyyy-MM-dd"), dentistFilterId ?? "all"],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const weekEnd = addDays(weekStart, 7);
 

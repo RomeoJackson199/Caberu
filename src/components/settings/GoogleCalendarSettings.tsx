@@ -3,12 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, CheckCircle, XCircle, RefreshCw, ExternalLink, ArrowRightLeft, ListChecks } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, RefreshCw, ExternalLink, ArrowRightLeft, ListChecks, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentDentist } from '@/hooks/useCurrentDentist';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSyncStatus } from '@/components/stability/CalendarSyncStatus';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -289,6 +290,16 @@ export function GoogleCalendarSettings() {
           )}
         </CardContent>
       </Card>
+
+      {/* Calendar Warning */}
+      {isConnected && (
+        <Alert className="border-amber-500/30 bg-amber-500/5">
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Important:</strong> Every event on your synced calendar will block patient booking slots. For best results, use a <strong>dedicated work calendar</strong> — personal events (e.g., gym, dinner) will prevent patients from booking those times. If your calendar has personal events, consider using the <strong>"Practice → Google only"</strong> sync direction below.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Calendar Selection */}
       {isConnected && (

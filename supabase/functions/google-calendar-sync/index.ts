@@ -156,15 +156,42 @@ serve(async (req) => {
 
     console.log(`Found ${events.length} Google Calendar events`);
 
-    // First, reset all slots in the date range to available (unblock previously blocked slots)
+    // Collect unique dates from events so we can ensure slots exist before blocking
+    const uniqueDates = new Set<string>();
     const resetStartDate = new Date(startDate);
     const resetEndDate = new Date(endDate);
     let currentResetDate = new Date(resetStartDate);
 
     while (currentResetDate <= resetEndDate) {
-      const dateStr = currentResetDate.toISOString().split('T')[0];
-      console.log(`Resetting all slots to available for ${dateStr}`);
+      uniqueDates.add(currentResetDate.toISOString().split('T')[0]);
+      currentResetDate.setDate(currentResetDate.getDate() + 1);
+    }
 
+    // Look up business_id for this dentist (needed for ensure_daily_slots)
+    const { data: businessMember } = await supabase
+      .from('business_members')
+      .select('business_id')
+      .eq('profile_id', (await supabase.from('dentists').select('profile_id').eq('id', dentist.id).single()).data?.profile_id)
+      .limit(1)
+      .single();
+
+    const businessId = businessMember?.business_id;
+
+    // Ensure slots exist for each date before blocking
+    if (businessId) {
+      for (const dateStr of uniqueDates) {
+        console.log(`Ensuring slots exist for ${dateStr}`);
+        await supabase.rpc('ensure_daily_slots', {
+          p_dentist_id: dentist.id,
+          p_date: dateStr,
+          p_business_id: businessId,
+        });
+      }
+    }
+
+    // Reset all slots in the date range to available (unblock previously blocked slots)
+    for (const dateStr of uniqueDates) {
+      console.log(`Resetting all slots to available for ${dateStr}`);
       await supabase
         .from('appointment_slots')
         .update({
@@ -174,8 +201,6 @@ serve(async (req) => {
         .eq('dentist_id', dentist.id)
         .eq('slot_date', dateStr)
         .is('appointment_id', null); // Only reset slots that aren't already booked
-
-      currentResetDate.setDate(currentResetDate.getDate() + 1);
     }
 
     // Now block appointment slots for Google Calendar events
