@@ -227,41 +227,39 @@ serve(async (req) => {
           currentDate.setDate(currentDate.getDate() + 1);
         }
       } else if (event.start && event.end) {
-        // Handle timed events: block all 30-minute slots in the event duration
+        // Handle timed events: block all slots that overlap with the event
         const startTime = new Date(event.start);
         const endTime = new Date(event.end);
         const slotDate = event.start.substring(0, 10); // YYYY-MM-DD
         
-        // Generate all 30-minute slot times for this event in Brussels timezone
-        const slotsToBlock: string[] = [];
-        let currentSlot = new Date(startTime);
+        // Convert event start/end to Brussels timezone HH:MM:SS strings
+        const startBrussels = startTime.toLocaleString('en-GB', { 
+          timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
+        });
+        const endBrussels = endTime.toLocaleString('en-GB', { 
+          timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false 
+        });
         
-        while (currentSlot < endTime) {
-          // Format time in Europe/Brussels timezone to match slot_time format (HH:MM:SS)
-          const brusselsTime = currentSlot.toLocaleString('en-GB', { 
-            timeZone: 'Europe/Brussels', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit',
-            hour12: false 
-          });
-          slotsToBlock.push(brusselsTime);
-          currentSlot.setMinutes(currentSlot.getMinutes() + 30);
-        }
+        // Round start DOWN to nearest 30-min boundary so we catch overlapping slots
+        const [startH, startM] = startBrussels.split(':').map(Number);
+        const roundedMinute = Math.floor(startM / 30) * 30;
+        const roundedStart = `${String(startH).padStart(2, '0')}:${String(roundedMinute).padStart(2, '0')}:00`;
         
-        if (slotsToBlock.length > 0) {
-          console.log(`Blocking ${slotsToBlock.length} slots on ${slotDate}: ${slotsToBlock.join(', ')}`);
-          
-          await supabase
-            .from('appointment_slots')
-            .update({ 
-              is_available: false,
-              updated_at: new Date().toISOString()
-            })
-            .eq('dentist_id', dentist.id)
-            .eq('slot_date', slotDate)
-            .in('slot_time', slotsToBlock);
-        }
+        console.log(`Blocking slots on ${slotDate} where slot_time >= ${roundedStart} AND < ${endBrussels} (event: ${startBrussels}-${endBrussels})`);
+        
+        const { data: blockedSlots, error: blockError } = await supabase
+          .from('appointment_slots')
+          .update({ 
+            is_available: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('dentist_id', dentist.id)
+          .eq('slot_date', slotDate)
+          .gte('slot_time', roundedStart)
+          .lt('slot_time', endBrussels)
+          .select('slot_time');
+        
+        console.log(`Blocked ${blockedSlots?.length ?? 0} slots${blockError ? ` (error: ${blockError.message})` : ''}`);
       }
     }
     
