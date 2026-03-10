@@ -6111,10 +6111,16 @@ export type Database = {
         Args: { p_business_id: string; p_value: string }
         Returns: string
       }
-      ensure_daily_slots: {
-        Args: { p_date: string; p_dentist_id: string }
-        Returns: undefined
-      }
+      ensure_daily_slots:
+        | { Args: { p_date: string; p_dentist_id: string }; Returns: undefined }
+        | {
+            Args: {
+              p_business_id?: string
+              p_date: string
+              p_dentist_id: string
+            }
+            Returns: undefined
+          }
       fn_can_view_profile: {
         Args: { target_profile_id: string }
         Returns: boolean
