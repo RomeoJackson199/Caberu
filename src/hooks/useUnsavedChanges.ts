@@ -65,7 +65,7 @@ export function useUnsavedChanges({
   
   const lastActivityRef = useRef(Date.now());
   const warningShownRef = useRef(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset activity timer
   const resetTimer = useCallback(() => {

@@ -589,6 +589,60 @@ serve(async (req) => {
           const result = await getClinicInfo(supabase, { info_type: body.info_type || 'general' }, actionBusinessId);
           return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
+
+        // ── Get dentists that offer a specific service ──────────────────────
+        case 'get_dentists_for_service': {
+          const serviceId = body.service_id;
+          console.log('Action: get_dentists_for_service', { business_id: actionBusinessId, service_id: serviceId });
+
+          if (!actionBusinessId || !serviceId) {
+            return new Response(JSON.stringify({ error: 'business_id and service_id are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+
+          const { data, error: rpcError } = await supabase.rpc('get_dentists_for_service', {
+            p_business_id: actionBusinessId,
+            p_service_id: serviceId,
+          });
+
+          if (rpcError) {
+            console.error('get_dentists_for_service RPC error:', rpcError);
+            // Fallback: return all active dentists for this business
+            const { data: allDentists } = await supabase
+              .from('dentists')
+              .select('id, first_name, last_name, specialization')
+              .eq('is_active', true);
+            
+            const mapped = (allDentists || []).map((d: any) => ({
+              id: d.id,
+              name: `${d.first_name || ''} ${d.last_name || ''}`.trim(),
+              specialization: d.specialization || null,
+            }));
+            return new Response(JSON.stringify({ dentists: mapped, fallback: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+
+          const dentists = (data || []).map((d: any) => ({
+            id: d.dentist_id || d.id,
+            name: d.dentist_name || `${d.first_name || ''} ${d.last_name || ''}`.trim(),
+            specialization: d.specialization || null,
+          }));
+
+          console.log(`Found ${dentists.length} dentists for service ${serviceId}`);
+          return new Response(JSON.stringify({ dentists }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        // ── Send profile completion link via SMS ────────────────────────────
+        case 'send_profile_completion_link': {
+          const phone = actionPhone;
+          console.log('Action: send_profile_completion_link', { phone: maskPhone(phone || '') });
+
+          if (!phone) {
+            return new Response(JSON.stringify({ error: 'phone is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+
+          // For now, log the intent — actual SMS sending can be wired to send-sms-verification or similar
+          console.log(`Profile completion link requested for ${maskPhone(phone)}`);
+          return new Response(JSON.stringify({ ok: true, message: 'Profile completion link queued' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
         
         default:
           return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

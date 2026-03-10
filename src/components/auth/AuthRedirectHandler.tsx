@@ -21,7 +21,7 @@ export function AuthRedirectHandler() {
   const { loading: businessLoading, businessId, memberships, switchBusiness } = useBusinessContext();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'auth' | 'role' | 'business' | 'redirect'>('auth');
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Check for circular redirect issues
   const checkRedirectLoops = (): boolean => {

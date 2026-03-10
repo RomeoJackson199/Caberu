@@ -14,7 +14,7 @@ jest.mock('@/integrations/supabase/client', () => {
 });
 
 // Mock IntersectionObserver (with full shape)
-Object.defineProperty(global, 'IntersectionObserver', {
+Object.defineProperty(globalThis, 'IntersectionObserver', {
   writable: true,
   value: class IntersectionObserver {
     readonly root: Element | null = null;
@@ -29,7 +29,7 @@ Object.defineProperty(global, 'IntersectionObserver', {
 });
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
+(globalThis as any).ResizeObserver = class ResizeObserver {
   constructor() { }
   disconnect() { }
   observe() { }
