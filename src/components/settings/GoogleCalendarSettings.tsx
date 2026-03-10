@@ -295,7 +295,7 @@ export function GoogleCalendarSettings() {
       {/* Calendar Selection */}
       {isConnected && (
         <Card>
-          <CardHeader>
+          <CardHeader className="space-y-3">
             <CardTitle className="text-base flex items-center gap-2">
               <ListChecks className="h-4 w-4" />
               Calendar
@@ -303,20 +303,19 @@ export function GoogleCalendarSettings() {
             <CardDescription>
               Choose which Google Calendar to sync with your practice.
             </CardDescription>
+            <div className="rounded-lg border-2 border-destructive bg-destructive/10 p-3">
+              <p className="text-sm font-semibold text-destructive flex items-center gap-1.5">
+                <Info className="h-4 w-4 shrink-0" />
+                ⚠️ Only use a work-only calendar!
+              </p>
+              <p className="text-sm text-muted-foreground mt-1.5 ml-5.5">
+                Every event on the selected calendar will <strong className="text-foreground">block patient booking slots</strong>. 
+                Personal events (gym, dinner, errands…) will prevent patients from booking. 
+                Use a <strong className="text-foreground">dedicated work calendar</strong> for best results.
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Alert className="border-destructive/50 bg-destructive/5">
-              <Info className="h-4 w-4 text-destructive" />
-              <AlertDescription className="text-sm">
-                <strong className="text-destructive">⚠️ Only use a work-only calendar!</strong>
-                <span className="block mt-1 text-muted-foreground">
-                  Every event on the selected calendar will <strong className="text-foreground">block patient booking slots</strong>. 
-                  If this calendar contains personal events (gym, dinner, errands…), patients won't be able to book during those times. 
-                  We recommend creating a <strong className="text-foreground">dedicated work calendar</strong> in Google Calendar and selecting it here.
-                </span>
-              </AlertDescription>
-            </Alert>
-
             {loadingCalendars ? (
               <div className="animate-pulse h-10 bg-muted rounded w-64" />
             ) : calendars.length > 0 ? (
