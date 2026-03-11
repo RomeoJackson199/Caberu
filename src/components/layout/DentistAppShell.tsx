@@ -260,7 +260,7 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-10 px-3 gap-3 hover:bg-muted/50" data-tour="user-menu">
                 <div className="flex flex-col items-end text-right">
-                  <span className="text-sm font-semibold truncate max-w-[140px]">{userName || 'Account'}</span>
+                  <span className="text-sm font-semibold truncate max-w-[200px]">{userName || 'Account'}</span>
                   <span className="text-xs text-muted-foreground">{t.provider || 'Provider'}</span>
                 </div>
                 <Avatar className="h-9 w-9">
