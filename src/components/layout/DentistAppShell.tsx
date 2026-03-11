@@ -256,24 +256,20 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
           })}
         </nav>
 
-        {/* Right Section: Search, Notifications, User */}
+        {/* Right Section: User */}
         <div className="ml-auto flex items-center gap-3">
-          {/* Notifications */}
-          <NotificationBell />
-
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 px-2 gap-2" data-tour="user-menu">
-                <Avatar className="h-7 w-7">
-                  <AvatarImage src={userProfilePicture || undefined} />
-                  <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col items-start text-left">
-                  <span className="text-xs font-medium truncate max-w-[120px]">{userName || 'Account'}</span>
-                  <span className="text-[10px] text-muted-foreground">{t.provider || 'Dentist'}</span>
+              <Button variant="ghost" className="h-10 px-3 gap-3 hover:bg-muted/50" data-tour="user-menu">
+                <div className="flex flex-col items-end text-right">
+                  <span className="text-sm font-semibold truncate max-w-[140px]">{userName || 'Account'}</span>
+                  <span className="text-xs text-muted-foreground">{t.provider || 'Provider'}</span>
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={userProfilePicture || undefined} />
+                  <AvatarFallback className="text-xs font-medium">{userInitials}</AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
