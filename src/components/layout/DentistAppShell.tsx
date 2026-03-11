@@ -254,20 +254,20 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
         </nav>
 
         {/* Right Section: User */}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center">
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-10 px-3 gap-3 hover:bg-muted/50" data-tour="user-menu">
-                <div className="flex flex-col items-end text-right">
-                  <span className="text-sm font-semibold truncate max-w-[200px]">{userName || 'Account'}</span>
+              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors" data-tour="user-menu">
+                <div className="flex flex-col items-end text-right shrink-0">
+                  <span className="text-sm font-semibold whitespace-nowrap">{userName || 'Account'}</span>
                   <span className="text-xs text-muted-foreground">{t.provider || 'Provider'}</span>
                 </div>
-                <Avatar className="h-9 w-9">
+                <Avatar className="h-9 w-9 shrink-0">
                   <AvatarImage src={userProfilePicture || undefined} />
                   <AvatarFallback className="text-xs font-medium">{userInitials}</AvatarFallback>
                 </Avatar>
-              </Button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuLabel>Account</DropdownMenuLabel>
