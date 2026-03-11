@@ -1622,6 +1622,7 @@ export type Database = {
       dentists: {
         Row: {
           average_rating: number
+          business_id: string | null
           clinic_address: string | null
           communication_score: number
           created_at: string
@@ -1648,6 +1649,7 @@ export type Database = {
         }
         Insert: {
           average_rating?: number
+          business_id?: string | null
           clinic_address?: string | null
           communication_score?: number
           created_at?: string
@@ -1674,6 +1676,7 @@ export type Database = {
         }
         Update: {
           average_rating?: number
+          business_id?: string | null
           clinic_address?: string | null
           communication_score?: number
           created_at?: string
@@ -1699,6 +1702,20 @@ export type Database = {
           wait_time_score?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "dentists_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dentists_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dentists_profile_id_fkey"
             columns: ["profile_id"]
@@ -6264,6 +6281,7 @@ export type Database = {
           dentist_first_name: string
           dentist_id: string
           dentist_last_name: string
+          dentist_name: string
           next_available_date: string
           next_available_time: string
           profile_picture_url: string

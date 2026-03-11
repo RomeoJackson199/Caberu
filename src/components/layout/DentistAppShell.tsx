@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, MessageSquare, ChevronDown, Bell } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ import { useTemplateNavigation } from "@/hooks/useTemplateNavigation";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/hooks/useLanguage";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
+
 export type DentistSection = 'dashboard' | 'patients' | 'appointments' | 'employees' | 'messages' | 'clinical' | 'schedule' | 'payments' | 'analytics' | 'reports' | 'imports' | 'branding' | 'security' | 'users' | 'team' | 'settings' | 'services' | 'admin-analytics';
 interface DentistAppShellProps {
   activeSection: DentistSection;
@@ -133,9 +133,6 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <NotificationBell />
-
             {/* User Avatar */}
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -256,24 +253,20 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
           })}
         </nav>
 
-        {/* Right Section: Search, Notifications, User */}
+        {/* Right Section: User */}
         <div className="ml-auto flex items-center gap-3">
-          {/* Notifications */}
-          <NotificationBell />
-
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 px-2 gap-2" data-tour="user-menu">
-                <Avatar className="h-7 w-7">
-                  <AvatarImage src={userProfilePicture || undefined} />
-                  <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col items-start text-left">
-                  <span className="text-xs font-medium truncate max-w-[120px]">{userName || 'Account'}</span>
-                  <span className="text-[10px] text-muted-foreground">{t.provider || 'Dentist'}</span>
+              <Button variant="ghost" className="h-10 px-3 gap-3 hover:bg-muted/50" data-tour="user-menu">
+                <div className="flex flex-col items-end text-right">
+                  <span className="text-sm font-semibold truncate max-w-[140px]">{userName || 'Account'}</span>
+                  <span className="text-xs text-muted-foreground">{t.provider || 'Provider'}</span>
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={userProfilePicture || undefined} />
+                  <AvatarFallback className="text-xs font-medium">{userInitials}</AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
