@@ -133,9 +133,6 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <NotificationBell />
-
             {/* User Avatar */}
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
