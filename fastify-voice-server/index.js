@@ -54,6 +54,41 @@ function getBrusselsTime() {
     return now.toLocaleTimeString('en-GB', { timeZone: BUSINESS_TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+// Get Brussels day-of-week index (0=Sun, 6=Sat)
+function getBrusselsDow() {
+    const now = new Date();
+    const dayName = now.toLocaleDateString('en-US', { timeZone: BUSINESS_TIMEZONE, weekday: 'long' });
+    const map = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+    return map[dayName] ?? 0;
+}
+
+// Pre-calculate next occurrence of each weekday (always tomorrow or later) in Brussels timezone
+function getNextWeekdayDates() {
+    const now = new Date();
+    // Parse Brussels "today" components
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: BUSINESS_TIMEZONE,
+        year: 'numeric', month: 'numeric', day: 'numeric'
+    }).formatToParts(now);
+    let year = 0, month = 0, day = 0;
+    for (const p of parts) {
+        if (p.type === 'year') year = parseInt(p.value);
+        if (p.type === 'month') month = parseInt(p.value);
+        if (p.type === 'day') day = parseInt(p.value);
+    }
+    const todayDow = getBrusselsDow();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const result = {};
+    for (let dow = 0; dow < 7; dow++) {
+        let delta = (dow - todayDow + 7) % 7;
+        if (delta === 0) delta = 7; // never today, always next week
+        const d = new Date(Date.UTC(year, month - 1, day + delta));
+        const dateStr = d.toISOString().split('T')[0];
+        result[dayNames[dow]] = dateStr;
+    }
+    return result;
+}
+
 // ─── Utility: Phone masking ───────────────────────────────────────────────────
 function maskPhone(phone) {
     if (!phone || phone.length < 4) return phone || '';
@@ -216,6 +251,12 @@ function buildSystemMessage(ctx) {
     const today = getBrusselsDate();           // e.g. "2026-03-10"
     const dayName = getBrusselsDayName();      // e.g. "Tuesday"
     const currentTime = getBrusselsTime();     // e.g. "14:30"
+    const nextDates = getNextWeekdayDates();   // pre-calculated next occurrence of each day
+    
+    // Build a lookup table so AI never has to calculate dates
+    const dateTableLines = Object.entries(nextDates)
+        .map(([d, date]) => `  ${d} → ${date}`)
+        .join('\n');
     
     const business = ctx?.business || {};
     const services = ctx?.services || [];
@@ -263,7 +304,10 @@ function buildSystemMessage(ctx) {
     return `You are ${receptionistName}, a phone receptionist for ${businessName}. Keep every reply to 1–2 short sentences maximum. Be warm, natural, and efficient.
 
 Today is ${dayName}, ${today} (current time: ${currentTime}, Brussels timezone).
-IMPORTANT: All dates and times are in Europe/Brussels timezone (CET/CEST). When calculating dates, remember that today is ${dayName}. For example, if today is ${dayName} ${today}, then "next ${dayName}" means 7 days from now (${today} + 7 days). Always double-check that the day name matches the date before presenting it to the patient.
+
+NEXT OCCURRENCE OF EACH DAY (use these EXACT dates — do NOT calculate yourself):
+${dateTableLines}
+When the patient says a weekday, look up the EXACT date from the table above. NEVER calculate dates manually.
 
 ${servicesBlock}
 
@@ -286,9 +330,9 @@ Introduce yourself warmly: "Hello! I'm the receptionist for ${businessName}. One
 4. Ask: "What day of the week works best for you?" (e.g. Monday, Tuesday, etc.)
    - IMPORTANT: Only accept weekdays when the clinic is OPEN (check the CLINIC OPEN DAYS above). If the patient picks a day the clinic is closed, say "I'm sorry, we're closed on [day]. How about [nearest open day]?"
 5. When the patient says a weekday (e.g. "Thursday"):
-   - Calculate the NEXT occurrence of that weekday (never today, always tomorrow or later)
-   - CRITICAL: Verify the day name matches the date. Today is ${dayName} ${today}. Count forward carefully.
-   - Set start_date = next occurrence of that weekday, end_date = 14 days after start_date
+   - Look up the EXACT date from the NEXT OCCURRENCE table above. Do NOT calculate it yourself.
+   - If the patient says "next week", "the week after", or any date more than 7 days out, call the resolve_weekday tool with the weekday name and weeks_ahead (1 = next week, 2 = two weeks out, etc.). Use the date it returns.
+   - Set start_date = that date, end_date = 14 days after start_date
    - Call check_appointment_availability with dentist_id, service_id, start_date, end_date
    - From the results, pick at most 3 slots on that specific weekday and present them naturally: "I have Thursday March 13th at 9am, Thursday March 20th at 10:30am, or Thursday March 20th at 2pm. Which one works for you?"
    - If no slots are found for that weekday, suggest trying a different day.
@@ -429,12 +473,64 @@ const TOOLS = [
             },
             required: ['phone']
         }
+    },
+    {
+        type: 'function',
+        name: 'resolve_weekday',
+        description: 'Convert a weekday name to the exact YYYY-MM-DD date. Use this when a patient requests a date more than 7 days from now or says "next [weekday]", "the [weekday] after", or any date beyond this week. Returns the exact date so you never need to calculate dates yourself.',
+        parameters: {
+            type: 'object',
+            properties: {
+                weekday: { type: 'string', description: 'The weekday name: monday, tuesday, wednesday, thursday, friday, saturday, sunday' },
+                weeks_ahead: { type: 'integer', description: 'How many weeks ahead. 0 = this coming occurrence (default), 1 = the one after that, 2 = two weeks out, etc.' }
+            },
+            required: ['weekday']
+        }
     }
 ];
 
 // ─── Execute tool call via edge function ─────────────────────────────────────
 async function executeToolCall(name, args, callerPhone, businessId) {
     console.log(`Tool call: ${name}`, JSON.stringify(args).substring(0, 200));
+
+    // ── resolve_weekday: handled locally, no edge function needed ──────────
+    if (name === 'resolve_weekday') {
+        const weekday = (args.weekday || '').toLowerCase().trim();
+        const weeksAhead = parseInt(args.weeks_ahead || '0', 10);
+        const dayMap = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+        const targetDow = dayMap[weekday];
+
+        if (targetDow === undefined) {
+            return { error: `Unknown weekday: ${weekday}` };
+        }
+
+        // Use Brussels timezone
+        const now = new Date();
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: BUSINESS_TIMEZONE,
+            year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'long'
+        }).formatToParts(now);
+        let year = 0, month = 0, day = 0, todayDow = 0;
+        const dowNames = { Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6 };
+        for (const p of parts) {
+            if (p.type === 'year') year = parseInt(p.value);
+            if (p.type === 'month') month = parseInt(p.value);
+            if (p.type === 'day') day = parseInt(p.value);
+            if (p.type === 'weekday') todayDow = dowNames[p.value] ?? 0;
+        }
+
+        let delta = (targetDow - todayDow + 7) % 7;
+        if (delta === 0) delta = 7; // never today
+        delta += weeksAhead * 7;
+
+        const d = new Date(Date.UTC(year, month - 1, day + delta));
+        const dateStr = d.toISOString().split('T')[0];
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const resultDayName = dayNames[d.getUTCDay()];
+
+        console.log(`resolve_weekday: ${weekday} (+${weeksAhead}w) → ${resultDayName} ${dateStr}`);
+        return { date: dateStr, day_name: resultDayName, weekday: weekday, weeks_ahead: weeksAhead };
+    }
 
     const actionMap = {
         lookup_patient:                 'lookup_patient',
@@ -561,6 +657,9 @@ fastify.register(async (fastify) => {
 
         let sessionData = null;
         let callerMuted = true; // Mute caller until initial lookup completes
+        let sessionInitialized = false;
+        let openAiReady = false;
+        let twilioStarted = false;
         const pendingToolCalls = new Map();
 
         const openAiWs = new WebSocket(
@@ -572,6 +671,14 @@ fastify.register(async (fastify) => {
                 },
             }
         );
+
+        // Only initialize when BOTH OpenAI WS is open AND Twilio start event received
+        const tryInitialize = () => {
+            if (openAiReady && twilioStarted && !sessionInitialized) {
+                sessionInitialized = true;
+                initializeSession();
+            }
+        };
 
         const initializeSession = async () => {
             businessId = await lookupBusinessByPhone(forwardedFrom);
@@ -712,7 +819,8 @@ fastify.register(async (fastify) => {
         // ── OpenAI WebSocket events ─────────────────────────────────────────
         openAiWs.on('open', () => {
             console.log('Connected to OpenAI Realtime API');
-            setTimeout(initializeSession, 100);
+            openAiReady = true;
+            tryInitialize();
         });
 
         openAiWs.on('message', async (data) => {
@@ -851,7 +959,8 @@ fastify.register(async (fastify) => {
                         console.log(`Stream started. SID: ${streamSid}, CallSid: ${callSid}, Caller: ${callerPhone || 'unknown'}, ForwardedFrom: ${forwardedFrom || 'none'}`);
                         responseStartTimestampTwilio = null;
                         latestMediaTimestamp = 0;
-                        initializeSession();
+                        twilioStarted = true;
+                        tryInitialize();
                         break;
 
                     case 'media':
