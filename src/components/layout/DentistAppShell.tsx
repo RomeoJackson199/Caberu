@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, MessageSquare, ChevronDown, Bell } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
