@@ -26,7 +26,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { formatClinicTime } from '@/lib/timezone';
+import { formatClinicTime, createAppointmentDateTimeFromStrings } from '@/lib/timezone';
 import { NotificationService } from '@/lib/notificationService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
@@ -507,7 +507,10 @@ export function CompletionDialog({
         await createAppointmentWithNotification({
           patient_id: appointment.patient_id,
           dentist_id: appointment.dentist_id,
-          appointment_date: new Date(formData.followUpDate).toISOString(),
+          appointment_date: createAppointmentDateTimeFromStrings(
+            formData.followUpDate.split('T')[0],
+            formData.followUpDate.split('T')[1] || '09:00'
+          ).toISOString(),
           reason: 'Follow-up appointment',
           status: 'confirmed',
           duration_minutes: 30
