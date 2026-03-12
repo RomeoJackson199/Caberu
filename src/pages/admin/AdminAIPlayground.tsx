@@ -56,14 +56,22 @@ async function getAuthToken(): Promise<string> {
   return data.session?.access_token || '';
 }
 
-// Helper: get Caberu business ID
+// Helper: get Caberu business ID (tries slug 'caberu', then falls back to first business)
 async function getCaberuBusinessId(): Promise<string | null> {
   const { data } = await supabase
     .from('businesses')
     .select('id')
     .eq('slug', 'caberu')
     .single();
-  return data?.id || null;
+  if (data?.id) return data.id;
+  // Fallback: get the first active business
+  const { data: fallback } = await supabase
+    .from('businesses')
+    .select('id')
+    .eq('status', 'active')
+    .limit(1)
+    .single();
+  return fallback?.id || null;
 }
 
 // Helper: call playground edge function (non-streaming)
@@ -368,6 +376,12 @@ function VoiceAITab() {
   const startCall = async () => {
     setCallStatus('connecting');
     setTranscript([]);
+
+    if (!businessId) {
+      toast({ title: 'Voice AI Error', description: 'No business found. Please ensure a business exists in the database.', variant: 'destructive' });
+      setCallStatus('idle');
+      return;
+    }
 
     try {
       const token = await getAuthToken();
