@@ -383,6 +383,7 @@ function VoiceAITab() {
       return;
     }
 
+    try {
       const token = await getAuthToken();
       const resp = await fetch(PLAYGROUND_URL, {
         method: 'POST',
