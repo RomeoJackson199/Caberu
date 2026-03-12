@@ -115,6 +115,7 @@ const AdminFeatureFlags = lazy(() => import("./pages/admin/AdminFeatureFlags"));
 const AdminRevenue = lazy(() => import("./pages/admin/AdminRevenue"));
 const AdminAuditLog = lazy(() => import("./pages/admin/AdminAuditLog"));
 const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
+const AdminAIPlayground = lazy(() => import("./pages/admin/AdminAIPlayground"));
 const AdminBusinessDetail = lazy(() => import("./pages/admin/AdminBusinessDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminSmsManagement = lazy(() => import("./pages/admin/AdminSmsManagement"));
