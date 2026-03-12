@@ -30,6 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as DateRangeCalendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 import { format, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getHours, getDay, eachDayOfInterval } from "date-fns";
+import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, LineChart, Line, PieChart, Pie, Legend, Cell } from "recharts";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -1087,7 +1088,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
                       const slots = await fetchDentistAvailability(dentistId, checkDate, true);
                       const firstAvail = slots.find(s => s.available);
                       if (firstAvail) {
-                        const dt = new Date(`${checkDate.toISOString().split('T')[0]}T${firstAvail.time}`);
+                        const dt = createAppointmentDateTimeFromStrings(checkDate.toISOString().split('T')[0], firstAvail.time);
                         const { data: appt, error: apptErr } = await supabase
                           .from('appointments')
                           .insert({

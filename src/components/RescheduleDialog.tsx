@@ -12,6 +12,7 @@ import {
   CheckCircle, Sun, Sunset, AlertCircle,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
+import { createAppointmentDateTimeFromStrings } from "@/lib/timezone";
 import { isPublicHoliday } from "@/lib/belgianHolidays";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -232,11 +233,10 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
       // Direct update — the reschedule_appointment RPC is not deployed
-      const newDateTime = `${dateStr}T${selectedTime}:00`;
       const { error: updateError } = await supabase
         .from('appointments')
         .update({
-          appointment_date: new Date(`${newDateTime}+01:00`).toISOString(),
+          appointment_date: createAppointmentDateTimeFromStrings(dateStr, selectedTime).toISOString(),
           status: 'confirmed',
           updated_at: new Date().toISOString(),
         })
