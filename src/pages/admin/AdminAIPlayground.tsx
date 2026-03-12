@@ -27,6 +27,7 @@ import {
   Loader2,
   RotateCcw,
   Zap,
+  Wrench,
 } from 'lucide-react';
 
 const PLAYGROUND_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-playground`;
@@ -337,31 +338,62 @@ function TextChatTab() {
 }
 
 // ─── Voice AI Tab ────────────────────────────────────────────
+interface VoiceTranscriptItem {
+  speaker: string;
+  text: string;
+  toolCalls?: { tool: string; args: any; result: any }[];
+  isLoading?: boolean;
+}
+
 function VoiceAITab() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [callStatus, setCallStatus] = useState<'idle' | 'connecting' | 'active' | 'ended'>('idle');
-  const [transcript, setTranscript] = useState<{ speaker: string; text: string }[]>([]);
+  const [transcript, setTranscript] = useState<VoiceTranscriptItem[]>([]);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  const [model, setModel] = useState('google/gemini-2.5-flash');
+  const [voiceInput, setVoiceInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [showToolDetails, setShowToolDetails] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     getCaberuBusinessId().then(setBusinessId);
   }, []);
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [transcript]);
+
   const startCall = async () => {
     setCallStatus('connecting');
     setTranscript([]);
 
     try {
-      // Use the voice-call-ai edge function to simulate a call
       const token = await getAuthToken();
-      
-      // For now, we demonstrate the voice AI by sending text messages through the voice-call-ai system
+      const resp = await fetch(PLAYGROUND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          action: 'voice_chat',
+          messages: [{ role: 'user', content: '[System: The patient just called. Greet them warmly and introduce yourself.]' }],
+          model,
+          business_id: businessId,
+        }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Connection failed' }));
+        throw new Error(err.error);
+      }
+
+      const data = await resp.json();
       setCallStatus('active');
       setIsCallActive(true);
-      setTranscript(prev => [...prev, { 
-        speaker: 'Eric (AI)', 
-        text: 'Hello! Thank you for calling Caberu Dental Clinic. This is Eric, your AI receptionist. How can I help you today?' 
+      setTranscript([{
+        speaker: 'Eric (AI)',
+        text: data.response,
+        toolCalls: data.tool_calls?.length > 0 ? data.tool_calls : undefined,
       }]);
     } catch (err: any) {
       toast({ title: 'Voice AI Error', description: err.message, variant: 'destructive' });
@@ -375,80 +407,108 @@ function VoiceAITab() {
   };
 
   const sendVoiceMessage = async (text: string) => {
-    if (!text.trim()) return;
+    if (!text.trim() || isSending) return;
+    setIsSending(true);
 
-    setTranscript(prev => [...prev, { speaker: 'You (Patient)', text }]);
+    setTranscript(prev => [...prev, { speaker: 'You (Patient)', text }, { speaker: 'Eric (AI)', text: '', isLoading: true }]);
 
     try {
-      // Route through the voice-call-ai function's chat capability
       const token = await getAuthToken();
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-playground`, {
+      const conversationMessages = transcript
+        .filter(t => !t.isLoading)
+        .map(t => ({
+          role: t.speaker.includes('AI') ? 'assistant' as const : 'user' as const,
+          content: t.text,
+        }));
+      conversationMessages.push({ role: 'user', content: text });
+
+      const resp = await fetch(PLAYGROUND_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          action: 'chat',
-          messages: transcript.map(t => ({
-            role: t.speaker.includes('AI') ? 'assistant' : 'user',
-            content: t.text,
-          })).concat([{ role: 'user', content: text }]),
-          model: 'google/gemini-2.5-flash',
-          system_prompt: `You are Eric, an AI phone receptionist for Caberu Dental Clinic in Belgium. 
-You are speaking on a phone call, so keep responses conversational and concise (1-3 sentences).
-You help patients book appointments, answer questions about services, and provide clinic information.
-Always be warm, professional, and helpful. Speak naturally as if on a phone call.
-When booking, ask for: symptoms/reason, preferred dentist, preferred day, and preferred time.
-The clinic is open Monday-Friday 9:00-18:00 in the Europe/Brussels timezone.`,
+          action: 'voice_chat',
+          messages: conversationMessages,
+          model,
           business_id: businessId,
-          stream: false,
         }),
       });
 
-      if (!resp.ok) throw new Error('Failed to get voice AI response');
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(err.error);
+      }
+
       const data = await resp.json();
-      setTranscript(prev => [...prev, { speaker: 'Eric (AI)', text: data.response }]);
+      setTranscript(prev => {
+        const updated = prev.filter(t => !t.isLoading);
+        return [...updated, {
+          speaker: 'Eric (AI)',
+          text: data.response,
+          toolCalls: data.tool_calls?.length > 0 ? data.tool_calls : undefined,
+        }];
+      });
     } catch (err: any) {
+      setTranscript(prev => prev.filter(t => !t.isLoading));
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSending(false);
     }
   };
-
-  const [voiceInput, setVoiceInput] = useState('');
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Phone className="h-5 w-5" />
-            Voice AI Receptionist — Eric
-          </CardTitle>
-          <CardDescription>
-            Simulate a phone call to the Caberu clinic. Eric will respond as the AI receptionist.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Phone className="h-5 w-5" />
+                Voice AI Receptionist — Eric
+              </CardTitle>
+              <CardDescription>
+                Simulate a phone call to Caberu. Uses <code className="text-[10px] bg-muted px-1 rounded">voice-call-ai</code> tools for real booking, patient lookup, etc.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {AI_MODELS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button
+                variant={showToolDetails ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowToolDetails(!showToolDetails)}
+                className="gap-1 h-8 text-xs"
+              >
+                <Wrench className="h-3 w-3" />
+                Tools
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Call controls */}
-          <div className="flex items-center justify-center gap-4 py-4">
-            <div className={`h-20 w-20 rounded-full flex items-center justify-center transition-all duration-500 ${
+          <div className="flex items-center justify-center gap-4 py-3">
+            <div className={`h-16 w-16 rounded-full flex items-center justify-center transition-all duration-500 ${
               isCallActive
                 ? 'bg-destructive/10 ring-4 ring-destructive/20 animate-pulse'
                 : callStatus === 'connecting'
                 ? 'bg-primary/10 ring-4 ring-primary/20 animate-pulse'
                 : 'bg-muted'
             }`}>
-              {isCallActive ? (
-                <Phone className="h-8 w-8 text-destructive" />
-              ) : (
-                <Phone className="h-8 w-8 text-muted-foreground" />
-              )}
+              <Phone className={`h-7 w-7 ${isCallActive ? 'text-destructive' : 'text-muted-foreground'}`} />
             </div>
 
             {callStatus === 'idle' || callStatus === 'ended' ? (
               <Button size="lg" onClick={startCall} className="gap-2">
                 <Play className="h-4 w-4" />
                 {callStatus === 'ended' ? 'New Call' : 'Start Call'}
+              </Button>
+            ) : callStatus === 'connecting' ? (
+              <Button size="lg" disabled className="gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Connecting...
               </Button>
             ) : (
               <Button size="lg" variant="destructive" onClick={endCall} className="gap-2">
@@ -460,30 +520,60 @@ The clinic is open Monday-Friday 9:00-18:00 in the Europe/Brussels timezone.`,
 
           {callStatus !== 'idle' && (
             <Badge variant={isCallActive ? 'default' : 'secondary'} className="mx-auto block w-fit">
-              {callStatus === 'connecting' && 'Connecting...'}
-              {callStatus === 'active' && '🔴 Call Active'}
+              {callStatus === 'connecting' && 'Connecting to Eric...'}
+              {callStatus === 'active' && '🔴 Call Active — voice-call-ai tools enabled'}
               {callStatus === 'ended' && 'Call Ended'}
             </Badge>
           )}
 
-          {/* Transcript */}
           {transcript.length > 0 && (
             <>
               <Separator />
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold">Call Transcript</h4>
-                <ScrollArea className="h-56 rounded-lg border bg-muted/20 p-3">
+                <ScrollArea className="h-[350px] rounded-lg border bg-muted/20 p-3" ref={scrollRef}>
                   <div className="space-y-3">
                     {transcript.map((line, i) => (
-                      <div key={i} className={`flex ${line.speaker.includes('AI') ? 'justify-start' : 'justify-end'}`}>
-                        <div className={`max-w-[80%] rounded-xl px-3 py-2 ${
-                          line.speaker.includes('AI')
-                            ? 'bg-card border shadow-sm'
-                            : 'bg-primary text-primary-foreground'
-                        }`}>
-                          <p className="text-[10px] font-medium opacity-70 mb-0.5">{line.speaker}</p>
-                          <p className="text-sm">{line.text}</p>
+                      <div key={i}>
+                        <div className={`flex ${line.speaker.includes('AI') ? 'justify-start' : 'justify-end'}`}>
+                          <div className={`max-w-[85%] rounded-xl px-3 py-2 ${
+                            line.isLoading
+                              ? 'bg-card border shadow-sm'
+                              : line.speaker.includes('AI')
+                              ? 'bg-card border shadow-sm'
+                              : 'bg-primary text-primary-foreground'
+                          }`}>
+                            <p className="text-[10px] font-medium opacity-70 mb-0.5">{line.speaker}</p>
+                            {line.isLoading ? (
+                              <div className="flex items-center gap-2 text-muted-foreground py-1">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <span className="text-xs">Eric is thinking...</span>
+                              </div>
+                            ) : (
+                              <p className="text-sm">{line.text}</p>
+                            )}
+                          </div>
                         </div>
+                        {showToolDetails && line.toolCalls && line.toolCalls.length > 0 && (
+                          <div className="ml-4 mt-1 space-y-1">
+                            {line.toolCalls.map((tc, j) => (
+                              <div key={j} className="rounded-md border border-dashed bg-muted/30 px-2.5 py-1.5 text-[11px]">
+                                <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
+                                  <Wrench className="h-3 w-3" />
+                                  {tc.tool}
+                                </div>
+                                <div className="mt-0.5 font-mono text-muted-foreground/70 break-all">
+                                  <span className="opacity-60">args:</span> {JSON.stringify(tc.args).substring(0, 120)}
+                                  {JSON.stringify(tc.args).length > 120 && '...'}
+                                </div>
+                                <div className="mt-0.5 font-mono text-muted-foreground/70 break-all">
+                                  <span className="opacity-60">result:</span> {JSON.stringify(tc.result).substring(0, 150)}
+                                  {JSON.stringify(tc.result).length > 150 && '...'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -492,7 +582,6 @@ The clinic is open Monday-Friday 9:00-18:00 in the Europe/Brussels timezone.`,
             </>
           )}
 
-          {/* Voice input (text simulation) */}
           {isCallActive && (
             <div className="flex gap-2">
               <Input
@@ -500,18 +589,19 @@ The clinic is open Monday-Friday 9:00-18:00 in the Europe/Brussels timezone.`,
                 value={voiceInput}
                 onChange={e => setVoiceInput(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !isSending) {
                     sendVoiceMessage(voiceInput);
                     setVoiceInput('');
                   }
                 }}
+                disabled={isSending}
               />
               <Button
                 onClick={() => { sendVoiceMessage(voiceInput); setVoiceInput(''); }}
-                disabled={!voiceInput.trim()}
+                disabled={!voiceInput.trim() || isSending}
                 size="icon"
               >
-                <Send className="h-4 w-4" />
+                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
           )}
