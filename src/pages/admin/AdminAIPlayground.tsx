@@ -27,6 +27,7 @@ import {
   Loader2,
   RotateCcw,
   Zap,
+  Wrench,
 } from 'lucide-react';
 
 const PLAYGROUND_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-playground`;
