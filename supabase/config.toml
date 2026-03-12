@@ -144,3 +144,6 @@ verify_jwt = false
 
 [functions.verify-sms-code]
 verify_jwt = false
+
+[functions.ai-playground]
+verify_jwt = false
