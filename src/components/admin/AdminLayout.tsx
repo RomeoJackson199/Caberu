@@ -25,6 +25,7 @@ import {
   DollarSign,
   ScrollText,
   Bot,
+  Sparkles,
   MessageSquareText,
   Bell,
   Menu,
