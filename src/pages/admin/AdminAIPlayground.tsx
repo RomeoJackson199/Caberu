@@ -377,7 +377,12 @@ function VoiceAITab() {
     setCallStatus('connecting');
     setTranscript([]);
 
-    try {
+    if (!businessId) {
+      toast({ title: 'Voice AI Error', description: 'No business found. Please ensure a business exists in the database.', variant: 'destructive' });
+      setCallStatus('idle');
+      return;
+    }
+
       const token = await getAuthToken();
       const resp = await fetch(PLAYGROUND_URL, {
         method: 'POST',
