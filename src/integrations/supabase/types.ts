@@ -4619,6 +4619,122 @@ export type Database = {
           },
         ]
       }
+      whatsapp_messages: {
+        Row: {
+          body: string | null
+          business_id: string
+          created_at: string | null
+          direction: string
+          id: string
+          is_read: boolean | null
+          patient_id: string | null
+          phone: string
+          status: string | null
+          template_name: string | null
+          template_sid: string | null
+          twilio_sid: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          body?: string | null
+          business_id: string
+          created_at?: string | null
+          direction: string
+          id?: string
+          is_read?: boolean | null
+          patient_id?: string | null
+          phone: string
+          status?: string | null
+          template_name?: string | null
+          template_sid?: string | null
+          twilio_sid?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string | null
+          business_id?: string
+          created_at?: string | null
+          direction?: string
+          id?: string
+          is_read?: boolean | null
+          patient_id?: string | null
+          phone?: string
+          status?: string | null
+          template_name?: string | null
+          template_sid?: string | null
+          twilio_sid?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "secure_profiles_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_sessions: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          id: string
+          last_inbound_at: string | null
+          phone: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          id?: string
+          last_inbound_at?: string | null
+          phone: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          id?: string
+          last_inbound_at?: string | null
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_sessions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       admin_encryption_key_status: {

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home as HomeIcon, Calendar, CreditCard, Settings as SettingsIcon, Bot, LogOut, Info, PanelLeft, MessageSquare } from "lucide-react";
+import { Home as HomeIcon, Calendar, CreditCard, Settings as SettingsIcon, Bot, LogOut, Info, PanelLeft } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { FloatingBookingButton } from "@/components/patients/FloatingBookingButton";
@@ -18,7 +18,7 @@ import { UserTour, useUserTour } from "@/components/UserTour";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
-export type PatientSection = 'home' | 'assistant' | 'appointments' | 'payments' | 'messages' | 'settings';
+export type PatientSection = 'home' | 'assistant' | 'appointments' | 'payments' | 'settings';
 
 interface PatientAppShellProps {
   activeSection: PatientSection;
@@ -63,12 +63,6 @@ const getNavItems = (hasAIChat: boolean): Array<{
       label: 'Payments',
       icon: CreditCard,
       color: 'text-green-600 bg-green-100 dark:bg-green-900/30'
-    },
-    {
-      id: 'messages' as PatientSection,
-      label: 'Messages',
-      icon: MessageSquare,
-      color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30'
     }
   );
 

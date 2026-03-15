@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { format } from 'https://esm.sh/date-fns@3.6.0';
 import { toZonedTime } from 'https://esm.sh/date-fns-tz@3.1.3';
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
-import { sendSms } from '../_shared/sms.ts';
+import { sendWhatsAppTemplate, WHATSAPP_TEMPLATES } from '../_shared/whatsapp.ts';
 
 serve(async (req) => {
     const origin = req.headers.get('Origin');
@@ -115,47 +115,34 @@ serve(async (req) => {
             ? `Great news! Your appointment has been approved.\n\nDate: ${formattedDate}\nTime: ${formattedTime}\nReason: ${appointment.reason || 'General consultation'}`
             : `Unfortunately, your appointment request could not be confirmed.\n\nDate: ${formattedDate}\nTime: ${formattedTime}\n\nPlease book a new appointment at a different time.`;
 
-        // Try to send email but don't fail if it doesn't work
-        let emailSent = false;
-        try {
-            const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
-                body: {
-                    to: patientEmail,
-                    subject: subject,
-                    message: message,
-                    messageType: 'system',
-                    isSystemNotification: true,
-                },
-                headers: {
-                    Authorization: `Bearer ${supabaseServiceKey}`,
-                },
-            });
-
-            if (!emailError) {
-                emailSent = true;
-                console.log('Email sent successfully');
-            } else {
-                console.error('Email error:', emailError);
-            }
-        } catch (emailCatchError) {
-            console.error('Failed to invoke email function:', emailCatchError);
-        }
-
-        // Send SMS alongside email
-        let smsSent = false;
+        // Send WhatsApp notification instead of email/SMS
+        let whatsappSent = false;
         if (patientPhone) {
-            try {
-                const smsBody = decision === 'approved'
-                    ? `✅ Your appointment on ${formattedDate} at ${formattedTime} has been confirmed! Please arrive 10 minutes early.`
-                    : `Your appointment request for ${formattedDate} at ${formattedTime} could not be confirmed. Please book a new appointment.`;
-                const smsResult = await sendSms({ to: patientPhone, message: smsBody });
-                smsSent = smsResult.success;
-                if (smsResult.success) {
-                    console.log('📱 Decision SMS sent successfully');
-                }
-            } catch (smsCatchError) {
-                console.warn('📱 SMS send failed (non-critical):', smsCatchError);
+          try {
+            // Get business_id for the appointment
+            const { data: aptFull } = await supabase
+              .from('appointments')
+              .select('business_id')
+              .eq('id', appointment_id)
+              .single();
+
+            if (aptFull?.business_id) {
+              const waResult = await sendWhatsAppTemplate({
+                phone: patientPhone,
+                contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_CONFIRMATION,
+                contentVariables: { "1": patientName || 'Patient' },
+                businessId: aptFull.business_id,
+                patientId: appointment.patient_id,
+                templateName: decision === 'approved' ? 'appointment_confirmation' : 'appointment_update',
+              });
+              whatsappSent = waResult.success;
+              if (waResult.success) {
+                console.log('✅ WhatsApp decision notification sent');
+              }
             }
+          } catch (waCatchError) {
+            console.warn('WhatsApp send failed (non-critical):', waCatchError);
+          }
         }
 
         // Create in-app notification and send push notification
@@ -233,9 +220,8 @@ serve(async (req) => {
         return new Response(
             JSON.stringify({
                 success: true,
-                message: emailSent ? `Email sent to ${patientEmail}` : 'Appointment processed but email not sent',
-                email_sent: emailSent,
-                sms_sent: smsSent,
+                message: whatsappSent ? `WhatsApp sent to ${patientPhone}` : 'Appointment processed but WhatsApp not sent',
+                whatsapp_sent: whatsappSent,
                 notification_created: notificationCreated,
                 push_sent: pushSent,
                 appointment_id: appointment_id,

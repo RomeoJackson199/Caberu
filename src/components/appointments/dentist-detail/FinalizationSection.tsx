@@ -81,7 +81,7 @@ export function FinalizationSection({
       // Get patient's user_id for notification
       const { data: patient, error: patientError } = await supabase
         .from('secure_profiles_view')
-        .select('user_id, first_name, email')
+        .select('user_id, first_name, email, phone')
         .eq('id', patientId)
         .single();
 
@@ -98,25 +98,21 @@ export function FinalizationSection({
         ? format(new Date(appointmentDate), 'MMMM d, yyyy')
         : 'your recent visit';
       
-      // Call edge function directly - use 'system' type to avoid using confirmation template
-      const invoiceText = totalCents > 0 
-        ? `An invoice for $${(totalCents / 100).toFixed(2)} has been generated.` 
-        : '';
-      
-      const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
+      // Send WhatsApp completion notification
+      const { error: waError } = await supabase.functions.invoke('whatsapp-send', {
         body: {
-          to: patient.email,
-          subject: 'Your Appointment Has Been Completed',
-          message: `Dear ${patient.first_name || 'Patient'},\n\nYour appointment on ${formattedDate} has been successfully completed and finalized. ${invoiceText}\n\nThank you for visiting us! If you have any questions about your visit, please don't hesitate to contact us.\n\nBest regards,\nYour Dental Team`,
-          messageType: 'system', // Use system to avoid confirmation template
-          patientId: patientId,
-          dentistId: dentistId,
-          appointmentDate: formattedDate,
+          action: 'send_template',
+          phone: patient.phone,
+          content_sid: 'HXb42396a8935679888be901c6511d346e',
+          content_variables: { "1": patient.first_name || 'Patient' },
+          business_id: businessId,
+          patient_id: patientId,
+          template_name: 'appointment_confirmation',
         }
       });
 
-      if (emailError) {
-        console.error('❌ Email notification error:', emailError);
+      if (waError) {
+        console.error('❌ WhatsApp notification error:', waError);
       }
 
       // Also create an in-app notification

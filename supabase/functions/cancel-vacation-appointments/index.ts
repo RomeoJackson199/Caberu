@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { format } from 'https://esm.sh/date-fns@3.6.0';
 import { toZonedTime } from 'https://esm.sh/date-fns-tz@3.1.3';
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
-import { sendSms } from '../_shared/sms.ts';
+import { sendWhatsAppFreeform, sendWhatsAppTemplate, WHATSAPP_TEMPLATES } from '../_shared/whatsapp.ts';
 
 const CLINIC_TIMEZONE = 'Europe/Brussels';
 
@@ -127,69 +127,48 @@ serve(async (req) => {
                 console.error(`Failed to release slot for appointment ${apt.id}:`, slotError);
             }
 
-            // Send cancellation email to patient
-            const patientEmail = (apt.profiles as any)?.email;
+            // Send WhatsApp cancellation notification to patient
+            const patientPhone = (apt.profiles as any)?.phone;
             const patientName = (apt.profiles as any)?.first_name || 'Patient';
 
-            if (patientEmail) {
+            if (patientPhone) {
                 const appointmentDate = new Date(apt.appointment_date);
                 const brusselsTime = toZonedTime(appointmentDate, CLINIC_TIMEZONE);
                 const formattedDate = format(brusselsTime, 'EEEE, MMMM d, yyyy');
                 const formattedTime = format(brusselsTime, 'h:mm a');
 
-                const subject = '⚠️ Your Appointment Has Been Cancelled';
-                const message = `Dear ${patientName},
+                // Get business_id for this appointment
+                const { data: aptBiz } = await supabase
+                    .from('appointments')
+                    .select('business_id')
+                    .eq('id', apt.id)
+                    .single();
 
-We regret to inform you that your appointment has been cancelled.
+                if (aptBiz?.business_id) {
+                    const cancelMsg = `⚠️ Your appointment on ${formattedDate} at ${formattedTime} has been cancelled. ${cancellationReason} Please book a new appointment at your convenience.`;
 
-${cancellationReason}
-
-Cancelled Appointment Details:
-- Date: ${formattedDate}
-- Time: ${formattedTime}
-- Reason: ${apt.reason || 'General consultation'}
-
-We sincerely apologize for any inconvenience this may cause. Please book a new appointment at your earliest convenience.
-
-Best regards,
-${dentistName}'s Office`;
-
-                try {
-                    const { error: emailError } = await supabase.functions.invoke('send-email-notification', {
-                        body: {
-                            to: patientEmail,
-                            subject: subject,
-                            message: message,
-                            messageType: 'system',
-                            isSystemNotification: true,
-                        },
-                        headers: {
-                            Authorization: `Bearer ${supabaseServiceKey}`,
-                        },
+                    // Try freeform first (within 24h window), fall back silently
+                    const freeResult = await sendWhatsAppFreeform({
+                        phone: patientPhone,
+                        body: cancelMsg,
+                        businessId: aptBiz.business_id,
+                        patientId: (apt.profiles as any)?.id,
                     });
 
-                    if (!emailError) {
-                        emailsSent.push(patientEmail);
-                        console.log(`Cancellation email sent to ${patientEmail}`);
-                    } else {
-                        console.error(`Failed to send email to ${patientEmail}:`, emailError);
+                    if (!freeResult.success) {
+                        // Window closed, send confirmation template as fallback
+                        await sendWhatsAppTemplate({
+                            phone: patientPhone,
+                            contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_CONFIRMATION,
+                            contentVariables: { "1": patientName },
+                            businessId: aptBiz.business_id,
+                            patientId: (apt.profiles as any)?.id,
+                            templateName: 'appointment_cancellation_fallback',
+                        });
                     }
-                } catch (emailCatchError) {
-                    console.error(`Failed to invoke email function for ${patientEmail}:`, emailCatchError);
-                }
 
-                // Send SMS alongside email
-                const patientPhone = (apt.profiles as any)?.phone;
-                if (patientPhone) {
-                    try {
-                        const smsBody = `⚠️ Your appointment on ${formattedDate} at ${formattedTime} has been cancelled. ${cancellationReason} Please book a new appointment at your convenience.`;
-                        const smsResult = await sendSms({ to: patientPhone, message: smsBody, messageType: 'appointment_cancelled' });
-                        if (smsResult.success) {
-                            console.log(`📱 Cancellation SMS sent to ${patientPhone}`);
-                        }
-                    } catch (smsErr) {
-                        console.warn(`📱 SMS error for ${patientPhone}:`, smsErr);
-                    }
+                    emailsSent.push(patientPhone);
+                    console.log(`WhatsApp cancellation sent to ${patientPhone}`);
                 }
             }
         }

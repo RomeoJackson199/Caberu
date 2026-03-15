@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, UserCog, Settings as SettingsIcon, LogOut, Phone } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -63,8 +63,8 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
     path: '/dentist/appointments'
   }, {
     id: 'messages' as DentistSection,
-    label: 'Messages',
-    icon: MessageSquare,
+    label: 'WhatsApp',
+    icon: Phone,
     path: '/dentist/messages'
   }], [t]);
 

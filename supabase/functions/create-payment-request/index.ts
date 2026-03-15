@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCorsHeaders, handleCorsPreflightSafe } from '../_shared/cors.ts';
-import { sendSms } from '../_shared/sms.ts';
+import { sendWhatsAppTemplate, WHATSAPP_TEMPLATES } from '../_shared/whatsapp.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -235,51 +235,45 @@ serve(async (req) => {
     // Update session ID via adminClient
     await adminClient.from('payment_requests').update({ stripe_session_id: session.id }).eq('id', newPaymentRequestId);
 
-    // 5. Send Notification
-    const shouldSend = send_now === true || channels?.includes('email');
+    // 5. Send WhatsApp Notification
+    const shouldSend = send_now === true || channels?.includes('email') || channels?.includes('whatsapp');
     if (shouldSend) {
       await adminClient.from('payment_requests').update({ status: 'sent' }).eq('id', newPaymentRequestId);
 
-      if (!channels || channels.includes('email')) {
+      // Get patient phone for WhatsApp
+      let patientPhone: string | null = null;
+      if (patient_id) {
         try {
-          await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email-notification`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
-            body: JSON.stringify({
-              to: patient_email, subject: `Payment request from your dentist`,
-              message: `Thanks for your visit.\n\nAmount: €${(totalAmount / 100).toFixed(2)}\nDescription: ${description}\n\nPay here: ${session.url}`,
-              messageType: 'payment_reminder', patientId: patient_id, dentistId: dentist_id, businessId: business_id,
-            })
+          const { data: patientProfile } = await adminClient
+            .from('profiles')
+            .select('phone')
+            .eq('id', patient_id)
+            .single();
+          patientPhone = patientProfile?.phone || null;
+        } catch (_) {}
+      }
+
+      if (patientPhone && business_id) {
+        try {
+          const waResult = await sendWhatsAppTemplate({
+            phone: patientPhone,
+            contentSid: WHATSAPP_TEMPLATES.PAYMENT_REMINDER,
+            contentVariables: { "1": `€${(totalAmount / 100).toFixed(2)}` },
+            businessId: business_id,
+            patientId: patient_id,
+            templateName: 'payment_reminder',
           });
-          // Insert reminder via adminClient
+          if (waResult.success) {
+            console.log(`✅ WhatsApp payment request sent for ${newPaymentRequestId}`);
+          }
           await adminClient.from('payment_reminders').insert({
-            payment_request_id: newPaymentRequestId, template_key: 'friendly', channel: 'email',
+            payment_request_id: newPaymentRequestId, template_key: 'friendly', channel: 'whatsapp',
             status: 'sent', sent_at: new Date().toISOString(), metadata: { totalAmount, description }
           });
           await adminClient.from('payment_requests').update({ last_reminder_at: new Date().toISOString() }).eq('id', newPaymentRequestId);
-        } catch (e) { console.error('Failed to send email:', e); }
-
-        // Send SMS alongside email if patient has a phone
-        if (patient_id) {
-          try {
-            const { data: patientProfile } = await adminClient
-              .from('profiles')
-              .select('phone')
-              .eq('id', patient_id)
-              .single();
-
-            if (patientProfile?.phone) {
-              const smsBody = `Payment request: €${(totalAmount / 100).toFixed(2)} for ${description || 'your visit'}. Pay securely here: ${session.url}`;
-              const smsResult = await sendSms({ to: patientProfile.phone, message: smsBody, messageType: 'payment_request' });
-              if (smsResult.success) {
-                console.log(`📱 Payment request SMS sent for ${newPaymentRequestId}`);
-              }
-            }
-          } catch (smsErr) {
-            console.warn(`📱 SMS failed for payment request:`, smsErr);
-          }
-        }
+        } catch (e) { console.error('Failed to send WhatsApp:', e); }
       }
+
       await adminClient.from('payment_requests').update({ status: 'pending' }).eq('id', newPaymentRequestId);
     }
 
