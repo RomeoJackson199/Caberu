@@ -66,6 +66,35 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('Origin'));
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    // Detect Twilio voice webhooks (sent as application/x-www-form-urlencoded with CallSid)
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await req.formData();
+      const callSid = formData.get('CallSid')?.toString();
+      if (callSid) {
+        // This is a Twilio voice webhook — look up the business and return TwiML
+        const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+        const toNumber = formData.get('To')?.toString() || '';
+        const callerPhone = formData.get('From')?.toString() || '';
+        const cleanTo = toNumber.replace(/[^0-9+]/g, '');
+        const { data: bp } = await supabase
+          .from('business_phone_numbers')
+          .select('business_id, businesses!inner(name, ai_greeting)')
+          .eq('phone_number', cleanTo)
+          .eq('is_active', true)
+          .maybeSingle();
+        const businessName = (bp as any)?.businesses?.name || 'the practice';
+        const greeting = (bp as any)?.businesses?.ai_greeting || `Thank you for calling ${businessName}. Our team will be with you shortly.`;
+        if (bp?.business_id) {
+          await supabase.from('voice_call_logs').upsert(
+            { business_id: bp.business_id, call_sid: callSid, caller_phone: callerPhone, status: 'in_progress', started_at: new Date().toISOString() },
+            { onConflict: 'call_sid' }
+          );
+        }
+        const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="alice" language="en-US">${greeting}</Say><Pause length="1"/><Say voice="alice" language="en-US">Please hold while we connect you.</Say></Response>`;
+        return new Response(twiml, { headers: { 'Content-Type': 'text/xml' } });
+      }
+    }
     const raw = await req.text(); let incoming: any; try { incoming = raw ? JSON.parse(raw) : {}; } catch { incoming = {}; }
     const body = (incoming && typeof incoming === 'object' && 'body' in incoming && incoming.body) ? incoming.body : incoming;
     const rlBusinessId = body?.business_id || 'unknown'; const rlCallSid = body?.call_sid || 'nosid';

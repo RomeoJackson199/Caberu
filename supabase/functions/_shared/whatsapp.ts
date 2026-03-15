@@ -57,7 +57,9 @@ function getSupabase() {
 function getTwilioAuth() {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const whatsappNumber = Deno.env.get('TWILIO_WHATSAPP_NUMBER') || 'whatsapp:+13609670625';
+  const rawNumber = Deno.env.get('TWILIO_WHATSAPP_NUMBER') || '+13609670625';
+  // Always ensure the From number has the whatsapp: channel prefix
+  const whatsappNumber = rawNumber.startsWith('whatsapp:') ? rawNumber : `whatsapp:${rawNumber}`;
   if (!accountSid || !authToken) return null;
   return { accountSid, authToken, whatsappNumber };
 }
