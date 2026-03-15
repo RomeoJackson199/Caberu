@@ -15,7 +15,7 @@ interface Conversation {
   patient_id: string | null;
   patient_name: string;
   last_message: string;
-  last_message_at: string;
+  last_message_at: string | null;
   last_direction: string;
   unread_count: number;
   window_open: boolean;
@@ -59,12 +59,49 @@ export default function WhatsAppInbox() {
   const fetchConversations = useCallback(async () => {
     if (!businessId) return;
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-send', {
-        body: { action: 'get_conversations', business_id: businessId },
-      });
-      if (!error && data?.conversations) {
-        setConversations(data.conversations);
+      const [{ data, error }, { data: aptData }] = await Promise.all([
+        supabase.functions.invoke('whatsapp-send', {
+          body: { action: 'get_conversations', business_id: businessId },
+        }),
+        supabase
+          .from('appointments')
+          .select('patient_id')
+          .eq('business_id', businessId),
+      ]);
+
+      const existingConversations: Conversation[] = (!error && data?.conversations) ? data.conversations : [];
+
+      // Collect all unique patient IDs from appointments
+      const uniquePatientIds = [...new Set((aptData || []).map((a: { patient_id: string }) => a.patient_id).filter(Boolean))];
+
+      let allPatientConvs: Conversation[] = [...existingConversations];
+
+      if (uniquePatientIds.length > 0) {
+        const existingPhones = new Set(existingConversations.map((c: Conversation) => c.phone));
+
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, phone')
+          .in('id', uniquePatientIds)
+          .not('phone', 'is', null);
+
+        const newPatients: Conversation[] = (profiles || [])
+          .filter((p: { id: string; first_name: string | null; last_name: string | null; phone: string }) => p.phone && !existingPhones.has(p.phone))
+          .map((p: { id: string; first_name: string | null; last_name: string | null; phone: string }) => ({
+            phone: p.phone,
+            patient_id: p.id,
+            patient_name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.phone,
+            last_message: '',
+            last_message_at: null,
+            last_direction: '',
+            unread_count: 0,
+            window_open: false,
+          }));
+
+        allPatientConvs = [...existingConversations, ...newPatients];
       }
+
+      setConversations(allPatientConvs);
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
     } finally {
@@ -250,13 +287,21 @@ export default function WhatsAppInbox() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {conv.last_direction === 'outbound' && '✓ '}
-                      {conv.last_message}
+                      {conv.last_message_at ? (
+                        <>
+                          {conv.last_direction === 'outbound' && '✓ '}
+                          {conv.last_message}
+                        </>
+                      ) : (
+                        <span className="italic">No messages yet</span>
+                      )}
                     </p>
                   </div>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                    {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true })}
-                  </span>
+                  {conv.last_message_at && (
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true })}
+                    </span>
+                  )}
                 </div>
               </button>
             ))
