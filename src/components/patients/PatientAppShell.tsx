@@ -147,7 +147,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
   if (isMobile) {
     return <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 overflow-x-hidden">
       {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 liquid-glass-header" role="banner">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b" role="banner">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center space-x-2">
             {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-8 w-8 rounded-lg object-cover" /> : <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
@@ -226,7 +226,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
       {onBookAppointment && <FloatingBookingButton onBookAppointment={onBookAppointment} />}
 
       {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 liquid-glass-nav safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t safe-bottom">
         <nav className="flex items-center justify-around py-2" role="navigation" aria-label="Primary">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
