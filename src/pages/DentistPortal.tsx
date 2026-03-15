@@ -257,7 +257,7 @@ function DentistPortalInner({ user: userProp }: DentistPortalProps) {
       case 'messages':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <Messages />
+            <WhatsAppInbox />
           </Suspense>
         );
       case 'clinical':

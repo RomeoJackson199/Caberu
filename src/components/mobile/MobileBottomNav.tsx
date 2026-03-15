@@ -45,7 +45,6 @@ export function MobileBottomNav({
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: Calendar, label: "Visits", path: "/dashboard" },
     { icon: Plus, label: "Book", path: "/book-appointment", isCenter: true },
-    { icon: MessageCircle, label: "Chat", path: "/messages", badge: notificationCount },
     { icon: User, label: "Profile", path: "/account/profile" },
   ];
 

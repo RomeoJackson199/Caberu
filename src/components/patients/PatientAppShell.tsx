@@ -63,12 +63,6 @@ const getNavItems = (hasAIChat: boolean): Array<{
       label: 'Payments',
       icon: CreditCard,
       color: 'text-green-600 bg-green-100 dark:bg-green-900/30'
-    },
-    {
-      id: 'messages' as PatientSection,
-      label: 'Messages',
-      icon: MessageSquare,
-      color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30'
     }
   );
 

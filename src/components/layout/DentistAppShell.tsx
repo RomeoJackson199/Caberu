@@ -63,8 +63,8 @@ export const DentistAppShell: React.FC<DentistAppShellProps> = ({
     path: '/dentist/appointments'
   }, {
     id: 'messages' as DentistSection,
-    label: 'Messages',
-    icon: MessageSquare,
+    label: 'WhatsApp',
+    icon: Phone,
     path: '/dentist/messages'
   }], [t]);
 
