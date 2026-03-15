@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders } from '../_shared/cors.ts';
 import { sendSms } from '../_shared/sms.ts';
+import { sendWhatsAppTemplate, WHATSAPP_TEMPLATES } from '../_shared/whatsapp.ts';
 import { checkRateLimitMemory, rateLimitResponse, RATE_LIMITS } from '../_shared/rateLimit.ts';
 const BUSINESS_TIMEZONE = 'Europe/Brussels';
 function getBrusselsOffset(dateStr: string): string { const d = new Date(dateStr + 'T12:00:00Z'); const parts = new Intl.DateTimeFormat('en-US', { timeZone: BUSINESS_TIMEZONE, hour: 'numeric', hour12: false }).formatToParts(d); const hourPart = parts.find(p => p.type === 'hour'); const brusselsHour = hourPart ? parseInt(hourPart.value, 10) : 13; const offsetHours = brusselsHour - 12; return `${offsetHours >= 0 ? '+' : '-'}${String(Math.abs(offsetHours)).padStart(2, '0')}:00`; }
