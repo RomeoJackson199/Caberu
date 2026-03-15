@@ -175,14 +175,30 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ user, onOpenAs
     });
     
     // Sort upcoming by date ascending (soonest first)
-    upcoming.sort((a, b) => 
+    upcoming.sort((a, b) =>
       new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
     );
-    
-    // Sort completed and cancelled by date descending (most recent first)
-    completed.sort((a, b) => 
-      new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
-    );
+
+    // Priority: action-required states (unpaid, draft) above fully-closed ones
+    const completedPriority = (apt: Appointment): number => {
+      const state = deriveAppointmentState({
+        status: apt.status,
+        payment_status: apt.payment_status ?? null,
+        appointment_date: apt.appointment_date,
+        completed_at: apt.completed_at ?? null,
+      });
+      if (state === 'COMPLETED_FINAL_UNPAID') return 0;
+      if (state === 'COMPLETED_DRAFT') return 1;
+      return 2; // COMPLETED_FINAL_PAID
+    };
+
+    // Sort completed: action-required first, then by date descending within each priority
+    completed.sort((a, b) => {
+      const pa = completedPriority(a);
+      const pb = completedPriority(b);
+      if (pa !== pb) return pa - pb;
+      return new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime();
+    });
     cancelled.sort((a, b) => 
       new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
     );
