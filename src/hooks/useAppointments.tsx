@@ -165,98 +165,31 @@ export async function createAppointmentWithNotification(appointmentData: {
     // Don't fail the appointment creation if Google Calendar sync fails
   }
 
-  // Send confirmation email to patient
+  // Send WhatsApp confirmation to patient
   try {
-    const dentistProfile = (dentist?.profiles as unknown) as { first_name: string; last_name: string } | null;
-
-
-
-    if (patient?.email && dentistProfile) {
-      const formattedDate = formatClinicTime(appointment.appointment_date, 'EEEE, MMMM d, yyyy');
-      const formattedTime = formatClinicTime(appointment.appointment_date, 'h:mm a');
-
-      const emailSubject = `Dr. ${dentistProfile.first_name} ${dentistProfile.last_name} has booked your appointment`;
-      const emailMessage = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2D5D7B; margin-bottom: 24px;">Your Dentist Has Scheduled an Appointment for You</h2>
-          
-          <p>Dear ${patient.first_name},</p>
-          
-          <p><strong>Dr. ${dentistProfile.first_name} ${dentistProfile.last_name}</strong> has scheduled a dental appointment for you. Here are the details:</p>
-          
-          <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #1e293b; margin: 0 0 16px 0;">📅 Appointment Details:</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Date:</td>
-                <td style="padding: 8px 0; color: #1e293b;">${formattedDate}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Time:</td>
-                <td style="padding: 8px 0; color: #1e293b;">${formattedTime}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Dentist:</td>
-                <td style="padding: 8px 0; color: #1e293b;">Dr. ${dentistProfile.first_name} ${dentistProfile.last_name}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #475569;">Reason:</td>
-                <td style="padding: 8px 0; color: #1e293b;">${appointment.reason}</td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="background: #dbeafe; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h4 style="color: #1e40af; margin: 0 0 12px 0;">📍 Please Remember:</h4>
-            <ul style="color: #1e40af; margin: 0; padding-left: 20px;">
-              <li>Arrive 10 minutes early for check-in</li>
-              <li>Bring a valid ID and insurance card</li>
-              <li>Contact us at least 24 hours in advance if you need to reschedule</li>
-            </ul>
-          </div>
-          
-          <p style="color: #059669; font-size: 14px; background: #d1fae5; padding: 12px; border-radius: 6px;">
-            📧 You'll receive a reminder 24 hours before your appointment.
-          </p>
-
-          <p style="color: #64748b; font-size: 14px; margin-top: 24px;">
-            We look forward to seeing you!
-          </p>
-        </div>
-      `;
-
-
-
-      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email-notification', {
+    if (patient?.phone) {
+      const { error: waError } = await supabase.functions.invoke('whatsapp-send', {
         body: {
-          to: patient.email,
-          subject: emailSubject,
-          message: emailMessage,
-          messageType: 'appointment_confirmation',
-          patientId: appointment.patient_id,
-          dentistId: appointment.dentist_id,
-          businessId: businessId,
-          appointmentDate: formattedDate,
-          appointmentTime: formattedTime,
-          isSystemNotification: true
+          action: 'send_template',
+          phone: patient.phone,
+          content_sid: 'HXb42396a8935679888be901c6511d346e',
+          content_variables: { "1": patient.first_name || 'Patient' },
+          business_id: businessId,
+          patient_id: appointment.patient_id,
+          template_name: 'appointment_confirmation',
         }
       });
 
-      if (emailError) {
-        logger.error('Email sending failed:', emailError);
+      if (waError) {
+        logger.error('WhatsApp confirmation failed:', waError);
       } else {
-
-        logger.info(`✅ Confirmation email sent to ${patient.email} for appointment ${appointment.id}`);
+        logger.info(`✅ WhatsApp confirmation sent to ${patient.phone} for appointment ${appointment.id}`);
       }
     } else {
-      logger.warn('Cannot send email - missing patient email or dentist profile');
+      logger.warn('Cannot send WhatsApp - missing patient phone');
     }
-  } catch (emailError: unknown) {
-    // Check if it's an email limit error and show popup
-    if (!handleEmailError(emailError)) {
-      logger.error('Failed to send appointment confirmation email:', emailError);
-    }
-    // Don't fail the appointment creation if email fails
+  } catch (waError: unknown) {
+    logger.error('Failed to send appointment confirmation WhatsApp:', waError);
   }
 
   return appointment as Appointment;

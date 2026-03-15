@@ -1,8 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0';
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
-import { sendSms } from '../_shared/sms.ts';
+import { sendWhatsAppTemplate, WHATSAPP_TEMPLATES } from '../_shared/whatsapp.ts';
 
 serve(async (req) => {
   const origin = req.headers.get('Origin');
@@ -21,7 +21,6 @@ serve(async (req) => {
       throw new Error('payment_request_ids required');
     }
 
-    // Fetch payment requests
     const { data: requests, error } = await supabase
       .from('payment_requests')
       .select('id, patient_email, description, amount, status, patient_id, dentist_id, stripe_session_id')
@@ -36,72 +35,62 @@ serve(async (req) => {
 
     for (const pr of (requests || [])) {
       try {
-        // Compose copy
-        const subject = template_key === 'firm'
-          ? `Reminder: invoice #${pr.id} is past due`
-          : `Payment reminder from your healthcare provider`;
-        const link = pr.stripe_session_id ? `${supabaseUrl}/functions/v1/create-payment-request?payment_request_id=${pr.id}` : '';
-        const message = template_key === 'firm'
-          ? `A quick reminder: invoice #${pr.id} is now past due. You can pay securely here: ${link}.`
-          : `Thanks for your visit. Your payment link is below.\n\nPay securely here: ${link}`;
+        // Get patient phone for WhatsApp
+        let patientPhone: string | null = null;
+        let businessId: string | null = null;
 
-        // Send via system email function
-        const fnUrl = `${supabaseUrl}/functions/v1/send-email-notification`;
-        await fetch(fnUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${serviceKey}`
-          },
-          body: JSON.stringify({
-            to: pr.patient_email,
-            subject,
-            message,
-            messageType: 'system',
-            isSystemNotification: true,
+        if (pr.patient_id) {
+          const { data: patientProfile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', pr.patient_id)
+            .single();
+          patientPhone = patientProfile?.phone || null;
+        }
+
+        // Get business_id from dentist
+        if (pr.dentist_id) {
+          const { data: dentist } = await supabase
+            .from('dentists')
+            .select('business_id')
+            .eq('id', pr.dentist_id)
+            .single();
+          businessId = dentist?.business_id || null;
+        }
+
+        // Send WhatsApp payment reminder template
+        if (patientPhone && businessId) {
+          const waResult = await sendWhatsAppTemplate({
+            phone: patientPhone,
+            contentSid: WHATSAPP_TEMPLATES.PAYMENT_REMINDER,
+            contentVariables: { "1": `€${(pr.amount / 100).toFixed(2)}` },
+            businessId,
             patientId: pr.patient_id,
-            dentistId: pr.dentist_id,
-          })
-        });
+            templateName: 'payment_reminder',
+          });
+
+          if (waResult.success) {
+            console.log(`✅ WhatsApp payment reminder sent for ${pr.id}`);
+          } else {
+            console.warn(`WhatsApp failed for ${pr.id}: ${waResult.error}`);
+          }
+        }
 
         await supabase
           .from('payment_reminders')
           .insert({
             payment_request_id: pr.id,
             template_key: template_key || 'friendly',
-            channel: 'email',
+            channel: 'whatsapp',
             status: 'sent',
             sent_at: new Date().toISOString(),
-            metadata: { subject }
+            metadata: { channel: 'whatsapp' }
           });
 
         await supabase
           .from('payment_requests')
           .update({ last_reminder_at: new Date().toISOString() })
           .eq('id', pr.id);
-
-        // Send SMS alongside email if patient has a phone number
-        if (pr.patient_id) {
-          try {
-            const { data: patientProfile } = await supabase
-              .from('profiles')
-              .select('phone')
-              .eq('id', pr.patient_id)
-              .single();
-
-            if (patientProfile?.phone) {
-              const smsBody = template_key === 'firm'
-                ? `Reminder: Your invoice #${pr.id.substring(0, 8)} is past due. Amount: €${(pr.amount / 100).toFixed(2)}. Please pay at your earliest convenience.`
-                : `Payment reminder: €${(pr.amount / 100).toFixed(2)} for ${pr.description || 'your visit'}. Thank you!`;
-              const smsResult = await sendSms({ to: patientProfile.phone, message: smsBody, messageType: 'payment_reminder', businessId: pr.dentist_id });
-              if (smsResult.success) {
-                console.log(`📱 Payment reminder SMS sent for ${pr.id}`);
-              }
-            }
-          } catch (smsErr) {
-            console.warn(`📱 SMS failed for payment ${pr.id}:`, smsErr);
-          }
-        }
 
         results[pr.id] = { ok: true };
       } catch (e) {
@@ -120,4 +109,3 @@ serve(async (req) => {
     });
   }
 });
-
