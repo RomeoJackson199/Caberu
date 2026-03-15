@@ -914,7 +914,7 @@ You'll receive a confirmation email shortly.`;
             </Button>
           </>
         ) : (
-          <div className="flex w-full justify-end">
+          <div className="flex w-full justify-center">
             <Button
               variant="ghost"
               size="sm"
