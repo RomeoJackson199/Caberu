@@ -220,9 +220,8 @@ serve(async (req) => {
         return new Response(
             JSON.stringify({
                 success: true,
-                message: emailSent ? `Email sent to ${patientEmail}` : 'Appointment processed but email not sent',
-                email_sent: emailSent,
-                sms_sent: smsSent,
+                message: whatsappSent ? `WhatsApp sent to ${patientPhone}` : 'Appointment processed but WhatsApp not sent',
+                whatsapp_sent: whatsappSent,
                 notification_created: notificationCreated,
                 push_sent: pushSent,
                 appointment_id: appointment_id,
