@@ -18,7 +18,7 @@ import { UserTour, useUserTour } from "@/components/UserTour";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
-export type PatientSection = 'home' | 'assistant' | 'appointments' | 'payments' | 'messages' | 'settings';
+export type PatientSection = 'home' | 'assistant' | 'appointments' | 'payments' | 'settings';
 
 interface PatientAppShellProps {
   activeSection: PatientSection;
