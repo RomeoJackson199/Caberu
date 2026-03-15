@@ -218,8 +218,8 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Floating Book Button for Mobile */}
-      {onBookAppointment && <FloatingBookingButton onBookAppointment={onBookAppointment} />}
+      {/* Floating Book Button for Mobile - hidden on AI assistant section since user is already there */}
+      {onBookAppointment && activeSection !== 'assistant' && <FloatingBookingButton onBookAppointment={onBookAppointment} />}
 
       {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t safe-bottom">
