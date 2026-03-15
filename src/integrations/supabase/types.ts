@@ -6091,6 +6091,14 @@ export type Database = {
         Args: { appointment_id: string; user_id: string }
         Returns: boolean
       }
+      cancel_appointment_for_voice: {
+        Args: {
+          p_appointment_id: string
+          p_business_id: string
+          p_patient_id: string
+        }
+        Returns: boolean
+      }
       check_affected_appointments_on_availability_change: {
         Args: {
           p_business_id: string
@@ -6431,6 +6439,16 @@ export type Database = {
           p_slot_date: string
           p_slot_time: string
           p_user_id: string
+        }
+        Returns: boolean
+      }
+      reschedule_appointment_for_voice: {
+        Args: {
+          p_appointment_id: string
+          p_business_id: string
+          p_patient_id: string
+          p_slot_date: string
+          p_slot_time: string
         }
         Returns: boolean
       }
