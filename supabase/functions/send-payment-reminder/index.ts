@@ -39,23 +39,27 @@ serve(async (req) => {
         let patientPhone: string | null = null;
         let businessId: string | null = null;
 
+        let patientFirstName = 'Patient';
         if (pr.patient_id) {
           const { data: patientProfile } = await supabase
             .from('profiles')
-            .select('phone')
+            .select('phone, first_name')
             .eq('id', pr.patient_id)
             .single();
           patientPhone = patientProfile?.phone || null;
+          patientFirstName = patientProfile?.first_name || 'Patient';
         }
 
-        // Get business_id from dentist
+        // Get business_id and business name from dentist
+        let businessName = '';
         if (pr.dentist_id) {
           const { data: dentist } = await supabase
             .from('dentists')
-            .select('business_id')
+            .select('business_id, businesses(name)')
             .eq('id', pr.dentist_id)
             .single();
           businessId = dentist?.business_id || null;
+          businessName = (dentist as any)?.businesses?.name || '';
         }
 
         // Send WhatsApp payment reminder template
@@ -63,7 +67,7 @@ serve(async (req) => {
           const waResult = await sendWhatsAppTemplate({
             phone: patientPhone,
             contentSid: WHATSAPP_TEMPLATES.PAYMENT_REMINDER,
-            contentVariables: { "1": `€${(pr.amount / 100).toFixed(2)}` },
+            contentVariables: { "1": patientFirstName, "2": (pr.amount / 100).toFixed(2), "3": businessName },
             businessId,
             patientId: pr.patient_id,
             templateName: 'payment_reminder',

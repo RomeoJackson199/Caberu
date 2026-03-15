@@ -76,11 +76,16 @@ serve(async (req) => {
           continue;
         }
 
+        // Format appointment date/time in clinic timezone
+        const aptDate = toZonedTime(new Date(appointment.appointment_date), CLINIC_TIMEZONE);
+        const reminderDate = formatTz(aptDate, 'd-M', { timeZone: CLINIC_TIMEZONE });
+        const reminderTime = formatTz(aptDate, 'HH:mm', { timeZone: CLINIC_TIMEZONE });
+
         // Send WhatsApp reminder template
         const waResult = await sendWhatsAppTemplate({
           phone: patient.phone,
           contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_REMINDER_24H,
-          contentVariables: { "1": patient.first_name || 'Patient' },
+          contentVariables: { "1": patient.first_name || 'Patient', "2": reminderDate, "3": reminderTime },
           businessId: appointment.business_id,
           patientId: patient.id,
           templateName: 'appointment_reminder_24h',
