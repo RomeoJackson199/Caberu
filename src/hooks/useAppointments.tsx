@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { utcToClinicTime, formatClinicTime } from '@/lib/timezone';
 import { useBusinessContext } from './useBusinessContext';
 import { logger } from '@/lib/logger';
-import { handleEmailError } from '@/hooks/useEmailLimit';
+
 
 export interface Appointment {
   id: string;
