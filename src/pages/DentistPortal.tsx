@@ -33,7 +33,7 @@ import DentistAppointmentsManagement from "./DentistAppointmentsManagement";
 import { InviteDentistDialog } from "@/components/InviteDentistDialog";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
 // Lazy load Messages component for better code splitting
-const Messages = lazy(() => import("./Messages"));
+const WhatsAppInbox = lazy(() => import("@/components/whatsapp/WhatsAppInbox"));
 import { ServiceManager } from "@/components/services/ServiceManager";
 import { OnboardingProgressTracker } from "@/components/onboarding/OnboardingProgressTracker";
 
