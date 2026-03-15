@@ -41,7 +41,7 @@ const TEMPLATES = [
 ];
 
 export default function WhatsAppInbox() {
-  const { businessId } = useBusinessContext();
+  const { businessId, businessName } = useBusinessContext();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -212,12 +212,27 @@ export default function WhatsAppInbox() {
     if (!selectedPhone || !businessId || sending) return;
     setSending(true);
     try {
+      const firstName = selectedConversation?.patient_name?.split(' ')[0] || selectedConversation?.patient_name || 'Patient';
+      const biz = businessName || '';
+      const apt = upcomingAppointments[0];
+      const aptDate = apt ? new Date(apt.appointment_date) : null;
+      const fmtDate = aptDate ? `${aptDate.getDate()}-${aptDate.getMonth() + 1}` : '';
+      const fmtTime = aptDate ? `${String(aptDate.getHours()).padStart(2, '0')}:${String(aptDate.getMinutes()).padStart(2, '0')}` : '';
+
+      const variablesByTemplate: Record<string, Record<string, string>> = {
+        appointment_confirmation: { "1": firstName, "2": biz, "3": fmtDate, "4": fmtTime },
+        appointment_reminder_24h: { "1": firstName, "2": fmtDate, "3": fmtTime },
+        payment_reminder:         { "1": firstName, "2": '', "3": biz },
+        patient_welcome:          { "1": firstName, "2": biz, "3": 'https://caberu.be/login' },
+      };
+      const contentVariables = variablesByTemplate[templateKey] ?? { "1": firstName };
+
       await supabase.functions.invoke('whatsapp-send', {
         body: {
           action: 'send_template',
           phone: selectedPhone,
           content_sid: templateSid,
-          content_variables: { "1": selectedConversation?.patient_name || 'Patient' },
+          content_variables: contentVariables,
           business_id: businessId,
           patient_id: selectedConversation?.patient_id,
           template_name: templateKey,

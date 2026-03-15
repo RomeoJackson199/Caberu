@@ -230,10 +230,15 @@ serve(async (req) => {
 
           if (existingReminder && existingReminder.length > 0) { skipped++; continue; }
 
+          const aptZoned = new Date(apt.appointment_date);
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const reminderDate = `${aptZoned.getUTCDate()}-${aptZoned.getUTCMonth() + 1}`;
+          const reminderTime = `${pad(aptZoned.getUTCHours())}:${pad(aptZoned.getUTCMinutes())}`;
+
           await sendWhatsAppTemplate({
             phone: patient.phone,
             contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_REMINDER_24H,
-            contentVariables: { "1": patient.first_name || 'Patient' },
+            contentVariables: { "1": patient.first_name || 'Patient', "2": reminderDate, "3": reminderTime },
             businessId: apt.business_id,
             patientId: patient.id,
             templateName: 'appointment_reminder_24h',

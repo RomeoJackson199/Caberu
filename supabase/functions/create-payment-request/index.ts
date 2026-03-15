@@ -240,16 +240,31 @@ serve(async (req) => {
     if (shouldSend) {
       await adminClient.from('payment_requests').update({ status: 'sent' }).eq('id', newPaymentRequestId);
 
-      // Get patient phone for WhatsApp
+      // Get patient phone and name for WhatsApp
       let patientPhone: string | null = null;
+      let patientFirstName = 'Patient';
       if (patient_id) {
         try {
           const { data: patientProfile } = await adminClient
             .from('profiles')
-            .select('phone')
+            .select('phone, first_name')
             .eq('id', patient_id)
             .single();
           patientPhone = patientProfile?.phone || null;
+          patientFirstName = patientProfile?.first_name || 'Patient';
+        } catch (_) {}
+      }
+
+      // Get business name for WhatsApp template
+      let businessName = '';
+      if (business_id) {
+        try {
+          const { data: bizData } = await adminClient
+            .from('businesses')
+            .select('name')
+            .eq('id', business_id)
+            .single();
+          businessName = bizData?.name || '';
         } catch (_) {}
       }
 
@@ -258,7 +273,7 @@ serve(async (req) => {
           const waResult = await sendWhatsAppTemplate({
             phone: patientPhone,
             contentSid: WHATSAPP_TEMPLATES.PAYMENT_REMINDER,
-            contentVariables: { "1": `€${(totalAmount / 100).toFixed(2)}` },
+            contentVariables: { "1": patientFirstName, "2": (totalAmount / 100).toFixed(2), "3": businessName },
             businessId: business_id,
             patientId: patient_id,
             templateName: 'payment_reminder',

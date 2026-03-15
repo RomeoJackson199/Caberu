@@ -127,10 +127,17 @@ serve(async (req) => {
               .single();
 
             if (aptFull?.business_id) {
+              const { data: bizData } = await supabase
+                .from('businesses')
+                .select('name')
+                .eq('id', aptFull.business_id)
+                .single();
+              const businessName = bizData?.name || '';
+              const firstName = patientName.split(' ')[0] || patientName || 'Patient';
               const waResult = await sendWhatsAppTemplate({
                 phone: patientPhone,
                 contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_CONFIRMATION,
-                contentVariables: { "1": patientName || 'Patient' },
+                contentVariables: { "1": firstName, "2": businessName, "3": formattedDate, "4": formattedTime },
                 businessId: aptFull.business_id,
                 patientId: appointment.patient_id,
                 templateName: decision === 'approved' ? 'appointment_confirmation' : 'appointment_update',
