@@ -164,16 +164,30 @@ export function useBookingFlow() {
 
     setLoadingServices(true);
     try {
-      const { data, error } = await supabase
-        .from('business_services')
-        .select('*')
-        .eq('business_id', businessId)
-        .eq('is_active', true)
-        .order('name');
+      // Fetch services and dentist-service links in parallel
+      const [servicesResult, dentistServicesResult] = await Promise.all([
+        supabase
+          .from('business_services')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('is_active', true)
+          .order('name'),
+        supabase
+          .from('dentist_services')
+          .select('service_id')
+          .eq('business_id', businessId)
+          .eq('is_active', true),
+      ]);
 
-      if (error) throw error;
+      if (servicesResult.error) throw servicesResult.error;
 
-      const fetchedServices = data || [];
+      // Only show services that have at least one active dentist assigned
+      const assignedServiceIds = new Set(
+        (dentistServicesResult.data || []).map((ds) => ds.service_id)
+      );
+      const fetchedServices = (servicesResult.data || []).filter(
+        (s) => assignedServiceIds.has(s.id)
+      );
       setServices(fetchedServices);
 
       if (aiBookingData?.recommendedService && fetchedServices.length > 0) {
