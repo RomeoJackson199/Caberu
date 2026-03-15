@@ -114,6 +114,7 @@ export const InteractiveDentalChat = ({
   const [hasCustomAI, setHasCustomAI] = useState(false);
   const [customGreeting, setCustomGreeting] = useState<string | null>(null);
   const [isAIConfigLoaded, setIsAIConfigLoaded] = useState(false);
+  const [userHasSentMessage, setUserHasSentMessage] = useState(false);
 
   // Booking flow state
   const [bookingFlow, setBookingFlow] = useState<BookingFlowState>({
@@ -704,6 +705,7 @@ You'll receive a confirmation email shortly.`;
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setUserHasSentMessage(true);
     const currentInput = inputMessage.toLowerCase();
     setInputMessage("");
     setIsLoading(true);
@@ -875,39 +877,57 @@ You'll receive a confirmation email shortly.`;
       
       {/* Header with booking toggle */}
       <div className="border-b bg-card/80 backdrop-blur-sm p-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary">
-                <Info className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 text-sm" side="bottom" align="start">
-              <p className="font-semibold mb-1">AI Dental Assistant</p>
-              <p className="text-muted-foreground leading-relaxed">
-                This assistant collects your symptoms and concerns before your visit. Your responses are summarized and shared with the dentist so they arrive informed and prepared — saving time and improving your care.
-              </p>
-            </PopoverContent>
-          </Popover>
-          {hasCustomAI && businessName && (
-            <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
-              <Bot className="h-3 w-3 mr-1" />
-              Powered by {businessName}
-            </Badge>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            navigate('/book-appointment');
-          }}
-          className="text-xs text-muted-foreground hover:text-primary"
-        >
-          <Calendar className="h-4 w-4 mr-1" />
-          Switch to Classic Booking
-        </Button>
+        {!userHasSentMessage ? (
+          <>
+            <div className="flex items-center gap-2">
+              <Bot className="h-5 w-5 text-primary" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary">
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-sm" side="bottom" align="start">
+                  <p className="font-semibold mb-1">AI Dental Assistant</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    This assistant collects your symptoms and concerns before your visit. Your responses are summarized and shared with the dentist so they arrive informed and prepared — saving time and improving your care.
+                  </p>
+                </PopoverContent>
+              </Popover>
+              {hasCustomAI && businessName && (
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
+                  <Bot className="h-3 w-3 mr-1" />
+                  Powered by {businessName}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                navigate('/book-appointment');
+              }}
+              className="text-xs text-muted-foreground hover:text-primary"
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Switch to Classic Booking
+            </Button>
+          </>
+        ) : (
+          <div className="flex w-full justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                navigate('/book-appointment');
+              }}
+              className="text-xs text-muted-foreground hover:text-primary"
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Switch to Classic Booking
+            </Button>
+          </div>
+        )}
       </div>
       
       <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-background to-muted/20">
