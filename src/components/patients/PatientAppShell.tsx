@@ -16,7 +16,6 @@ import { LanguageSelectorMenu } from "@/components/shared/LanguagePicker";
 import { RoleSwitcherMenu } from "@/components/RoleSwitcher";
 import { UserTour, useUserTour } from "@/components/UserTour";
 import { useBusinessContext } from "@/hooks/useBusinessContext";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export type PatientSection = 'home' | 'assistant' | 'appointments' | 'payments' | 'settings';
 
@@ -157,10 +156,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notifications */}
-            <NotificationBell />
-
-            {onBookAppointment && <Button variant="gradient" size="icon" onClick={onBookAppointment} className="min-h-[44px] min-w-[44px]" aria-label="Book appointment">
+            {onBookAppointment && activeSection !== 'assistant' && <Button variant="gradient" size="icon" onClick={onBookAppointment} className="min-h-[44px] min-w-[44px]" aria-label="Book appointment">
               <Calendar className="h-5 w-5" />
               <span className="sr-only">Book appointment</span>
             </Button>}
