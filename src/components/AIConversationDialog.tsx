@@ -7,7 +7,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Bot, Send, Loader2, Check, X, MessageSquare, User } from "lucide-react";
-import { AIWritingAssistant } from "@/components/AIWritingAssistant";
 import {
   NewPrescriptionForm,
   NewTreatmentPlanForm,
@@ -380,11 +379,6 @@ export function AIConversationDialog({
                 )}
               </Button>
             </div>
-            <AIWritingAssistant
-              currentText={inputMessage}
-              onImprove={setInputMessage}
-              placeholder="consultation message"
-            />
           </div>
         </div>
       </DialogContent>
