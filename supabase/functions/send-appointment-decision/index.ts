@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { format } from 'https://esm.sh/date-fns@3.6.0';
 import { toZonedTime } from 'https://esm.sh/date-fns-tz@3.1.3';
 import { getCorsHeaders, handleCorsPreflightSafe } from "../_shared/cors.ts";
-import { sendSms } from '../_shared/sms.ts';
+import { sendWhatsAppTemplate, WHATSAPP_TEMPLATES } from '../_shared/whatsapp.ts';
 
 serve(async (req) => {
     const origin = req.headers.get('Origin');
