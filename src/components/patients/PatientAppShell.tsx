@@ -148,14 +148,21 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
       {/* Mobile Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b" role="banner">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-1">
             {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.clinicName || "Clinic Logo"} className="h-8 w-8 rounded-lg object-cover" /> : <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">P</span>
             </div>}
             <span className="font-semibold text-lg">{branding.clinicName || "Patient Portal"}</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          {activeSection === 'assistant' && (
+            <Button variant="ghost" size="sm" onClick={() => navigate('/book-appointment')} className="text-xs text-muted-foreground hover:text-primary">
+              <Calendar className="h-4 w-4 mr-1" />
+              Switch to Classic Booking
+            </Button>
+          )}
+
+          <div className="flex items-center gap-2 flex-1 justify-end">
             {onBookAppointment && activeSection !== 'assistant' && <Button variant="gradient" size="icon" onClick={onBookAppointment} className="min-h-[44px] min-w-[44px]" aria-label="Book appointment">
               <Calendar className="h-5 w-5" />
               <span className="sr-only">Book appointment</span>
