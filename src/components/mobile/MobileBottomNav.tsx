@@ -52,7 +52,7 @@ export function MobileBottomNav({
     { icon: Home, label: "Home", path: "/dentist" },
     { icon: Calendar, label: "Schedule", path: "/dentist/schedule" },
     { icon: Plus, label: "New", path: "/dentist/patients", isCenter: true },
-    { icon: MessageCircle, label: "Messages", path: "/messages" },
+    { icon: MessageCircle, label: "WhatsApp", path: "/dentist/messages" },
     { icon: User, label: "Settings", path: "/dentist/settings" },
   ];
 
