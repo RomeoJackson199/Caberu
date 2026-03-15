@@ -81,7 +81,7 @@ export function FinalizationSection({
       // Get patient's user_id for notification
       const { data: patient, error: patientError } = await supabase
         .from('secure_profiles_view')
-        .select('user_id, first_name, email')
+        .select('user_id, first_name, email, phone')
         .eq('id', patientId)
         .single();
 
