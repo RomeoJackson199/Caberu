@@ -604,14 +604,8 @@ const PatientDashboardInner = ({
     })() : null} totalDueCents={totalDueCents} onNavigateTo={(s, appointmentId) => { setActiveSection(s); if (appointmentId) setPendingAppointmentId(appointmentId); }} onOpenAssistant={() => setActiveSection('assistant')} onBookAppointment={() => setActiveSection('assistant')} />}
 
     {activeSection === 'assistant' && (
-      <div className="px-4 md:px-6 py-4">
-        <GlassCard>
-          <GlassCardContent>
-            <div className="h-[70vh]">
-              <InteractiveDentalChat user={user} triggerBooking={triggerBooking} />
-            </div>
-          </GlassCardContent>
-        </GlassCard>
+      <div className="h-full">
+        <InteractiveDentalChat user={user} triggerBooking={triggerBooking} />
       </div>
     )}
 

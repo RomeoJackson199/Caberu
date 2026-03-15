@@ -199,7 +199,10 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
       </div>
 
       {/* Main Content Area */}
-      <div className="mobile-header-offset mobile-bottom-nav-offset min-h-screen">
+      <div className={cn(
+        "mobile-header-offset mobile-bottom-nav-offset",
+        activeSection === 'assistant' ? "h-[100dvh] overflow-hidden" : "min-h-screen"
+      )}>
         <AnimatePresence mode="wait">
           <motion.div key={activeSection} initial={{
             opacity: 0,
@@ -212,7 +215,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
             y: -10
           }} transition={{
             duration: 0.2
-          }} className="min-h-[calc(100vh-8rem)]">
+          }} className={activeSection === 'assistant' ? "h-full" : "min-h-[calc(100vh-8rem)]"}>
             {children}
           </motion.div>
         </AnimatePresence>
@@ -385,7 +388,7 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
           x: -20
         }} transition={{
           duration: 0.3
-        }} className="p-6">
+        }} className={activeSection === 'assistant' ? "h-screen overflow-hidden" : "p-6"}>
           {children}
         </motion.div>
       </AnimatePresence>
