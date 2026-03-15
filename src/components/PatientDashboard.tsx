@@ -616,11 +616,6 @@ const PatientDashboardInner = ({
     )}
 
 
-    {activeSection === 'messages' && (
-      <Suspense fallback={<div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-        <Messages />
-      </Suspense>
-    )}
 
     {activeSection === 'appointments' && <AppointmentsTab user={user} onOpenAssistant={() => setActiveSection('assistant')} initialAppointmentId={pendingAppointmentId} />}
 
