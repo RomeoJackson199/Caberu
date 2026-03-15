@@ -82,18 +82,19 @@ export function MobileBottomNav({
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50 liquid-glass-nav"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      {/* Gradient blur backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/98 to-background/90 backdrop-blur-xl" />
-      
-      {/* Top border glow */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-      
-      <div className="relative flex items-end justify-around px-2 pt-2 pb-2">
+      {/* Specular top highlight — light hitting the glass edge */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none z-10" />
+
+      {/* Prismatic color edge — iridescent refraction along the top */}
+      <div className="absolute top-0 left-[8%] right-[8%] h-px bg-gradient-to-r from-blue-400/20 via-primary/35 to-purple-400/20 blur-[0.5px] pointer-events-none z-10" />
+
+      <div className="relative flex items-end justify-around px-2 pt-2 pb-2 z-10">
         {items.map((item, index) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -128,9 +129,12 @@ export function MobileBottomNav({
                     "relative flex items-center justify-center",
                     "w-14 h-14 rounded-full",
                     "bg-gradient-to-br from-primary via-primary to-primary-dark",
-                    "shadow-lg shadow-primary/30",
-                    "border-4 border-background"
+                    "shadow-lg shadow-primary/40",
+                    "border-[3px] border-white/20"
                   )}
+                  style={{
+                    boxShadow: '0 0 0 3px rgba(255,255,255,0.07), 0 8px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25)'
+                  }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -160,7 +164,7 @@ export function MobileBottomNav({
               <AnimatePresence>
                 {active && (
                   <motion.div
-                    className="absolute -top-1 w-8 h-1 rounded-full bg-primary"
+                    className="absolute -top-1 w-8 h-1 rounded-full lg-active-pill"
                     layoutId="nav-pill"
                     initial={{ opacity: 0, scaleX: 0 }}
                     animate={{ opacity: 1, scaleX: 1 }}
@@ -176,7 +180,7 @@ export function MobileBottomNav({
                   "relative flex items-center justify-center",
                   "w-10 h-10 rounded-xl",
                   "transition-all duration-200",
-                  active && "bg-primary/10"
+                  active && "lg-active-icon"
                 )}
                 animate={tapped ? { scale: 0.85 } : { scale: 1 }}
               >

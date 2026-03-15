@@ -1435,6 +1435,98 @@
     @apply text-dental-primary;
   }
 
+  /* ==========================================================================
+     Liquid Glass — Apple iOS 26 inspired navigation surfaces
+     True translucency with specular highlights, shimmer, and subtle refraction
+     ========================================================================== */
+
+  @keyframes lg-shimmer {
+    0%   { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+    40%  { opacity: 1; }
+    100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+  }
+
+  /* Bottom navigation bar */
+  .liquid-glass-nav {
+    position: relative;
+    background: rgba(8, 12, 28, 0.52);
+    backdrop-filter: blur(40px) saturate(200%) brightness(1.12);
+    -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.12);
+    border-top: 0.5px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 0 60px rgba(255, 255, 255, 0.012),
+      0 -4px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+
+  /* Top header bar */
+  .liquid-glass-header {
+    position: relative;
+    background: rgba(8, 12, 28, 0.48);
+    backdrop-filter: blur(40px) saturate(180%) brightness(1.08);
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.08);
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+      0 4px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  /* Shimmer sweep — light moving across the glass surface */
+  .liquid-glass-nav::before,
+  .liquid-glass-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      108deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.045) 50%,
+      transparent 70%
+    );
+    animation: lg-shimmer 9s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Gradient depth layer — gives the surface a slight convex look */
+  .liquid-glass-nav::after,
+  .liquid-glass-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      transparent 40%,
+      transparent 70%,
+      rgba(0, 0, 0, 0.04) 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Active pill indicator — liquid glass style */
+  .lg-active-pill {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.12));
+    box-shadow:
+      0 0 0 0.5px rgba(255, 255, 255, 0.28),
+      0 1px 6px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Active icon container — frosted glass pocket */
+  .lg-active-icon {
+    background: rgba(255, 255, 255, 0.08);
+    border: 0.5px solid rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+
   /* Mobile Modal */
   .mobile-modal {
     @apply fixed inset-0 z-50 bg-background/80 backdrop-blur-sm;
