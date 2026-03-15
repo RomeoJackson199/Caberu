@@ -66,13 +66,13 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('Origin'));
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    // Detect Twilio voice webhooks (sent as application/x-www-form-urlencoded with CallSid)
+    // Detect form-encoded requests from Twilio (voice webhooks and debug notifications)
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('application/x-www-form-urlencoded')) {
       const formData = await req.formData();
       const callSid = formData.get('CallSid')?.toString();
       if (callSid) {
-        // This is a Twilio voice webhook — look up the business and return TwiML
+        // Voice webhook — look up the business and return TwiML
         const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
         const toNumber = formData.get('To')?.toString() || '';
         const callerPhone = formData.get('From')?.toString() || '';
@@ -94,6 +94,8 @@ serve(async (req) => {
         const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="alice" language="en-US">${greeting}</Say><Pause length="1"/><Say voice="alice" language="en-US">Please hold while we connect you.</Say></Response>`;
         return new Response(twiml, { headers: { 'Content-Type': 'text/xml' } });
       }
+      // Any other form-encoded Twilio request (e.g. debug notifications) — acknowledge and return
+      return new Response('', { status: 200 });
     }
     const raw = await req.text(); let incoming: any; try { incoming = raw ? JSON.parse(raw) : {}; } catch { incoming = {}; }
     const body = (incoming && typeof incoming === 'object' && 'body' in incoming && incoming.body) ? incoming.body : incoming;
