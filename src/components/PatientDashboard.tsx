@@ -35,7 +35,7 @@ import { useBusinessTemplate } from '@/hooks/useBusinessTemplate';
 import { useBusinessContext } from '@/hooks/useBusinessContext';
 import { formatClinicTime } from "@/lib/timezone";
 
-const Messages = lazy(() => import("@/pages/Messages"));
+// Messages removed — patients now receive WhatsApp notifications directly
 
 interface PatientDashboardProps {
   user: User;
