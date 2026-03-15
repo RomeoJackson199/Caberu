@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, Calendar } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Send, Bot, Calendar, Info } from "lucide-react";
 import { ChatMessage } from "@/types/chat";
 import { format } from "date-fns";
 import { ChatMessageBubble } from "./ChatMessageBubble";
@@ -876,7 +877,19 @@ You'll receive a confirmation email shortly.`;
       <div className="border-b bg-card/80 backdrop-blur-sm p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold text-base">AI Dental Assistant</h2>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary">
+                <Info className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 text-sm" side="bottom" align="start">
+              <p className="font-semibold mb-1">AI Dental Assistant</p>
+              <p className="text-muted-foreground leading-relaxed">
+                This assistant collects your symptoms and concerns before your visit. Your responses are summarized and shared with the dentist so they arrive informed and prepared — saving time and improving your care.
+              </p>
+            </PopoverContent>
+          </Popover>
           {hasCustomAI && businessName && (
             <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
               <Bot className="h-3 w-3 mr-1" />
