@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Send, Bot, Info } from "lucide-react";
+import { Send, Bot, Info, Calendar } from "lucide-react";
 import { ChatMessage } from "@/types/chat";
 import { format } from "date-fns";
 import { ChatMessageBubble } from "./ChatMessageBubble";
@@ -130,6 +131,7 @@ export const InteractiveDentalChat = ({
   useLanguage();
   const { toast } = useToast();
   const { businessId, businessName } = useBusinessContext();
+  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -936,6 +938,16 @@ You'll receive a confirmation email shortly.`;
               </p>
             </PopoverContent>
           </Popover>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/book-appointment')}
+            className="hidden md:inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary h-6 px-2"
+            aria-label="Switch to classic booking"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            Classic Booking
+          </Button>
           {hasCustomAI && businessName && (
             <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800">
               <Bot className="h-3 w-3 mr-1" />
