@@ -288,6 +288,24 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
           <h1 className="font-semibold text-base leading-tight truncate">{branding.clinicName || "Patient Portal"}</h1>
           <p className="text-xs text-muted-foreground">{branding.tagline || "Healthcare Dashboard"}</p>
         </div>}
+        {!collapsed && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate('/book-appointment')}
+                  className="shrink-0 flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  aria-label="Book Appointment"
+                >
+                  <Calendar className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Book Appointment</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
 
       {/* Sidebar edge – collapse/expand on hover */}
@@ -322,28 +340,23 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
             </Tooltip>;
           })}
 
-          {/* Classic Booking CTA – always visible on desktop */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => navigate('/book-appointment')}
-                className={cn(
-                  "w-full flex items-center px-3 py-3 rounded-xl transition-all group touch-target min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                  "bg-primary/10 text-primary hover:bg-primary/20 hover:scale-[1.01] border border-primary/20",
-                  collapsed ? "justify-center" : "gap-3"
-                )}
-                aria-label="Book Appointment"
-              >
-                <Calendar className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="font-medium truncate">Book Appointment</span>}
-              </button>
-            </TooltipTrigger>
-            {collapsed && (
+          {/* Classic Booking CTA – collapsed sidebar only */}
+          {collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate('/book-appointment')}
+                  className="w-full flex items-center justify-center px-3 py-3 rounded-xl transition-all touch-target min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
+                  aria-label="Book Appointment"
+                >
+                  <Calendar className="h-5 w-5 shrink-0" />
+                </button>
+              </TooltipTrigger>
               <TooltipContent side="right">
                 <p>Book Appointment</p>
               </TooltipContent>
-            )}
-          </Tooltip>
+            </Tooltip>
+          )}
         </TooltipProvider>
       </nav>
 
