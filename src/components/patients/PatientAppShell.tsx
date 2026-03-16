@@ -322,28 +322,6 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
             </Tooltip>;
           })}
 
-          {/* Classic Booking CTA – always visible on desktop */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => navigate('/book-appointment')}
-                className={cn(
-                  "w-full flex items-center px-3 py-3 rounded-xl transition-all group touch-target min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                  "bg-primary/10 text-primary hover:bg-primary/20 hover:scale-[1.01] border border-primary/20",
-                  collapsed ? "justify-center" : "gap-3"
-                )}
-                aria-label="Book Appointment"
-              >
-                <Calendar className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="font-medium truncate">Book Appointment</span>}
-              </button>
-            </TooltipTrigger>
-            {collapsed && (
-              <TooltipContent side="right">
-                <p>Book Appointment</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
         </TooltipProvider>
       </nav>
 
