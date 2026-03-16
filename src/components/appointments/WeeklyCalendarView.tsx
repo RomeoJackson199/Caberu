@@ -348,71 +348,70 @@ export function WeeklyCalendarView({
           </div>
         )}
 
-        {/* Calendar Header (Days) with density indicators */}
-        <div className="flex border-b bg-muted/5">
-          <div className="w-16 flex-shrink-0 border-r bg-background/50" /> {/* Time axis spacer */}
-          <div
-            className="flex-1 grid divide-x"
-            style={{ gridTemplateColumns: `repeat(${displayDays.length}, minmax(0, 1fr))` }}
-          >
-            {displayDays.map((day) => {
-              const isToday = isSameDay(day, new Date());
-              const dayKey = format(day, 'yyyy-MM-dd');
-              const dayEventCount = positionedEventsByDay.get(dayKey)?.length || 0;
-              const hasVacation = getScheduleBlocks(day).some(b => b.type === 'vacation' || b.type === 'sick-leave');
-
-              // Calculate density level for visual indicator
-              const getDensityColor = (count: number) => {
-                if (count === 0) return null;
-                if (count <= 2) return "bg-green-400";
-                if (count <= 4) return "bg-yellow-400";
-                if (count <= 6) return "bg-orange-400";
-                return "bg-red-400";
-              };
-              const densityColor = getDensityColor(dayEventCount);
-
-              return (
-                <button
-                  key={day.toISOString()}
-                  className={cn(
-                    "py-3 text-center relative transition-colors",
-                    isToday && "bg-blue-50/50 dark:bg-blue-900/10",
-                    onDayHeaderClick && "hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-                  )}
-                  onClick={() => onDayHeaderClick?.(day)}
-                  type="button"
-                >
-                  <div className={cn("text-xs font-medium uppercase mb-1", isToday ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground")}>
-                    {format(day, "EEE")}
-                  </div>
-                  <div className="relative inline-flex flex-col items-center">
-                    <div className={cn(
-                      "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold",
-                      isToday ? "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/20" : "text-foreground",
-                      hasVacation && !isToday && "bg-teal-100 dark:bg-teal-900/40"
-                    )}>
-                      {format(day, "d")}
-                    </div>
-                    {/* Density indicator dots */}
-                    {dayEventCount > 0 && (
-                      <div className="flex gap-0.5 mt-1">
-                        <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} title={`${dayEventCount} appointments`} />
-                        {dayEventCount > 3 && <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} />}
-                        {dayEventCount > 6 && <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} />}
-                      </div>
-                    )}
-                    {hasVacation && (
-                      <span className="text-[10px] text-teal-600 dark:text-teal-400 mt-0.5">Off</span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Scrollable Grid Area */}
         <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+          {/* Calendar Header (Days) with density indicators — sticky so it stays visible while scrolling */}
+          <div className="flex border-b bg-muted/5 sticky top-0 z-30">
+            <div className="w-16 flex-shrink-0 border-r bg-background/50" /> {/* Time axis spacer */}
+            <div
+              className="flex-1 grid divide-x"
+              style={{ gridTemplateColumns: `repeat(${displayDays.length}, minmax(0, 1fr))` }}
+            >
+              {displayDays.map((day) => {
+                const isToday = isSameDay(day, new Date());
+                const dayKey = format(day, 'yyyy-MM-dd');
+                const dayEventCount = positionedEventsByDay.get(dayKey)?.length || 0;
+                const hasVacation = getScheduleBlocks(day).some(b => b.type === 'vacation' || b.type === 'sick-leave');
+
+                // Calculate density level for visual indicator
+                const getDensityColor = (count: number) => {
+                  if (count === 0) return null;
+                  if (count <= 2) return "bg-green-400";
+                  if (count <= 4) return "bg-yellow-400";
+                  if (count <= 6) return "bg-orange-400";
+                  return "bg-red-400";
+                };
+                const densityColor = getDensityColor(dayEventCount);
+
+                return (
+                  <button
+                    key={day.toISOString()}
+                    className={cn(
+                      "py-3 text-center relative transition-colors",
+                      isToday && "bg-blue-50/50 dark:bg-blue-900/10",
+                      onDayHeaderClick && "hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                    )}
+                    onClick={() => onDayHeaderClick?.(day)}
+                    type="button"
+                  >
+                    <div className={cn("text-xs font-medium uppercase mb-1", isToday ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground")}>
+                      {format(day, "EEE")}
+                    </div>
+                    <div className="relative inline-flex flex-col items-center">
+                      <div className={cn(
+                        "inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold",
+                        isToday ? "bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900/20" : "text-foreground",
+                        hasVacation && !isToday && "bg-teal-100 dark:bg-teal-900/40"
+                      )}>
+                        {format(day, "d")}
+                      </div>
+                      {/* Density indicator dots */}
+                      {dayEventCount > 0 && (
+                        <div className="flex gap-0.5 mt-1">
+                          <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} title={`${dayEventCount} appointments`} />
+                          {dayEventCount > 3 && <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} />}
+                          {dayEventCount > 6 && <div className={cn("w-1.5 h-1.5 rounded-full", densityColor)} />}
+                        </div>
+                      )}
+                      {hasVacation && (
+                        <span className="text-[10px] text-teal-600 dark:text-teal-400 mt-0.5">Off</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="flex min-h-[800px]" style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT}px` }}>
 
             {/* Time Axis */}
