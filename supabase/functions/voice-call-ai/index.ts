@@ -246,6 +246,47 @@ async function bookAppointment(supabase:any, args:any, callerPhone:string, busin
   const{data:apt,error:ae2}=await supabase.from('appointments').insert(apd).select().single(); if(ae2) return {error:ae2.message};
   const{error:se}=await supabase.rpc('book_appointment_slots_for_duration',{p_dentist_id:fdid,p_slot_date:pd,p_start_time:`${pt}:00`,p_duration_minutes:dur,p_appointment_id:apt.id}); if(se){await supabase.from('appointments').delete().eq('id',apt.id);return{error:'Slot taken. Choose different time.'};}
   syncAppointmentToCalendar(supabase, apt.id).catch(() => {});
+
+  // Send WhatsApp confirmation (fire-and-forget)
+  const patientPhone = patient.phone || callerPhone;
+  if (patientPhone) {
+    const dateParts = pd.split('-'); // yyyy-MM-dd
+    const confirmDate = `${parseInt(dateParts[2])}-${parseInt(dateParts[1])}`; // D-M
+    const confirmTime = pt; // HH:mm
+    let bizName = '';
+    const { data: biz } = await supabase.from('businesses').select('name').eq('id', rbid).maybeSingle();
+    bizName = biz?.name || '';
+
+    // Send confirmation template
+    sendWhatsAppTemplate({
+      phone: patientPhone,
+      contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_CONFIRMATION,
+      contentVariables: {
+        "1": patient.first_name || fn || 'Patient',
+        "2": bizName,
+        "3": confirmDate,
+        "4": confirmTime,
+      },
+      businessId: rbid,
+      patientId: patient.id,
+      templateName: 'appointment_confirmation',
+    }).catch((e: unknown) => console.warn('WhatsApp confirmation failed:', e));
+
+    // Send welcome template for new patients (fire-and-forget)
+    sendWhatsAppTemplate({
+      phone: patientPhone,
+      contentSid: WHATSAPP_TEMPLATES.PATIENT_WELCOME,
+      contentVariables: {
+        "1": patient.first_name || fn || 'there',
+        "2": bizName,
+        "3": "caberu.be/login",
+      },
+      businessId: rbid,
+      patientId: patient.id,
+      templateName: 'patient_welcome',
+    }).catch((e: unknown) => console.warn('WhatsApp welcome failed:', e));
+  }
+
   return {success:true,appointment_id:apt.id,patient_name:apd.patient_name,confirmation:`Appointment booked for ${pd} at ${pt}`};
 }
 
