@@ -145,6 +145,14 @@ export function AIConversationDialog({
     }
 
     try {
+      // Look up business_id from the dentist record
+      const { data: dentistData } = await supabase
+        .from('dentists')
+        .select('business_id')
+        .eq('id', dentistId)
+        .maybeSingle();
+      const bId = dentistData?.business_id;
+
       if (suggestion.type === 'note') {
         const data = suggestion.data as NewPatientNoteForm;
         await supabase
@@ -159,12 +167,13 @@ export function AIConversationDialog({
           });
       } else if (suggestion.type === 'prescription') {
         const data = suggestion.data as NewPrescriptionForm;
-        // Store prescription as a medical record since prescriptions table doesn't exist
+        if (!bId) throw new Error('Business ID not found for dentist');
         await supabase
           .from('medical_records')
           .insert({
             patient_id: patientId,
             dentist_id: dentistId,
+            business_id: bId,
             record_type: 'prescription',
             title: `Prescription: ${data.medication_name}`,
             description: `${data.medication_name} - ${data.dosage}, ${data.frequency} for ${data.duration} days. ${data.instructions || ''}`.trim(),
@@ -172,12 +181,13 @@ export function AIConversationDialog({
           });
       } else if (suggestion.type === 'treatment_plan') {
         const data = suggestion.data as NewTreatmentPlanForm;
+        if (!bId) throw new Error('Business ID not found for dentist');
         await supabase
           .from('treatment_plans')
           .insert({
             patient_id: patientId,
             dentist_id: dentistId,
-            business_id: businessId!,
+            business_id: bId,
             title: data.title,
             description: data.description,
             diagnosis: data.diagnosis,
@@ -189,15 +199,16 @@ export function AIConversationDialog({
           });
       } else if (suggestion.type === 'medical_record') {
         const data = suggestion.data as NewMedicalRecordForm;
+        if (!bId) throw new Error('Business ID not found for dentist');
         await supabase
           .from('medical_records')
           .insert({
             patient_id: patientId,
             dentist_id: dentistId,
+            business_id: bId,
             record_type: data.record_type,
             title: data.title,
             description: data.description,
-            file_url: data.file_url,
             record_date: data.record_date || new Date().toISOString().split('T')[0]
           });
       }
