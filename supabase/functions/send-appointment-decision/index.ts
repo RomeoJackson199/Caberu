@@ -105,6 +105,9 @@ serve(async (req) => {
         
         const formattedDate = format(brusselsTime, 'EEEE, MMMM d, yyyy');
         const formattedTime = format(brusselsTime, 'h:mm a');
+        // WhatsApp template uses D-M and HH:mm formats
+        const waDate = `${brusselsTime.getDate()}-${brusselsTime.getMonth() + 1}`;
+        const waTime = format(brusselsTime, 'HH:mm');
 
         // Prepare email content
         const subject = decision === 'approved'
