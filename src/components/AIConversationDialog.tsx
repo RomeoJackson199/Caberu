@@ -159,17 +159,16 @@ export function AIConversationDialog({
           });
       } else if (suggestion.type === 'prescription') {
         const data = suggestion.data as NewPrescriptionForm;
+        // Store prescription as a medical record since prescriptions table doesn't exist
         await supabase
-          .from('prescriptions')
+          .from('medical_records')
           .insert({
             patient_id: patientId,
             dentist_id: dentistId,
-            medication_name: data.medication_name,
-            dosage: data.dosage,
-            frequency: data.frequency,
-            duration_days: parseInt(data.duration),
-            instructions: data.instructions,
-            prescribed_date: new Date().toISOString().split('T')[0]
+            record_type: 'prescription',
+            title: `Prescription: ${data.medication_name}`,
+            description: `${data.medication_name} - ${data.dosage}, ${data.frequency} for ${data.duration} days. ${data.instructions || ''}`.trim(),
+            record_date: new Date().toISOString().split('T')[0]
           });
       } else if (suggestion.type === 'treatment_plan') {
         const data = suggestion.data as NewTreatmentPlanForm;
@@ -178,10 +177,11 @@ export function AIConversationDialog({
           .insert({
             patient_id: patientId,
             dentist_id: dentistId,
+            business_id: businessId!,
             title: data.title,
             description: data.description,
             diagnosis: data.diagnosis,
-            treatment_steps: data.treatment_goals,
+            treatment_goals: data.treatment_goals ? [data.treatment_goals].flat() : null,
             estimated_duration_weeks: data.estimated_duration ? parseInt(data.estimated_duration) : null,
             estimated_cost: data.estimated_cost,
             priority: data.priority,
