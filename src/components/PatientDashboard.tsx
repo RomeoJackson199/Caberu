@@ -329,11 +329,11 @@ const PatientDashboardInner = ({
       const completedAppointments = appointmentsData?.filter(apt => apt.status === 'completed').length || 0;
       const lastVisit = appointmentsData?.filter(apt => apt.status === 'completed').sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())[0]?.appointment_date || null;
 
-      // Fetch prescriptions
+      // Fetch prescriptions (stored as medical_records with record_type='prescription')
       const {
         data: prescriptionsData
-      } = await supabase.from('prescriptions').select('*').eq('patient_id', profileId);
-      const activePrescriptions = prescriptionsData?.filter(p => p.status === 'active').length || 0;
+      } = await supabase.from('medical_records').select('*').eq('patient_id', profileId).eq('record_type', 'prescription');
+      const activePrescriptions = prescriptionsData?.length || 0;
 
       const {
         data: treatmentPlansData

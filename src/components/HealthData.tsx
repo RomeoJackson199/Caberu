@@ -287,8 +287,9 @@ export const HealthData = ({
   };
 
   const loadPrescriptions = async (profileId: string) => {
+    // Prescriptions are stored as medical_records with record_type='prescription'
     const { data, error } = await supabase
-      .from('prescriptions')
+      .from('medical_records')
       .select(`
         *,
         dentist:dentists(
@@ -296,7 +297,8 @@ export const HealthData = ({
         )
       `)
       .eq('patient_id', profileId)
-      .order('prescribed_date', { ascending: false });
+      .eq('record_type', 'prescription')
+      .order('record_date', { ascending: false });
 
     if (error) throw error;
     return data || [];
