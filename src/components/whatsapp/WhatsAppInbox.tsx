@@ -222,8 +222,8 @@ export default function WhatsAppInbox() {
       const variablesByTemplate: Record<string, Record<string, string>> = {
         appointment_confirmation: { "1": firstName, "2": biz, "3": fmtDate, "4": fmtTime },
         appointment_reminder_24h: { "1": firstName, "2": fmtDate, "3": fmtTime },
-        payment_reminder:         { "1": firstName, "2": '', "3": biz },
-        patient_welcome:          { "1": firstName, "2": biz, "3": 'https://caberu.be/login' },
+        payment_reminder:         { "1": firstName, "2": '€0.00', "3": biz },
+        patient_welcome:          { "1": firstName, "2": biz, "3": 'caberu.be/login' },
       };
       const contentVariables = variablesByTemplate[templateKey] ?? { "1": firstName };
 

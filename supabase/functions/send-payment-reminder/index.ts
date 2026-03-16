@@ -67,7 +67,7 @@ serve(async (req) => {
           const waResult = await sendWhatsAppTemplate({
             phone: patientPhone,
             contentSid: WHATSAPP_TEMPLATES.PAYMENT_REMINDER,
-            contentVariables: { "1": patientFirstName, "2": (pr.amount / 100).toFixed(2), "3": businessName },
+            contentVariables: { "1": patientFirstName, "2": `€${(pr.amount / 100).toFixed(2)}`, "3": businessName },
             businessId,
             patientId: pr.patient_id,
             templateName: 'payment_reminder',

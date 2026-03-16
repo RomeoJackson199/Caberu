@@ -140,7 +140,7 @@ serve(async (req) => {
               const waResult = await sendWhatsAppTemplate({
                 phone: patientPhone,
                 contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_CONFIRMATION,
-                contentVariables: { "1": firstName, "2": businessName, "3": formattedDate, "4": formattedTime },
+                contentVariables: { "1": firstName, "2": businessName, "3": waDate, "4": waTime },
                 businessId: aptFull.business_id,
                 patientId: appointment.patient_id,
                 templateName: decision === 'approved' ? 'appointment_confirmation' : 'appointment_update',
