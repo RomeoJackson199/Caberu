@@ -5,6 +5,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Blinking cursor for AI streaming */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 0.7s step-end infinite;
+}
+
 /* Lightweight fade-in animation */
 @keyframes fadeIn {
   from {
