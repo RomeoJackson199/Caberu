@@ -105,6 +105,9 @@ serve(async (req) => {
         
         const formattedDate = format(brusselsTime, 'EEEE, MMMM d, yyyy');
         const formattedTime = format(brusselsTime, 'h:mm a');
+        // WhatsApp template uses D-M and HH:mm formats
+        const waDate = `${brusselsTime.getDate()}-${brusselsTime.getMonth() + 1}`;
+        const waTime = format(brusselsTime, 'HH:mm');
 
         // Prepare email content
         const subject = decision === 'approved'
@@ -137,7 +140,7 @@ serve(async (req) => {
               const waResult = await sendWhatsAppTemplate({
                 phone: patientPhone,
                 contentSid: WHATSAPP_TEMPLATES.APPOINTMENT_CONFIRMATION,
-                contentVariables: { "1": firstName, "2": businessName, "3": formattedDate, "4": formattedTime },
+                contentVariables: { "1": firstName, "2": businessName, "3": waDate, "4": waTime },
                 businessId: aptFull.business_id,
                 patientId: appointment.patient_id,
                 templateName: decision === 'approved' ? 'appointment_confirmation' : 'appointment_update',
