@@ -605,6 +605,31 @@ export function useBookingFlow() {
         }
       });
 
+      // Send WhatsApp confirmation (fire-and-forget)
+      if (profile.phone) {
+        const confirmDate = format(selectedDate, 'd-M');
+        const confirmTime = selectedTime; // already HH:mm
+        supabase.functions.invoke('whatsapp-send', {
+          body: {
+            action: 'send_template',
+            phone: profile.phone,
+            content_sid: 'HXb42396a8935679888be901c6511d346e',
+            content_variables: {
+              "1": profile.first_name || 'Patient',
+              "2": businessData?.name || '',
+              "3": confirmDate,
+              "4": confirmTime,
+            },
+            business_id: businessId,
+            patient_id: profile.id,
+            template_name: 'appointment_confirmation',
+          }
+        }).then(({ error: waErr }) => {
+          if (waErr) logger.warn("WhatsApp confirmation failed (non-blocking):", waErr);
+          else logger.info("WhatsApp confirmation sent");
+        });
+      }
+
       setSuccessDetails({
         date: format(selectedDate, 'yyyy-MM-dd'),
         time: selectedTime,
