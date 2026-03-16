@@ -5,24 +5,31 @@ import { ChatMessage } from "@/types/chat";
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
+  isStreaming?: boolean;
 }
 
-export const ChatMessageBubble = ({ message }: ChatMessageBubbleProps) => {
+export const ChatMessageBubble = ({ message, isStreaming = false }: ChatMessageBubbleProps) => {
   const timestamp = message.created_at ? new Date(message.created_at) : null;
 
   if (message.is_bot) {
     return (
       <div className="flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 px-2">
         <div className="flex-shrink-0 mt-1">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-            <Bot className="w-4 h-4 text-primary" />
+          <div className={`w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 transition-all duration-300 ${isStreaming ? 'shadow-[0_0_8px_2px_hsl(var(--primary)/0.3)] border-primary/50' : ''}`}>
+            <Bot className={`w-4 h-4 text-primary transition-all duration-300 ${isStreaming ? 'animate-pulse' : ''}`} />
           </div>
         </div>
         <div className="flex flex-col gap-1 max-w-[85%]">
           <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
             {message.message}
+            {isStreaming && (
+              <span
+                className="cursor-blink inline-block w-[2px] h-[1em] bg-primary ml-0.5 align-middle rounded-full"
+                aria-hidden="true"
+              />
+            )}
           </div>
-          {timestamp && (
+          {!isStreaming && timestamp && (
             <time
               dateTime={timestamp.toISOString()}
               title={format(timestamp, "PPpp")}
@@ -31,7 +38,7 @@ export const ChatMessageBubble = ({ message }: ChatMessageBubbleProps) => {
               {format(timestamp, "p")}
             </time>
           )}
-          {message.message_type === "success" && (
+          {!isStreaming && message.message_type === "success" && (
             <Badge
               variant="secondary"
               className="self-start bg-success/10 text-success border-success/20"

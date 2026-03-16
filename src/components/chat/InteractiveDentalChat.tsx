@@ -103,6 +103,8 @@ export const InteractiveDentalChat = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const streamingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [sessionId] = useState(() => crypto.randomUUID());
   const [hasConsented, setHasConsented] = useState(true);
   const [showConsentWidget, setShowConsentWidget] = useState(!user);
@@ -248,10 +250,54 @@ export const InteractiveDentalChat = ({
     loadAIConfig();
   }, [businessId]);
 
+  // Clean up streaming interval on unmount
+  useEffect(() => {
+    return () => {
+      if (streamingIntervalRef.current) {
+        clearInterval(streamingIntervalRef.current);
+      }
+    };
+  }, []);
+
   const scrollToBottom = () => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
+  };
+
+  const streamBotMessage = (
+    botMessage: ChatMessage,
+    onComplete: () => void
+  ) => {
+    const fullText = botMessage.message;
+    // Split into tokens (words + whitespace) for smooth word-by-word reveal
+    const tokens = fullText.split(/(\s+)/);
+    let tokenIndex = 0;
+
+    // Add message with empty text first
+    setMessages(prev => [...prev, { ...botMessage, message: '' }]);
+    setStreamingMessageId(botMessage.id);
+
+    if (streamingIntervalRef.current) {
+      clearInterval(streamingIntervalRef.current);
+    }
+
+    // Reveal ~2-3 tokens per tick at 25ms for a natural ~80 wpm feel
+    streamingIntervalRef.current = setInterval(() => {
+      tokenIndex = Math.min(tokenIndex + 3, tokens.length);
+      const currentText = tokens.slice(0, tokenIndex).join('');
+
+      setMessages(prev =>
+        prev.map(m => m.id === botMessage.id ? { ...m, message: currentText } : m)
+      );
+
+      if (tokenIndex >= tokens.length) {
+        clearInterval(streamingIntervalRef.current!);
+        streamingIntervalRef.current = null;
+        setStreamingMessageId(null);
+        onComplete();
+      }
+    }, 25);
   };
 
   const loadUserProfile = async () => {
@@ -732,14 +778,14 @@ You'll receive a confirmation email shortly.`;
       businessId
     );
 
-    setMessages(prev => [...prev, botResponse]);
-    await saveMessage(botResponse);
-
     setIsLoading(false);
 
-    if (suggestions && suggestions.length > 0) {
-      handleSuggestions(suggestions, recommendedDentists, recommendedService, symptomSummary);
-    }
+    streamBotMessage(botResponse, async () => {
+      await saveMessage(botResponse);
+      if (suggestions && suggestions.length > 0) {
+        handleSuggestions(suggestions, recommendedDentists, recommendedService, symptomSummary);
+      }
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -902,7 +948,11 @@ You'll receive a confirmation email shortly.`;
       <ScrollArea className="flex-1 p-4 bg-gradient-to-b from-background to-muted/20">
         <div className="space-y-4 max-w-4xl mx-auto pb-4">
           {messages.map((message) => (
-            <ChatMessageBubble key={message.id} message={message} />
+            <ChatMessageBubble
+              key={message.id}
+              message={message}
+              isStreaming={streamingMessageId === message.id}
+            />
           ))}
 
           {isLoading && <ChatLoadingIndicator />}
