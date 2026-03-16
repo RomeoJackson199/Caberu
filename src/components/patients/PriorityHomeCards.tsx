@@ -235,81 +235,112 @@ export const PriorityHomeCards: React.FC<PriorityHomeCardsProps> = ({
     result.push({
       id: 'assistant',
       priority: 30,
-      component: (
+      component: hasAIChat ? (
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="h-full"
+        >
+          <Card
+            role="button"
+            tabIndex={0}
+            onClick={onOpenAssistant}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpenAssistant?.();
+              }
+            }}
+            className="h-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 border-0 overflow-hidden relative bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-700 shadow-lg shadow-emerald-200/50 dark:shadow-emerald-900/30"
+          >
+            {/* Background decoration */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
+              <div className="absolute -bottom-8 -left-4 w-32 h-32 rounded-full bg-white/5" />
+              <div className="absolute top-1/2 right-4 w-2 h-2 rounded-full bg-white/30" />
+            </div>
+
+            <CardContent className="p-5 flex flex-col h-full relative z-10">
+              {/* Header row */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
+                      <Sparkles className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-300 border-2 border-white animate-pulse" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white text-sm leading-tight">{t.aiAssistant}</p>
+                    <p className="text-emerald-100 text-xs">Online now</p>
+                  </div>
+                </div>
+                <Badge className="bg-white/20 text-white border-0 text-xs font-medium backdrop-blur-sm">
+                  AI
+                </Badge>
+              </div>
+
+              {/* Prompt chips */}
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {[t.bookingAppointments, t.dentalQuestions].map((chip) => (
+                  <span
+                    key={chip}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 text-white text-xs font-medium backdrop-blur-sm border border-white/20"
+                  >
+                    <MessageSquare className="h-2.5 w-2.5 flex-shrink-0" />
+                    {chip}
+                  </span>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <Button
+                size="sm"
+                className="w-full bg-white text-emerald-700 hover:bg-emerald-50 font-semibold border-0 shadow-sm mt-auto"
+                tabIndex={-1}
+              >
+                <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                {t.startChat}
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : (
         <Card
           role="button"
           tabIndex={0}
-          onClick={hasAIChat ? onOpenAssistant : onBookAppointment}
+          onClick={onBookAppointment}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              hasAIChat ? onOpenAssistant?.() : onBookAppointment?.();
+              onBookAppointment?.();
             }
           }}
-          className={cn(
-            "h-full transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2",
-            hasAIChat
-              ? "bg-gradient-to-br from-emerald-50/50 to-emerald-100/30 dark:from-emerald-900/10 dark:to-emerald-900/5 border-emerald-200/50"
-              : "bg-gradient-to-br from-orange-50/50 to-orange-100/30 dark:from-orange-900/10 dark:to-orange-900/5 border-orange-200/50"
-          )}
+          className="h-full transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 bg-gradient-to-br from-orange-50/50 to-orange-100/30 dark:from-orange-900/10 dark:to-orange-900/5 border-orange-200/50"
         >
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-base">
-              <span className="flex items-center gap-2">
-                {hasAIChat ? (
-                  <MessageSquare className="h-5 w-5 text-emerald-600" />
-                ) : (
-                  <Calendar className="h-5 w-5 text-orange-600" />
-                )}
-                {hasAIChat ? t.aiAssistant : t.bookAppointment}
-              </span>
-              {hasAIChat && (
-                <Badge className="bg-emerald-100 text-emerald-700">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  AI
-                </Badge>
-              )}
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Calendar className="h-5 w-5 text-orange-600" />
+              {t.bookAppointment}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {hasAIChat ? (
-                <>
-                  <p className="text-sm font-medium">{t.getInstantHelpWith}</p>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-emerald-600" />
-                      {t.bookingAppointments}
-                    </li>
-                    <li className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-emerald-600" />
-                      {t.dentalQuestions}
-                    </li>
-                  </ul>
-                  <Button variant="secondary" className="w-full mt-3" size="sm">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {t.startChat}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-medium">Schedule your next visit</p>
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-orange-600" />
-                      Choose available times
-                    </li>
-                    <li className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-orange-600" />
-                      Instant confirmation
-                    </li>
-                  </ul>
-                  <Button variant="secondary" className="w-full mt-3" size="sm">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    {t.bookNow}
-                  </Button>
-                </>
-              )}
+              <p className="text-sm font-medium">Schedule your next visit</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-orange-600" />
+                  Choose available times
+                </li>
+                <li className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-orange-600" />
+                  Instant confirmation
+                </li>
+              </ul>
+              <Button variant="secondary" className="w-full mt-3" size="sm">
+                <Calendar className="h-4 w-4 mr-2" />
+                {t.bookNow}
+              </Button>
             </div>
           </CardContent>
         </Card>
