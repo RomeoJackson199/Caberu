@@ -322,28 +322,6 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
             </Tooltip>;
           })}
 
-          {/* Classic Booking CTA – always visible on desktop */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => navigate('/book-appointment')}
-                className={cn(
-                  "w-full flex items-center px-3 py-3 rounded-xl transition-all group touch-target min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                  "bg-primary/10 text-primary hover:bg-primary/20 hover:scale-[1.01] border border-primary/20",
-                  collapsed ? "justify-center" : "gap-3"
-                )}
-                aria-label="Book Appointment"
-              >
-                <Calendar className="h-5 w-5 shrink-0" />
-                {!collapsed && <span className="font-medium truncate">Book Appointment</span>}
-              </button>
-            </TooltipTrigger>
-            {collapsed && (
-              <TooltipContent side="right">
-                <p>Book Appointment</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
         </TooltipProvider>
       </nav>
 
@@ -405,6 +383,47 @@ export const PatientAppShell: React.FC<PatientAppShellProps> = ({
 
     {/* Main Content Area */}
     <div className={cn("flex-1 transition-[margin-left] duration-200 ease-linear", collapsed ? "ml-16" : "ml-64")}>
+
+      {/* Desktop Top Header */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50 px-6 py-3 flex items-center justify-between">
+        <div />
+        {activeSection === 'assistant' && (
+          <Button variant="ghost" size="sm" onClick={() => navigate('/book-appointment')} className="text-xs text-muted-foreground hover:text-primary">
+            <Calendar className="h-4 w-4 mr-1" />
+            Switch to Classic Booking
+          </Button>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Open menu">
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={userProfilePicture || undefined} className="object-cover" />
+                <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>{userName || 'My Account'}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <div className="space-y-1">
+                <RoleSwitcherMenu />
+                <LanguageSelectorMenu />
+              </div>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/about')} aria-label="About">
+              <Info className="mr-2 h-4 w-4" />
+              About Caberu
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="text-red-600" aria-label="Logout">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <AnimatePresence mode="wait">
         <motion.div key={activeSection} initial={{
