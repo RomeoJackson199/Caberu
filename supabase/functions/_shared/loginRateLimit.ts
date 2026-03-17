@@ -22,7 +22,7 @@ interface RateLimitResult {
  * Uses database-backed rate limiting for multi-instance support
  */
 export async function checkLoginRateLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   email: string,
   clientIP: string
 ): Promise<RateLimitResult> {
