@@ -59,9 +59,9 @@ export function RoleBasedRouter({ children, requiredRole, redirectTo = "/" }: Ro
                 const { error: insertError } = await supabase
                   .from('dentists')
                   .insert({
-                    profile_id: profile.id,
+                    profile_id: profile.id!,
                     is_active: true
-                  });
+                  } as any);
 
                 if (insertError) {
                   logger.error('Failed to create dentist record:', insertError);

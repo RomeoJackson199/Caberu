@@ -140,8 +140,8 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
       }
 
       // Ensure appointments data is properly formatted
-      const formattedAppointments: Appointment[] = (appointmentsData || []).map(apt => {
-        const dentistInfo = dentistMap[apt.dentist_id];
+      const formattedAppointments: Appointment[] = (appointmentsData || []).map((apt: any) => {
+        const dentistInfo = dentistMap[apt.dentist_id!];
         return {
           id: apt.id,
           appointment_date: apt.appointment_date || new Date().toISOString(),

@@ -121,7 +121,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('prescriptions')
         .insert({
           patient_id: newPrescription.patient_id,

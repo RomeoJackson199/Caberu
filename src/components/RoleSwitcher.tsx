@@ -53,7 +53,7 @@ export function useRoleSwitcher(): RoleSwitcherState {
         const { data: businesses } = await supabase
           .from('business_members')
           .select('business_id')
-          .eq('profile_id', profile.id)
+          .eq('profile_id', profile.id as string)
           .limit(1);
 
         setHasBusiness((businesses?.length || 0) > 0);

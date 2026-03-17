@@ -89,7 +89,7 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
 
         const validAppointments = (appointments || []).map(apt => ({
           ...apt,
-          profiles: profilesMap.get(apt.patient_id) || undefined,
+          profiles: profilesMap.get(apt.patient_id!) || undefined,
         })) as PendingAppointment[];
 
         setPendingAppointments(validAppointments);

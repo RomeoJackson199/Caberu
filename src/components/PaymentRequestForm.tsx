@@ -101,7 +101,7 @@ export const PaymentRequestForm: React.FC<PaymentRequestFormProps> = ({
 
       if (!profileError && patientProfile) {
         // Create notification for the patient
-        await supabase
+        await (supabase as any)
           .from('notifications')
           .insert({
             user_id: patientProfile.user_id,
