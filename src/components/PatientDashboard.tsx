@@ -307,7 +307,7 @@ const PatientDashboardInner = ({
             .select('*')
             .eq('user_id', user.id)
             .maybeSingle();
-          setUserProfile(reloadedProfile);
+          setUserProfile(reloadedProfile as unknown as UserProfile);
         }
       } else {
         setUserProfile(profile);
