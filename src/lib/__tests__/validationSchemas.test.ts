@@ -629,8 +629,8 @@ describe('validationSchemas.ts', () => {
         const result = validateData(emailSchema, 'invalid');
         expect(result.success).toBe(false);
         if (!result.success) {
-          expect(result.errors).toBeDefined();
-          expect(Object.keys(result.errors).length).toBeGreaterThan(0);
+          expect((result as any).errors).toBeDefined();
+          expect(Object.keys((result as any).errors).length).toBeGreaterThan(0);
         }
       });
 
