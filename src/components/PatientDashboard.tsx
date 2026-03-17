@@ -378,7 +378,7 @@ const PatientDashboardInner = ({
       const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
 
       const transformed = (appointmentsData || []).map(apt => {
-        const dentist = dentistsMap.get(apt.dentist_id);
+        const dentist = dentistsMap.get(apt.dentist_id!);
         return {
           ...apt,
           duration: apt.duration_minutes || 60,
