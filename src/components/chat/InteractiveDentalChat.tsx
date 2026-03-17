@@ -979,20 +979,20 @@ You'll receive a confirmation email shortly.`;
         </div>
       </ScrollArea>
 
-      <div className="p-4">
-        <div className="flex gap-3 max-w-4xl mx-auto">
+      <div className="px-4 pb-6 pt-2">
+        <div className="flex items-center gap-2 max-w-4xl mx-auto rounded-full border border-border/40 bg-background/30 backdrop-blur-md px-4 py-2 shadow-sm">
           <Input
             placeholder="Type your message..."
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-background/50 border-input/50 focus:border-primary transition-colors"
+            className="flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground/60 h-10"
           />
-          <Button 
-            onClick={handleSendMessage} 
+          <Button
+            onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isLoading}
             size="icon"
-            className="h-10 w-10 rounded-xl shadow-md hover:shadow-lg transition-all"
+            className="h-8 w-8 rounded-full shrink-0 transition-all"
           >
             <Send className="h-4 w-4" />
           </Button>
