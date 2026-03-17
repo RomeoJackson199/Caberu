@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, User } from 'lucide-react';
+import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, Phone, Smile } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, isSameDay } from 'date-fns';
 
 interface Conversation {
@@ -40,6 +40,8 @@ const TEMPLATES = [
     key: 'appointment_confirmation',
     description: 'Confirm an upcoming appointment',
     icon: '📅',
+    color: 'from-blue-500/10 to-blue-500/5 border-blue-200/60 dark:border-blue-800/40',
+    iconBg: 'bg-blue-100 dark:bg-blue-900/40',
   },
   {
     name: 'Appointment Reminder (24h)',
@@ -47,6 +49,8 @@ const TEMPLATES = [
     key: 'appointment_reminder_24h',
     description: 'Remind patient of tomorrow\'s visit',
     icon: '⏰',
+    color: 'from-purple-500/10 to-purple-500/5 border-purple-200/60 dark:border-purple-800/40',
+    iconBg: 'bg-purple-100 dark:bg-purple-900/40',
   },
   {
     name: 'Payment Reminder',
@@ -54,6 +58,8 @@ const TEMPLATES = [
     key: 'payment_reminder',
     description: 'Request outstanding payment',
     icon: '💳',
+    color: 'from-orange-500/10 to-orange-500/5 border-orange-200/60 dark:border-orange-800/40',
+    iconBg: 'bg-orange-100 dark:bg-orange-900/40',
   },
   {
     name: 'Patient Welcome',
@@ -61,6 +67,8 @@ const TEMPLATES = [
     key: 'patient_welcome',
     description: 'Welcome a new patient',
     icon: '👋',
+    color: 'from-green-500/10 to-green-500/5 border-green-200/60 dark:border-green-800/40',
+    iconBg: 'bg-green-100 dark:bg-green-900/40',
   },
 ];
 
@@ -71,14 +79,20 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getAvatarColor(name: string): string {
-  const colors = [
-    'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500',
-    'bg-teal-500', 'bg-cyan-500', 'bg-orange-500', 'bg-rose-500',
+function getAvatarGradient(name: string): string {
+  const gradients = [
+    'from-blue-400 to-blue-600',
+    'from-purple-400 to-purple-600',
+    'from-pink-400 to-pink-600',
+    'from-indigo-400 to-indigo-600',
+    'from-teal-400 to-teal-600',
+    'from-cyan-400 to-cyan-600',
+    'from-orange-400 to-orange-600',
+    'from-rose-400 to-rose-600',
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
+  return gradients[Math.abs(hash) % gradients.length];
 }
 
 function formatMessageDate(dateStr: string): string {
@@ -96,12 +110,12 @@ function DateSeparator({ date }: { date: string }) {
   else label = format(d, 'MMMM d, yyyy');
 
   return (
-    <div className="flex items-center gap-3 my-4">
-      <div className="flex-1 h-px bg-border/60" />
-      <span className="text-[11px] font-medium text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-full">
+    <div className="flex items-center gap-3 my-5">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      <span className="text-[11px] font-medium text-muted-foreground/80 bg-background/80 backdrop-blur-sm border border-border/40 px-3 py-1 rounded-full shadow-sm">
         {label}
       </span>
-      <div className="flex-1 h-px bg-border/60" />
+      <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-transparent" />
     </div>
   );
 }
@@ -111,6 +125,19 @@ function MessageStatus({ status }: { status: string }) {
   if (status === 'sent') return <Check className="h-3 w-3 inline ml-1 text-green-200/70" />;
   if (status === 'failed') return <X className="h-3 w-3 inline ml-1 text-red-300" />;
   return null;
+}
+
+function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
+  const gradient = getAvatarGradient(name);
+  const sizeClass = size === 'sm' ? 'w-8 h-8 text-xs' : size === 'lg' ? 'w-12 h-12 text-base' : 'w-10 h-10 text-sm';
+  return (
+    <div className={cn(
+      'rounded-full flex items-center justify-center text-white font-bold shrink-0 bg-gradient-to-br shadow-sm',
+      gradient, sizeClass
+    )}>
+      {getInitials(name)}
+    </div>
+  );
 }
 
 export default function WhatsAppInbox() {
@@ -314,7 +341,6 @@ export default function WhatsAppInbox() {
     c.phone.includes(searchQuery)
   );
 
-  // Group messages by date for separators
   const messagesWithSeparators = messages.reduce<{ type: 'separator' | 'message'; date?: string; msg?: Message }[]>((acc, msg, i) => {
     const prev = messages[i - 1];
     if (!prev || !isSameDay(new Date(msg.created_at), new Date(prev.created_at))) {
@@ -327,178 +353,236 @@ export default function WhatsAppInbox() {
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
 
   return (
-    <div className="flex h-[calc(100vh-120px)] rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-      {/* Left panel — Conversations */}
-      <div className="w-[300px] border-r border-border flex flex-col bg-card">
+    <div className="flex h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-xl border border-border/50 bg-card">
+
+      {/* ── Left panel ── */}
+      <div className="w-[320px] border-r border-border/50 flex flex-col bg-card">
+
         {/* Header */}
-        <div className="px-4 py-3 border-b border-border bg-muted/30">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center">
+        <div className="bg-gradient-to-br from-[#075e54] to-[#128c7e] px-4 pt-4 pb-3">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30">
                 <MessageCircle className="h-4 w-4 text-white" />
               </div>
-              <h2 className="font-semibold text-foreground text-sm">WhatsApp</h2>
+              <div>
+                <h2 className="font-semibold text-white text-sm leading-none">WhatsApp</h2>
+                <p className="text-[10px] text-white/60 mt-0.5">Inbox</p>
+              </div>
             </div>
             {totalUnread > 0 && (
-              <Badge className="bg-green-600 hover:bg-green-600 h-5 text-xs">
+              <div className="bg-[#25d366] text-white text-xs font-bold min-w-[22px] h-[22px] rounded-full flex items-center justify-center px-1.5 shadow-sm">
                 {totalUnread}
-              </Badge>
+              </div>
             )}
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/50" />
+            <input
               placeholder="Search patients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-8 text-sm bg-background"
+              className="w-full pl-9 pr-3 h-9 rounded-lg bg-white/15 text-white placeholder:text-white/50 text-sm border-0 outline-none focus:ring-1 focus:ring-white/30 transition-all"
             />
           </div>
         </div>
 
         {/* Conversation list */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 bg-card">
           {loading ? (
-            <div className="flex items-center justify-center p-10">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center p-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#075e54]/10 flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-[#075e54]" />
+                </div>
+                <p className="text-xs text-muted-foreground">Loading conversations…</p>
+              </div>
             </div>
           ) : filteredConversations.length === 0 ? (
-            <div className="p-8 text-center">
-              <MessageCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                {searchQuery ? 'No matches found' : 'No conversations yet'}
+            <div className="p-10 text-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <MessageCircle className="h-7 w-7 text-muted-foreground/40" />
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                {searchQuery ? 'No results found' : 'No conversations yet'}
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                {searchQuery ? 'Try a different search' : 'Patients will appear here once they message you'}
               </p>
             </div>
           ) : (
-            filteredConversations.map((conv) => {
-              const initials = getInitials(conv.patient_name);
-              const avatarColor = getAvatarColor(conv.patient_name);
-              const isSelected = selectedPhone === conv.phone;
-
-              return (
-                <button
-                  key={conv.phone}
-                  onClick={() => setSelectedPhone(conv.phone)}
-                  className={cn(
-                    'w-full px-3 py-3 text-left border-b border-border/40 hover:bg-accent/60 transition-colors relative',
-                    isSelected && 'bg-accent border-l-2 border-l-green-600'
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className={cn('w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0', avatarColor)}>
-                      {initials}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className={cn('text-sm truncate', conv.unread_count > 0 ? 'font-semibold text-foreground' : 'font-medium text-foreground')}>
-                          {conv.patient_name}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
-                          {conv.last_message_at ? formatMessageDate(conv.last_message_at) : ''}
-                        </span>
+            <div>
+              {filteredConversations.map((conv, idx) => {
+                const isSelected = selectedPhone === conv.phone;
+                return (
+                  <button
+                    key={conv.phone}
+                    onClick={() => setSelectedPhone(conv.phone)}
+                    className={cn(
+                      'w-full px-4 py-3.5 text-left transition-all duration-150 relative group',
+                      idx !== filteredConversations.length - 1 && 'border-b border-border/30',
+                      isSelected
+                        ? 'bg-[#075e54]/8 dark:bg-[#25d366]/10'
+                        : 'hover:bg-accent/50'
+                    )}
+                  >
+                    {isSelected && (
+                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#25d366] rounded-r-full" />
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Avatar name={conv.patient_name} />
+                        <div className={cn(
+                          'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card',
+                          conv.window_open ? 'bg-[#25d366]' : 'bg-amber-400'
+                        )} />
                       </div>
 
-                      <div className="flex items-center justify-between gap-1 mt-0.5">
-                        <p className={cn('text-xs truncate', conv.unread_count > 0 ? 'text-foreground' : 'text-muted-foreground')}>
-                          {conv.last_message_at ? (
-                            <>
-                              {conv.last_direction === 'outbound' && (
-                                <CheckCheck className="h-3 w-3 inline mr-0.5 text-green-500" />
-                              )}
-                              {conv.last_message || <span className="italic">Template sent</span>}
-                            </>
-                          ) : (
-                            <span className="italic text-muted-foreground/70">No messages yet</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={cn(
+                            'text-sm truncate',
+                            conv.unread_count > 0 ? 'font-semibold text-foreground' : 'font-medium text-foreground'
+                          )}>
+                            {conv.patient_name}
+                          </span>
+                          <span className={cn(
+                            'text-[10px] whitespace-nowrap shrink-0',
+                            conv.unread_count > 0 ? 'text-[#25d366] font-medium' : 'text-muted-foreground'
+                          )}>
+                            {conv.last_message_at ? formatMessageDate(conv.last_message_at) : ''}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 mt-0.5">
+                          <p className={cn(
+                            'text-xs truncate',
+                            conv.unread_count > 0 ? 'text-foreground' : 'text-muted-foreground'
+                          )}>
+                            {conv.last_message_at ? (
+                              <>
+                                {conv.last_direction === 'outbound' && (
+                                  <CheckCheck className="h-3 w-3 inline mr-0.5 text-[#25d366]" />
+                                )}
+                                {conv.last_message || <span className="italic">Template sent</span>}
+                              </>
+                            ) : (
+                              <span className="italic text-muted-foreground/60">No messages yet</span>
+                            )}
+                          </p>
+                          {conv.unread_count > 0 && (
+                            <div className="bg-[#25d366] text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 shrink-0">
+                              {conv.unread_count}
+                            </div>
                           )}
-                        </p>
-                        {conv.unread_count > 0 && (
-                          <Badge className="bg-green-600 hover:bg-green-600 h-4 min-w-[16px] text-[10px] px-1 shrink-0">
-                            {conv.unread_count}
-                          </Badge>
-                        )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Window status dot */}
-                  <div className={cn(
-                    'absolute bottom-2 left-[42px] w-2.5 h-2.5 rounded-full border-2 border-card',
-                    conv.window_open ? 'bg-green-500' : 'bg-amber-400'
-                  )} />
-                </button>
-              );
-            })
+                  </button>
+                );
+              })}
+            </div>
           )}
         </ScrollArea>
 
         {/* Legend */}
-        <div className="px-3 py-2 border-t border-border/50 flex items-center gap-3 text-[10px] text-muted-foreground">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" />Free text</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />Template only</span>
+        <div className="px-4 py-2.5 border-t border-border/40 bg-muted/20 flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#25d366] shadow-sm" />
+            Free text open
+          </span>
+          <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" />
+            Template only
+          </span>
         </div>
       </div>
 
-      {/* Right panel — Chat */}
+      {/* ── Right panel ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {!selectedPhone ? (
-          <div className="flex-1 flex items-center justify-center bg-muted/10">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-950/40 flex items-center justify-center mx-auto">
-                <MessageCircle className="h-8 w-8 text-green-600" />
+          /* Empty state */
+          <div className="flex-1 flex items-center justify-center"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23075e54' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          >
+            <div className="text-center space-y-4 p-8">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#075e54]/15 to-[#25d366]/10 flex items-center justify-center mx-auto shadow-inner">
+                <MessageCircle className="h-12 w-12 text-[#075e54]/50 dark:text-[#25d366]/50" />
               </div>
               <div>
-                <p className="font-medium text-foreground text-sm">WhatsApp Inbox</p>
-                <p className="text-xs text-muted-foreground mt-1">Select a conversation to view messages</p>
+                <p className="font-semibold text-foreground text-lg">WhatsApp Inbox</p>
+                <p className="text-sm text-muted-foreground mt-1.5 max-w-[220px] mx-auto leading-relaxed">
+                  Select a conversation from the list to start messaging
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-4 pt-2">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{conversations.length}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">Contacts</p>
+                </div>
+                <div className="w-px h-8 bg-border" />
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-[#25d366]">{totalUnread}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">Unread</p>
+                </div>
               </div>
             </div>
           </div>
         ) : (
           <>
             {/* Chat header */}
-            <div className="px-4 py-3 border-b border-border flex items-center gap-3 bg-card">
-              <div className={cn(
-                'w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0',
-                getAvatarColor(selectedConversation?.patient_name || '')
-              )}>
-                {getInitials(selectedConversation?.patient_name || '?')}
-              </div>
+            <div className="bg-gradient-to-r from-[#075e54] to-[#128c7e] px-4 py-3 flex items-center gap-3 shadow-sm">
+              <Avatar name={selectedConversation?.patient_name || '?'} size="md" />
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground text-sm leading-tight">
+                <h3 className="font-semibold text-white text-sm leading-tight">
                   {selectedConversation?.patient_name}
                 </h3>
-                <p className="text-xs text-muted-foreground">{selectedPhone}</p>
+                <p className="text-[11px] text-white/60 flex items-center gap-1 mt-0.5">
+                  <Phone className="h-3 w-3" />
+                  {selectedPhone}
+                </p>
               </div>
-              <Badge
-                variant="outline"
-                className={cn(
-                  'text-xs shrink-0',
-                  selectedConversation?.window_open
-                    ? 'border-green-500 text-green-700 bg-green-50 dark:bg-green-950/30'
-                    : 'border-amber-500 text-amber-700 bg-amber-50 dark:bg-amber-950/30'
-                )}
-              >
-                <Clock className="h-3 w-3 mr-1" />
-                {selectedConversation?.window_open ? 'Free text open' : 'Template only'}
-              </Badge>
+              <div className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border backdrop-blur-sm',
+                selectedConversation?.window_open
+                  ? 'bg-[#25d366]/20 border-[#25d366]/40 text-white'
+                  : 'bg-amber-400/20 border-amber-400/40 text-white'
+              )}>
+                <Clock className="h-3 w-3" />
+                {selectedConversation?.window_open ? 'Session open' : 'Template only'}
+              </div>
             </div>
 
             {/* Messages area */}
-            <ScrollArea className="flex-1 bg-muted/10">
-              <div className="p-4">
+            <ScrollArea
+              className="flex-1"
+              style={{
+                background: 'hsl(var(--muted) / 0.15)',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23075e54' fill-opacity='0.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }}
+            >
+              <div className="p-4 pb-2">
                 {messagesLoading ? (
-                  <div className="flex items-center justify-center py-10">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="flex items-center justify-center py-16">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#075e54]/10 flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#075e54]" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Loading messages…</p>
+                    </div>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center py-10 space-y-2">
-                    <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground/30" />
-                    <p className="text-sm text-muted-foreground">No messages yet</p>
-                    <p className="text-xs text-muted-foreground/70">Send a template to start the conversation</p>
+                  <div className="text-center py-16 space-y-3">
+                    <div className="w-16 h-16 rounded-full bg-[#075e54]/10 flex items-center justify-center mx-auto">
+                      <Smile className="h-8 w-8 text-[#075e54]/40" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">No messages yet</p>
+                    <p className="text-xs text-muted-foreground/70">Send a template to kick off the conversation</p>
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {messagesWithSeparators.map((item, i) => {
                       if (item.type === 'separator') {
                         return <DateSeparator key={`sep-${i}`} date={item.date!} />;
@@ -508,26 +592,28 @@ export default function WhatsAppInbox() {
                       return (
                         <div
                           key={msg.id}
-                          className={cn('flex', isOutbound ? 'justify-end' : 'justify-start')}
+                          className={cn('flex mb-1', isOutbound ? 'justify-end' : 'justify-start')}
                         >
                           <div
                             className={cn(
-                              'max-w-[72%] rounded-2xl px-3.5 py-2 text-sm shadow-sm',
+                              'max-w-[68%] px-3.5 py-2 text-sm shadow-md relative',
                               isOutbound
-                                ? 'bg-green-600 text-white rounded-br-sm'
-                                : 'bg-card text-foreground rounded-bl-sm border border-border/60'
+                                ? 'bg-[#dcf8c6] dark:bg-[#005c4b] text-gray-800 dark:text-gray-100 rounded-2xl rounded-br-sm'
+                                : 'bg-white dark:bg-[#202c33] text-gray-800 dark:text-gray-100 rounded-2xl rounded-bl-sm border border-black/5 dark:border-white/5'
                             )}
                           >
                             <p className="leading-relaxed whitespace-pre-wrap break-words">
                               {msg.body || (
-                                <span className="italic opacity-80">
+                                <span className="italic opacity-70">
                                   📋 {msg.template_name?.replace(/_/g, ' ') || 'Template message'}
                                 </span>
                               )}
                             </p>
                             <div className={cn(
                               'text-[10px] mt-1 flex items-center justify-end gap-0.5',
-                              isOutbound ? 'text-green-100/80' : 'text-muted-foreground'
+                              isOutbound
+                                ? 'text-gray-500 dark:text-[#8696a0]'
+                                : 'text-gray-400 dark:text-[#8696a0]'
                             )}>
                               {format(new Date(msg.created_at), 'HH:mm')}
                               {isOutbound && <MessageStatus status={msg.status} />}
@@ -542,29 +628,33 @@ export default function WhatsAppInbox() {
               </div>
             </ScrollArea>
 
-            {/* Upcoming appointments collapsible */}
+            {/* Upcoming appointments */}
             {selectedConversation?.patient_id && upcomingAppointments.length > 0 && (
               <Collapsible open={remindersOpen} onOpenChange={setRemindersOpen}>
-                <CollapsibleTrigger className="w-full px-4 py-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground hover:bg-accent/40 transition-colors">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Calendar className="h-3.5 w-3.5 text-green-600" />
+                <CollapsibleTrigger className="w-full px-4 py-2.5 border-t border-border/40 bg-card flex items-center justify-between text-xs hover:bg-accent/30 transition-colors">
+                  <span className="flex items-center gap-2 font-medium text-foreground">
+                    <div className="w-5 h-5 rounded-full bg-[#075e54]/10 flex items-center justify-center">
+                      <Calendar className="h-3 w-3 text-[#075e54]" />
+                    </div>
                     Upcoming Appointments
-                    <Badge variant="secondary" className="h-4 text-[10px] px-1.5">{upcomingAppointments.length}</Badge>
+                    <span className="bg-[#075e54]/10 text-[#075e54] dark:text-[#25d366] text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                      {upcomingAppointments.length}
+                    </span>
                   </span>
-                  <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-200', remindersOpen && 'rotate-180')} />
+                  <ChevronDown className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform duration-200', remindersOpen && 'rotate-180')} />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="border-t border-border/50 px-4 py-2 bg-muted/20 max-h-36 overflow-auto space-y-1.5">
+                  <div className="border-t border-border/30 px-4 py-2 bg-muted/20 max-h-36 overflow-auto space-y-1.5">
                     {upcomingAppointments.map((apt) => (
-                      <div key={apt.id} className="flex items-center justify-between text-xs py-0.5">
+                      <div key={apt.id} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg hover:bg-accent/40 transition-colors">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#25d366]" />
                           <span className="text-foreground font-medium">
                             {format(new Date(apt.appointment_date), 'MMM d, HH:mm')}
                           </span>
                           <span className="text-muted-foreground">— {apt.reason || 'General'}</span>
                         </div>
-                        <Badge variant="outline" className="text-[10px] h-4 capitalize">{apt.status}</Badge>
+                        <Badge variant="outline" className="text-[10px] h-4 capitalize border-border/50">{apt.status}</Badge>
                       </div>
                     ))}
                   </div>
@@ -573,32 +663,38 @@ export default function WhatsAppInbox() {
             )}
 
             {/* Input area */}
-            <div className="p-3 border-t border-border bg-card">
+            <div className="px-3 py-3 border-t border-border/40 bg-card/95 backdrop-blur-sm">
               {/* Template picker */}
               {showTemplates && (
-                <div className="mb-2 rounded-xl border border-border bg-card shadow-md overflow-hidden">
-                  <div className="px-3 py-2 border-b border-border/50 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-foreground">Message Templates</p>
+                <div className="mb-3 rounded-2xl border border-border/60 bg-card shadow-xl overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-border/40 bg-muted/30 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-[#075e54]" />
+                      <p className="text-xs font-semibold text-foreground">Message Templates</p>
+                    </div>
                     <button
                       onClick={() => setShowTemplates(false)}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="w-5 h-5 rounded-full bg-muted hover:bg-accent flex items-center justify-center transition-colors"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-3 w-3 text-muted-foreground" />
                     </button>
                   </div>
-                  <div className="divide-y divide-border/40">
+                  <div className="grid grid-cols-2 gap-2 p-3">
                     {TEMPLATES.map((tmpl) => (
                       <button
                         key={tmpl.sid}
                         onClick={() => handleSendTemplate(tmpl.sid, tmpl.key)}
                         disabled={sending}
-                        className="w-full text-left px-3 py-2.5 hover:bg-accent/60 transition-colors flex items-start gap-2.5 disabled:opacity-50"
+                        className={cn(
+                          'text-left p-3 rounded-xl border bg-gradient-to-br transition-all hover:shadow-md hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none',
+                          tmpl.color
+                        )}
                       >
-                        <span className="text-base shrink-0 mt-0.5">{tmpl.icon}</span>
-                        <div>
-                          <p className="text-sm font-medium text-foreground leading-tight">{tmpl.name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{tmpl.description}</p>
+                        <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center mb-2 text-base', tmpl.iconBg)}>
+                          {tmpl.icon}
                         </div>
+                        <p className="text-xs font-semibold text-foreground leading-tight">{tmpl.name}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{tmpl.description}</p>
                       </button>
                     ))}
                   </div>
@@ -606,51 +702,55 @@ export default function WhatsAppInbox() {
               )}
 
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn('shrink-0 h-9 w-9', showTemplates && 'bg-accent text-accent-foreground')}
+                <button
+                  className={cn(
+                    'shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all',
+                    showTemplates
+                      ? 'bg-[#075e54] text-white shadow-md'
+                      : 'bg-muted hover:bg-[#075e54]/10 text-muted-foreground hover:text-[#075e54]'
+                  )}
                   onClick={() => setShowTemplates(!showTemplates)}
                   title="Message templates"
                 >
                   <FileText className="h-4 w-4" />
-                </Button>
+                </button>
+
                 <div className="relative flex-1">
                   <Input
                     placeholder={
                       selectedConversation?.window_open
-                        ? 'Type a message...'
+                        ? 'Type a message…'
                         : 'Session expired — use a template'
                     }
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendFreeform()}
                     disabled={!selectedConversation?.window_open || sending}
-                    className="h-9 pr-2"
+                    className="h-10 rounded-full bg-muted/60 border-border/40 focus-visible:ring-[#075e54]/30 pr-4 pl-4 text-sm"
                   />
-                  {!selectedConversation?.window_open && (
-                    <div className="absolute inset-0 rounded-md bg-muted/20 flex items-center justify-center pointer-events-none">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> Use a template to reach this patient
-                      </span>
-                    </div>
-                  )}
                 </div>
-                <Button
-                  size="icon"
-                  className="shrink-0 h-9 w-9 bg-green-600 hover:bg-green-700"
+
+                <button
+                  className={cn(
+                    'shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm',
+                    (!newMessage.trim() || !selectedConversation?.window_open || sending)
+                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                      : 'bg-[#25d366] hover:bg-[#1dbc5a] text-white hover:shadow-md hover:scale-105'
+                  )}
                   onClick={handleSendFreeform}
                   disabled={!newMessage.trim() || !selectedConversation?.window_open || sending}
                 >
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
+                  {sending
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <Send className="h-4 w-4" />
+                  }
+                </button>
               </div>
 
-              {/* User hint */}
               {selectedConversation && !selectedConversation.window_open && (
-                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  24-hour session closed. Click <FileText className="h-3 w-3 inline" /> to send a pre-approved template.
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1 pl-1">
+                  <Clock className="h-3 w-3 shrink-0" />
+                  24-hour session closed. Use the template button to send a pre-approved message.
                 </p>
               )}
             </div>
