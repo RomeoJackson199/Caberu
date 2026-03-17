@@ -979,7 +979,7 @@ You'll receive a confirmation email shortly.`;
         </div>
       </ScrollArea>
 
-      <div className="border-t bg-card/50 backdrop-blur-sm p-4">
+      <div className="p-4">
         <div className="flex gap-3 max-w-4xl mx-auto">
           <Input
             placeholder="Type your message..."
