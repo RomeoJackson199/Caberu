@@ -101,7 +101,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
           notes,
           dentist_id
         `)
-        .eq('patient_id', profile.id)
+        .eq('patient_id', profile.id as string)
         .order('appointment_date', { ascending: false });
 
       if (appointmentsError) {
@@ -110,7 +110,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
       }
 
       // Collect unique dentist IDs to fetch their profiles
-      const dentistIds = [...new Set((appointmentsData || []).map(apt => apt.dentist_id).filter(Boolean))];
+      const dentistIds = [...new Set((appointmentsData || []).map(apt => apt.dentist_id).filter((id): id is string => id !== null))];
 
       // Fetch dentist details (name, phone, clinic address)
       const dentistMap: Record<string, { first_name: string; last_name: string; phone?: string; clinic_address?: string }> = {};
@@ -118,7 +118,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
         const { data: dentists } = await supabase
           .from('dentists')
           .select('id, clinic_address, profiles:profile_id(first_name, last_name, phone)')
-          .in('id', dentistIds);
+          .in('id', dentistIds as string[]);
 
         if (dentists) {
           for (const d of dentists) {
@@ -140,8 +140,8 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
       }
 
       // Ensure appointments data is properly formatted
-      const formattedAppointments: Appointment[] = (appointmentsData || []).map(apt => {
-        const dentistInfo = dentistMap[apt.dentist_id];
+      const formattedAppointments: Appointment[] = (appointmentsData || []).map((apt: any) => {
+        const dentistInfo = dentistMap[apt.dentist_id!];
         return {
           id: apt.id,
           appointment_date: apt.appointment_date || new Date().toISOString(),

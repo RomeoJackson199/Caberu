@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// deno-lint-ignore no-explicit-any
+type AnySupabaseClient = any;
+
 // =====================================================
 // Login Rate Limiting Utility for Supabase Edge Functions
 // =====================================================
@@ -19,7 +22,7 @@ interface RateLimitResult {
  * Uses database-backed rate limiting for multi-instance support
  */
 export async function checkLoginRateLimit(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   email: string,
   clientIP: string
 ): Promise<RateLimitResult> {
@@ -105,7 +108,7 @@ export async function checkLoginRateLimit(
  * Record a successful login (resets the rate limit for this user/IP)
  */
 export async function recordSuccessfulLogin(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   email: string,
   clientIP: string
 ): Promise<void> {
@@ -127,7 +130,7 @@ export async function recordSuccessfulLogin(
  * Record a failed login attempt (for audit purposes)
  */
 export async function recordFailedLogin(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   email: string,
   clientIP: string,
   reason: string

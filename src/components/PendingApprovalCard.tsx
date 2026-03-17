@@ -81,15 +81,15 @@ export function PendingApprovalCard({ dentistId, onAction, onNavigateToPatient }
         if (error) throw error;
 
         // Fetch patient profiles separately (views don't support PostgREST joins)
-        const patientIds = [...new Set((appointments || []).map(a => a.patient_id).filter(Boolean))];
+        const patientIds = [...new Set((appointments || []).map(a => a.patient_id).filter((id): id is string => id !== null))];
         const { data: profiles } = patientIds.length > 0
-          ? await supabase.from('profiles').select('id, first_name, last_name').in('id', patientIds)
+          ? await supabase.from('profiles').select('id, first_name, last_name').in('id', patientIds as string[])
           : { data: [] };
         const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
 
         const validAppointments = (appointments || []).map(apt => ({
           ...apt,
-          profiles: profilesMap.get(apt.patient_id) || undefined,
+          profiles: profilesMap.get(apt.patient_id!) || undefined,
         })) as PendingAppointment[];
 
         setPendingAppointments(validAppointments);

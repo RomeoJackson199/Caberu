@@ -115,18 +115,18 @@ export const RescheduleDialog = ({ appointmentId, open, onOpenChange, onSuccess 
       }
 
       setAppointment({
-        id: data.id,
-        appointment_date: data.appointment_date,
-        reason: data.reason,
-        dentist_id: data.dentist_id,
-        service_id: data.service_id,
+        id: data.id!,
+        appointment_date: data.appointment_date!,
+        reason: data.reason!,
+        dentist_id: data.dentist_id!,
+        service_id: data.service_id!,
         dentistName,
       });
 
       const { data: avail } = await supabase
         .from('dentist_availability')
         .select('day_of_week, is_available')
-        .eq('dentist_id', data.dentist_id)
+        .eq('dentist_id', data.dentist_id!)
         .eq('business_id', bId);
 
       if (avail) {

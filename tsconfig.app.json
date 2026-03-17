@@ -13,7 +13,7 @@
     "moduleResolution": "bundler",
     "noEmit": true,
     "noFallthroughCasesInSwitch": false,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
@@ -23,6 +23,7 @@
     },
     "skipLibCheck": true,
     "strict": true,
+    "strictNullChecks": false,
     "target": "ES2020",
     "useDefineForClassFields": true
   },

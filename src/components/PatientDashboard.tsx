@@ -275,7 +275,7 @@ const PatientDashboardInner = ({
             .eq('user_id', user.id)
             .maybeSingle();
           if (retryProfile) {
-            setUserProfile(retryProfile);
+            setUserProfile(retryProfile as unknown as UserProfile);
           } else {
             setError('Profile exists but could not be loaded. Please try refreshing.');
           }
@@ -296,7 +296,7 @@ const PatientDashboardInner = ({
               .eq('user_id', user.id)
               .maybeSingle();
             if (retryProfile) {
-              setUserProfile(retryProfile);
+              setUserProfile(retryProfile as unknown as UserProfile);
             } else {
               setError('Unable to load your profile. Please try refreshing the page.');
             }
@@ -307,10 +307,10 @@ const PatientDashboardInner = ({
             .select('*')
             .eq('user_id', user.id)
             .maybeSingle();
-          setUserProfile(reloadedProfile);
+          setUserProfile(reloadedProfile as unknown as UserProfile);
         }
       } else {
-        setUserProfile(profile);
+        setUserProfile(profile as unknown as UserProfile);
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
@@ -325,9 +325,9 @@ const PatientDashboardInner = ({
       const {
         data: appointmentsData
       } = await supabase.from('appointments_decrypted').select('*').eq('patient_id', profileId);
-      const upcomingAppointments = appointmentsData?.filter(apt => new Date(apt.appointment_date) > new Date() && apt.status === 'confirmed').length || 0;
+      const upcomingAppointments = appointmentsData?.filter(apt => new Date(apt.appointment_date!) > new Date() && apt.status === 'confirmed').length || 0;
       const completedAppointments = appointmentsData?.filter(apt => apt.status === 'completed').length || 0;
-      const lastVisit = appointmentsData?.filter(apt => apt.status === 'completed').sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())[0]?.appointment_date || null;
+      const lastVisit = appointmentsData?.filter(apt => apt.status === 'completed').sort((a, b) => new Date(b.appointment_date!).getTime() - new Date(a.appointment_date!).getTime())[0]?.appointment_date || null;
 
       // Fetch prescriptions (stored as medical_records with record_type='prescription')
       const {
@@ -371,14 +371,14 @@ const PatientDashboardInner = ({
       }
 
       // Fetch dentist data separately (views don't support PostgREST joins)
-      const dentistIds = [...new Set((appointmentsData || []).map(a => a.dentist_id).filter(Boolean))];
+      const dentistIds = [...new Set((appointmentsData || []).map(a => a.dentist_id).filter((id): id is string => id !== null))];
       const { data: dentists } = dentistIds.length > 0
-        ? await supabase.from('dentists').select('id, specialization, email, profile_picture_url, profiles:profile_id(first_name, last_name, bio, phone, address, profile_picture_url)').in('id', dentistIds)
+        ? await supabase.from('dentists').select('id, specialization, email, profile_picture_url, profiles:profile_id(first_name, last_name, bio, phone, address, profile_picture_url)').in('id', dentistIds as string[])
         : { data: [] };
       const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
 
       const transformed = (appointmentsData || []).map(apt => {
-        const dentist = dentistsMap.get(apt.dentist_id);
+        const dentist = dentistsMap.get(apt.dentist_id!);
         return {
           ...apt,
           duration: apt.duration_minutes || 60,
@@ -395,7 +395,7 @@ const PatientDashboardInner = ({
           } : undefined
         };
       });
-      setRecentAppointments(transformed);
+      setRecentAppointments(transformed as unknown as Appointment[]);
     } catch (error) {
       console.error('💥 Exception fetching recent appointments:', error);
     }
@@ -405,24 +405,24 @@ const PatientDashboardInner = ({
       // Fetch prescriptions
       const {
         data: prescriptionsData
-      } = await supabase.from('prescriptions').select('*').eq('patient_id', profileId).order('prescribed_date', {
+      } = await (supabase as any).from('prescriptions').select('*').eq('patient_id', profileId).order('prescribed_date', {
         ascending: false
       });
-      setPrescriptions((prescriptionsData || []).map(prescription => ({
+      setPrescriptions(((prescriptionsData || []) as any[]).map((prescription: any) => ({
         ...prescription,
         duration: prescription.duration_days?.toString() || "7 days"
-      })));
+      })) as Prescription[]);
 
       const {
         data: treatmentPlansData
       } = await supabase.from('treatment_plans_decrypted').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
-      setTreatmentPlans((treatmentPlansData || []).map(plan => ({
+      setTreatmentPlans(((treatmentPlansData || []) as any[]).map((plan: any) => ({
         ...plan,
         title: plan.title || "Treatment Plan",
         estimated_duration: plan.estimated_duration_weeks ? `${plan.estimated_duration_weeks} weeks` : "2 weeks"
-      })));
+      })) as TreatmentPlan[]);
 
       // Fetch medical records
       const {
@@ -430,10 +430,10 @@ const PatientDashboardInner = ({
       } = await supabase.from('medical_records_decrypted').select('*').eq('patient_id', profileId).order('record_date', {
         ascending: false
       });
-      setMedicalRecords((medicalRecordsData || []).map(record => ({
+      setMedicalRecords(((medicalRecordsData || []) as any[]).map((record: any) => ({
         ...record,
         visit_date: record.record_date
-      })));
+      })) as MedicalRecord[]);
 
       // Fetch patient notes
       const {
@@ -441,7 +441,7 @@ const PatientDashboardInner = ({
       } = await supabase.from('notes_decrypted').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
-      setPatientNotes(notesData || []);
+      setPatientNotes((notesData || []) as unknown as PatientNote[]);
     } catch (error) {
       console.error('Error fetching patient data:', error);
     }

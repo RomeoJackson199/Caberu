@@ -335,15 +335,15 @@ export const HealthData = ({
     if (error) throw error;
 
     // Fetch dentist profiles separately (views don't support PostgREST joins)
-    const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter(Boolean))];
+    const dentistIds = [...new Set((data || []).map(a => a.dentist_id).filter((id): id is string => id !== null))];
     const { data: dentists } = dentistIds.length > 0
-      ? await supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds)
+      ? await supabase.from('dentists').select('id, profiles:profile_id(first_name, last_name)').in('id', dentistIds as string[])
       : { data: [] };
     const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
 
     return (data || []).map(apt => ({
       ...apt,
-      dentist: dentistsMap.get(apt.dentist_id) || undefined,
+      dentist: dentistsMap.get(apt.dentist_id!) || undefined,
     }));
   };
 

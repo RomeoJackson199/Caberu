@@ -59,7 +59,7 @@ export const DentistAnalyticsDashboard = () => {
       const { data: businessMembers, error: membersError } = await supabase
         .from('business_members')
         .select('profile_id')
-        .eq('business_id', businessId)
+        .eq('business_id', businessId!)
         .in('role', ['dentist', 'admin', 'owner']);
 
       if (membersError) throw membersError;
@@ -109,7 +109,7 @@ export const DentistAnalyticsDashboard = () => {
         .from('appointments_decrypted')
         .select('id, status, dentist_id')
         .in('dentist_id', dentistIds)
-        .eq('business_id', businessId);
+        .eq('business_id', businessId!);
 
       if (timeRange !== 'all') {
         appointmentsQuery = appointmentsQuery.gte('appointment_date', dateFilter.toISOString().split('T')[0]);

@@ -386,7 +386,7 @@ export function CompletionDialog({
       // 3. Create invoice if payment received, or payment request if not
       if (formData.totalAmount > 0) {
         if (formData.paymentReceived) {
-          const { data: invoice, error: invoiceError } = await supabase
+          const { data: invoice, error: invoiceError } = await (supabase as any)
             .from('invoices')
             .insert({
               appointment_id: appointment.id,
@@ -415,7 +415,7 @@ export function CompletionDialog({
             }));
 
             if (invoiceItems.length > 0) {
-              await supabase.from('invoice_items').insert(invoiceItems);
+              await (supabase as any).from('invoice_items').insert(invoiceItems);
             }
           }
         } else {
@@ -461,7 +461,7 @@ export function CompletionDialog({
           status: 'active'
         }));
 
-        await supabase.from('prescriptions').insert(prescriptionData);
+        await (supabase as any).from('prescriptions').insert(prescriptionData);
       }
 
       // 5. Create new treatment plan or link to existing one

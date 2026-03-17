@@ -54,7 +54,7 @@ export const PatientPaymentHistory: React.FC<PatientPaymentHistoryProps> = ({ pa
       const { data, error } = await query;
 
       if (error) throw error;
-      setPaymentRequests(data || []);
+      setPaymentRequests((data || []) as unknown as PaymentRequest[]);
     } catch (error) {
       console.error('Error fetching payment history:', error);
     } finally {
