@@ -186,7 +186,7 @@ export default function DataImportManager() {
       const { data: dentist, error: dentistError } = await supabase
         .from('dentists')
         .select('id')
-        .eq('profile_id', userProfile.id)
+        .eq('profile_id', userProfile.id as string)
         .single();
 
       if (dentistError || !dentist) {

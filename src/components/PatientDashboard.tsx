@@ -310,7 +310,7 @@ const PatientDashboardInner = ({
           setUserProfile(reloadedProfile as unknown as UserProfile);
         }
       } else {
-        setUserProfile(profile);
+        setUserProfile(profile as unknown as UserProfile);
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);

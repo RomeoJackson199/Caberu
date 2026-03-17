@@ -343,7 +343,7 @@ export const HealthData = ({
 
     return (data || []).map(apt => ({
       ...apt,
-      dentist: dentistsMap.get(apt.dentist_id) || undefined,
+      dentist: dentistsMap.get(apt.dentist_id!) || undefined,
     }));
   };
 

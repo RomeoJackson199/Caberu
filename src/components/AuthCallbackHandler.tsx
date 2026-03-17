@@ -97,17 +97,18 @@ export const AuthCallbackHandler = () => {
                 }).catch(console.warn);
                 sessionStorage.removeItem('selected_business_id');
               } else {
-                // No pre-selected business, check if user's profile has a business_id
-                const { data: userProfile } = await supabase
-                  .from('secure_profiles_view')
+                // No pre-selected business, check if user has a business membership
+                const { data: memberData } = await supabase
+                  .from('business_members')
                   .select('business_id')
-                  .eq('user_id', session?.user?.id)
+                  .eq('profile_id', session?.user?.id ?? '')
+                  .limit(1)
                   .maybeSingle();
 
-                if (userProfile?.business_id) {
-                  logger.info('Auto-setting business context from profile:', userProfile.business_id);
+                if (memberData?.business_id) {
+                  logger.info('Auto-setting business context from membership:', memberData.business_id);
                   await supabase.functions.invoke('set-current-business', {
-                    body: { businessId: userProfile.business_id },
+                    body: { businessId: memberData.business_id },
                   }).catch(console.warn);
                 }
               }

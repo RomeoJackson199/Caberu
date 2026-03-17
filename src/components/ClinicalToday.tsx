@@ -155,7 +155,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				const nextAppointmentData = nextApt && nextApt.length > 0
 					? {
 						...nextApt[0],
-						profiles: profilesMap.get(nextApt[0].patient_id) || null,
+						profiles: profilesMap.get(nextApt[0].patient_id!) || null,
 					} as TodayAppointment
 					: null;
 

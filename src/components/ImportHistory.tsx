@@ -37,25 +37,25 @@ export function ImportHistory() {
       if (!session) return;
 
       const { data: profile } = await supabase
-        .from('secure_profiles_view')
-        .select('dentists(id)')
-        .eq('user_id', session.user.id)
-        .single();
+        .from('dentists')
+        .select('id')
+        .eq('profile_id', session.user.id)
+        .maybeSingle();
 
-      if (!profile?.dentists?.[0]?.id) return;
+      if (!profile?.id) return;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('import_sessions')
         .select('*')
-        .eq('dentist_id', profile.dentists[0].id)
+        .eq('dentist_id', profile.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setSessions((data || []).map(session => ({
+      setSessions(((data || []) as any[]).map((session: any) => ({
         ...session,
         error_details: Array.isArray(session.error_details) ? session.error_details : []
-      })));
+      })) as ImportSession[]);
     } catch (error) {
       console.error('Error fetching import history:', error);
       toast({
