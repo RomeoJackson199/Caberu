@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, Phone, Smile } from 'lucide-react';
+import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, Phone, Smile, ArrowLeft } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, isSameDay } from 'date-fns';
 
 interface Conversation {
@@ -152,6 +152,7 @@ export default function WhatsAppInbox() {
   const [sending, setSending] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [remindersOpen, setRemindersOpen] = useState(false);
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const [upcomingAppointments, setUpcomingAppointments] = useState<{ id: string; appointment_date: string; reason: string | null; status: string }[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -356,7 +357,11 @@ export default function WhatsAppInbox() {
     <div className="flex h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-xl border border-border/50 bg-card">
 
       {/* ── Left panel ── */}
-      <div className="w-[320px] border-r border-border/50 flex flex-col bg-card">
+      <div className={cn(
+        "border-r border-border/50 flex-col bg-card",
+        "md:flex md:w-[320px]",
+        mobileShowChat ? "hidden" : "flex w-full"
+      )}>
 
         {/* Header */}
         <div className="bg-gradient-to-br from-[#075e54] to-[#128c7e] px-4 pt-4 pb-3">
@@ -417,7 +422,7 @@ export default function WhatsAppInbox() {
                 return (
                   <button
                     key={conv.phone}
-                    onClick={() => setSelectedPhone(conv.phone)}
+                    onClick={() => { setSelectedPhone(conv.phone); setMobileShowChat(true); }}
                     className={cn(
                       'w-full px-4 py-3.5 text-left transition-all duration-150 relative group',
                       idx !== filteredConversations.length - 1 && 'border-b border-border/30',
@@ -499,7 +504,11 @@ export default function WhatsAppInbox() {
       </div>
 
       {/* ── Right panel ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={cn(
+        "flex-col min-w-0",
+        "md:flex md:flex-1",
+        mobileShowChat ? "flex flex-1" : "hidden md:flex"
+      )}>
         {!selectedPhone ? (
           /* Empty state */
           <div className="flex-1 flex items-center justify-center"
@@ -534,6 +543,13 @@ export default function WhatsAppInbox() {
           <>
             {/* Chat header */}
             <div className="bg-gradient-to-r from-[#075e54] to-[#128c7e] px-4 py-3 flex items-center gap-3 shadow-sm">
+              <button
+                onClick={() => { setMobileShowChat(false); setSelectedPhone(null); }}
+                className="md:hidden p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0"
+                aria-label="Back to conversations"
+              >
+                <ArrowLeft className="h-5 w-5 text-white" />
+              </button>
               <Avatar name={selectedConversation?.patient_name || '?'} size="md" />
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-white text-sm leading-tight">
