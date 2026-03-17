@@ -405,13 +405,13 @@ const PatientDashboardInner = ({
       // Fetch prescriptions
       const {
         data: prescriptionsData
-      } = await supabase.from('prescriptions').select('*').eq('patient_id', profileId).order('prescribed_date', {
+      } = await (supabase as any).from('prescriptions').select('*').eq('patient_id', profileId).order('prescribed_date', {
         ascending: false
       });
-      setPrescriptions((prescriptionsData || []).map(prescription => ({
+      setPrescriptions(((prescriptionsData || []) as any[]).map((prescription: any) => ({
         ...prescription,
         duration: prescription.duration_days?.toString() || "7 days"
-      })));
+      })) as Prescription[]);
 
       const {
         data: treatmentPlansData
