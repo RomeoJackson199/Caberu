@@ -139,7 +139,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				].filter(Boolean))];
 
 			const { data: profilesData } = allPatientIds.length > 0
-				? await supabase.from('profiles').select('id, first_name, last_name, email, phone, profile_picture_url').in('id', allPatientIds)
+				? await supabase.from('profiles').select('id, first_name, last_name, email, phone, profile_picture_url').in('id', allPatientIds.filter((id): id is string => id !== null))
 				: { data: [] };
 				const profilesMap = new Map((profilesData || []).map(p => [p.id, p]));
 
