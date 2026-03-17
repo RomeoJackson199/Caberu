@@ -130,7 +130,7 @@ export async function recordSuccessfulLogin(
  * Record a failed login attempt (for audit purposes)
  */
 export async function recordFailedLogin(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   email: string,
   clientIP: string,
   reason: string
