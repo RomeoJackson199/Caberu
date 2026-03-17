@@ -979,14 +979,14 @@ You'll receive a confirmation email shortly.`;
         </div>
       </ScrollArea>
 
-      <div className="border-t bg-card/50 backdrop-blur-sm p-4">
+      <div className="border-t border-border/30 bg-transparent backdrop-blur-sm p-4">
         <div className="flex gap-3 max-w-4xl mx-auto">
           <Input
             placeholder="Type your message..."
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-background/50 border-input/50 focus:border-primary transition-colors"
+            className="flex-1 bg-transparent border-input/30 focus:border-primary transition-colors placeholder:text-muted-foreground/60"
           />
           <Button 
             onClick={handleSendMessage} 
