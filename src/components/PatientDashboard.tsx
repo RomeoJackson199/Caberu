@@ -441,7 +441,7 @@ const PatientDashboardInner = ({
       } = await supabase.from('notes_decrypted').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
-      setPatientNotes(notesData || []);
+      setPatientNotes((notesData || []) as unknown as PatientNote[]);
     } catch (error) {
       console.error('Error fetching patient data:', error);
     }

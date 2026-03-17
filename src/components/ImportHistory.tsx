@@ -96,7 +96,7 @@ export function ImportHistory() {
 
   const deleteImportSession = async (sessionId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('import_sessions')
         .delete()
         .eq('id', sessionId);
