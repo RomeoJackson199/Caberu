@@ -418,11 +418,11 @@ const PatientDashboardInner = ({
       } = await supabase.from('treatment_plans_decrypted').select('*').eq('patient_id', profileId).order('created_at', {
         ascending: false
       });
-      setTreatmentPlans((treatmentPlansData || []).map(plan => ({
+      setTreatmentPlans(((treatmentPlansData || []) as any[]).map((plan: any) => ({
         ...plan,
         title: plan.title || "Treatment Plan",
         estimated_duration: plan.estimated_duration_weeks ? `${plan.estimated_duration_weeks} weeks` : "2 weeks"
-      })));
+      })) as TreatmentPlan[]);
 
       // Fetch medical records
       const {
