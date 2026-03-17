@@ -415,7 +415,7 @@ export function CompletionDialog({
             }));
 
             if (invoiceItems.length > 0) {
-              await supabase.from('invoice_items').insert(invoiceItems);
+              await (supabase as any).from('invoice_items').insert(invoiceItems);
             }
           }
         } else {
