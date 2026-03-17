@@ -371,9 +371,9 @@ const PatientDashboardInner = ({
       }
 
       // Fetch dentist data separately (views don't support PostgREST joins)
-      const dentistIds = [...new Set((appointmentsData || []).map(a => a.dentist_id).filter(Boolean))];
+      const dentistIds = [...new Set((appointmentsData || []).map(a => a.dentist_id).filter((id): id is string => id !== null))];
       const { data: dentists } = dentistIds.length > 0
-        ? await supabase.from('dentists').select('id, specialization, email, profile_picture_url, profiles:profile_id(first_name, last_name, bio, phone, address, profile_picture_url)').in('id', dentistIds)
+        ? await supabase.from('dentists').select('id, specialization, email, profile_picture_url, profiles:profile_id(first_name, last_name, bio, phone, address, profile_picture_url)').in('id', dentistIds as string[])
         : { data: [] };
       const dentistsMap = new Map((dentists || []).map(d => [d.id, d]));
 
