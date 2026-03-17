@@ -101,7 +101,7 @@ export const RealAppointmentsList = ({ user, filter }: RealAppointmentsListProps
           notes,
           dentist_id
         `)
-        .eq('patient_id', profile.id)
+        .eq('patient_id', profile.id as string)
         .order('appointment_date', { ascending: false });
 
       if (appointmentsError) {
