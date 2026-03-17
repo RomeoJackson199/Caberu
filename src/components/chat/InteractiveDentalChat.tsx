@@ -986,7 +986,7 @@ You'll receive a confirmation email shortly.`;
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-transparent border-input/30 focus:border-primary transition-colors placeholder:text-muted-foreground/60"
+            className="flex-1 bg-transparent border-0 border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
           />
           <Button 
             onClick={handleSendMessage} 
