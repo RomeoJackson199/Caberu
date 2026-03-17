@@ -667,7 +667,7 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
 
             // Lovable AI (Gemini) request logging for development
         if (Deno.env.get('ENVIRONMENT') === 'development') {
-          console.log('Sending to Lovable AI Gateway (Gemini):', { messageCount: messages.length });
+          console.log('Sending to Lovable AI Gateway (GPT-5.4 nano):', { messageCount: messages.length });
         }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -677,7 +677,7 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'openai/gpt-5.4-nano',
         messages: messages,
         max_completion_tokens: mode === 'dentist_consultation' ? 1000 : 300,
         ...responseFormat
@@ -686,7 +686,7 @@ ${patient_context.recent_payments.slice(0, 3).map((p: any) => `- €${p.amount} 
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Lovable AI Gateway error:', errorData);
+      console.error('Lovable AI Gateway (GPT-5.4 nano) error:', errorData);
       throw new Error('Lovable AI Gateway error: ' + response.status);
     }
 
