@@ -395,7 +395,7 @@ const PatientDashboardInner = ({
           } : undefined
         };
       });
-      setRecentAppointments(transformed);
+      setRecentAppointments(transformed as unknown as Appointment[]);
     } catch (error) {
       console.error('💥 Exception fetching recent appointments:', error);
     }
