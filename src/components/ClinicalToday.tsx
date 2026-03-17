@@ -147,7 +147,7 @@ export function ClinicalToday({ user, dentistId, onOpenPatientsTab, onOpenAppoin
 				const validAppts = (todayAppts || [])
 					.map(apt => ({
 						...apt,
-						profiles: profilesMap.get(apt.patient_id) || null,
+						profiles: profilesMap.get(apt.patient_id!) || null,
 					}))
 					.filter(apt => apt.profiles) as TodayAppointment[];
 
