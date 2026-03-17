@@ -82,7 +82,7 @@ export function PrescriptionManager({ dentistId }: PrescriptionManagerProps) {
   const fetchPrescriptions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('prescriptions')
         .select(`
           *,
