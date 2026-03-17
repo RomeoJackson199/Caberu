@@ -275,7 +275,7 @@ const PatientDashboardInner = ({
             .eq('user_id', user.id)
             .maybeSingle();
           if (retryProfile) {
-            setUserProfile(retryProfile);
+            setUserProfile(retryProfile as unknown as UserProfile);
           } else {
             setError('Profile exists but could not be loaded. Please try refreshing.');
           }
