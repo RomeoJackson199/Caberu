@@ -108,7 +108,7 @@ export async function checkLoginRateLimit(
  * Record a successful login (resets the rate limit for this user/IP)
  */
 export async function recordSuccessfulLogin(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AnySupabaseClient,
   email: string,
   clientIP: string
 ): Promise<void> {
