@@ -50,7 +50,7 @@ export function RoleBasedRouter({ children, requiredRole, redirectTo = "/" }: Ro
               const { data: dentist } = await supabase
                 .from('dentists')
                 .select('id, is_active')
-                .eq('profile_id', profile.id)
+                .eq('profile_id', profile.id as string)
                 .maybeSingle();
 
               if (!dentist) {
