@@ -430,10 +430,10 @@ const PatientDashboardInner = ({
       } = await supabase.from('medical_records_decrypted').select('*').eq('patient_id', profileId).order('record_date', {
         ascending: false
       });
-      setMedicalRecords((medicalRecordsData || []).map(record => ({
+      setMedicalRecords(((medicalRecordsData || []) as any[]).map((record: any) => ({
         ...record,
         visit_date: record.record_date
-      })));
+      })) as MedicalRecord[]);
 
       // Fetch patient notes
       const {
