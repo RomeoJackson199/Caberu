@@ -59,7 +59,7 @@ export const DentistAnalyticsDashboard = () => {
       const { data: businessMembers, error: membersError } = await supabase
         .from('business_members')
         .select('profile_id')
-        .eq('business_id', businessId)
+        .eq('business_id', businessId!)
         .in('role', ['dentist', 'admin', 'owner']);
 
       if (membersError) throw membersError;
