@@ -386,7 +386,7 @@ export function CompletionDialog({
       // 3. Create invoice if payment received, or payment request if not
       if (formData.totalAmount > 0) {
         if (formData.paymentReceived) {
-          const { data: invoice, error: invoiceError } = await supabase
+          const { data: invoice, error: invoiceError } = await (supabase as any)
             .from('invoices')
             .insert({
               appointment_id: appointment.id,
