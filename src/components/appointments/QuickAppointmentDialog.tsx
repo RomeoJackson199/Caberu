@@ -102,7 +102,7 @@ export function QuickAppointmentDialog({
 
       if (ownedBusiness?.id) return ownedBusiness.id;
 
-      const { data: providerMap } = await supabase
+      const { data: providerMap } = await (supabase as any)
         .from("provider_business_map")
         .select("business_id")
         .eq("provider_id", dentist.profile_id)

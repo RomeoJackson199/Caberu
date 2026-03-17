@@ -461,7 +461,7 @@ export function CompletionDialog({
           status: 'active'
         }));
 
-        await supabase.from('prescriptions').insert(prescriptionData);
+        await (supabase as any).from('prescriptions').insert(prescriptionData);
       }
 
       // 5. Create new treatment plan or link to existing one

@@ -197,7 +197,7 @@ export const DentistAnalytics = ({ dentistId, onOpenPatientsTab, onOpenClinicalT
           .eq('business_id', businessId!);
 
         // Invoices in range for payor split
-        const { data: inv } = await supabase
+        const { data: inv } = await (supabase as any)
           .from('invoices')
           .select('id, mutuality_amount_cents, patient_amount_cents, created_at, patient_id')
           .eq('dentist_id', dentistId)
