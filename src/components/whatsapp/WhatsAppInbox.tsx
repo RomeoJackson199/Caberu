@@ -640,11 +640,37 @@ export default function WhatsAppInbox() {
                             )}
                           >
                             <p className="leading-relaxed whitespace-pre-wrap break-words">
-                              {msg.body || (
-                                <span className="italic opacity-70">
-                                  📋 {msg.template_name?.replace(/_/g, ' ') || 'Template message'}
-                                </span>
-                              )}
+                              {(() => {
+                                // If body exists and is not a raw template placeholder, show it
+                                if (msg.body && !msg.body.startsWith('[Template:')) {
+                                  return msg.body;
+                                }
+                                // Try to render the template content from the known templates
+                                if (msg.template_name) {
+                                  const tmpl = TEMPLATES.find(t => t.key === msg.template_name);
+                                  if (tmpl) {
+                                    const firstName = selectedConversation?.patient_name?.split(' ')[0] || 'Patient';
+                                    const biz = businessName || '';
+                                    const variablesByTemplate: Record<string, Record<string, string>> = {
+                                      appointment_confirmation: { "1": firstName, "2": biz, "3": "—", "4": "—" },
+                                      appointment_reminder_24h: { "1": firstName, "2": "—", "3": "—" },
+                                      payment_reminder: { "1": firstName, "2": "€—", "3": biz },
+                                      patient_welcome: { "1": firstName, "2": biz, "3": "caberu.be/login" },
+                                    };
+                                    const vars = variablesByTemplate[msg.template_name] || { "1": firstName };
+                                    return (
+                                      <span className="opacity-90">
+                                        📋 {renderTemplateBody(tmpl.bodyTemplate, vars)}
+                                      </span>
+                                    );
+                                  }
+                                }
+                                return (
+                                  <span className="italic opacity-70">
+                                    📋 {msg.template_name?.replace(/_/g, ' ') || 'Template message'}
+                                  </span>
+                                );
+                              })()}
                             </p>
                             <div className={cn(
                               'text-[10px] mt-1 flex items-center justify-end gap-0.5',
