@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, Phone, Smile } from 'lucide-react';
+import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, Phone, Smile, ArrowLeft } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, isSameDay } from 'date-fns';
 
 interface Conversation {
@@ -356,7 +356,12 @@ export default function WhatsAppInbox() {
     <div className="flex h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-xl border border-border/50 bg-card">
 
       {/* ── Left panel ── */}
-      <div className="w-[320px] border-r border-border/50 flex flex-col bg-card">
+      <div className={cn(
+        "border-r border-border/50 flex flex-col bg-card",
+        // Mobile: full width when no conversation selected, hidden when chat open
+        "w-full md:w-[320px]",
+        selectedPhone ? "hidden md:flex" : "flex"
+      )}>
 
         {/* Header */}
         <div className="bg-gradient-to-br from-[#075e54] to-[#128c7e] px-4 pt-4 pb-3">
@@ -499,7 +504,11 @@ export default function WhatsAppInbox() {
       </div>
 
       {/* ── Right panel ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0",
+        // Mobile: full width when conversation selected, hidden otherwise
+        selectedPhone ? "flex" : "hidden md:flex"
+      )}>
         {!selectedPhone ? (
           /* Empty state */
           <div className="flex-1 flex items-center justify-center"
@@ -534,6 +543,14 @@ export default function WhatsAppInbox() {
           <>
             {/* Chat header */}
             <div className="bg-gradient-to-r from-[#075e54] to-[#128c7e] px-4 py-3 flex items-center gap-3 shadow-sm">
+              {/* Back button — mobile only */}
+              <button
+                className="md:hidden shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+                onClick={() => setSelectedPhone(null)}
+                aria-label="Back to conversations"
+              >
+                <ArrowLeft className="h-4 w-4 text-white" />
+              </button>
               <Avatar name={selectedConversation?.patient_name || '?'} size="md" />
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-white text-sm leading-tight">
@@ -679,7 +696,7 @@ export default function WhatsAppInbox() {
                       <X className="h-3 w-3 text-muted-foreground" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 p-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
                     {TEMPLATES.map((tmpl) => (
                       <button
                         key={tmpl.sid}
