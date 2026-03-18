@@ -42,6 +42,8 @@ const TEMPLATES = [
     icon: '📅',
     color: 'from-blue-500/10 to-blue-500/5 border-blue-200/60 dark:border-blue-800/40',
     iconBg: 'bg-blue-100 dark:bg-blue-900/40',
+    // {{1}} firstName, {{2}} businessName, {{3}} date, {{4}} time
+    bodyTemplate: 'Hi {{1}}, your appointment at {{2}} on {{3}} at {{4}} is confirmed. See you then! 😊',
   },
   {
     name: 'Appointment Reminder (24h)',
@@ -51,6 +53,8 @@ const TEMPLATES = [
     icon: '⏰',
     color: 'from-purple-500/10 to-purple-500/5 border-purple-200/60 dark:border-purple-800/40',
     iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+    // {{1}} firstName, {{2}} date, {{3}} time
+    bodyTemplate: 'Hi {{1}}, just a reminder about your appointment tomorrow on {{2}} at {{3}}. See you soon! 🦷',
   },
   {
     name: 'Payment Reminder',
@@ -60,6 +64,8 @@ const TEMPLATES = [
     icon: '💳',
     color: 'from-orange-500/10 to-orange-500/5 border-orange-200/60 dark:border-orange-800/40',
     iconBg: 'bg-orange-100 dark:bg-orange-900/40',
+    // {{1}} firstName, {{2}} amount, {{3}} businessName
+    bodyTemplate: 'Hi {{1}}, you have an outstanding balance of {{2}} at {{3}}. Please contact us to settle your payment. Thank you!',
   },
   {
     name: 'Patient Welcome',
@@ -69,8 +75,17 @@ const TEMPLATES = [
     icon: '👋',
     color: 'from-green-500/10 to-green-500/5 border-green-200/60 dark:border-green-800/40',
     iconBg: 'bg-green-100 dark:bg-green-900/40',
+    // {{1}} firstName, {{2}} businessName, {{3}} portal url
+    bodyTemplate: 'Welcome {{1}}! 🎉 Thank you for choosing {{2}}. You can access your patient portal at {{3}}. We look forward to seeing you!',
   },
 ];
+
+function renderTemplateBody(bodyTemplate: string, variables: Record<string, string>): string {
+  return Object.entries(variables).reduce(
+    (text, [key, value]) => text.replaceAll(`{{${key}}}`, value),
+    bodyTemplate
+  );
+}
 
 function getInitials(name: string): string {
   const parts = name.trim().split(' ').filter(Boolean);
@@ -318,15 +333,20 @@ export default function WhatsAppInbox() {
         patient_welcome:          { "1": firstName, "2": biz, "3": 'caberu.be/login' },
       };
 
+      const variables = variablesByTemplate[templateKey] ?? { "1": firstName };
+      const tmpl = TEMPLATES.find(t => t.key === templateKey);
+      const renderedBody = tmpl ? renderTemplateBody(tmpl.bodyTemplate, variables) : undefined;
+
       await supabase.functions.invoke('whatsapp-send', {
         body: {
           action: 'send_template',
           phone: selectedPhone,
           content_sid: templateSid,
-          content_variables: variablesByTemplate[templateKey] ?? { "1": firstName },
+          content_variables: variables,
           business_id: businessId,
           patient_id: selectedConversation?.patient_id,
           template_name: templateKey,
+          rendered_body: renderedBody,
         },
       });
       fetchMessages(selectedPhone);

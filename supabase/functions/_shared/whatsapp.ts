@@ -13,6 +13,7 @@ interface SendTemplateParams {
   businessId: string;
   patientId?: string;
   templateName?: string;
+  renderedBody?: string;
 }
 
 interface SendFreeformParams {
@@ -98,7 +99,7 @@ async function logMessage(params: {
  * Send a WhatsApp template message via Twilio Content API
  */
 export async function sendWhatsAppTemplate({
-  phone, contentSid, contentVariables, businessId, patientId, templateName
+  phone, contentSid, contentVariables, businessId, patientId, templateName, renderedBody
 }: SendTemplateParams): Promise<WhatsAppResult> {
   const twilio = getTwilioAuth();
   if (!twilio) {
@@ -141,7 +142,7 @@ export async function sendWhatsAppTemplate({
       console.error('❌ Twilio WhatsApp error:', data);
       await logMessage({
         businessId, patientId, phone: cleanedPhone, direction: 'outbound',
-        body: `[Template: ${templateName || contentSid}]`,
+        body: renderedBody || `[Template: ${templateName || contentSid}]`,
         templateSid: contentSid, templateName, status: 'failed',
       });
       return { success: false, error: data.message || `Twilio error ${data.code}` };
@@ -150,7 +151,7 @@ export async function sendWhatsAppTemplate({
     console.log(`✅ WhatsApp template sent to ${cleanedPhone}, SID: ${data.sid}`);
     await logMessage({
       businessId, patientId, phone: cleanedPhone, direction: 'outbound',
-      body: `[Template: ${templateName || contentSid}]`,
+      body: renderedBody || `[Template: ${templateName || contentSid}]`,
       templateSid: contentSid, templateName, twilioSid: data.sid, status: 'sent',
     });
     return { success: true, sid: data.sid };
@@ -159,7 +160,7 @@ export async function sendWhatsAppTemplate({
     console.error('❌ WhatsApp template send failed:', errMsg);
     await logMessage({
       businessId, patientId, phone: cleanedPhone, direction: 'outbound',
-      body: `[Template: ${templateName || contentSid}]`,
+      body: renderedBody || `[Template: ${templateName || contentSid}]`,
       templateSid: contentSid, templateName, status: 'failed',
     });
     return { success: false, error: errMsg };
