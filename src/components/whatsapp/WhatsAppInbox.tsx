@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, Phone, Smile } from 'lucide-react';
+import { Send, Search, Clock, ChevronDown, FileText, Loader2, MessageCircle, CheckCheck, Check, X, Calendar, Phone, Smile, ArrowLeft } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday, isSameDay } from 'date-fns';
 
 interface Conversation {
@@ -42,6 +42,8 @@ const TEMPLATES = [
     icon: '📅',
     color: 'from-blue-500/10 to-blue-500/5 border-blue-200/60 dark:border-blue-800/40',
     iconBg: 'bg-blue-100 dark:bg-blue-900/40',
+    // {{1}} firstName, {{2}} businessName, {{3}} date, {{4}} time
+    bodyTemplate: 'Hi {{1}}, your appointment at {{2}} on {{3}} at {{4}} is confirmed. See you then! 😊',
   },
   {
     name: 'Appointment Reminder (24h)',
@@ -51,6 +53,8 @@ const TEMPLATES = [
     icon: '⏰',
     color: 'from-purple-500/10 to-purple-500/5 border-purple-200/60 dark:border-purple-800/40',
     iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+    // {{1}} firstName, {{2}} date, {{3}} time
+    bodyTemplate: 'Hi {{1}}, just a reminder about your appointment tomorrow on {{2}} at {{3}}. See you soon! 🦷',
   },
   {
     name: 'Payment Reminder',
@@ -60,6 +64,8 @@ const TEMPLATES = [
     icon: '💳',
     color: 'from-orange-500/10 to-orange-500/5 border-orange-200/60 dark:border-orange-800/40',
     iconBg: 'bg-orange-100 dark:bg-orange-900/40',
+    // {{1}} firstName, {{2}} amount, {{3}} businessName
+    bodyTemplate: 'Hi {{1}}, you have an outstanding balance of {{2}} at {{3}}. Please contact us to settle your payment. Thank you!',
   },
   {
     name: 'Patient Welcome',
@@ -69,8 +75,17 @@ const TEMPLATES = [
     icon: '👋',
     color: 'from-green-500/10 to-green-500/5 border-green-200/60 dark:border-green-800/40',
     iconBg: 'bg-green-100 dark:bg-green-900/40',
+    // {{1}} firstName, {{2}} businessName, {{3}} portal url
+    bodyTemplate: 'Welcome {{1}}! 🎉 Thank you for choosing {{2}}. You can access your patient portal at {{3}}. We look forward to seeing you!',
   },
 ];
+
+function renderTemplateBody(bodyTemplate: string, variables: Record<string, string>): string {
+  return Object.entries(variables).reduce(
+    (text, [key, value]) => text.replaceAll(`{{${key}}}`, value),
+    bodyTemplate
+  );
+}
 
 function getInitials(name: string): string {
   const parts = name.trim().split(' ').filter(Boolean);
@@ -318,15 +333,20 @@ export default function WhatsAppInbox() {
         patient_welcome:          { "1": firstName, "2": biz, "3": 'caberu.be/login' },
       };
 
+      const variables = variablesByTemplate[templateKey] ?? { "1": firstName };
+      const tmpl = TEMPLATES.find(t => t.key === templateKey);
+      const renderedBody = tmpl ? renderTemplateBody(tmpl.bodyTemplate, variables) : undefined;
+
       await supabase.functions.invoke('whatsapp-send', {
         body: {
           action: 'send_template',
           phone: selectedPhone,
           content_sid: templateSid,
-          content_variables: variablesByTemplate[templateKey] ?? { "1": firstName },
+          content_variables: variables,
           business_id: businessId,
           patient_id: selectedConversation?.patient_id,
           template_name: templateKey,
+          rendered_body: renderedBody,
         },
       });
       fetchMessages(selectedPhone);
@@ -356,7 +376,12 @@ export default function WhatsAppInbox() {
     <div className="flex h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-xl border border-border/50 bg-card">
 
       {/* ── Left panel ── */}
-      <div className="w-[320px] border-r border-border/50 flex flex-col bg-card">
+      <div className={cn(
+        "border-r border-border/50 flex flex-col bg-card",
+        // Mobile: full width when no conversation selected, hidden when chat open
+        "w-full md:w-[320px]",
+        selectedPhone ? "hidden md:flex" : "flex"
+      )}>
 
         {/* Header */}
         <div className="bg-gradient-to-br from-[#075e54] to-[#128c7e] px-4 pt-4 pb-3">
@@ -499,7 +524,11 @@ export default function WhatsAppInbox() {
       </div>
 
       {/* ── Right panel ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0",
+        // Mobile: full width when conversation selected, hidden otherwise
+        selectedPhone ? "flex" : "hidden md:flex"
+      )}>
         {!selectedPhone ? (
           /* Empty state */
           <div className="flex-1 flex items-center justify-center"
@@ -534,6 +563,14 @@ export default function WhatsAppInbox() {
           <>
             {/* Chat header */}
             <div className="bg-gradient-to-r from-[#075e54] to-[#128c7e] px-4 py-3 flex items-center gap-3 shadow-sm">
+              {/* Back button — mobile only */}
+              <button
+                className="md:hidden shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+                onClick={() => setSelectedPhone(null)}
+                aria-label="Back to conversations"
+              >
+                <ArrowLeft className="h-4 w-4 text-white" />
+              </button>
               <Avatar name={selectedConversation?.patient_name || '?'} size="md" />
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-white text-sm leading-tight">
@@ -679,7 +716,7 @@ export default function WhatsAppInbox() {
                       <X className="h-3 w-3 text-muted-foreground" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 p-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
                     {TEMPLATES.map((tmpl) => (
                       <button
                         key={tmpl.sid}

@@ -24,7 +24,7 @@ serve(async (req) => {
 
     switch (action) {
       case 'send_template': {
-        const { phone, content_sid, content_variables, business_id, patient_id, template_name } = body;
+        const { phone, content_sid, content_variables, business_id, patient_id, template_name, rendered_body } = body;
         if (!phone || !content_sid || !business_id) {
           return new Response(JSON.stringify({ error: 'phone, content_sid, business_id required' }), {
             status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -33,6 +33,7 @@ serve(async (req) => {
         const result = await sendWhatsAppTemplate({
           phone, contentSid: content_sid, contentVariables: content_variables,
           businessId: business_id, patientId: patient_id, templateName: template_name,
+          renderedBody: rendered_body,
         });
         return new Response(JSON.stringify(result), {
           status: result.success ? 200 : 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
