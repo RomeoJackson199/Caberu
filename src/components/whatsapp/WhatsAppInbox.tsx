@@ -484,12 +484,15 @@ export default function WhatsAppInbox() {
                             'text-xs truncate',
                             conv.unread_count > 0 ? 'text-foreground' : 'text-muted-foreground'
                           )}>
-                            {conv.last_message_at ? (
+                          {conv.last_message_at ? (
                               <>
                                 {conv.last_direction === 'outbound' && (
                                   <CheckCheck className="h-3 w-3 inline mr-0.5 text-[#25d366]" />
                                 )}
-                                {conv.last_message || <span className="italic">Template sent</span>}
+                                {conv.last_message && !conv.last_message.startsWith('[Template:')
+                                  ? conv.last_message
+                                  : <span className="italic">📋 Template message sent</span>
+                                }
                               </>
                             ) : (
                               <span className="italic text-muted-foreground/60">No messages yet</span>
