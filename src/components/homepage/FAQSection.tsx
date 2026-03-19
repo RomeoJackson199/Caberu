@@ -31,7 +31,7 @@ const faqs: FAQ[] = [
   {
     question: "Can Caberu integrate with my existing practice management software?",
     answer:
-      "Yes. Caberu integrates with major dental practice management systems including Dentrix, Eaglesoft, Open Dental, Curve, and others. We also offer API access for custom integrations.",
+      "Yes. Caberu integrates with major practice management systems. We also offer API access for custom integrations.",
     category: "Getting Started",
   },
 
