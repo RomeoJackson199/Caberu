@@ -37,7 +37,7 @@ export const TestimonialsSection = () => {
             What Our Early Adopters Say
           </h2>
           <p className="text-xl text-gray-600">
-            We're working closely with dental practices to build the tool they actually need
+            We're working closely with healthcare practices to build the tool they actually need
           </p>
         </div>
 
