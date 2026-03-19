@@ -129,7 +129,7 @@ const faqs: FAQ[] = [
     category: "Account",
   },
   {
-    question: "What should I do in a dental emergency?",
+    question: "What should I do in a medical emergency?",
     answer:
       "Use our emergency triage system to assess your situation — it will guide you on next steps. For severe pain, bleeding, or trauma, call emergency services immediately.",
     category: "Account",
