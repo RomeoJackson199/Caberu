@@ -68,6 +68,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const PrivacyPolicyFr = lazy(() => import("./pages/PrivacyPolicyFr"));
 const PrivacyPolicyNl = lazy(() => import("./pages/PrivacyPolicyNl"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const Romeo = lazy(() => import("./pages/Romeo"));
 const CookiePolicyFr = lazy(() => import("./pages/CookiePolicyFr"));
 const CookiePolicyNl = lazy(() => import("./pages/CookiePolicyNl"));
 const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
@@ -398,6 +399,7 @@ const App = () => {
                     <Suspense fallback={<LoadingSpinner variant="overlay" message="Loading..." />}>
                       <Routes>
                         <Route path="/" element={<Index />} />
+                        <Route path="/romeo" element={<Romeo />} />
                         {/* Demo routes */}
                         <Route path="/demo/dentist" element={<DemoDentistDashboard />} />
                         <Route path="/demo/undo" element={<UndoDemo />} />

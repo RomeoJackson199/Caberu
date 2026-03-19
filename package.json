@@ -23,6 +23,8 @@
     "video:premium": "remotion render remotion/index.ts CaberuMarketingPremium out/video-premium.mp4"
   },
   "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource-variable/playfair-display": "^5.2.8",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
