@@ -39,7 +39,7 @@ const faqs: FAQ[] = [
   {
     question: "How do I book an appointment?",
     answer:
-      "Log in to your patient portal, go to 'Book Appointment', pick your preferred dentist, date, and time. You'll get a confirmation email right away. You can also book by chatting with our AI assistant.",
+      "Log in to your patient portal, go to 'Book Appointment', pick your preferred provider, date, and time. You'll get a confirmation email right away. You can also book by chatting with our AI assistant.",
     category: "Appointments",
   },
   {
