@@ -4,7 +4,7 @@ export const SITE_META = {
   title: "Romeo Jackson — Founder & CEO of Caberu",
   description:
     "15-year-old founder building AI voice infrastructure for Belgian healthcare practices. CEO & Co-founder of Caberu.",
-  url: "https://romeo.caberu.be",
+  url: "https://caberu.be/romeo",
   ogImage: "/images/og-image.png",
 };
 
