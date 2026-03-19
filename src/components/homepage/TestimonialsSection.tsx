@@ -15,14 +15,14 @@ const testimonials: Testimonial[] = [
   {
     name: "Early Adopter",
     role: "Practice Owner",
-    practice: "General Dentistry Practice",
+    practice: "Healthcare Practice",
     content: "We switched to Caberu to streamline our scheduling and patient records. The setup was straightforward and the team has been responsive to our feedback as we get everything dialed in.",
     rating: 5,
   },
   {
     name: "Early Adopter",
-    role: "Dentist",
-    practice: "Private Dental Practice",
+    role: "Practitioner",
+    practice: "Private Practice",
     content: "Having everything in one place — appointments, notes, billing — has cut down on the admin work after each patient. It's still early days but the workflow improvements are already noticeable.",
     rating: 5,
   },
@@ -37,7 +37,7 @@ export const TestimonialsSection = () => {
             What Our Early Adopters Say
           </h2>
           <p className="text-xl text-gray-600">
-            We're working closely with dental practices to build the tool they actually need
+            We're working closely with healthcare practices to build the tool they actually need
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export const TestimonialsSection = () => {
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors"
           >
             <p className="text-sm font-medium text-gray-700">
-              Currently onboarding dental practices —{" "}
+              Currently onboarding healthcare practices —{" "}
               <span className="font-bold text-blue-700">get early access</span>
             </p>
           </a>

@@ -31,7 +31,7 @@ const faqs: FAQ[] = [
   {
     question: "Can Caberu integrate with my existing practice management software?",
     answer:
-      "Yes. Caberu integrates with major dental practice management systems including Dentrix, Eaglesoft, Open Dental, Curve, and others. We also offer API access for custom integrations.",
+      "Yes. Caberu integrates with major practice management systems. We also offer API access for custom integrations.",
     category: "Getting Started",
   },
 
@@ -39,7 +39,7 @@ const faqs: FAQ[] = [
   {
     question: "How do I book an appointment?",
     answer:
-      "Log in to your patient portal, go to 'Book Appointment', pick your preferred dentist, date, and time. You'll get a confirmation email right away. You can also book by chatting with our AI assistant.",
+      "Log in to your patient portal, go to 'Book Appointment', pick your preferred provider, date, and time. You'll get a confirmation email right away. You can also book by chatting with our AI assistant.",
     category: "Appointments",
   },
   {
@@ -129,7 +129,7 @@ const faqs: FAQ[] = [
     category: "Account",
   },
   {
-    question: "What should I do in a dental emergency?",
+    question: "What should I do in a medical emergency?",
     answer:
       "Use our emergency triage system to assess your situation — it will guide you on next steps. For severe pain, bleeding, or trauma, call emergency services immediately.",
     category: "Account",

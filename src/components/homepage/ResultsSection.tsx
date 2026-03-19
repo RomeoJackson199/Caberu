@@ -46,7 +46,7 @@ export const ResultsSection = () => {
                             <CheckCircle2 className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                            <div className="text-sm text-gray-500">Built With Dentists</div>
+                            <div className="text-sm text-gray-500">Built With Practitioners</div>
                             <div className="text-xl font-bold text-gray-900">Designed from real practice feedback</div>
                         </div>
                     </div>

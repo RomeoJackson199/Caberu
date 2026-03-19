@@ -131,7 +131,7 @@ const Index = () => {
               Transform Your Practice Today
             </h2>
             <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto">
-              Join hundreds of forward-thinking dentists who have switched to Caberu for a more efficient, patient-centric practice.
+              Join hundreds of forward-thinking healthcare professionals who have switched to Caberu for a more efficient, patient-centric practice.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="h-16 px-10 text-lg bg-white text-slate-900 hover:bg-slate-100 rounded-full shadow-2xl font-bold transition-all hover:scale-105" onClick={() => navigate('/signup')}>
