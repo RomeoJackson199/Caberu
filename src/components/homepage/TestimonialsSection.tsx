@@ -15,14 +15,14 @@ const testimonials: Testimonial[] = [
   {
     name: "Early Adopter",
     role: "Practice Owner",
-    practice: "General Dentistry Practice",
+    practice: "Healthcare Practice",
     content: "We switched to Caberu to streamline our scheduling and patient records. The setup was straightforward and the team has been responsive to our feedback as we get everything dialed in.",
     rating: 5,
   },
   {
     name: "Early Adopter",
-    role: "Dentist",
-    practice: "Private Dental Practice",
+    role: "Practitioner",
+    practice: "Private Practice",
     content: "Having everything in one place — appointments, notes, billing — has cut down on the admin work after each patient. It's still early days but the workflow improvements are already noticeable.",
     rating: 5,
   },
