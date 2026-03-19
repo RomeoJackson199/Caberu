@@ -31,7 +31,7 @@ export const ABOUT = {
   heading: "The Story",
   paragraphs: [
     "I'm Romeo — a 15-year-old founder based in Belgium, building AI tools for healthcare practices. I started Caberu after realising that thousands of medical and dental practices across Belgium lose patients every week simply because no one picks up the phone. My grandmother is a dentist. I grew up seeing the problem firsthand.",
-    "I co-founded Caberu with Thomas Iordache after meeting at an AI camp in 2024. Since then we've built a full AI voice receptionist and practice management platform — real infrastructure, real code, real customers.",
+    "I co-founded Caberu with Thomas Iordache after meeting at an AI camp in 2025. Since then we've built a full AI voice receptionist and practice management platform — real infrastructure, real code, real customers.",
     "Beyond Caberu, I'm obsessed with markets and investing, I practise ITF Taekwon-Do, play basketball, and ski competitively. I'm planning to study handelsingenieur at KU Leuven, then a master's in the US.",
     "I build things that should already exist.",
   ],
@@ -68,12 +68,12 @@ export const TIMELINE = {
   heading: "What I've Done",
   entries: [
     {
-      year: "2024",
+      year: "2025",
       title: "Met Thomas at an AI camp",
       description: "Started exploring AI product ideas together. Realised we were building toward the same problem from different angles.",
     },
     {
-      year: "Late 2024",
+      year: "Late 2025",
       title: "Founded Caberu",
       description: "Built the initial voice AI booking system. First external validation from Pascal Vanhove, CEO of Mobminder.",
     },
