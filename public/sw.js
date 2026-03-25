@@ -7,9 +7,8 @@ const CORE_ASSETS = [
   '/index.html',
   '/offline.html',
   '/manifest.json',
-  '/logo.png',
-  '/badge.png',
-  '/favicon.ico'
+  '/favicon.png',
+  '/caberu-icon.png',
 ];
 
 // Critical asset patterns to cache on first load
@@ -70,8 +69,8 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'TEST_NOTIFICATION') {
     self.registration.showNotification('Test Notification', {
       body: 'This is a test notification from Caberu',
-      icon: '/logo.png',
-      badge: '/badge.png',
+      icon: '/caberu-icon.png',
+      badge: '/favicon.png',
       tag: 'test-notification',
       data: {
         url: '/'
@@ -108,8 +107,8 @@ self.addEventListener('push', (event) => {
   let notificationData = {
     title: 'Caberu Notification',
     body: 'You have a new notification',
-    icon: '/logo.png',
-    badge: '/badge.png',
+    icon: '/caberu-icon.png',
+    badge: '/favicon.png',
     data: {}
   };
 
