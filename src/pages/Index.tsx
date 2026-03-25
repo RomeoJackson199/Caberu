@@ -122,39 +122,28 @@ const Index = () => {
         <FAQSection />
 
         {/* CTA Section */}
-        <section className="relative py-32 px-5 sm:px-8 overflow-hidden bg-[#0a0e1a]">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,_rgba(37,99,235,0.15),_transparent_70%)]" />
+        <section className="relative py-32 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-900">
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#4f46e5_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-          <div className="relative z-10 max-w-3xl mx-auto text-center">
-            <h2
-              className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              Transform your practice today
+          <div className="relative z-10 max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
+              Transform Your Practice Today
             </h2>
-            <p className="text-lg text-slate-400 mb-10 max-w-xl mx-auto">
-              Join forward-thinking healthcare professionals who have switched to Caberu for a more efficient, patient-centric practice.
+            <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto">
+              Join hundreds of forward-thinking healthcare professionals who have switched to Caberu for a more efficient, patient-centric practice.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="h-14 px-10 text-base bg-white text-slate-900 hover:bg-slate-100 rounded-xl font-semibold transition-all hover:shadow-[0_0_40px_rgba(255,255,255,0.15)]"
-                onClick={() => navigate('/signup')}
-              >
-                Get started
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="lg" className="h-16 px-10 text-lg bg-white text-slate-900 hover:bg-slate-100 rounded-full shadow-2xl font-bold transition-all hover:scale-105" onClick={() => navigate('/signup')}>
+                Get Started Now
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-14 px-10 text-base border-white/15 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white rounded-xl font-medium transition-all"
-                onClick={() => setShowContactForm(true)}
-              >
-                Contact sales
+              <Button size="lg" variant="outline" className="h-16 px-10 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-slate-900 rounded-full font-semibold transition-all" onClick={() => setShowContactForm(true)}>
+                Contact Sales
               </Button>
             </div>
-            <p className="mt-8 text-sm text-slate-600">
-              No credit card required · Cancel anytime
+            <p className="mt-8 text-sm text-slate-500">
+              No credit card required • Cancel anytime
             </p>
           </div>
         </section>

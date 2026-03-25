@@ -1,107 +1,121 @@
-import { useRef } from "react";
+import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
   PhoneForwarded,
   MessageSquare,
   Calendar,
   ArrowRight,
+  CheckCircle2,
   Clock,
   TrendingUp,
   RefreshCw,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { HowItWorksFeature } from "@/components/homepage/HowItWorksPopup";
 
-// ── Feature Row (editorial layout, no cards) ────────────────────────────────
+// ── Feature Card ─────────────────────────────────────────────────────────────
 
-interface FeatureRowProps {
+interface FeatureCardProps {
   icon: typeof PhoneForwarded;
-  featureId: HowItWorksFeature;
+  iconBg: string;
+  iconColor: string;
+  accentColor: string;
   title: string;
   description: string;
   benefits: string[];
-  index: number;
+  featureId: HowItWorksFeature;
+  delay: number;
+  isActive: boolean;
+  onHover: () => void;
   onOpenHowItWorks?: (feature: HowItWorksFeature) => void;
 }
 
-const FeatureRow = ({
+const FeatureCard = ({
   icon: Icon,
-  featureId,
+  iconBg,
+  iconColor,
   title,
   description,
   benefits,
-  index,
+  featureId,
+  delay,
+  isActive,
+  onHover,
   onOpenHowItWorks,
-}: FeatureRowProps) => {
+}: FeatureCardProps) => {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const isReversed = index % 2 === 1;
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 40 }}
+      initial={{ opacity: 0, y: 30 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className={`grid md:grid-cols-2 gap-12 md:gap-20 items-center ${
-        isReversed ? "md:direction-rtl" : ""
-      }`}
+      transition={{ duration: 0.5, delay }}
+      onMouseEnter={onHover}
+      className={cn(
+        "relative group",
+        "bg-white rounded-2xl p-8 border transition-all duration-500",
+        isActive
+          ? "border-blue-200 shadow-xl shadow-blue-100/50 scale-[1.02]"
+          : "border-slate-200 hover:border-slate-300 hover:shadow-lg"
+      )}
     >
-      {/* Text side */}
-      <div className={isReversed ? "md:order-2 md:text-left" : ""} style={{ direction: "ltr" }}>
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600/10 mb-6">
-          <Icon className="w-6 h-6 text-blue-600" />
-        </div>
-        <h3
-          className="text-2xl md:text-3xl font-bold text-slate-900 mb-4"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+      <div className={cn(
+        "absolute inset-0 rounded-2xl transition-opacity duration-500",
+        "bg-gradient-to-br from-blue-50/50 via-transparent to-purple-50/30",
+        isActive ? "opacity-100" : "opacity-0"
+      )} />
+
+      <div className="relative z-10">
+        <motion.div
+          className={cn(
+            "w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300",
+            iconBg
+          )}
+          whileHover={{ scale: 1.1, rotate: 5 }}
         >
+          <Icon className={cn("w-8 h-8", iconColor)} />
+        </motion.div>
+
+        <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-blue-600 transition-colors">
           {title}
         </h3>
-        <p className="text-slate-500 text-lg leading-relaxed mb-6">{description}</p>
-        <ul className="space-y-2 mb-6">
-          {benefits.map((b) => (
-            <li key={b} className="flex items-center gap-2.5 text-slate-600 text-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
-              {b}
-            </li>
+
+        <p className="text-slate-600 leading-relaxed mb-6">
+          {description}
+        </p>
+
+        <ul className="space-y-3">
+          {benefits.map((benefit, i) => (
+            <motion.li
+              key={benefit}
+              initial={{ opacity: 0, x: -10 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ delay: delay + 0.2 + i * 0.1 }}
+              className="flex items-center gap-2 text-sm text-slate-600"
+            >
+              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+              {benefit}
+            </motion.li>
           ))}
         </ul>
+
         <button
           onClick={() => onOpenHowItWorks?.(featureId)}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+          className="mt-6 flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full border bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-slate-900 transition-all duration-200"
         >
           See how it works
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
-
-      {/* Visual side — atmospheric block instead of card */}
-      <div
-        className={`relative aspect-[4/3] rounded-2xl overflow-hidden ${
-          isReversed ? "md:order-1" : ""
-        }`}
-        style={{ direction: "ltr" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-50" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={isInView ? { scale: 1, opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            <Icon className="w-20 h-20 text-blue-600/20" strokeWidth={1} />
-          </motion.div>
-        </div>
-        {/* Subtle gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/60 to-transparent" />
-      </div>
     </motion.div>
   );
 };
 
-// ── Stats strip ─────────────────────────────────────────────────────────────
+// ── Stats bar ────────────────────────────────────────────────────────────────
 
-const StatsStrip = () => {
+const StatsBar = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
 
@@ -117,38 +131,47 @@ const StatsStrip = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5 }}
-      className="flex flex-col md:flex-row justify-center gap-12 md:gap-20 py-16 border-t border-slate-200"
+      className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 mt-16"
     >
-      {stats.map((stat, i) => (
-        <motion.div
-          key={stat.label}
-          initial={{ opacity: 0, y: 10 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.1 + i * 0.1 }}
-          className="text-center"
-        >
-          <div className="text-3xl md:text-4xl font-bold text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            {stat.value}
-          </div>
-          <div className="text-slate-500 text-sm mt-1">{stat.label}</div>
-        </motion.div>
-      ))}
+      <div className="grid md:grid-cols-3 gap-8">
+        {stats.map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ delay: 0.2 + i * 0.1 }}
+            className="flex items-center gap-4"
+          >
+            <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+              <stat.icon className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-white">{stat.value}</div>
+              <div className="text-slate-400 text-sm">{stat.label}</div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </motion.div>
   );
 };
 
-// ── Section ─────────────────────────────────────────────────────────────────
+// ── Section ──────────────────────────────────────────────────────────────────
 
 interface FeatureSectionProps {
   onOpenHowItWorks?: (feature: HowItWorksFeature) => void;
 }
 
 export function FeatureSection({ onOpenHowItWorks }: FeatureSectionProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   const features: {
     icon: typeof PhoneForwarded;
+    iconBg: string;
+    iconColor: string;
+    accentColor: string;
     featureId: HowItWorksFeature;
     title: string;
     description: string;
@@ -156,79 +179,97 @@ export function FeatureSection({ onOpenHowItWorks }: FeatureSectionProps) {
   }[] = [
     {
       icon: PhoneForwarded,
+      iconBg: "bg-blue-100",
+      iconColor: "text-blue-600",
+      accentColor: "border-blue-200 bg-blue-50/50",
       featureId: "phone",
-      title: "AI Phone Forwarding",
-      description:
-        "Keep your existing phone number. When your team doesn't answer, Caberu's AI picks up — capturing symptoms, contact details, and reason for visit.",
+      title: "Phone Forwarding — Your Number, AI Backup",
+      description: "Keep your existing phone number. When a call comes in and your team doesn't answer, Caberu's AI picks up naturally — capturing the patient's reason for visit, symptoms, and contact details, then sending you a structured summary.",
       benefits: [
         "Keep your current phone number",
-        "AI answers when you can't",
+        "AI answers if you don't pick up",
         "Patient symptoms captured automatically",
         "Summary delivered to your dashboard",
       ],
     },
     {
       icon: MessageSquare,
+      iconBg: "bg-indigo-100",
+      iconColor: "text-indigo-600",
+      accentColor: "border-indigo-200 bg-indigo-50/50",
       featureId: "sms",
-      title: "Automated SMS Reminders",
-      description:
-        "Reminders go out at 48h, 24h, and 2h before each appointment. Post-visit follow-ups are automatic too. No manual effort needed.",
+      title: "SMS Reminders — Fewer No-Shows",
+      description: "Automated SMS reminders go out at 48h, 24h, and 2h before each appointment — no manual effort needed. Post-visit follow-up messages and instructions go out automatically too.",
       benefits: [
-        "Automated reminders at 48h, 24h, 2h",
+        "Automated reminders at 48h, 24h, and 2h before",
         "Post-visit follow-ups sent automatically",
         "Reduce no-shows by up to 35%",
-        "Zero manual work",
+        "Outbound SMS, zero manual work",
       ],
     },
     {
       icon: Calendar,
+      iconBg: "bg-green-100",
+      iconColor: "text-green-600",
+      accentColor: "border-green-200 bg-green-50/50",
       featureId: "calendar",
       title: "Google Calendar — 2-Way Sync",
-      description:
-        "Connect once. Appointments booked in Caberu appear in Google Calendar instantly, and changes made there sync straight back.",
+      description: "Connect your Google Calendar once and Caberu keeps both sides up to date in real time. Appointments booked in Caberu appear in Google Calendar instantly, and changes made there sync straight back.",
       benefits: [
         "One-click Google Calendar connection",
-        "Bookings sync to Google Calendar instantly",
-        "Changes flow both ways",
+        "New bookings sync to Google Calendar instantly",
+        "Changes in either tool flow both ways",
         "Conflict detection prevents double-bookings",
       ],
     },
   ];
 
   return (
-    <section ref={sectionRef} className="py-24 md:py-32 bg-white relative">
-      <div className="max-w-5xl mx-auto px-5 sm:px-8">
+    <section ref={sectionRef} className="py-24 bg-slate-50 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-50">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-100 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-2xl mx-auto mb-20"
+          className="text-center max-w-4xl mx-auto mb-16"
         >
-          <p className="text-blue-600 font-medium text-sm tracking-wide uppercase mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            How it works
-          </p>
-          <h2
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 tracking-tight"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            className="inline-block px-4 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4"
           >
-            The intelligence layer
-            <br />
-            that sits on top
+            How Caberu Works
+          </motion.span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+            The Intelligence Layer That{" "}
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Sits on Top
+            </span>
           </h2>
+          <p className="text-xl text-slate-600">
+            No switching tools, no disruption. Caberu plugs in as the layer that catches missed calls, sends reminders, and keeps your Google Calendar in sync — automatically.
+          </p>
         </motion.div>
 
-        <div className="space-y-24 md:space-y-32">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           {features.map((feature, index) => (
-            <FeatureRow
+            <FeatureCard
               key={feature.title}
               {...feature}
-              index={index}
+              delay={0.1 * index}
+              isActive={activeIndex === index}
+              onHover={() => setActiveIndex(index)}
               onOpenHowItWorks={onOpenHowItWorks}
             />
           ))}
         </div>
 
-        <StatsStrip />
+        <StatsBar />
       </div>
     </section>
   );
