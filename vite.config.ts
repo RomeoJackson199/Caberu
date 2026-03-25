@@ -68,6 +68,8 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       'framer-motion',
       'mapbox-gl',
+      'leaflet',
+      'react-leaflet',
     ],
   },
   // Enable CSS optimizations
@@ -78,13 +80,12 @@ export default defineConfig(({ mode }) => ({
   json: {
     stringify: true,
   },
-  // Enable experimental features for better performance
+  // esbuild transform options — only drop console/debugger in production.
+  // Do NOT set minifyIdentifiers/minifySyntax/minifyWhitespace here; those
+  // run per-file during the transform phase and cause identifier conflicts
+  // in lazy-loaded chunks when combined with build.minify:'esbuild' (which
+  // already minifies the final bundle correctly in one pass).
   esbuild: {
-    // Remove console.log in production
     drop: mode === 'production' ? ['console', 'debugger'] : [],
-    // Minify identifiers
-    minifyIdentifiers: true,
-    minifySyntax: true,
-    minifyWhitespace: true,
   },
 }));
