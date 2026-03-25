@@ -101,6 +101,7 @@ const Welcome = lazy(() => import("./pages/Welcome"));
 const MobileAuthScreen = lazy(() => import("./pages/MobileAuthScreen"));
 const StatusPage = lazy(() => import("./pages/StatusPage"));
 const BusinessProfilePage = lazy(() => import("./pages/BusinessProfilePage"));
+const Pipeline = lazy(() => import("./pages/Pipeline"));
 
 // Admin Dashboard pages
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
