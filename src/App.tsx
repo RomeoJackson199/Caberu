@@ -493,6 +493,8 @@ const App = () => {
                         <Route path="/clinic/:slug" element={<BusinessPortal />} />
                         {/* Public status page */}
                         <Route path="/status" element={<StatusPage />} />
+                        {/* Pipeline - super admin only */}
+                        <Route path="/pipeline" element={<Pipeline />} />
                         {/* Public business profile page (caberu.be/business-slug) - must be last before catch-all */}
                         <Route path="/:slug" element={<BusinessProfilePage />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
