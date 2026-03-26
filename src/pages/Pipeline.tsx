@@ -7,12 +7,10 @@ import type { Prospect, Priority } from '@/types/prospect';
 import { Sidebar } from '@/components/pipeline/Sidebar';
 import { DetailPanel } from '@/components/pipeline/DetailPanel';
 import { ImportModal } from '@/components/pipeline/ImportModal';
+import { usePipelineProspects } from '@/hooks/usePipelineProspects';
 
-// Lazy-load map to avoid SSR/Leaflet issues
 import { lazy, Suspense } from 'react';
 const ProspectMap = lazy(() => import('@/components/pipeline/ProspectMap'));
-
-const STORAGE_KEY = 'caberu_prospects';
 
 export default function Pipeline() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -47,34 +45,18 @@ export default function Pipeline() {
 }
 
 function PipelineApp() {
-  const [prospects, setProspects] = useState<Prospect[]>([]);
+  const { prospects, loading, importProspects, updateProspect } = usePipelineProspects();
   const [filter, setFilter] = useState<'All' | Priority | 'NoBooking'>('All');
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [flyTo, setFlyTo] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setProspects(JSON.parse(stored));
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  // Save to localStorage on change
-  useEffect(() => {
-    if (prospects.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(prospects));
-    }
-  }, [prospects]);
-
   const filtered = prospects.filter(p => {
     const matchesSearch = !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.address.toLowerCase().includes(search.toLowerCase());
+      p.address.toLowerCase().includes(search.toLowerCase()) ||
+      (p.contactName || '').toLowerCase().includes(search.toLowerCase());
 
     const matchesFilter =
       filter === 'All' ? true :
@@ -90,18 +72,24 @@ function PipelineApp() {
     if (p) setFlyTo({ lat: p.lat, lng: p.lng });
   }, [filtered]);
 
-  const handleImport = useCallback((data: Prospect[]) => {
-    setProspects(data);
-    setSelectedIndex(null);
-    setShowImport(false);
-  }, []);
+  const handleImport = useCallback(async (data: Prospect[]) => {
+    const success = await importProspects(data);
+    if (success) {
+      setSelectedIndex(null);
+      setShowImport(false);
+    }
+  }, [importProspects]);
+
+  const handleSaveProspect = useCallback(async (updated: Prospect) => {
+    await updateProspect(updated);
+  }, [updateProspect]);
 
   const handleExportCSV = useCallback(() => {
-    const headers = ['name', 'address', 'phone', 'website', 'rating', 'reviewCount', 'dentistCount', 'languages', 'onlineBooking', 'priority', 'receptionSignal', 'notes'];
+    const headers = ['name', 'address', 'phone', 'website', 'rating', 'reviewCount', 'dentistCount', 'languages', 'onlineBooking', 'priority', 'receptionSignal', 'notes', 'contactName', 'contactRole', 'contactPersonality', 'painPoints', 'visitDate', 'visitNotes', 'personalNotes', 'talkTrack', 'status'];
     const rows = prospects.map(p =>
       headers.map(h => {
         const val = p[h as keyof Prospect];
-        if (h === 'languages') return (val as string[]).join(' / ');
+        if (h === 'languages' || h === 'painPoints') return (val as string[])?.join(' / ') || '';
         if (val === null || val === undefined) return '';
         return String(val).includes(',') ? `"${val}"` : String(val);
       }).join(',')
@@ -118,6 +106,14 @@ function PipelineApp() {
 
   const hotCount = prospects.filter(p => p.priority === 'Hot').length;
   const warmCount = prospects.filter(p => p.priority === 'Warm').length;
+
+  if (loading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center" style={{ background: '#090d1a' }}>
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -151,6 +147,7 @@ function PipelineApp() {
             <DetailPanel
               prospect={filtered[selectedIndex]}
               onClose={() => setSelectedIndex(null)}
+              onSave={handleSaveProspect}
             />
           )}
         </div>
