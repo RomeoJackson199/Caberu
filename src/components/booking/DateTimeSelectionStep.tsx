@@ -202,6 +202,29 @@ export function DateTimeSelectionStep({
                 );
               })}
             </div>
+
+            {/* No availability this week banner */}
+            {allWeekDisabled && nextAvailableDate && jumpToNextAvailable && (
+              <div className="mt-4 p-4 rounded-xl bg-accent/60 border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <CalendarSearch className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">No availability this week</p>
+                    <p className="text-xs text-muted-foreground">
+                      Next available: <span className="font-medium text-foreground">{format(nextAvailableDate, "EEEE, MMMM d")}</span>
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={jumpToNextAvailable}
+                  className="shrink-0"
+                >
+                  Go to {format(nextAvailableDate, "MMM d")}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
