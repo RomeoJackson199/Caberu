@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Clock, CheckCircle, ChevronLeft, ChevronRight, Sun, Sunset, Moon } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle, ChevronLeft, ChevronRight, Sun, Sunset, Moon, CalendarSearch } from "lucide-react";
 import { format, addDays, isSameDay, isToday as isDateToday } from "date-fns";
 import { isPublicHoliday, getHolidayName } from "@/lib/belgianHolidays";
 import { formatTimeSlot } from "@/lib/timezone";
 import { DentistInfoHeader } from "./DentistInfoHeader";
 import type { Dentist, TimeSlot } from "./types";
+import { useMemo } from "react";
 
 interface DateTimeSelectionStepProps {
   dentist: Dentist;
@@ -19,6 +20,8 @@ interface DateTimeSelectionStepProps {
   onTimeSelect: (time: string) => void;
   onNavigateWeek: (direction: "prev" | "next") => void;
   onBack: () => void;
+  findNextAvailableDate?: (fromDate: Date) => Date | null;
+  jumpToNextAvailable?: () => void;
 }
 
 function groupSlotsByPeriod(slots: TimeSlot[]) {
@@ -48,10 +51,21 @@ export function DateTimeSelectionStep({
   onTimeSelect,
   onNavigateWeek,
   onBack,
+  findNextAvailableDate,
+  jumpToNextAvailable,
 }: DateTimeSelectionStepProps) {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
   const { morning, afternoon, evening } = groupSlotsByPeriod(availableSlots);
   const totalAvailable = morning.length + afternoon.length + evening.length;
+
+  // Check if all days in the current week are disabled
+  const allWeekDisabled = useMemo(() => weekDays.every(d => isDateDisabled(d)), [weekDays, isDateDisabled]);
+
+  // Find the next available date after this week
+  const nextAvailableDate = useMemo(() => {
+    if (!allWeekDisabled || !findNextAvailableDate) return null;
+    return findNextAvailableDate(addDays(currentWeekStart, 7));
+  }, [allWeekDisabled, findNextAvailableDate, currentWeekStart]);
 
   const renderSlotGroup = (
     label: string,
@@ -188,6 +202,29 @@ export function DateTimeSelectionStep({
                 );
               })}
             </div>
+
+            {/* No availability this week banner */}
+            {allWeekDisabled && nextAvailableDate && jumpToNextAvailable && (
+              <div className="mt-4 p-4 rounded-xl bg-accent/60 border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <CalendarSearch className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">No availability this week</p>
+                    <p className="text-xs text-muted-foreground">
+                      Next available: <span className="font-medium text-foreground">{format(nextAvailableDate, "EEEE, MMMM d")}</span>
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={jumpToNextAvailable}
+                  className="shrink-0"
+                >
+                  Go to {format(nextAvailableDate, "MMM d")}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

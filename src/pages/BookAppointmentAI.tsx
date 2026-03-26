@@ -112,6 +112,8 @@ function BookAppointmentContent() {
           onTimeSelect={booking.handleTimeSelect}
           onNavigateWeek={booking.navigateWeek}
           onBack={() => booking.setBookingStep("dentist")}
+          findNextAvailableDate={booking.findNextAvailableDate}
+          jumpToNextAvailable={booking.jumpToNextAvailable}
         />
       )}
 
