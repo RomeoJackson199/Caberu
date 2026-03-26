@@ -448,6 +448,36 @@ export function useBookingFlow() {
     setCurrentWeekStart(prev => addDays(prev, direction === 'next' ? 7 : -7));
   }, []);
 
+  // Find the next available date starting from a given date
+  const findNextAvailableDate = useCallback((fromDate: Date): Date | null => {
+    let candidate = fromDate;
+    for (let i = 0; i < 90; i++) {
+      const today = startOfDay(new Date());
+      if (candidate >= today && !isPublicHoliday(candidate)) {
+        const dayOfWeek = candidate.getDay();
+        if (dentistAvailableDays.includes(dayOfWeek)) {
+          const dateStr = format(candidate, 'yyyy-MM-dd');
+          const onVacation = vacationRanges.some(v => dateStr >= v.start_date && dateStr <= v.end_date);
+          if (!onVacation) return candidate;
+        }
+      }
+      candidate = addDays(candidate, 1);
+    }
+    return null;
+  }, [dentistAvailableDays, vacationRanges]);
+
+  const jumpToNextAvailable = useCallback(() => {
+    const searchFrom = addDays(currentWeekStart, 7);
+    const nextDate = findNextAvailableDate(searchFrom);
+    if (nextDate && selectedDentist) {
+      const weekStart = startOfWeek(nextDate, { weekStartsOn: 1 });
+      setCurrentWeekStart(weekStart);
+      setSelectedDate(nextDate);
+      setSelectedTime(undefined);
+      fetchAvailableSlots(nextDate, selectedDentist.id, selectedService?.id);
+    }
+  }, [currentWeekStart, findNextAvailableDate, selectedDentist, selectedService, fetchAvailableSlots]);
+
   const isDateDisabled = useCallback((date: Date) => {
     const today = startOfDay(new Date());
     if (date < today) return true;
