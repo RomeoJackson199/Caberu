@@ -3341,6 +3341,96 @@ export type Database = {
           },
         ]
       }
+      pipeline_prospects: {
+        Row: {
+          address: string
+          contact_name: string
+          contact_personality: string
+          contact_role: string
+          created_at: string
+          created_by: string | null
+          dentist_count: number | null
+          id: string
+          languages: string[]
+          lat: number
+          lng: number
+          name: string
+          notes: string
+          online_booking: string
+          pain_points: string[]
+          personal_notes: string
+          phone: string
+          priority: string
+          rating: number | null
+          reception_signal: string
+          review_count: number | null
+          status: string
+          talk_track: string
+          updated_at: string
+          visit_date: string | null
+          visit_notes: string
+          website: string
+        }
+        Insert: {
+          address?: string
+          contact_name?: string
+          contact_personality?: string
+          contact_role?: string
+          created_at?: string
+          created_by?: string | null
+          dentist_count?: number | null
+          id?: string
+          languages?: string[]
+          lat: number
+          lng: number
+          name: string
+          notes?: string
+          online_booking?: string
+          pain_points?: string[]
+          personal_notes?: string
+          phone?: string
+          priority?: string
+          rating?: number | null
+          reception_signal?: string
+          review_count?: number | null
+          status?: string
+          talk_track?: string
+          updated_at?: string
+          visit_date?: string | null
+          visit_notes?: string
+          website?: string
+        }
+        Update: {
+          address?: string
+          contact_name?: string
+          contact_personality?: string
+          contact_role?: string
+          created_at?: string
+          created_by?: string | null
+          dentist_count?: number | null
+          id?: string
+          languages?: string[]
+          lat?: number
+          lng?: number
+          name?: string
+          notes?: string
+          online_booking?: string
+          pain_points?: string[]
+          personal_notes?: string
+          phone?: string
+          priority?: string
+          rating?: number | null
+          reception_signal?: string
+          review_count?: number | null
+          status?: string
+          talk_track?: string
+          updated_at?: string
+          visit_date?: string | null
+          visit_notes?: string
+          website?: string
+        }
+        Relationships: []
+      }
       platform_revenue: {
         Row: {
           business_id: string
