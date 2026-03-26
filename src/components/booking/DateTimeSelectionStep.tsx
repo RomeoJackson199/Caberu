@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Clock, CheckCircle, ChevronLeft, ChevronRight, Sun, Sunset, Moon } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle, ChevronLeft, ChevronRight, Sun, Sunset, Moon, CalendarSearch } from "lucide-react";
 import { format, addDays, isSameDay, isToday as isDateToday } from "date-fns";
 import { isPublicHoliday, getHolidayName } from "@/lib/belgianHolidays";
 import { formatTimeSlot } from "@/lib/timezone";
 import { DentistInfoHeader } from "./DentistInfoHeader";
 import type { Dentist, TimeSlot } from "./types";
+import { useMemo } from "react";
 
 interface DateTimeSelectionStepProps {
   dentist: Dentist;
@@ -19,6 +20,8 @@ interface DateTimeSelectionStepProps {
   onTimeSelect: (time: string) => void;
   onNavigateWeek: (direction: "prev" | "next") => void;
   onBack: () => void;
+  findNextAvailableDate?: (fromDate: Date) => Date | null;
+  jumpToNextAvailable?: () => void;
 }
 
 function groupSlotsByPeriod(slots: TimeSlot[]) {
