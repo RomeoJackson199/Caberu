@@ -51,10 +51,21 @@ export function DateTimeSelectionStep({
   onTimeSelect,
   onNavigateWeek,
   onBack,
+  findNextAvailableDate,
+  jumpToNextAvailable,
 }: DateTimeSelectionStepProps) {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
   const { morning, afternoon, evening } = groupSlotsByPeriod(availableSlots);
   const totalAvailable = morning.length + afternoon.length + evening.length;
+
+  // Check if all days in the current week are disabled
+  const allWeekDisabled = useMemo(() => weekDays.every(d => isDateDisabled(d)), [weekDays, isDateDisabled]);
+
+  // Find the next available date after this week
+  const nextAvailableDate = useMemo(() => {
+    if (!allWeekDisabled || !findNextAvailableDate) return null;
+    return findNextAvailableDate(addDays(currentWeekStart, 7));
+  }, [allWeekDisabled, findNextAvailableDate, currentWeekStart]);
 
   const renderSlotGroup = (
     label: string,
