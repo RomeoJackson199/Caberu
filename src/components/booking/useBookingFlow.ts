@@ -749,5 +749,7 @@ export function useBookingFlow() {
     handleSuccessDialogChange,
     fetchAvailableSlots,
     navigate,
+    findNextAvailableDate,
+    jumpToNextAvailable,
   };
 }
